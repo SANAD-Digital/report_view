@@ -1,0 +1,4 @@
+/* Loaded with frappe.require("report_view.bundle.css") by the report-view page only. */
+@import "tabulator-tables/dist/css/tabulator.min.css";
+@import "./rv_tokens.css";
+@import "./rv_components.css";

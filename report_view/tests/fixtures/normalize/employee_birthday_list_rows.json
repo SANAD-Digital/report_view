@@ -1,0 +1,295 @@
+{
+ "description": "Raw execute() output: string columns and list rows (N1.1, N2.2)",
+ "expected": {
+  "chart": null,
+  "columns": [
+   {
+    "agg": null,
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "employee",
+    "fieldtype": "Link",
+    "hidden": false,
+    "key": "employee",
+    "label": "Employee",
+    "link": {
+     "doctype": "Employee",
+     "kind": "static"
+    },
+    "options": "Employee",
+    "original": {
+     "fieldname": "employee",
+     "fieldtype": "Link",
+     "label": "Employee",
+     "options": "Employee",
+     "width": "120"
+    },
+    "role": "dimension",
+    "source_index": 0,
+    "width": 120
+   },
+   {
+    "agg": null,
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "name",
+    "fieldtype": "Data",
+    "hidden": false,
+    "key": "name",
+    "label": "Name",
+    "link": null,
+    "options": null,
+    "original": {
+     "fieldname": "name",
+     "fieldtype": "Data",
+     "label": "Name",
+     "width": "200"
+    },
+    "role": "dimension",
+    "source_index": 1,
+    "width": 200
+   },
+   {
+    "agg": null,
+    "currency": null,
+    "date": true,
+    "export_hidden": false,
+    "fieldname": "date_of_birth",
+    "fieldtype": "Date",
+    "hidden": false,
+    "key": "date_of_birth",
+    "label": "Date of Birth",
+    "link": null,
+    "options": null,
+    "original": {
+     "fieldname": "date_of_birth",
+     "fieldtype": "Date",
+     "label": "Date of Birth",
+     "width": "100"
+    },
+    "role": "dimension",
+    "source_index": 2,
+    "width": 100
+   },
+   {
+    "agg": null,
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "branch",
+    "fieldtype": "Link",
+    "hidden": false,
+    "key": "branch",
+    "label": "Branch",
+    "link": {
+     "doctype": "Branch",
+     "kind": "static"
+    },
+    "options": "Branch",
+    "original": {
+     "fieldname": "branch",
+     "fieldtype": "Link",
+     "label": "Branch",
+     "options": "Branch",
+     "width": "120"
+    },
+    "role": "dimension",
+    "source_index": 3,
+    "width": 120
+   },
+   {
+    "agg": null,
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "department",
+    "fieldtype": "Link",
+    "hidden": false,
+    "key": "department",
+    "label": "Department",
+    "link": {
+     "doctype": "Department",
+     "kind": "static"
+    },
+    "options": "Department",
+    "original": {
+     "fieldname": "department",
+     "fieldtype": "Link",
+     "label": "Department",
+     "options": "Department",
+     "width": "120"
+    },
+    "role": "dimension",
+    "source_index": 4,
+    "width": 120
+   },
+   {
+    "agg": null,
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "designation",
+    "fieldtype": "Link",
+    "hidden": false,
+    "key": "designation",
+    "label": "Designation",
+    "link": {
+     "doctype": "Designation",
+     "kind": "static"
+    },
+    "options": "Designation",
+    "original": {
+     "fieldname": "designation",
+     "fieldtype": "Link",
+     "label": "Designation",
+     "options": "Designation",
+     "width": "120"
+    },
+    "role": "dimension",
+    "source_index": 5,
+    "width": 120
+   },
+   {
+    "agg": null,
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "gender",
+    "fieldtype": "Data",
+    "hidden": false,
+    "key": "gender",
+    "label": "Gender",
+    "link": null,
+    "options": null,
+    "original": {
+     "fieldname": "gender",
+     "fieldtype": "",
+     "label": "Gender",
+     "width": "60"
+    },
+    "role": "dimension",
+    "source_index": 6,
+    "width": 60
+   },
+   {
+    "agg": null,
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "company",
+    "fieldtype": "Link",
+    "hidden": false,
+    "key": "company",
+    "label": "Company",
+    "link": {
+     "doctype": "Company",
+     "kind": "static"
+    },
+    "options": "Company",
+    "original": {
+     "fieldname": "company",
+     "fieldtype": "Link",
+     "label": "Company",
+     "options": "Company",
+     "width": "120"
+    },
+    "role": "dimension",
+    "source_index": 7,
+    "width": 120
+   }
+  ],
+  "facts": [
+   {
+    "__bold": false,
+    "__indent": null,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 0,
+    "branch": null,
+    "company": "SND Accounting",
+    "date_of_birth": "2000-09-01",
+    "department": null,
+    "designation": null,
+    "employee": "موظف تجريبي لاختبار العهد",
+    "gender": "Male",
+    "name": "موظف تجريبي لاختبار العهد"
+   }
+  ],
+  "flags": {
+   "add_total_row": false,
+   "mixed_row_shapes": false,
+   "prepared": false,
+   "skip_total_row": false
+  },
+  "message": null,
+  "notices": [],
+  "report_summary": null,
+  "report_totals": {
+   "frappe_total": null,
+   "internal": []
+  },
+  "rows": [
+   {
+    "__bold": false,
+    "__indent": null,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 0,
+    "branch": null,
+    "company": "SND Accounting",
+    "date_of_birth": "2000-09-01",
+    "department": null,
+    "designation": null,
+    "employee": "موظف تجريبي لاختبار العهد",
+    "gender": "Male",
+    "name": "موظف تجريبي لاختبار العهد"
+   }
+  ],
+  "tree": null
+ },
+ "input": {
+  "filters": {
+   "company": "SND Accounting",
+   "month": "Sep"
+  },
+  "raw": {
+   "add_total_row": 0,
+   "chart": null,
+   "columns": [
+    "Employee:Link/Employee:120",
+    "Name:Data:200",
+    "Date of Birth:Date:100",
+    "Branch:Link/Branch:120",
+    "Department:Link/Department:120",
+    "Designation:Link/Designation:120",
+    "Gender::60",
+    "Company:Link/Company:120"
+   ],
+   "message": null,
+   "report_summary": null,
+   "result": [
+    [
+     "موظف تجريبي لاختبار العهد",
+     "موظف تجريبي لاختبار العهد",
+     "2000-09-01",
+     null,
+     null,
+     null,
+     "Male",
+     "SND Accounting"
+    ]
+   ],
+   "skip_total_row": 0,
+   "status": null
+  },
+  "register": {},
+  "report_settings": {}
+ },
+ "name": "employee_birthday_list_rows"
+}

@@ -1,0 +1,27 @@
+{
+	"report": "Trial Balance",
+	"enabled": 1,
+	"report_settings": {
+		"tree": true,
+		"name_field": "account",
+		"parent_field": "parent_account",
+		"export_hidden_cols": true,
+		"initial_depth": 3
+	},
+	"enrich_rules": [
+		{
+			"source_column": "account",
+			"link_doctype": "Account",
+			"fields": "root_type\naccount_type"
+		}
+	],
+	"filter_defs": [
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "fiscal_year", "fieldtype": "Link", "options": "Fiscal Year"}
+	],
+	"balance_pairs": [
+		{"label": "Opening", "debit_column": "opening_debit", "credit_column": "opening_credit"},
+		{"label": "Movement", "debit_column": "debit", "credit_column": "credit"},
+		{"label": "Closing", "debit_column": "closing_debit", "credit_column": "closing_credit"}
+	]
+}

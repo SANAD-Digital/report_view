@@ -1,0 +1,807 @@
+{
+ "description": "fieldtype \"float\" (N1.3); tree by indent where every row has indent 1",
+ "expected": {
+  "chart": {
+   "colors": [
+    "#456789",
+    "#EE8888",
+    "#7E77BF"
+   ],
+   "data": {
+    "datasets": [],
+    "labels": []
+   },
+   "type": "bar"
+  },
+  "columns": [
+   {
+    "agg": null,
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "leave_type",
+    "fieldtype": "Link",
+    "hidden": false,
+    "key": "leave_type",
+    "label": "Leave Type",
+    "link": {
+     "doctype": "Leave Type",
+     "kind": "static"
+    },
+    "options": "Leave Type",
+    "original": {
+     "fieldname": "leave_type",
+     "fieldtype": "Link",
+     "label": "Leave Type",
+     "options": "Leave Type",
+     "width": 200
+    },
+    "role": "dimension",
+    "source_index": 0,
+    "width": 200
+   },
+   {
+    "agg": null,
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "employee",
+    "fieldtype": "Link",
+    "hidden": false,
+    "key": "employee",
+    "label": "Employee",
+    "link": {
+     "doctype": "Employee",
+     "kind": "static"
+    },
+    "options": "Employee",
+    "original": {
+     "fieldname": "employee",
+     "fieldtype": "Link",
+     "label": "Employee",
+     "options": "Employee",
+     "width": 100
+    },
+    "role": "dimension",
+    "source_index": 1,
+    "width": 100
+   },
+   {
+    "agg": null,
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "employee_name",
+    "fieldtype": "Dynamic Link",
+    "hidden": false,
+    "key": "employee_name",
+    "label": "Employee Name",
+    "link": {
+     "doctype_key": "employee",
+     "kind": "dynamic"
+    },
+    "options": "employee",
+    "original": {
+     "fieldname": "employee_name",
+     "fieldtype": "Dynamic Link",
+     "label": "Employee Name",
+     "options": "employee",
+     "width": 100
+    },
+    "role": "dimension",
+    "source_index": 2,
+    "width": 100
+   },
+   {
+    "agg": "sum",
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "opening_balance",
+    "fieldtype": "Float",
+    "hidden": false,
+    "key": "opening_balance",
+    "label": "Opening Balance",
+    "link": null,
+    "options": null,
+    "original": {
+     "fieldname": "opening_balance",
+     "fieldtype": "float",
+     "label": "Opening Balance",
+     "width": 150
+    },
+    "role": "measure",
+    "source_index": 3,
+    "width": 150
+   },
+   {
+    "agg": "sum",
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "leaves_allocated",
+    "fieldtype": "Float",
+    "hidden": false,
+    "key": "leaves_allocated",
+    "label": "Leave(s) Allocated",
+    "link": null,
+    "options": null,
+    "original": {
+     "fieldname": "leaves_allocated",
+     "fieldtype": "float",
+     "label": "Leave(s) Allocated",
+     "width": 200
+    },
+    "role": "measure",
+    "source_index": 4,
+    "width": 200
+   },
+   {
+    "agg": "sum",
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "leaves_taken",
+    "fieldtype": "Float",
+    "hidden": false,
+    "key": "leaves_taken",
+    "label": "Leave(s) Taken",
+    "link": null,
+    "options": null,
+    "original": {
+     "fieldname": "leaves_taken",
+     "fieldtype": "float",
+     "label": "Leave(s) Taken",
+     "width": 150
+    },
+    "role": "measure",
+    "source_index": 5,
+    "width": 150
+   },
+   {
+    "agg": "sum",
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "leaves_expired",
+    "fieldtype": "Float",
+    "hidden": false,
+    "key": "leaves_expired",
+    "label": "Leave(s) Expired",
+    "link": null,
+    "options": null,
+    "original": {
+     "fieldname": "leaves_expired",
+     "fieldtype": "float",
+     "label": "Leave(s) Expired",
+     "width": 150
+    },
+    "role": "measure",
+    "source_index": 6,
+    "width": 150
+   },
+   {
+    "agg": "sum",
+    "currency": null,
+    "date": false,
+    "export_hidden": false,
+    "fieldname": "closing_balance",
+    "fieldtype": "Float",
+    "hidden": false,
+    "key": "closing_balance",
+    "label": "Closing Balance",
+    "link": null,
+    "options": null,
+    "original": {
+     "fieldname": "closing_balance",
+     "fieldtype": "float",
+     "label": "Closing Balance",
+     "width": 150
+    },
+    "role": "measure",
+    "source_index": 7,
+    "width": 150
+   }
+  ],
+  "facts": [
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 0,
+    "closing_balance": 0.0,
+    "employee": "HR-EMP-00001",
+    "employee_name": "SND ACC",
+    "indent": 1,
+    "leave_type": "Casual Leave",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 1,
+    "closing_balance": 0.0,
+    "employee": "موظف تجريبي لاختبار العهد",
+    "employee_name": "موظف تجريبي لاختبار العهد",
+    "indent": 1,
+    "leave_type": "Casual Leave",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 2,
+    "closing_balance": 0.0,
+    "employee": "HR-EMP-00001",
+    "employee_name": "SND ACC",
+    "indent": 1,
+    "leave_type": "Compensatory Off",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 3,
+    "closing_balance": 0.0,
+    "employee": "موظف تجريبي لاختبار العهد",
+    "employee_name": "موظف تجريبي لاختبار العهد",
+    "indent": 1,
+    "leave_type": "Compensatory Off",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 4,
+    "closing_balance": 0.0,
+    "employee": "HR-EMP-00001",
+    "employee_name": "SND ACC",
+    "indent": 1,
+    "leave_type": "Leave Without Pay",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 5,
+    "closing_balance": 0.0,
+    "employee": "موظف تجريبي لاختبار العهد",
+    "employee_name": "موظف تجريبي لاختبار العهد",
+    "indent": 1,
+    "leave_type": "Leave Without Pay",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 6,
+    "closing_balance": 0.0,
+    "employee": "HR-EMP-00001",
+    "employee_name": "SND ACC",
+    "indent": 1,
+    "leave_type": "Privilege Leave",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 7,
+    "closing_balance": 0.0,
+    "employee": "موظف تجريبي لاختبار العهد",
+    "employee_name": "موظف تجريبي لاختبار العهد",
+    "indent": 1,
+    "leave_type": "Privilege Leave",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 8,
+    "closing_balance": 0.0,
+    "employee": "HR-EMP-00001",
+    "employee_name": "SND ACC",
+    "indent": 1,
+    "leave_type": "Sick Leave",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 9,
+    "closing_balance": 0.0,
+    "employee": "موظف تجريبي لاختبار العهد",
+    "employee_name": "موظف تجريبي لاختبار العهد",
+    "indent": 1,
+    "leave_type": "Sick Leave",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   }
+  ],
+  "flags": {
+   "add_total_row": false,
+   "mixed_row_shapes": false,
+   "prepared": false,
+   "skip_total_row": false
+  },
+  "message": null,
+  "notices": [
+   {
+    "code": "FIELDTYPE_CASE",
+    "detail": "opening_balance"
+   },
+   {
+    "code": "FIELDTYPE_CASE",
+    "detail": "leaves_allocated"
+   },
+   {
+    "code": "FIELDTYPE_CASE",
+    "detail": "leaves_taken"
+   },
+   {
+    "code": "FIELDTYPE_CASE",
+    "detail": "leaves_expired"
+   },
+   {
+    "code": "FIELDTYPE_CASE",
+    "detail": "closing_balance"
+   }
+  ],
+  "report_summary": null,
+  "report_totals": {
+   "frappe_total": null,
+   "internal": []
+  },
+  "rows": [
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 0,
+    "closing_balance": 0.0,
+    "employee": "HR-EMP-00001",
+    "employee_name": "SND ACC",
+    "indent": 1,
+    "leave_type": "Casual Leave",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 1,
+    "closing_balance": 0.0,
+    "employee": "موظف تجريبي لاختبار العهد",
+    "employee_name": "موظف تجريبي لاختبار العهد",
+    "indent": 1,
+    "leave_type": "Casual Leave",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 2,
+    "closing_balance": 0.0,
+    "employee": "HR-EMP-00001",
+    "employee_name": "SND ACC",
+    "indent": 1,
+    "leave_type": "Compensatory Off",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 3,
+    "closing_balance": 0.0,
+    "employee": "موظف تجريبي لاختبار العهد",
+    "employee_name": "موظف تجريبي لاختبار العهد",
+    "indent": 1,
+    "leave_type": "Compensatory Off",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 4,
+    "closing_balance": 0.0,
+    "employee": "HR-EMP-00001",
+    "employee_name": "SND ACC",
+    "indent": 1,
+    "leave_type": "Leave Without Pay",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 5,
+    "closing_balance": 0.0,
+    "employee": "موظف تجريبي لاختبار العهد",
+    "employee_name": "موظف تجريبي لاختبار العهد",
+    "indent": 1,
+    "leave_type": "Leave Without Pay",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 6,
+    "closing_balance": 0.0,
+    "employee": "HR-EMP-00001",
+    "employee_name": "SND ACC",
+    "indent": 1,
+    "leave_type": "Privilege Leave",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 7,
+    "closing_balance": 0.0,
+    "employee": "موظف تجريبي لاختبار العهد",
+    "employee_name": "موظف تجريبي لاختبار العهد",
+    "indent": 1,
+    "leave_type": "Privilege Leave",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 8,
+    "closing_balance": 0.0,
+    "employee": "HR-EMP-00001",
+    "employee_name": "SND ACC",
+    "indent": 1,
+    "leave_type": "Sick Leave",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   },
+   {
+    "__bold": false,
+    "__indent": 1,
+    "__is_leaf": true,
+    "__kind": "data",
+    "__label_raw": null,
+    "__parent": null,
+    "__rid": 9,
+    "closing_balance": 0.0,
+    "employee": "موظف تجريبي لاختبار العهد",
+    "employee_name": "موظف تجريبي لاختبار العهد",
+    "indent": 1,
+    "leave_type": "Sick Leave",
+    "leaves_allocated": 0.0,
+    "leaves_expired": 0.0,
+    "leaves_taken": 0.0,
+    "opening_balance": 0.0
+   }
+  ],
+  "tree": {
+   "enabled": true,
+   "id_key": "__rid",
+   "initial_depth": 2,
+   "label_key": "leave_type",
+   "parent_key": "__parent"
+  }
+ },
+ "input": {
+  "filters": {
+   "company": "SND Accounting",
+   "employee_status": "Active",
+   "from_date": "2026-01-01",
+   "to_date": "2026-12-31"
+  },
+  "raw": {
+   "add_total_row": 0,
+   "chart": {
+    "colors": [
+     "#456789",
+     "#EE8888",
+     "#7E77BF"
+    ],
+    "data": {
+     "datasets": [],
+     "labels": []
+    },
+    "type": "bar"
+   },
+   "columns": [
+    {
+     "fieldname": "leave_type",
+     "fieldtype": "Link",
+     "label": "Leave Type",
+     "options": "Leave Type",
+     "width": 200
+    },
+    {
+     "fieldname": "employee",
+     "fieldtype": "Link",
+     "label": "Employee",
+     "options": "Employee",
+     "width": 100
+    },
+    {
+     "fieldname": "employee_name",
+     "fieldtype": "Dynamic Link",
+     "label": "Employee Name",
+     "options": "employee",
+     "width": 100
+    },
+    {
+     "fieldname": "opening_balance",
+     "fieldtype": "float",
+     "label": "Opening Balance",
+     "width": 150
+    },
+    {
+     "fieldname": "leaves_allocated",
+     "fieldtype": "float",
+     "label": "Leave(s) Allocated",
+     "width": 200
+    },
+    {
+     "fieldname": "leaves_taken",
+     "fieldtype": "float",
+     "label": "Leave(s) Taken",
+     "width": 150
+    },
+    {
+     "fieldname": "leaves_expired",
+     "fieldtype": "float",
+     "label": "Leave(s) Expired",
+     "width": 150
+    },
+    {
+     "fieldname": "closing_balance",
+     "fieldtype": "float",
+     "label": "Closing Balance",
+     "width": 150
+    }
+   ],
+   "message": null,
+   "report_summary": null,
+   "result": [
+    {
+     "closing_balance": 0.0,
+     "employee": "HR-EMP-00001",
+     "employee_name": "SND ACC",
+     "indent": 1,
+     "leave_type": "Casual Leave",
+     "leaves_allocated": 0.0,
+     "leaves_expired": 0.0,
+     "leaves_taken": 0.0,
+     "opening_balance": 0.0
+    },
+    {
+     "closing_balance": 0.0,
+     "employee": "موظف تجريبي لاختبار العهد",
+     "employee_name": "موظف تجريبي لاختبار العهد",
+     "indent": 1,
+     "leave_type": "Casual Leave",
+     "leaves_allocated": 0.0,
+     "leaves_expired": 0.0,
+     "leaves_taken": 0.0,
+     "opening_balance": 0.0
+    },
+    {
+     "closing_balance": 0.0,
+     "employee": "HR-EMP-00001",
+     "employee_name": "SND ACC",
+     "indent": 1,
+     "leave_type": "Compensatory Off",
+     "leaves_allocated": 0.0,
+     "leaves_expired": 0.0,
+     "leaves_taken": 0.0,
+     "opening_balance": 0.0
+    },
+    {
+     "closing_balance": 0.0,
+     "employee": "موظف تجريبي لاختبار العهد",
+     "employee_name": "موظف تجريبي لاختبار العهد",
+     "indent": 1,
+     "leave_type": "Compensatory Off",
+     "leaves_allocated": 0.0,
+     "leaves_expired": 0.0,
+     "leaves_taken": 0.0,
+     "opening_balance": 0.0
+    },
+    {
+     "closing_balance": 0.0,
+     "employee": "HR-EMP-00001",
+     "employee_name": "SND ACC",
+     "indent": 1,
+     "leave_type": "Leave Without Pay",
+     "leaves_allocated": 0.0,
+     "leaves_expired": 0.0,
+     "leaves_taken": 0.0,
+     "opening_balance": 0.0
+    },
+    {
+     "closing_balance": 0.0,
+     "employee": "موظف تجريبي لاختبار العهد",
+     "employee_name": "موظف تجريبي لاختبار العهد",
+     "indent": 1,
+     "leave_type": "Leave Without Pay",
+     "leaves_allocated": 0.0,
+     "leaves_expired": 0.0,
+     "leaves_taken": 0.0,
+     "opening_balance": 0.0
+    },
+    {
+     "closing_balance": 0.0,
+     "employee": "HR-EMP-00001",
+     "employee_name": "SND ACC",
+     "indent": 1,
+     "leave_type": "Privilege Leave",
+     "leaves_allocated": 0.0,
+     "leaves_expired": 0.0,
+     "leaves_taken": 0.0,
+     "opening_balance": 0.0
+    },
+    {
+     "closing_balance": 0.0,
+     "employee": "موظف تجريبي لاختبار العهد",
+     "employee_name": "موظف تجريبي لاختبار العهد",
+     "indent": 1,
+     "leave_type": "Privilege Leave",
+     "leaves_allocated": 0.0,
+     "leaves_expired": 0.0,
+     "leaves_taken": 0.0,
+     "opening_balance": 0.0
+    },
+    {
+     "closing_balance": 0.0,
+     "employee": "HR-EMP-00001",
+     "employee_name": "SND ACC",
+     "indent": 1,
+     "leave_type": "Sick Leave",
+     "leaves_allocated": 0.0,
+     "leaves_expired": 0.0,
+     "leaves_taken": 0.0,
+     "opening_balance": 0.0
+    },
+    {
+     "closing_balance": 0.0,
+     "employee": "موظف تجريبي لاختبار العهد",
+     "employee_name": "موظف تجريبي لاختبار العهد",
+     "indent": 1,
+     "leave_type": "Sick Leave",
+     "leaves_allocated": 0.0,
+     "leaves_expired": 0.0,
+     "leaves_taken": 0.0,
+     "opening_balance": 0.0
+    }
+   ],
+   "skip_total_row": 0,
+   "status": null
+  },
+  "register": {},
+  "report_settings": {}
+ },
+ "name": "employee_leave_balance_float"
+}

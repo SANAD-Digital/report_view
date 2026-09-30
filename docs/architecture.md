@@ -245,8 +245,12 @@ Column = {
 Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "opening" | "closing"
                         | "group_header" | "separator",
         __indent: int | null, __parent: __rid | null, __is_leaf: bool, __bold: bool,
-        __label_raw: str | null,     # قيمة عمود العنوان قبل نزع علامتي الاقتباس
+        __label_raw: str | null,     # القيمة المقتبسة الأصلية (مثل "'Total'") إن نُزع اقتباسها في N3.2، وإلا null
         <key>: value ... }           # القيم الخام بلا تنسيق
+  # (المرحلة 3) الصف يحتفظ بكل مفاتيح صف التقرير الأصلية (مثل parent_account و indent و bold) لأن
+  # الـ formatter الأصلي والعملة (options اسم مفتاح في الصف) يحتاجانها، ثم يُضاف لكل عمود مفتاحه
+  # `key`: القيمة المفقودة ⇒ null (لا undefined)، وعمود مكرر (`fieldname__2`) ينسخ قيمة `fieldname`.
+  # صف القائمة يُحوَّل بالموضع إلى مفاتيح الأعمدة فقط.
 ```
 
 ### 3.2 خطوات التطبيع (بالترتيب، وكل خطوة لها رقم يُشار إليه في §3.5)
@@ -275,13 +279,13 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 4. `add_total_row` قد يصل `0/1` أو `True/False` ⇒ `bool`.
 
 **N3 — تصنيف الصفوف** (أول قاعدة تنطبق):
-1. **فاصل:** لا توجد قيمة ذات معنى في أي عمود `dimension` أو `measure` (القيم `null`، `""`، أو غياب المفتاح؛ الصفر **ذو معنى**). يشمل `{}` في BS/PL/CF و AR/AP و Sales Analytics، والصفوف شبه الفارغة في GL التي تحمل `presentation_currency` فقط (لأن العملة `attribute`). ⇒ `separator`.
-2. **مجموع داخلي بعنوان مقتبس:** قيمة **عمود العنوان** (§3.2 N4.1) نص يبدأ وينتهي بـ `'` ⇒ يُنزع الاقتباس للعرض ويُحفظ الأصل في `__label_raw`، ثم: `'Opening'` ⇒ `opening`؛ `'Closing (Opening + Total)'` ⇒ `closing`؛ غيرها (`'Total'`, `'Totals'`, `'Total Asset (Debit)'`, `'Provisional Profit / Loss (Credit)'`، …) ⇒ `internal_total`. الاقتباس في الأصل لتعطيل الرابط، فلا رابط لهذه الصفوف.
-3. **مجموع داخلي بلا اقتباس:** `bold` صادق وقيمة عمود العنوان تساوي `"Total"` أو `_("Total")` (AR `party:"Total"`، Gross Profit `sales_invoice:"Total"`، Employee Advance Summary `title=_("Total")`) ⇒ `internal_total`.
+1. **فاصل:** لا توجد قيمة ذات معنى في أي عمود `dimension` (القيم `null`، `""`، أو غياب المفتاح)، ولا قيمة **غير صفرية** في أي عمود `measure`. (تعديل المرحلة 3: الصيغة الأولى «الصفر ذو معنى» جعلت فواصل GL حقائق، لأن صفوف GL شبه الفارغة تحمل `balance: 0` فعلياً على `acc.dev`. الصفر يبقى ذا معنى في أي صف له بُعد.) يشمل `{}` في BS/PL/CF و AR/AP و Sales Analytics، والصفوف شبه الفارغة في GL التي تحمل `presentation_currency` فقط (لأن العملة `attribute`). ⇒ `separator`.
+2. **مجموع داخلي بعنوان مقتبس:** قيمة **عمود العنوان** (§3.2 N4.1)، ثم بقية أعمدة `dimension` بترتيبها، أول نص يبدأ وينتهي بـ `'` (تعديل المرحلة 3: عمود العنوان في GL هو `posting_date` بينما `'Opening'` في `account`، وفي AR العنوان `party_type` بينما `"Total"` في `party`؛ القاعدة نفسها تنطبق على N3.3) ⇒ يُنزع الاقتباس للعرض ويُحفظ الأصل في `__label_raw`، ثم: `'Opening'` ⇒ `opening`؛ `'Closing (Opening + Total)'` ⇒ `closing`؛ غيرها (`'Total'`, `'Totals'`, `'Total Asset (Debit)'`, `'Provisional Profit / Loss (Credit)'`، …) ⇒ `internal_total`. الاقتباس في الأصل لتعطيل الرابط، فلا رابط لهذه الصفوف.
+3. **مجموع داخلي بلا اقتباس:** `bold` صادق وقيمة عمود العنوان (أو أي عمود `dimension` بالترتيب نفسه) تساوي `"Total"` أو `_("Total")` (AR `party:"Total"`، Gross Profit `sales_invoice:"Total"`، Employee Advance Summary `title=_("Total")`) ⇒ `internal_total`.
 4. **مصنّف مخصص:** `register.classify_row(row, ctx)` إن وُجد، يعيد أحد الأنواع أو `undefined` للمتابعة.
 5. **رأس مجموعة:** إذا كانت الشجرة مفعّلة (N4) والصف بلا `indent` ويليه صف بـ `indent > 0` ⇒ `group_header` بعمق 0 (Employee Leave Balance، Sales Analytics/All). وفي الشجرة، أي صف له أبناء ليس «ورقة» لكنه يبقى `data` (Trial Balance: الحسابات الأب صفوف `data` بـ `__is_leaf=false`).
 6. **مجموعة بلا indent:** صف يحوي عمود التجميع فقط (Monthly Attendance Sheet مع `group_by`: `{"department": v}`) ⇒ `group_header`، ويُحدَّد عبر `register.group_header_key` أو تلقائياً: كل أعمدة `measure` فارغة وقيمة واحدة فقط في الأبعاد.
-7. `bold` صادق ولم ينطبق ما سبق ⇒ `data` مع `__bold = true` (AR `group_by_party`: مجاميع الطرف تُعامل `internal_total` فقط إن طابقت 3، وإلا `data` عريض).
+7. `bold` صادق ولم ينطبق ما سبق ⇒ `data` مع `__bold = true`. **استثناء (المرحلة 3):** في تقرير غير شجري فيه صف طابق 3 (مجموع عريض بلا اقتباس)، كل صف عريض آخر مصنّف `data` يصبح `internal_total`، لأنه مجموع فرعي من التقرير (AR `group_by_party`: مجاميع الأطراف). بدون ذلك تتضاعف الإجماليات (ثبت على `acc.dev`: 184 مقابل 92).
 8. غير ذلك ⇒ `data`.
 
 **N4 — الشجرة.**
@@ -291,6 +295,20 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 4. `__is_leaf = true` إذا كان الصف التالي بـ `indent <=` هذا الصف أو لا يوجد صف تالٍ. الفواصل والمجاميع الداخلية لا تدخل في حساب الأبناء.
 5. `initial_depth` من `report_settings.initial_depth` أو `register.tree.initial_depth` أو 2.
 6. **الحقائق في التقارير الشجرية = الأوراق فقط** (`docs/brief.md` المصطلحات)، لأن قيم الآباء في Trial Balance مجاميع أبنائها، وجمعها يضاعف الأرقام.
+7. **(المرحلة 3) الإجمالي الكلي في العرض الشجري = مجموع صفوف الجذر (`__parent = null`، `data`)**، لا مجموع الأوراق، ما دام لا فلتر عرض ولا تحديد. هذا ما يفعله Frappe نفسه في الشجرة (`Q:780`) و `calculate_total_row` في Trial Balance. السبب: مع `show_net_values` (افتراضي الواجهة) يصفّي التقرير الافتتاحي والختامي لكل حساب أب على حدة، فالعمودان الختاميان غير تجميعيين: مجموع صافي الأوراق 24,653,599 مقابل `'Total'` = مجموع الجذور 7,553,469 على `acc.dev`. مع فلتر عرض أو تحديد، الإجمالي = مجموع الأوراق المطابقة (قيم الآباء لا تُعاد حسابها). التجميع (`group.by`) يبني المجموعات من الأوراق، فالعمودان الختاميان فيه مجموع أرصدة صافية للأوراق ولا يقابلان صفاً في الأصل.
+
+**قيم N1 المحددة في المرحلة 3** (ليطابق المحوّلان بعضهما):
+- `width` عدد صحيح أو `null`؛ `options` الفارغة ⇒ `null`؛ `label` الغائب ⇒ `fieldname`؛ `original` = العمود بعد تحليل N1.1 (قاموس).
+- `export_hidden = hidden && report_settings.export_hidden_cols === true` (العمود غير المخفي `false`).
+- الأنواع خارج قائمتي `measure` و `dimension` (مثل `Small Text`، `Time`) ⇒ `attribute`. نوع غير معروف يبقى كما هو مع `notice FIELDTYPE_UNKNOWN`.
+- `link` يُحسب لكل عمود أياً كان دوره. `Link` خياراته اسم فلتر حالي **أو** بصيغة `snake_case` (`^[a-z_][a-z0-9_]*$`) ⇒ `filter`.
+- «أول صف بيانات» في N1.7 وفي القيم القوائمية = أول صف قاموس غير فارغ في الرد.
+- N3.6 التلقائي لا يعمل إلا إذا وُجد عمود `measure` واحد على الأقل.
+- `tree.initial_depth`: `register.tree.initial_depth` ← `report_settings.initial_depth` ← 2.
+- `report_totals.internal` = كل صفوف `internal_total` بالترتيب؛ المرجع في ADR-008 هو **آخرها** (GL «حسب الحساب» فيه مجموع لكل حساب ثم الكلي).
+- `message` الفارغ و `report_summary` الفارغ ⇒ `null`.
+- `notices`: `FIELDTYPE_CASE` و `FIELDTYPE_UNKNOWN` (`detail` = fieldname)، `SKIP_TOTAL_NON_BOOL` (`detail` = القيمة)، `TREE_PARENT_MISMATCH` (`detail` = `__rid`؛ يُفحص فقط إن وُجد `name_field` و `parent_field` في `report_settings`).
+- خارج الشجرة: `__indent = null`، `__parent = null`، `__is_leaf = true`. في الشجرة: الفواصل والمجاميع الداخلية `__parent = null` و `__is_leaf = true`، و `__indent` قيمة `indent` كما هي أو `null`.
 
 **N5 — الرسائل والرسم والملخص.**
 - `chart`: `{}` أو `[]` أو `null` ⇒ `null`؛ وإلا يُحفظ كما هو ويُحوَّل لـ ECharts في `views/charts_view.js` (أنواع percentage/donut/line/bar والمفاتيح الإضافية `fieldtype`، `options`، `currency`).

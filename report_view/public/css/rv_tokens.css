@@ -1,0 +1,55 @@
+/* Design tokens of Report View, copied from reference/prototype/rv.css (.rv / .rv.compact / .rv.dark).
+   Every colour used by the app comes from these variables. */
+
+.rv{
+  --font:'IBM Plex Sans Arabic',system-ui,sans-serif;
+  /* surfaces */
+  --bg:#F3F6F4; --surface:#FFFFFF; --surface-2:#F8FAF9; --surface-3:#EEF2EF; --hdr:#F7F9F8;
+  --line:#E2E8E4; --line-2:#D3DBD6; --line-3:#B9C4BD;
+  /* text */
+  --tx:#17211C; --tx-2:#46534C; --tx-3:#627069; --tx-4:#95A19A;
+  /* brand */
+  --pri:#1E5C45; --pri-h:#164A37; --pri-tx:#1E5C45; --pri-soft:#E6F1EB; --pri-soft-2:#CBE2D6; --on-pri:#FFFFFF;
+  /* accounting semantics */
+  --dr:#2D5C93; --dr-soft:#EAF1F9; --cr:#8A2D3B; --cr-soft:#F8ECEE;
+  /* status */
+  --neu:#56625B; --neu-soft:#ECF0ED; --ok:#1D7550; --ok-soft:#E3F2E9;
+  --err:#B02A21; --err-soft:#FCEBEA; --warn:#7F5500; --warn-soft:#FBF3E0; --warn-line:#EAD7A6;
+  /* grid states */
+  --sel:rgba(45,92,147,.10); --sel-line:#2D5C93; --hover:#F1F5F2;
+  --grp:#F9FBFA; --grp-0:#F1F5F2; --foot:#F4F7F5; --total:#E7F0EA;
+  /* charts (categorical, similar lightness) */
+  --c1:#2D5C93; --c2:#8A2D3B; --c3:#2F7D5F; --c4:#B07A22; --c5:#6A5A9C; --c6:#2A8791; --c7:#A5AFA9;
+  --scrim:rgba(19,27,23,.34);
+  --sh-1:0 1px 2px rgba(17,24,20,.06);
+  --sh-2:0 2px 8px rgba(17,24,20,.06);
+  --sh-pop:0 12px 32px rgba(17,24,20,.14),0 2px 6px rgba(17,24,20,.06);
+  --sh-drawer:0 0 48px rgba(17,24,20,.18);
+  --r-xs:3px; --r-sm:5px; --r:7px; --r-lg:10px; --r-xl:14px;
+  /* density — comfortable */
+  --rh:36px; --fs:13px; --fs-sm:12.5px; --fs-xs:11.5px; --cp:12px;
+  --bh:30px; --hh:34px; --fh:38px; --ctl:34px; --gap:14px; --pad:24px; --ind:18px;
+  font-family:var(--font); color:var(--tx); background:var(--bg); font-size:var(--fs); line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.rv.compact{
+  --rh:28px; --fs:12.5px; --fs-sm:12px; --fs-xs:11px; --cp:8px;
+  --bh:26px; --hh:28px; --fh:32px; --ctl:30px; --gap:10px; --pad:16px; --ind:14px;
+}
+.rv.dark{
+  --bg:#0E1411; --surface:#141B17; --surface-2:#18201C; --surface-3:#1E2823; --hdr:#18201C;
+  --line:#25302A; --line-2:#2F3B34; --line-3:#45524A;
+  --tx:#E3EAE6; --tx-2:#B3BFB8; --tx-3:#8E9B94; --tx-4:#67746D;
+  --pri:#2A7C5D; --pri-h:#32906C; --pri-tx:#74C8A3; --pri-soft:#17302A; --pri-soft-2:#21443A; --on-pri:#FFFFFF;
+  --dr:#8EB5E6; --dr-soft:#18263A; --cr:#E7A2AC; --cr-soft:#36202A;
+  --neu:#A9B5AE; --neu-soft:#222C27; --ok:#6CCB9B; --ok-soft:#173327;
+  --err:#F0918A; --err-soft:#3A1D1B; --warn:#E6BE6A; --warn-soft:#2E2715; --warn-line:#4D4122;
+  --sel:rgba(142,181,230,.14); --sel-line:#8EB5E6; --hover:#1B2420;
+  --grp:#171F1B; --grp-0:#1C2621; --foot:#1A231F; --total:#1D3029;
+  --c1:#7EA8DD; --c2:#DE8F9B; --c3:#66BD95; --c4:#D9AE5C; --c5:#A596D6; --c6:#63BCC4; --c7:#5E6B64;
+  --scrim:rgba(0,0,0,.5);
+  --sh-1:0 1px 2px rgba(0,0,0,.3); --sh-2:0 2px 8px rgba(0,0,0,.3);
+  --sh-pop:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);
+  --sh-drawer:0 0 48px rgba(0,0,0,.5);
+  color-scheme:dark;
+}

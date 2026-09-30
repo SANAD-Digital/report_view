@@ -1,0 +1,21 @@
+# ADR-009: الحد الأقصى للصفوف ومعاملة Prepared Report
+
+- الحالة: مقبول
+- التاريخ: 2026-09-30
+
+## السياق
+- الموجز: 50,000 صف في المتصفح، وما فوقه «يُحال إلى Prepared Report».
+- لا يمكن تحويل تقرير إلى Prepared Report من تطبيقنا: `_run` لا يقرأ النتائج المعدّة إلا إذا `Report.prepared_report=1` (`query_report.py:274`)، ورفع هذا العلم كتابة على تقرير قياسي (`report.py:436-446`).
+- Frappe يفعّل Prepared Report تلقائياً بعد 15 ثانية بكتابة من خيط جانبي (`report.py:188-198,504-509`) ما لم يكن `disable_prepared_report_automation`.
+- قراءة نتيجة معدّة تتطلب تطابق المالك ونص الفلاتر (`prepared_report.py:249-258`)، وقد يأتي الرد `{"prepared_report": True, "doc": None}` بلا `result` ولا `columns`.
+- حد Frappe `System Settings.max_report_rows` = 100,000 (`query_report.js:1091`).
+
+## القرار
+- الحد = `min(Report View Global Settings.max_rows (افتراضي 50,000), System Settings.max_report_rows)`.
+- `api.run` يحسب عدد الصفوف بعد `run`. فوق الحد: لا يعيد الصفوف، ويعيد `{"status": "too_large", "row_count": n, "limit": l}`، والواجهة تعرض حالة «أكبر من الحد» بخيارات: تضييق الفلاتر، أو فتح التقرير في query-report الأصلية، أو (إن كان `prepared_report=1` أصلاً) توليد نتيجة معدّة.
+- التقارير المعدّة أصلاً (`prepared_report=1`، مثل Stock Balance): `api.run` يمرّر `prepared_report_name` إن وُجد، ويحوّل الرد بلا نتيجة إلى `{"status": "prepared_pending" | "prepared_missing", ...}`. زر «توليد» يستدعي `frappe.core.doctype.prepared_report.prepared_report.make_prepared_report` كما تفعل الصفحة الأصلية، ويستطلع الحالة بـ `frappe.realtime` (`prepared_report_update`).
+- لا نكتب على مستند Report أبداً. التفعيل التلقائي بعد 15 ث سلوك Frappe، ويُوثَّق ولا يُمنع.
+
+## العواقب
+- تعديل صياغة الموجز: «يُحال إلى Prepared Report» تصبح «رسالة واضحة بخيارات فعلية». مذكور في `docs/progress/phase-2.md`.
+- اختبار 50,000 صف يحتاج بيانات مولّدة (قرار معلّق من المرحلة 0).

@@ -2,7 +2,7 @@
 const { defineConfig, devices } = require("@playwright/test");
 
 // Development site. Override with RV_BASE_URL=https://other.site npx playwright test
-const baseURL = process.env.RV_BASE_URL || "https://test.dev.sanad.digital";
+const baseURL = process.env.RV_BASE_URL || "https://acc.dev.sanad.digital";
 
 module.exports = defineConfig({
 	testDir: "./tests/e2e",

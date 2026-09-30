@@ -203,3 +203,139 @@ msgstr "{0} مطلوب"
 
 msgid "{0} is too large"
 msgstr "{0} كبير جداً"
+
+#: report_view/public/js/report_view
+msgid "Excel"
+msgstr "Excel"
+
+#: report_view/public/js/report_view
+msgid "Excel file downloaded"
+msgstr "تم تنزيل ملف Excel"
+
+#: report_view/public/js/report_view
+msgid "Export failed"
+msgstr "فشل التصدير"
+
+#: report_view/public/js/report_view
+msgid "Extra columns could not be loaded: {0}"
+msgstr "تعذّر تحميل الأعمدة الإضافية: {0}"
+
+#: report_view/public/js/report_view
+msgid "Generate it from the standard report page, then come back."
+msgstr "أنشئه من صفحة التقرير القياسية ثم عد إلى هنا."
+
+#: report_view/public/js/report_view
+msgid "Group by"
+msgstr "تجميع حسب"
+
+#: report_view/public/js/report_view
+msgid "Loading report…"
+msgstr "جارٍ تحميل التقرير…"
+
+#: report_view/public/js/report_view
+msgid "Mixed currencies: no total"
+msgstr "عملات مختلفة: لا يوجد إجمالي"
+
+#: report_view/public/js/report_view
+msgid "No prepared result for these filters"
+msgstr "لا توجد نتيجة مُعدّة لهذه الفلاتر"
+
+#: report_view/public/js/report_view
+msgid "No results"
+msgstr "لا نتائج"
+
+#: report_view/public/js/report_view
+msgid "Not Set"
+msgstr "غير محدد"
+
+#: report_view/public/js/report_view
+msgid "Nothing matches these filters."
+msgstr "لا شيء يطابق هذه الفلاتر."
+
+#: report_view/public/js/report_view
+msgid "Open standard report"
+msgstr "فتح التقرير القياسي"
+
+#: report_view/public/js/report_view
+msgid "Please set filters"
+msgstr "يرجى تعيين الفلاتر"
+
+#: report_view/public/js/report_view
+msgid "Refresh"
+msgstr "تحديث"
+
+#: report_view/public/js/report_view
+msgid "Report View"
+msgstr "عرض التقرير"
+
+#: report_view/public/js/report_view
+msgid "Report not found"
+msgstr "التقرير غير موجود"
+
+#: report_view/public/js/report_view
+msgid "Something went wrong"
+msgstr "حدث خطأ ما"
+
+#: report_view/public/js/report_view
+msgid "The export is being prepared; you will be notified."
+msgstr "جارٍ تجهيز ملف التصدير، وستصلك رسالة عند اكتماله."
+
+#: report_view/public/js/report_view
+msgid "The exported totals do not match the screen"
+msgstr "إجماليات الملف المصدَّر لا تطابق ما على الشاشة"
+
+#: report_view/public/js/report_view
+msgid "The report could not run"
+msgstr "تعذّر تشغيل التقرير"
+
+#: report_view/public/js/report_view
+msgid "The report is being prepared in the background"
+msgstr "جارٍ إعداد التقرير في الخلفية"
+
+#: report_view/public/js/report_view
+msgid "The report raised an error"
+msgstr "حدث خطأ في التقرير"
+
+#: report_view/public/js/report_view
+msgid "The report returned {0} rows; the limit is {1}. Narrow the filters or open the standard report."
+msgstr "أعاد التقرير {0} صفاً والحد الأقصى {1}. ضيّق الفلاتر أو افتح التقرير القياسي."
+
+#: report_view/public/js/report_view
+msgid "The request was not valid"
+msgstr "الطلب غير صالح"
+
+#: report_view/public/js/report_view
+msgid "The server could not complete the request."
+msgstr "تعذّر على الخادم إكمال الطلب."
+
+#: report_view/public/js/report_view
+msgid "This report is not enabled in Report View"
+msgstr "هذا التقرير غير مفعّل في عرض التقرير"
+
+#: report_view/public/js/report_view
+msgid "This report type is not supported in Report View"
+msgstr "نوع هذا التقرير غير مدعوم في عرض التقرير"
+
+#: report_view/public/js/report_view
+msgid "Too many rows for Report View"
+msgstr "عدد الصفوف أكبر من حد عرض التقرير"
+
+#: report_view/public/js/report_view
+msgid "Try again"
+msgstr "إعادة المحاولة"
+
+#: report_view/public/js/report_view
+msgid "Try again in a moment."
+msgstr "أعد المحاولة بعد قليل."
+
+#: report_view/public/js/report_view
+msgid "You are not allowed to export this report"
+msgstr "غير مسموح لك بتصدير هذا التقرير"
+
+#: report_view/public/js/report_view
+msgid "You do not have permission to open this report"
+msgstr "لا تملك صلاحية فتح هذا التقرير"
+
+#: report_view/public/js/report_view
+msgid "{0} rows"
+msgstr "{0} صف"

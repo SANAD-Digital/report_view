@@ -278,3 +278,31 @@
 3. ع8: حصر `filter_defs.fieldtype` في `Link`.
 4. ع9: قرار `default_saved_view` (Data أو رسالة واضحة) وتصحيح `:205`.
 5. ن6 إلى ن9: تعديلات نصية في نفس التحديث.
+
+---
+
+## المراجعة الثالثة
+
+- التاريخ: 2026-09-30. المراجَع: commit `d2e5039` (`docs: fix saved-view owner takeover and remaining phase 2 review items`)، يعدّل `docs/architecture.md` و ADR-010.
+- النطاق: بنود المراجعة الثانية فقط.
+
+### الحكم النهائي لقسم الصلاحيات: **قبول**
+
+عولجت كل بنود المراجعة الثانية، ولا توجد مشكلة مفتوحة تمنع القبول. شروط القبول التي تنتقل إلى المرحلة 4 مذكورة في آخر هذا القسم.
+
+| البند | الحالة | الموضع | التحقق من كود Frappe |
+|---|---|---|---|
+| ح4 الاستيلاء بتغيير `owner` | **عولج** | `architecture.md:541-542` (المالك المخزّن لـ read/write/delete…)، و `:546-551` (`validate` يمنع تغيير `owner`)، و `:553` (استثناء `db.get_value` موثّق)، و `:559` (اختبار REST إلزامي)، و ADR-010 | الحل صحيح بالتفصيل. عند `check_permission` (`F/model/document.py:577`) لم يُحمَّل `_doc_before_save` بعد، إذ يُحمَّل في `check_if_latest` (`:580` ← `:1090`). فيعيد `get_doc_before_save()` القيمة `None` (`:689-690`)، ويعمل البديل `frappe.db.get_value`، وهو يقرأ المالك المخزّن. ولا يستطيع الطلب حقن `_doc_before_save` لأنه في `RESERVED_KEYWORDS` (`F/model/base_document.py:1603`). وفي `validate` يكون `_doc_before_save` محمّلاً من قاعدة البيانات، فمقارنة `owner` سليمة. أما استخدام `doc.owner` «للجديد فقط» فآمن: مسار الإنشاء يفحص `create` لا `write` (`document.py:470`)، ويُضبط `owner` من الجلسة للمستند الجديد (`:797-801`) |
+| ع7 التحقق في `validate` | **عولج** | `architecture.md:204` (`save_view` يبني المستند فقط)، و `:546-551` | `_validate` يعمل في `insert` و `save` لكل المسارات، ومنها REST (`document.py:590-591`) |
+| ع8 `filter_defs` | **عولج**: النوع Link فقط مع التعليل | `architecture.md:469` | يطابق `Q:1149` |
+| ع9 `default_saved_view` | **عولج**: صار Data مع تحقق وتجاهل المعلّق، وصُحّح نص `delete_view` | `architecture.md:460`، `:205` | لا يبقى حقل Link يشير إلى العرض، فلا يُرمى `LinkExistsError` (`delete_doc.py:170-172`) |
+| ن6 `IN ()` وترتيب المالك | **عولج** | `architecture.md:535`، `:521`، `:541` | — |
+| ن7 بقايا نصية | **عولج** | `architecture.md:771` (`guard_report_quiet`)، و `:785` (محسوم)، و §5.2 (`Desk User` مسمّى) | — |
+| ن8 Custom Report | **عولج** | `architecture.md:154` (4) | يطابق `Q:356-358` |
+| ن9 الكتابة في GET | **عولج** | `architecture.md:508` | — |
+| ملاحظة `Contact` و `Address` | موثّقة لصاحب المشروع دون تعديل | ADR-010 | تلتزم بحدود التعديل في `CLAUDE.md` |
+
+### شروط تنتقل إلى المرحلة 4 (لا تمنع قبول المرحلة 2)
+1. اختبار REST في `architecture.md:559`، ويُضاف إليه `frappe.client.save` بنفس الجسم، واختبار الحذف عبر `DELETE /api/resource` من غير المالك.
+2. تنفيذ مصفوفة الصلاحيات بمستخدمي `rv_*` بعد إنشائهم (`phase-0.md`)، مع حالات Auditor (`print=0`)، والمشاركة (ع1)، و `js_filters` المزوّرة (ع3)، و `prepared_report_name` لمالك آخر (ع2).
+3. مراجعة الكود نفسه في المرحلة 4 بالبنود الآلية لهذا الوكيل: `ignore_permissions`، و `db.sql`، و `get_all`، و `set_user`، وكل دالة whitelisted. الاستثناء الوحيد المقبول مسبقاً هو `frappe.db.get_value(..., "owner")` داخل الـ hook (`architecture.md:553`).

@@ -53,3 +53,9 @@ jspm_packages/
 
 # Aider AI Chat
 .aider*
+
+# symlink created by bench build (links app node_modules into public/)
+report_view/public/node_modules
+# Playwright output
+test-results/
+playwright-report/

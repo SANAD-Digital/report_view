@@ -1,0 +1,9 @@
+{"v":3,"createdOnFiles":{"v":1,"at":"2026-09-30T16:33:17Z"},"title":"محرك عرض التقارير — ميزان المراجعة","launch":{"view":"canvas"},"pages":[],
+"boards":{
+"Main.dc.html":{"x":0,"y":0,"w":1440,"h":1100,"title":"النموذج التفاعلي — سطح المكتب","is_interactive":true},
+"Mobile.dc.html":{"x":1520,"y":0,"w":390,"h":844,"title":"عرض الجوال","is_interactive":true},
+"Tokens.dc.html":{"x":1990,"y":0,"w":1440,"h":3000,"title":"رموز التصميم والمكونات"},
+"States.dc.html":{"x":0,"y":1220,"w":1440,"h":900,"title":"الحالات"}},
+"order":["Main.dc.html","Mobile.dc.html","Tokens.dc.html","States.dc.html"],
+"notes":{"t1":{"x":0,"y":-300,"text":"محرك عرض التقارير · ميزان المراجعة","kind":"title1","maxW":3430}},
+"designSystems":[]}

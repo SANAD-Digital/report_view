@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>ميزان المراجعة — الجوال</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./rv.css">
+<script src="./tb-data.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EEEA}
+.m-app{display:flex;align-items:center;gap:8px;height:56px;padding:0 8px 0 12px;background:var(--surface);border-bottom:1px solid var(--line);flex:none}
+.m-app h1{font-size:16px;font-weight:600;line-height:1.3}
+.m-app p{font-size:11.5px;color:var(--tx-3)}
+.m-ib{width:44px;height:44px;border:0;background:transparent;border-radius:10px;display:grid;place-items:center;color:var(--tx-2);cursor:pointer;position:relative}
+.m-ib:hover{background:var(--hover)}
+.m-sum{display:flex;flex-direction:column;gap:6px;padding:10px 12px 0}
+.m-card{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.m-card .lbl{width:64px;font-size:11.5px;font-weight:600;color:var(--tx-2);flex:none;line-height:1.3}
+.m-card .eq{flex:1;display:flex;flex-direction:column;gap:0;min-width:0}
+.m-card .eq b{font-size:13.5px;font-weight:600;direction:ltr;text-align:right;font-variant-numeric:tabular-nums;line-height:1.45}
+.m-card .eq b.dr{color:var(--dr)} .m-card .eq b.cr{color:var(--cr)}
+.m-card .eq small{font-size:10.5px;color:var(--tx-3);font-weight:400;margin-left:4px}
+.m-tools{display:flex;gap:8px;padding:10px 12px 8px;align-items:center}
+.m-search{flex:1;display:flex;align-items:center;gap:6px;height:40px;padding:0 10px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);color:var(--tx-3);font-size:13px;min-width:0;overflow:hidden}
+.m-search .rv-facet{height:24px}
+.m-fbtn{height:40px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;gap:4px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);color:var(--tx);cursor:pointer;position:relative;padding:0 10px}
+.m-badge{position:absolute;top:-5px;left:-5px;min-width:18px;height:18px;border-radius:9px;background:var(--pri);color:var(--on-pri);font-size:10.5px;font-weight:600;display:grid;place-items:center;padding:0 4px}
+.m-seg{margin:0 12px 8px;display:flex}
+.m-seg .rv-seg{width:100%}
+.m-seg .rv-seg button{flex:1;justify-content:center;height:32px}
+.m-list{flex:1;min-height:0;overflow:auto;margin:0 12px;border:1px solid var(--line-2);border-radius:10px 10px 0 0;background:var(--surface);display:flex;flex-direction:column}
+.m-hd{display:flex;align-items:center;height:32px;padding:0 12px;background:var(--hdr);border-bottom:1px solid var(--line-2);font-size:11.5px;font-weight:600;color:var(--tx-2);position:sticky;top:0;z-index:2;flex:none}
+.m-hd .a{flex:1}
+.m-hd .n{width:92px;text-align:left}
+.m-row{display:flex;align-items:center;min-height:44px;padding:0 12px;border-bottom:1px solid var(--line);font-size:12.5px;flex:none;border-left:0;border-right:0;border-top:0;background:var(--surface);width:100%;text-align:start;cursor:pointer}
+.m-row .a{flex:1;min-width:0;display:flex;align-items:center;gap:6px}
+.m-row .a .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m-row .n{width:92px;text-align:left;direction:ltr;font-variant-numeric:tabular-nums;flex:none}
+.m-row .n.dr{color:var(--dr)} .m-row .n.cr{color:var(--cr)} .m-row .n.z{color:var(--tx-4)}
+.m-row.grp{background:var(--grp-0);font-weight:600;min-height:40px}
+.m-row.ft{background:var(--foot);font-weight:600;min-height:36px;color:var(--tx-2)}
+.m-row.leaf .a{padding-right:26px}
+.m-tot{display:flex;align-items:center;margin:0 12px 12px;padding:0 12px;min-height:44px;border:1px solid var(--line-2);border-top:1px solid var(--line-3);border-radius:0 0 10px 10px;background:var(--total);font-weight:700;font-size:12.5px;flex:none}
+.m-tot .a{flex:1}
+.m-tot .n{width:92px;text-align:left;direction:ltr;font-variant-numeric:tabular-nums}
+.m-scrim{position:absolute;inset:0;background:var(--scrim);z-index:20}
+.m-sheet{position:absolute;inset-inline:0;bottom:0;z-index:21;background:var(--surface);border-radius:18px 18px 0 0;box-shadow:var(--sh-pop);display:flex;flex-direction:column;max-height:620px}
+.m-grab{width:40px;height:4px;border-radius:2px;background:var(--line-3);margin:8px auto 4px}
+.m-sheet-hd{display:flex;align-items:center;gap:8px;padding:4px 16px 10px;border-bottom:1px solid var(--line)}
+.m-sheet-hd h2{font-size:15px;font-weight:600;flex:1}
+.m-tabs{display:flex;gap:4px;padding:10px 16px 0}
+.m-tab{flex:1;height:36px;border:0;border-bottom:2px solid transparent;background:transparent;font-size:13px;font-weight:500;color:var(--tx-3);cursor:pointer}
+.m-tab.on{color:var(--pri-tx);border-bottom-color:var(--pri)}
+.m-sheet-bd{flex:1;overflow:auto;padding:12px 16px;display:flex;flex-direction:column;gap:14px}
+.m-sheet-bd h4{margin:0 0 6px;font-size:11.5px;font-weight:600;color:var(--tx-3)}
+.m-chiprow{display:flex;flex-wrap:wrap;gap:6px}
+.m-opt{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 4px;border-bottom:1px solid var(--line);font-size:13.5px;cursor:pointer}
+.m-opt input{width:18px;height:18px;accent-color:var(--pri);margin:0}
+.m-opt .c{margin-inline-start:auto;font-size:11.5px;color:var(--tx-3)}
+.m-sheet-ft{display:flex;gap:8px;padding:12px 16px 20px;border-top:1px solid var(--line)}
+.m-sheet-ft .rv-btn{flex:1;height:44px;font-size:14px}
+</style>
+</helmet>
+<div class="{{rootCls}}" dir="rtl" style="width: 390px; height: 844px; position: relative; overflow: hidden; display: flex; flex-direction: column;">
+  <div class="m-app">
+    <button type="button" class="m-ib" aria-label="رجوع"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+    <div style="flex: 1; min-width: 0;">
+      <h1>ميزان المراجعة</h1>
+      <p>شركة سند للمقاولات · <span class="ltr">01/04 – 30/09/2026</span></p>
+    </div>
+    <button type="button" class="m-ib" aria-label="تشغيل التقرير"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg></button>
+    <button type="button" class="m-ib" aria-label="المزيد: تصدير وطباعة"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg></button>
+  </div>
+
+  <div class="m-sum">
+    <sc-for list="{{cards}}" as="cd" hint-placeholder-count="3">
+      <div class="m-card">
+        <span class="lbl">{{cd.label}}</span>
+        <div class="eq">
+          <b class="dr">{{cd.d}}<small>مدين</small></b>
+          <b class="cr">{{cd.c}}<small>دائن</small></b>
+        </div>
+        <span class="{{cd.pill}}">{{cd.pillText}}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div class="m-tools">
+    <div class="m-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <sc-if value="{{hasChip}}" hint-placeholder-val="{{true}}"><span class="rv-facet"><span class="rv-facet-k">نوع الجذر</span><span class="rv-facet-v">{{chipVal}}</span></span></sc-if>
+      <span>بحث…</span>
+    </div>
+    <button type="button" class="m-fbtn" aria-label="الفلاتر والتجميع" onClick="{{openSheet}}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path></svg>
+      <sc-if value="{{hasChip}}" hint-placeholder-val="{{true}}"><span class="m-badge">1</span></sc-if>
+    </button>
+    <button type="button" class="m-fbtn" aria-label="المفضلة"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"></path></svg></button>
+  </div>
+
+  <div class="m-seg">
+    <div class="rv-seg" role="tablist" aria-label="عمودا الرصيد">
+      <button type="button" class="{{bandO}}" onClick="{{toO}}">الافتتاحي</button>
+      <button type="button" class="{{bandP}}" onClick="{{toP}}">الحركة</button>
+      <button type="button" class="{{bandC}}" onClick="{{toC}}">الختامي</button>
+    </div>
+  </div>
+
+  <div class="m-list">
+    <div class="m-hd"><span class="a">الحساب</span><span class="n">مدين</span><span class="n">دائن</span></div>
+    <sc-for list="{{lines}}" as="ln" hint-placeholder-count="14">
+      <button type="button" class="{{ln.cls}}" onClick="{{ln.act}}">
+        <span class="a">
+          <sc-if value="{{ln.isGrp}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{ln.rot}}deg);"><path d="m15 18-6-6 6-6"></path></svg></sc-if>
+          <sc-if value="{{ln.hasNo}}" hint-placeholder-val="{{true}}"><span class="rv-accno">{{ln.no}}</span></sc-if>
+          <span class="nm">{{ln.name}}</span>
+          <sc-if value="{{ln.isGrp}}" hint-placeholder-val="{{false}}"><span class="rv-gcount">{{ln.count}}</span></sc-if>
+        </span>
+        <span class="{{ln.dCls}}">{{ln.d}}</span>
+        <span class="{{ln.cCls}}">{{ln.c}}</span>
+      </button>
+    </sc-for>
+  </div>
+  <div class="m-tot"><span class="a">الإجمالي العام</span><span class="n" style="color: var(--dr);">{{tot.d}}</span><span class="n" style="color: var(--cr);">{{tot.c}}</span></div>
+
+  <sc-if value="{{sheet}}" hint-placeholder-val="{{true}}">
+    <div class="m-scrim" onClick="{{closeSheet}}"></div>
+    <div class="m-sheet" role="dialog" aria-label="الفلاتر والتجميع">
+      <div class="m-grab"></div>
+      <div class="m-sheet-hd">
+        <h2>أدوات العرض</h2>
+        <button type="button" class="rv-link" onClick="{{clear}}">مسح الكل</button>
+        <button type="button" class="m-ib" aria-label="إغلاق" onClick="{{closeSheet}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </div>
+      <div class="m-tabs">
+        <button type="button" class="{{tabF}}" onClick="{{toF}}">الفلاتر</button>
+        <button type="button" class="{{tabG}}" onClick="{{toG}}">التجميع</button>
+        <button type="button" class="{{tabC}}" onClick="{{toCols}}">الأعمدة</button>
+      </div>
+      <div class="m-sheet-bd">
+        <sc-if value="{{isF}}" hint-placeholder-val="{{true}}">
+          <div>
+            <h4>نوع الجذر</h4>
+            <sc-for list="{{roots}}" as="it" hint-placeholder-count="5">
+              <label class="m-opt"><input type="checkbox" checked="{{it.on}}" onChange="{{it.toggle}}"><span>{{it.label}}</span><span class="c">{{it.count}}</span></label>
+            </sc-for>
+          </div>
+          <div>
+            <h4>خيارات سريعة</h4>
+            <label class="m-opt"><input type="checkbox" checked="{{moving}}" onChange="{{tMoving}}"><span>حسابات عليها حركة</span></label>
+            <label class="m-opt"><input type="checkbox" checked="{{nonzero}}" onChange="{{tNonzero}}"><span>إخفاء الحسابات الصفرية</span></label>
+          </div>
+        </sc-if>
+        <sc-if value="{{isG}}" hint-placeholder-val="{{false}}">
+          <div>
+            <h4>مجموعات الصفوف (بالترتيب)</h4>
+            <div class="m-chiprow"><span class="rv-gchip">1 · الحساب الجذري</span></div>
+          </div>
+          <div>
+            <h4>إضافة مستوى</h4>
+            <label class="m-opt"><input type="radio" name="g" checked="{{true}}"><span>الحساب الجذري</span></label>
+            <label class="m-opt"><input type="radio" name="g"><span>الحساب الرئيسي</span></label>
+            <label class="m-opt"><input type="radio" name="g"><span>نوع الحساب</span></label>
+            <label class="m-opt"><input type="radio" name="g"><span>طبيعة الرصيد</span></label>
+          </div>
+        </sc-if>
+        <sc-if value="{{isC}}" hint-placeholder-val="{{false}}">
+          <div>
+            <h4>على الجوال يظهر زوج واحد (مدين/دائن) — اختر الأزواج المتاحة</h4>
+            <label class="m-opt"><input type="checkbox" checked="{{true}}"><span>الرصيد الافتتاحي</span></label>
+            <label class="m-opt"><input type="checkbox" checked="{{true}}"><span>حركة الفترة</span></label>
+            <label class="m-opt"><input type="checkbox" checked="{{true}}"><span>الرصيد الختامي</span></label>
+            <label class="m-opt"><input type="checkbox"><span>صافي الرصيد الختامي</span></label>
+          </div>
+        </sc-if>
+      </div>
+      <div class="m-sheet-ft">
+        <button type="button" class="rv-btn" onClick="{{closeSheet}}">إلغاء</button>
+        <button type="button" class="rv-btn primary" onClick="{{closeSheet}}">عرض {{shown}} حساباً</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"sheetOpen":{"editor":"boolean","default":true},"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+const ROOT_AR={Asset:'الأصول',Liability:'الخصوم',Equity:'حقوق الملكية',Income:'الإيرادات',Expense:'المصروفات'};
+const ROOT_ORDER=['Asset','Liability','Equity','Income','Expense'];
+function nf(n){ return Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmt(n){ return Math.abs(n)<0.005?'—':(n<0?'-':'')+nf(n); }
+function r2(n){ return Math.round(n*100)/100; }
+class Component extends DCLogic {
+  constructor(props){ super(props); this.state={sheet:null,tab:'f',band:'c',roots:['الأصول','الخصوم','حقوق الملكية','الإيرادات'],moving:false,nonzero:true,open:{Asset:true,Liability:false,Equity:false,Income:false,Expense:false},tick:0}; }
+  componentDidMount(){ var n=0; var w=()=>{ if(window.TB_DATA) this.setState({tick:1}); else if(n++<60) this._t=setTimeout(w,100); }; w(); }
+  componentWillUnmount(){ clearTimeout(this._t); }
+  rows(){
+    var d=window.TB_DATA; if(!d) return [];
+    var by={}, bal={}; d.accounts.forEach(function(a){ by[a[0]]={no:a[0],name:a[1],parent:a[2],rt:a[3],grp:a[5]}; if(!a[5]) bal[a[0]]={o:0,dr:0,cr:0}; });
+    d.opening.forEach(function(o){ if(o[0]===0&&bal[o[1]]) bal[o[1]].o+=o[2]-o[3]; });
+    d.gl.forEach(function(g){ if(g[0]!==0) return; var b=bal[g[2]]; if(!b) return; if(g[1]<'2026-04-01') b.o+=g[3]-g[4]; else if(g[1]<='2026-09-30'){ b.dr+=g[3]; b.cr+=g[4]; } });
+    return Object.keys(bal).sort().map(function(no){ var a=by[no], b=bal[no], o=r2(b.o), cn=r2(b.o+b.dr-b.cr); return {no:no,name:a.name,rt:a.rt,od:o>0?o:0,oc:o<0?-o:0,dr:r2(b.dr),cr:r2(b.cr),cd:cn>0?cn:0,cc:cn<0?-cn:0}; });
+  }
+  renderVals(){
+    var s=this.state, p=this.props, self=this;
+    var all=this.rows();
+    var rows=all.filter(function(r){ if(s.roots.indexOf(ROOT_AR[r.rt])<0) return false; if(s.moving&&!(r.dr||r.cr)) return false; if(s.nonzero&&!(r.od||r.oc||r.dr||r.cr||r.cd||r.cc)) return false; return true; });
+    var K={o:['od','oc'],p:['dr','cr'],c:['cd','cc']}[s.band];
+    var sum=function(rs,k){ return rs.reduce(function(a,r){ return a+r[k]; },0); };
+    var mk=function(label,dk,ck){ var dv=sum(rows,dk), cv=sum(rows,ck), bal=Math.abs(dv-cv)<0.01; return {label:label,d:fmt(dv),c:fmt(cv),pill:'rv-pill '+(bal?'ok':'neu'),pillText:bal?'متوازن':'فرق فلترة'}; };
+    var lines=[];
+    ROOT_ORDER.forEach(function(rt){ var rs=rows.filter(function(r){ return r.rt===rt; }); if(!rs.length) return; var open=!!s.open[rt];
+      lines.push({cls:'m-row grp',isGrp:true,hasNo:false,name:ROOT_AR[rt],count:rs.length,rot:open?-90:0,d:open?'':fmt(sum(rs,K[0])),c:open?'':fmt(sum(rs,K[1])),dCls:'n dr',cCls:'n cr',act:function(){ var o=Object.assign({},s.open); o[rt]=!open; self.setState({open:o}); }});
+      if(open){ rs.forEach(function(r){ var dv=r[K[0]], cv=r[K[1]]; lines.push({cls:'m-row leaf',isGrp:false,hasNo:true,no:r.no,name:r.name,d:fmt(dv),c:fmt(cv),dCls:'n '+(dv?'dr':'z'),cCls:'n '+(cv?'cr':'z')}); });
+        lines.push({cls:'m-row ft',isGrp:false,hasNo:false,name:'إجمالي '+ROOT_AR[rt],d:fmt(sum(rs,K[0])),c:fmt(sum(rs,K[1])),dCls:'n dr',cCls:'n cr'}); }
+    });
+    var sheet=s.sheet!=null?s.sheet:(p.sheetOpen!==false);
+    var excluded=ROOT_ORDER.map(function(rt){ return ROOT_AR[rt]; }).filter(function(l){ return s.roots.indexOf(l)<0; });
+    return {
+      rootCls:'rv compact'+(p.theme==='dark'?' dark':''),
+      cards:[mk('الافتتاحي','od','oc'),mk('الحركة','dr','cr'),mk('الختامي','cd','cc')],
+      hasChip:excluded.length>0, chipVal:s.roots.length+' من 5',
+      bandO:s.band==='o'?'on':'',bandP:s.band==='p'?'on':'',bandC:s.band==='c'?'on':'',
+      toO:function(){ self.setState({band:'o'}); },toP:function(){ self.setState({band:'p'}); },toC:function(){ self.setState({band:'c'}); },
+      lines:lines, tot:{d:fmt(sum(rows,K[0])),c:fmt(sum(rows,K[1]))},
+      sheet:sheet, openSheet:function(){ self.setState({sheet:true}); }, closeSheet:function(){ self.setState({sheet:false}); },
+      clear:function(){ self.setState({roots:ROOT_ORDER.map(function(rt){ return ROOT_AR[rt]; }),moving:false,nonzero:false}); },
+      tabF:'m-tab'+(s.tab==='f'?' on':''),tabG:'m-tab'+(s.tab==='g'?' on':''),tabC:'m-tab'+(s.tab==='c'?' on':''),
+      toF:function(){ self.setState({tab:'f'}); },toG:function(){ self.setState({tab:'g'}); },toCols:function(){ self.setState({tab:'c'}); },
+      isF:s.tab==='f',isG:s.tab==='g',isC:s.tab==='c',
+      roots:ROOT_ORDER.map(function(rt){ var l=ROOT_AR[rt]; return {label:l,on:s.roots.indexOf(l)>=0,count:all.filter(function(r){ return r.rt===rt; }).length,toggle:function(){ var a=s.roots.indexOf(l)>=0?s.roots.filter(function(x){ return x!==l; }):s.roots.concat([l]); self.setState({roots:a}); }}; }),
+      moving:s.moving,nonzero:s.nonzero,tMoving:function(){ self.setState({moving:!s.moving}); },tNonzero:function(){ self.setState({nonzero:!s.nonzero}); },
+      shown:rows.length
+    };
+  }
+}
+</script>
+</body>
+</html>

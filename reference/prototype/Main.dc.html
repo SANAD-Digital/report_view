@@ -1,0 +1,1838 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>ميزان المراجعة — محرك عرض التقارير</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./rv.css">
+<script src="./tb-data.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EEEA}
+a{color:#1E5C45}a:hover{color:#164A37}
+</style>
+</helmet>
+<div class="{{rootCls}}" dir="rtl" ref="{{setRoot}}" onMouseDown="{{closeMenus}}" style="width: 1440px; height: 1100px; position: relative; overflow: hidden; display: flex; flex-direction: column;">
+<div class="rv-shell">
+
+<!-- ============ 1 · Header ============ -->
+<header class="rv-top">
+  <div>
+    <nav class="rv-crumbs" aria-label="مسار التنقل">
+      <span>المحاسبة</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+      <span>التقارير المالية</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+      <b>ميزان المراجعة</b>
+    </nav>
+    <div class="rv-title-row">
+      <h1 class="rv-title">ميزان المراجعة</h1>
+      <span class="rv-tag">Query Report</span>
+    </div>
+    <div class="rv-meta">
+      <span>{{hdr.company}}</span><span class="dot"></span>
+      <span>الفترة <span class="ltr">{{hdr.period}}</span></span><span class="dot"></span>
+      <span>العملة SAR</span><span class="dot"></span>
+      <span>{{hdr.runAt}}</span>
+    </div>
+  </div>
+  <div class="rv-actions">
+    <div class="rv-seg" role="group" aria-label="الكثافة">
+      <button type="button" class="{{densCmf}}" onClick="{{setComfortable}}">مريح</button>
+      <button type="button" class="{{densCmp}}" onClick="{{setCompact}}">مضغوط</button>
+    </div>
+    <button type="button" class="rv-btn icon ghost" aria-label="تبديل الوضع الداكن" onClick="{{toggleDark}}">
+      <sc-if value="{{dark}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+      <sc-if value="{{light}}" hint-placeholder-val="{{true}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></svg></sc-if>
+    </button>
+    <span class="rv-vsep"></span>
+    <button type="button" class="rv-btn" onClick="{{exportXlsx}}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ico-dr"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M4 9h16M4 15h16M10 3v18"></path></svg>
+      Excel
+    </button>
+    <button type="button" class="rv-btn" onClick="{{openPdf}}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path></svg>
+      PDF
+    </button>
+    <button type="button" class="rv-btn" onClick="{{openPrint}}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"></path><rect x="3" y="9" width="18" height="8" rx="2"></rect><path d="M7 14h10v7H7z"></path></svg>
+      طباعة
+    </button>
+  </div>
+</header>
+
+<!-- ============ 2 · Server filters (re-fetch) ============ -->
+<section class="{{srv.cls}}" aria-label="معايير التقرير">
+  <div class="rv-server-tag">
+    <div class="rv-server-ico">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"></ellipse><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path></svg>
+    </div>
+    <div><strong>معايير التقرير</strong><span>تعيد جلب البيانات من الخادم</span></div>
+  </div>
+  <label class="rv-field">الشركة
+    <select class="rv-input" value="{{srv.company}}" onChange="{{srv.onCompany}}">
+      <option value="0">شركة سند للمقاولات</option>
+      <option value="1">شركة سند التجارية</option>
+    </select>
+  </label>
+  <div class="rv-field">الفترة
+    <button type="button" class="{{srv.dateCls}}" aria-haspopup="dialog" aria-label="اختيار الفترة" onMouseDown="{{stop}}" onClick="{{srv.openDate}}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+      <span class="ltr">{{srv.periodText}}</span>
+      <span class="rv-date-tag">{{srv.presetLabel}}</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+    </button>
+  </div>
+  <div class="rv-server-note">
+    <sc-if value="{{srv.pending}}" hint-placeholder-val="{{false}}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5v.5"></path></svg>
+      <span>تغيّرت المعايير — شغّل التقرير لجلب البيانات من جديد</span>
+    </sc-if>
+    <sc-if value="{{srv.fresh}}" hint-placeholder-val="{{true}}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg>
+      <span>{{srv.note}}</span>
+    </sc-if>
+  </div>
+  <button type="button" class="rv-btn primary" onClick="{{run}}">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 5v14L5 12z"></path></svg>
+    تشغيل التقرير
+  </button>
+</section>
+
+<!-- ============ 3 · Trial balance summary ============ -->
+<section class="rv-summary" aria-label="ملخص التوازن">
+  <sc-for list="{{cards}}" as="cd" hint-placeholder-count="3">
+    <div class="rv-sum">
+      <div class="rv-sum-hd">
+        <span class="rv-sum-t">{{cd.label}}</span>
+        <span class="{{cd.pill}}">
+          <sc-if value="{{cd.ok}}" hint-placeholder-val="{{true}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></sc-if>
+          <sc-if value="{{cd.neu}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path></svg></sc-if>
+          <sc-if value="{{cd.bad}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5v.5"></path></svg></sc-if>
+          {{cd.pillText}}
+        </span>
+      </div>
+      <div class="rv-sum-eq">
+        <div class="rv-sum-side dr"><small>مدين</small>
+          <sc-if value="{{cd.loading}}" hint-placeholder-val="{{false}}"><span class="rv-skel" style="width: 150px; height: 20px; margin-top: 4px;"></span></sc-if>
+          <sc-if value="{{cd.notLoading}}" hint-placeholder-val="{{true}}"><b>{{cd.d}}</b></sc-if>
+        </div>
+        <span class="rv-sum-op">=</span>
+        <div class="rv-sum-side cr"><small>دائن</small>
+          <sc-if value="{{cd.loading}}" hint-placeholder-val="{{false}}"><span class="rv-skel" style="width: 150px; height: 20px; margin-top: 4px;"></span></sc-if>
+          <sc-if value="{{cd.notLoading}}" hint-placeholder-val="{{true}}"><b>{{cd.c}}</b></sc-if>
+        </div>
+      </div>
+      <div class="rv-sum-foot">{{cd.note}}</div>
+    </div>
+  </sc-for>
+</section>
+
+<!-- ============ 4 · Toolbar ============ -->
+<div class="rv-toolbar">
+  <div class="rv-seg" role="tablist" aria-label="طريقة العرض">
+    <button type="button" class="{{vw.grid}}" onClick="{{vw.toGrid}}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 10h18M3 15h18M9 10v10"></path></svg>
+      جدول
+    </button>
+    <button type="button" class="{{vw.pivot}}" onClick="{{vw.toPivot}}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18M9 3v18"></path><path d="M13 14h4M15 12v4"></path></svg>
+      تحليل Pivot
+    </button>
+    <button type="button" class="{{vw.charts}}" onClick="{{vw.toCharts}}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M21 20H3"></path></svg>
+      رسوم
+    </button>
+  </div>
+  <div class="rv-search" ref="{{setSearch}}" onMouseDown="{{searchDown}}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+    <sc-for list="{{chips}}" as="ch" hint-placeholder-count="0">
+      <span class="rv-facet">
+        <span class="rv-facet-k">{{ch.k}}</span>
+        <span class="rv-facet-v">{{ch.v}}</span>
+        <button type="button" class="rv-facet-x" aria-label="إزالة الفلتر" onClick="{{ch.rm}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </span>
+    </sc-for>
+    <input type="text" aria-label="بحث وفلترة" placeholder="{{searchPh}}" value="{{searchText}}" onChange="{{onSearch}}" onFocus="{{openSearch}}" onKeyDown="{{searchKey}}">
+    <button type="button" class="rv-btn icon sm ghost" aria-label="خيارات البحث" onMouseDown="{{stop}}" onClick="{{toggleSearch}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></button>
+  </div>
+  <button type="button" class="rv-btn rv-fav-btn" onMouseDown="{{stop}}" onClick="{{openFav}}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"></path></svg>
+    المفضلة
+    <span class="sub">{{favSub}}</span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+  </button>
+</div>
+
+<!-- ============ 5 · Grid / Pivot ============ -->
+<sc-if value="{{showGrid}}" hint-placeholder-val="{{true}}">
+<div class="rv-gridwrap">
+  <!-- row-group panel -->
+  <div class="{{gp.cls}}" onDragOver="{{allow}}" onDrop="{{gp.drop}}">
+    <span class="rv-gp-lbl">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M8 12h12M12 18h8"></path></svg>
+      {{gp.title}}
+    </span>
+    <sc-if value="{{gp.empty}}" hint-placeholder-val="{{false}}"><span class="rv-gp-hint">اسحب عموداً هنا للتجميع</span></sc-if>
+    <sc-for list="{{gp.chips}}" as="gc" hint-placeholder-count="2">
+      <span class="rv-gchip" draggable="true" onDragStart="{{gc.dragStart}}" onDragEnd="{{dragEnd}}" onDragOver="{{allow}}" onDrop="{{gc.drop}}">
+        <span class="rv-grip"><svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"></circle><circle cx="7" cy="3" r="1.3"></circle><circle cx="3" cy="8" r="1.3"></circle><circle cx="7" cy="8" r="1.3"></circle><circle cx="3" cy="13" r="1.3"></circle><circle cx="7" cy="13" r="1.3"></circle></svg></span>
+        {{gc.label}}
+        <button type="button" class="rv-chip-x" aria-label="إزالة من التجميع" onClick="{{gc.rm}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </span>
+      <sc-if value="{{gc.arrow}}" hint-placeholder-val="{{true}}"><span class="rv-gsep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></span></sc-if>
+    </sc-for>
+    <div class="rv-gp-tools">
+      <sc-if value="{{gp.showFooterToggle}}" hint-placeholder-val="{{true}}">
+        <label class="rv-check sm"><input type="checkbox" checked="{{footers}}" onChange="{{toggleFooters}}"><span>مجاميع المجموعات</span></label>
+        <span class="rv-vsep"></span>
+      </sc-if>
+      <button type="button" class="rv-btn icon sm ghost" aria-label="توسيع الكل" title="توسيع الكل" onClick="{{expandAll}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3"></rect><path d="M8 12h8M12 8v8"></path></svg></button>
+      <button type="button" class="rv-btn icon sm ghost" aria-label="طي الكل" title="طي الكل" onClick="{{collapseAll}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3"></rect><path d="M8 12h8"></path></svg></button>
+    </div>
+  </div>
+  <sc-if value="{{pvp.show}}" hint-placeholder-val="{{false}}">
+  <div class="rv-gp pv" onDragOver="{{allow}}" onDrop="{{pvp.drop}}">
+    <span class="rv-gp-lbl">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 4v16M12 8v12M18 12v8"></path></svg>
+      أعمدة التحليل
+    </span>
+    <sc-if value="{{pvp.empty}}" hint-placeholder-val="{{false}}"><span class="rv-gp-hint">اسحب عموداً هنا لتحويل قيمه إلى أعمدة</span></sc-if>
+    <sc-for list="{{pvp.chips}}" as="gc" hint-placeholder-count="1">
+      <span class="rv-gchip pv" draggable="true" onDragStart="{{gc.dragStart}}" onDragEnd="{{dragEnd}}" onDragOver="{{allow}}" onDrop="{{gc.drop}}">
+        <span class="rv-grip"><svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"></circle><circle cx="7" cy="3" r="1.3"></circle><circle cx="3" cy="8" r="1.3"></circle><circle cx="7" cy="8" r="1.3"></circle><circle cx="3" cy="13" r="1.3"></circle><circle cx="7" cy="13" r="1.3"></circle></svg></span>
+        {{gc.label}}
+        <button type="button" class="rv-chip-x" aria-label="إزالة" onClick="{{gc.rm}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </span>
+    </sc-for>
+    <div class="rv-gp-tools"><span class="rv-gp-lbl">القيمة: {{pvp.valueLabel}}</span></div>
+  </div>
+  </sc-if>
+
+  <div class="rv-body">
+    <div style="flex: 1; min-width: 0; position: relative; display: flex;">
+      <div class="rv-scroll">
+        <!-- grouped column headers + floating filters -->
+        <div class="rv-head" style="width: {{g.totalW}}px;">
+          <sc-for list="{{g.hgroups}}" as="hg" hint-placeholder-count="4">
+            <div class="{{hg.cls}}" style="width: {{hg.w}}px; {{hg.sticky}}">
+              <div class="{{hg.bandCls}}">{{hg.label}}</div>
+              <div class="rv-hrow">
+                <sc-for list="{{hg.cells}}" as="h" hint-placeholder-count="2">
+                  <div class="{{h.cls}}" style="width: {{h.w}}px;" draggable="true" onDragStart="{{h.dragStart}}" onDragEnd="{{dragEnd}}" onClick="{{h.sort}}" title="{{h.label}}">
+                    <span class="rv-hlabel">{{h.label}}</span>
+                    <sc-if value="{{h.sortAsc}}" hint-placeholder-val="{{false}}"><span class="rv-hico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span></sc-if>
+                    <sc-if value="{{h.sortDesc}}" hint-placeholder-val="{{false}}"><span class="rv-hico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"></path></svg></span></sc-if>
+                    <sc-if value="{{h.filtered}}" hint-placeholder-val="{{false}}"><span class="rv-hico" title="فلتر نشط"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path></svg></span></sc-if>
+                    <button type="button" class="{{h.menuCls}}" aria-label="قائمة العمود" onMouseDown="{{stop}}" onClick="{{h.menu}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"></path></svg></button>
+                    <span class="rv-resize" onMouseDown="{{h.resize}}" onClick="{{stop}}"></span>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{g.showFloat}}" hint-placeholder-val="{{true}}">
+              <div class="rv-frow">
+                <sc-for list="{{hg.cells}}" as="h" hint-placeholder-count="2">
+                  <div class="{{h.fcls}}" style="width: {{h.w}}px;">
+                    <sc-if value="{{h.ffText}}" hint-placeholder-val="{{false}}"><input type="text" class="{{h.qCls}}" aria-label="بحث في الحساب" placeholder="يحتوي…" value="{{h.q}}" onChange="{{h.onQ}}"></sc-if>
+                    <sc-if value="{{h.ffSet}}" hint-placeholder-val="{{false}}"><button type="button" class="{{h.setCls}}" onMouseDown="{{stop}}" onClick="{{h.openSet}}"><span>{{h.setLabel}}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></button></sc-if>
+                    <sc-if value="{{h.ffNum}}" hint-placeholder-val="{{false}}">
+                      <input type="text" inputmode="decimal" class="{{h.minCls}}" aria-label="من" placeholder="≥ من" value="{{h.min}}" onChange="{{h.onMin}}">
+                      <input type="text" inputmode="decimal" class="{{h.maxCls}}" aria-label="إلى" placeholder="≤ إلى" value="{{h.max}}" onChange="{{h.onMax}}">
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- loading skeleton -->
+        <sc-for list="{{skel}}" as="sk" hint-placeholder-count="0">
+          <div class="rv-skel-row rv-row" style="width: {{g.totalW}}px;">
+            <sc-for list="{{sk.cells}}" as="c">
+              <div class="{{c.cls}}" style="width: {{c.w}}px; {{c.sticky}}"><span class="rv-skel" style="width: {{c.bw}};"></span></div>
+            </sc-for>
+          </div>
+        </sc-for>
+
+        <!-- rows (leaf / group / group footer / pinned grand total) -->
+        <sc-for list="{{gRows}}" as="row" hint-placeholder-count="12">
+          <div class="{{row.cls}}" style="width: {{g.totalW}}px;" onDoubleClick="{{row.dbl}}">
+            <sc-for list="{{row.cells}}" as="c" hint-placeholder-count="8">
+              <div class="{{c.cls}}" style="width: {{c.w}}px; {{c.sticky}}" onMouseDown="{{c.down}}" onMouseEnter="{{c.enter}}" onContextMenu="{{c.ctx}}" onClick="{{c.click}}">
+                <sc-if value="{{c.isGroup}}" hint-placeholder-val="{{false}}">
+                  <span class="rv-indent" style="width: {{c.indent}}px;"></span>
+                  <sc-if value="{{c.hasCaret}}" hint-placeholder-val="{{false}}"><button type="button" class="{{c.caretCls}}" aria-label="{{c.caretAria}}" onMouseDown="{{stop}}" onClick="{{c.toggle}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button></sc-if>
+                  <sc-if value="{{c.caretSpace}}" hint-placeholder-val="{{false}}"><span class="rv-caret-sp"></span></sc-if>
+                  <sc-if value="{{c.isLink}}" hint-placeholder-val="{{false}}"><button type="button" class="rv-acc" onMouseDown="{{stop}}" onClick="{{c.open}}" title="فتح كشف الحساب"><span class="rv-accno">{{c.no}}</span><span class="rv-accname">{{c.text}}</span></button></sc-if>
+                  <sc-if value="{{c.isLabel}}" hint-placeholder-val="{{false}}"><span class="rv-glabel">{{c.text}}</span></sc-if>
+                  <sc-if value="{{c.hasCount}}" hint-placeholder-val="{{false}}"><span class="rv-gcount">{{c.count}}</span></sc-if>
+                </sc-if>
+                <sc-if value="{{c.isNum}}" hint-placeholder-val="{{false}}"><span class="rv-n">{{c.text}}</span></sc-if>
+                <sc-if value="{{c.isText}}" hint-placeholder-val="{{false}}"><span class="rv-t">{{c.text}}</span></sc-if>
+                <sc-if value="{{c.isActions}}" hint-placeholder-val="{{false}}">
+                  <div class="rv-cellbtns">
+                    <button type="button" class="rv-cbtn txt" title="فتح كشف الحساب" onMouseDown="{{stop}}" onClick="{{c.a1}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5M9 13h6M9 17h4"></path></svg>كشف</button>
+                    <button type="button" class="rv-cbtn" title="دفتر الأستاذ العام" aria-label="دفتر الأستاذ العام" onMouseDown="{{stop}}" onClick="{{c.a2}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"></path><path d="M4 19V5M9 7h6"></path></svg></button>
+                    <button type="button" class="{{c.moreCls}}" title="المزيد" aria-label="إجراءات أخرى" onMouseDown="{{stop}}" onClick="{{c.more}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg></button>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- empty state -->
+      <sc-if value="{{st.empty}}" hint-placeholder-val="{{false}}">
+        <div class="{{st.ovCls}}">
+          <div class="rv-state">
+            <div class="rv-state-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path></svg></div>
+            <h3>لا توجد حسابات تطابق الفلاتر الحالية</h3>
+            <p>البيانات محمّلة ({{st.total}} حساباً)، لكن الفلاتر التالية استبعدتها كلها. أزل فلتراً أو أكثر لإظهار النتائج.</p>
+            <div class="rv-state-chips">
+              <sc-for list="{{chips}}" as="ch" hint-placeholder-count="2">
+                <span class="rv-facet"><span class="rv-facet-k">{{ch.k}}</span><span class="rv-facet-v">{{ch.v}}</span><button type="button" class="rv-facet-x" aria-label="إزالة الفلتر" onClick="{{ch.rm}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></span>
+              </sc-for>
+            </div>
+            <div class="rv-state-actions">
+              <button type="button" class="rv-btn primary" onClick="{{clearAll}}">إزالة كل الفلاتر</button>
+              <button type="button" class="rv-btn" onClick="{{applyDefault}}">العودة للعرض الافتراضي</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      <!-- error state -->
+      <sc-if value="{{st.error}}" hint-placeholder-val="{{false}}">
+        <div class="{{st.ovCls}}">
+          <div class="rv-state">
+            <div class="rv-state-ico err"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5.5M12 16.5v.5"></path></svg></div>
+            <h3>{{st.errTitle}}</h3>
+            <p>{{st.errMsg}}</p>
+            <code>{{st.errCode}}</code>
+            <div class="rv-state-actions">
+              <button type="button" class="rv-btn primary" onClick="{{run}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg>إعادة المحاولة</button>
+              <button type="button" class="rv-btn" onClick="{{copyErr}}">نسخ تفاصيل الخطأ</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- tool panel: columns -->
+    <sc-if value="{{side.cols}}" hint-placeholder-val="{{false}}">
+    <aside class="rv-panel" aria-label="لوحة الأعمدة">
+      <div class="rv-panel-hd">
+        <strong>الأعمدة</strong><span class="sp"></span>
+        <button type="button" class="rv-btn icon sm ghost" aria-label="إغلاق اللوحة" onClick="{{side.close}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </div>
+      <div class="rv-panel-bd">
+        <div class="rv-switch-row">
+          <div>وضع التحليل (Pivot)<small>تحويل قيم بُعد إلى أعمدة ديناميكية</small></div>
+          <button type="button" class="{{side.pivotSw}}" aria-pressed="{{isPivot}}" aria-label="وضع التحليل" onClick="{{togglePivot}}"></button>
+        </div>
+        <input type="text" class="rv-input sm" aria-label="بحث في الأعمدة" placeholder="ابحث في الأعمدة…" value="{{side.colQ}}" onChange="{{side.onColQ}}">
+        <div class="rv-collist">
+          <sc-for list="{{side.colList}}" as="it" hint-placeholder-count="8">
+            <div class="rv-colitem" draggable="true" onDragStart="{{it.dragStart}}" onDragEnd="{{dragEnd}}">
+              <span class="rv-grip"><svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"></circle><circle cx="7" cy="3" r="1.3"></circle><circle cx="3" cy="8" r="1.3"></circle><circle cx="7" cy="8" r="1.3"></circle><circle cx="3" cy="13" r="1.3"></circle><circle cx="7" cy="13" r="1.3"></circle></svg></span>
+              <label class="rv-check"><input type="checkbox" checked="{{it.on}}" disabled="{{it.locked}}" onChange="{{it.toggle}}"><span>{{it.label}}</span></label>
+              <span class="{{it.tagCls}}">{{it.tag}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div class="{{side.zoneG}}" onDragOver="{{allow}}" onDrop="{{side.dropG}}">
+          <div class="rv-zone-hd"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M8 12h12M12 18h8"></path></svg>مجموعات الصفوف</div>
+          <sc-if value="{{gp.empty}}" hint-placeholder-val="{{false}}"><div class="rv-zone-empty">اسحب أعمدة هنا لتجميع الصفوف</div></sc-if>
+          <div class="rv-zone-chips">
+            <sc-for list="{{gp.chips}}" as="gc" hint-placeholder-count="2">
+              <div class="rv-zchip" draggable="true" onDragStart="{{gc.dragStart}}" onDragEnd="{{dragEnd}}" onDragOver="{{allow}}" onDrop="{{gc.drop}}">
+                <span class="rv-grip"><svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"></circle><circle cx="7" cy="3" r="1.3"></circle><circle cx="3" cy="8" r="1.3"></circle><circle cx="7" cy="8" r="1.3"></circle><circle cx="3" cy="13" r="1.3"></circle><circle cx="7" cy="13" r="1.3"></circle></svg></span>
+                <span class="lbl">{{gc.label}}</span>
+                <button type="button" class="rv-chip-x" aria-label="إزالة" onClick="{{gc.rm}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div class="{{side.zoneV}}" onDragOver="{{allow}}" onDrop="{{side.dropV}}">
+          <div class="rv-zone-hd"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5H6l6 7-6 7h12"></path></svg>القيم</div>
+          <sc-if value="{{side.noVals}}" hint-placeholder-val="{{false}}"><div class="rv-zone-empty">اسحب عموداً رقمياً هنا</div></sc-if>
+          <div class="rv-zone-chips">
+            <sc-for list="{{side.vals}}" as="vc" hint-placeholder-count="3">
+              <div class="rv-zchip">
+                <span class="lbl">{{vc.label}}</span>
+                <select aria-label="دالة التجميع" value="{{vc.fn}}" onChange="{{vc.setFn}}">
+                  <option value="sum">مجموع</option>
+                  <option value="avg">متوسط</option>
+                  <option value="count">عدد</option>
+                  <option value="min">الأدنى</option>
+                  <option value="max">الأعلى</option>
+                </select>
+                <button type="button" class="rv-chip-x" aria-label="إزالة" onClick="{{vc.rm}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div class="{{side.zoneP}}" onDragOver="{{allow}}" onDrop="{{pvp.drop}}">
+          <div class="rv-zone-hd"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v16M12 8v12M18 12v8"></path></svg>أعمدة التحليل</div>
+          <sc-if value="{{side.pivotOff}}" hint-placeholder-val="{{true}}"><div class="rv-zone-empty">فعّل وضع التحليل، أو اسحب بُعداً هنا لتفعيله تلقائياً</div></sc-if>
+          <div class="rv-zone-chips">
+            <sc-for list="{{pvp.chips}}" as="gc" hint-placeholder-count="1">
+              <div class="rv-zchip" draggable="true" onDragStart="{{gc.dragStart}}" onDragEnd="{{dragEnd}}" onDragOver="{{allow}}" onDrop="{{gc.drop}}">
+                <span class="lbl">{{gc.label}}</span>
+                <button type="button" class="rv-chip-x" aria-label="إزالة" onClick="{{gc.rm}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </aside>
+    </sc-if>
+
+    <!-- tool panel: filters -->
+    <sc-if value="{{side.filters}}" hint-placeholder-val="{{false}}">
+    <aside class="rv-panel" aria-label="لوحة الفلاتر">
+      <div class="rv-panel-hd">
+        <strong>الفلاتر</strong>
+        <sc-if value="{{side.hasActive}}" hint-placeholder-val="{{false}}"><span class="rv-count-badge">{{side.activeCount}}</span></sc-if>
+        <span class="sp"></span>
+        <button type="button" class="rv-link" onClick="{{clearAll}}">مسح الكل</button>
+        <button type="button" class="rv-btn icon sm ghost" aria-label="إغلاق اللوحة" onClick="{{side.close}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </div>
+      <div class="rv-panel-bd">
+        <sc-for list="{{side.fsecs}}" as="fs" hint-placeholder-count="6">
+          <div class="rv-fsec">
+            <button type="button" class="rv-fsec-hd" onClick="{{fs.toggle}}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="{{fs.chevCls}}"><path d="m15 18-6-6 6-6"></path></svg>
+              <span class="lbl">{{fs.label}}</span>
+              <sc-if value="{{fs.active}}" hint-placeholder-val="{{false}}"><span class="rv-dot" title="فلتر نشط"></span></sc-if>
+            </button>
+            <sc-if value="{{fs.open}}" hint-placeholder-val="{{false}}">
+              <div class="rv-fsec-bd">
+                <sc-if value="{{fs.isText}}" hint-placeholder-val="{{false}}"><input type="text" class="rv-input sm" aria-label="{{fs.label}}" placeholder="يحتوي على…" value="{{q}}" onChange="{{onQ}}"></sc-if>
+                <sc-if value="{{fs.isSet}}" hint-placeholder-val="{{false}}">
+                  <div class="rv-setlist" style="max-height: 180px;">
+                    <label class="rv-setitem all"><span class="rv-check"><input type="checkbox" checked="{{fs.set.allOn}}" onChange="{{fs.set.toggleAll}}"><span>(تحديد الكل)</span></span><span class="cnt">{{fs.set.allCount}}</span></label>
+                    <sc-for list="{{fs.set.items}}" as="it" hint-placeholder-count="4">
+                      <label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked="{{it.on}}" onChange="{{it.toggle}}"><span>{{it.label}}</span></span><span class="cnt">{{it.count}}</span></label>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{fs.isNum}}" hint-placeholder-val="{{false}}">
+                  <div class="rv-range">
+                    <input type="text" inputmode="decimal" class="rv-input sm num" aria-label="من" placeholder="من" value="{{fs.min}}" onChange="{{fs.onMin}}">
+                    <span>إلى</span>
+                    <input type="text" inputmode="decimal" class="rv-input sm num" aria-label="إلى" placeholder="إلى" value="{{fs.max}}" onChange="{{fs.onMax}}">
+                  </div>
+                </sc-if>
+                <sc-if value="{{fs.isPreset}}" hint-placeholder-val="{{false}}">
+                  <sc-for list="{{fs.items}}" as="it" hint-placeholder-count="4">
+                    <label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked="{{it.on}}" onChange="{{it.toggle}}"><span>{{it.label}}</span></span></label>
+                  </sc-for>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </aside>
+    </sc-if>
+
+    <!-- side bar tabs -->
+    <nav class="rv-sidetabs" aria-label="لوحات الأدوات">
+      <button type="button" class="{{side.tabCols}}" onClick="{{side.openCols}}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16M15 4v16"></path></svg>
+        الأعمدة
+      </button>
+      <button type="button" class="{{side.tabFilt}}" onClick="{{side.openFilters}}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path></svg>
+        الفلاتر
+        <sc-if value="{{side.hasActive}}" hint-placeholder-val="{{false}}"><i class="rv-tabcount">{{side.activeCount}}</i></sc-if>
+      </button>
+    </nav>
+  </div>
+
+  <!-- status bar -->
+  <footer class="rv-status">
+    <div class="rv-status-grp">
+      <span class="rv-status-item">الحسابات <b>{{status.shown}}</b> من <b>{{status.total}}</b></span>
+      <span class="rv-status-item">المجموعات <b>{{status.groups}}</b></span>
+      <sc-if value="{{status.filtered}}" hint-placeholder-val="{{false}}"><span class="rv-status-flag"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path></svg>مفلتر ({{status.filters}})</span></sc-if>
+    </div>
+    <div class="rv-status-grp">
+      <sc-if value="{{status.hasSel}}" hint-placeholder-val="{{false}}">
+        <span class="rv-status-item">النطاق <b class="ltr">{{status.dims}}</b></span>
+        <span class="rv-status-item">العدد <b>{{status.cnt}}</b></span>
+        <span class="rv-status-item">المجموع <b class="ltr">{{status.sum}}</b></span>
+        <span class="rv-status-item">المتوسط <b class="ltr">{{status.avg}}</b></span>
+        <span class="rv-status-item">الأدنى <b class="ltr">{{status.mn}}</b></span>
+        <span class="rv-status-item">الأعلى <b class="ltr">{{status.mx}}</b></span>
+      </sc-if>
+      <sc-if value="{{status.noSel}}" hint-placeholder-val="{{true}}"><span class="rv-status-hint">اسحب على الخلايا لتحديد نطاق · زر الفأرة الأيمن للخيارات · انقر مرتين على الحساب لكشفه</span></sc-if>
+    </div>
+  </footer>
+</div>
+</sc-if>
+
+<!-- ============ Charts view ============ -->
+<sc-if value="{{showCharts}}" hint-placeholder-val="{{false}}">
+<div class="rv-charts">
+  <sc-if value="{{ch.notReady}}" hint-placeholder-val="{{false}}">
+    <div class="rv-card wide" style="min-height: 420px; align-items: center; justify-content: center;">
+      <div class="rv-state">
+        <div class="rv-state-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M21 20H3"></path></svg></div>
+        <h3>{{ch.stateTitle}}</h3>
+        <p>{{ch.stateMsg}}</p>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ch.ready}}" hint-placeholder-val="{{true}}">
+    <div class="rv-card">
+      <div class="rv-card-hd">
+        <div><h3>الأرصدة الختامية حسب نوع الحساب</h3><p>مجموع الأرصدة الختامية المدينة والدائنة لكل نوع جذري</p></div>
+        <div class="rv-legend"><span><i style="background: var(--c1);"></i>مدين</span><span><i style="background: var(--c2);"></i>دائن</span></div>
+      </div>
+      <div class="rv-plot">
+        <div class="rv-yax">
+          <sc-for list="{{ch.ticks}}" as="t" hint-placeholder-count="5"><span class="rv-ytick" style="bottom: {{t.p}}%;">{{t.label}}</span></sc-for>
+        </div>
+        <div class="rv-plot-area">
+          <sc-for list="{{ch.ticks}}" as="t" hint-placeholder-count="5"><div class="rv-gridline" style="bottom: {{t.p}}%;"></div></sc-for>
+          <div class="rv-colgroups">
+            <sc-for list="{{ch.byRoot}}" as="b" hint-placeholder-count="5">
+              <div class="rv-colgroup">
+                <div class="rv-colbars">
+                  <div class="rv-colbar dr" style="height: {{b.dh}}%;" title="{{b.dt}}"></div>
+                  <div class="rv-colbar cr" style="height: {{b.ch}}%;" title="{{b.ct}}"></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div class="rv-xlabels">
+        <sc-for list="{{ch.byRoot}}" as="b" hint-placeholder-count="5"><span class="rv-xlabel">{{b.label}}</span></sc-for>
+      </div>
+    </div>
+    <div class="rv-card">
+      <div class="rv-card-hd">
+        <div><h3>توزيع المصروفات</h3><p>صافي الرصيد الختامي لحسابات المصروفات</p></div>
+      </div>
+      <div class="rv-donut-wrap">
+        <div class="rv-donut">
+          <svg width="200" height="200" viewBox="0 0 200 200"><circle cx="100" cy="100" r="72" fill="none" stroke-width="26" style="stroke: var(--surface-3);"></circle></svg>
+          <sc-for list="{{ch.segs}}" as="sg" hint-placeholder-count="6">
+            <svg width="200" height="200" viewBox="0 0 200 200"><circle cx="100" cy="100" r="72" fill="none" stroke-width="26" style="stroke: {{sg.color}}; stroke-dasharray: {{sg.dash}}; stroke-dashoffset: {{sg.off}};"></circle></svg>
+          </sc-for>
+          <div class="rv-donut-c"><span>إجمالي المصروفات</span><b>{{ch.expTotal}}</b></div>
+        </div>
+        <ul class="rv-dlegend">
+          <sc-for list="{{ch.legend}}" as="it" hint-placeholder-count="6">
+            <li><i style="background: {{it.color}};"></i><span class="nm">{{it.label}}</span><span class="v">{{it.v}}</span><span class="p">{{it.p}}</span></li>
+          </sc-for>
+        </ul>
+      </div>
+    </div>
+    <div class="rv-card wide">
+      <div class="rv-card-hd">
+        <div><h3>أكثر عشرة حسابات حركة خلال الفترة</h3><p>مدين ودائن الفترة مكدّسين · انقر على الحساب لفتح كشفه</p></div>
+        <div class="rv-legend"><span><i style="background: var(--c1);"></i>مدين الفترة</span><span><i style="background: var(--c2);"></i>دائن الفترة</span></div>
+      </div>
+      <div class="rv-hbars">
+        <sc-for list="{{ch.top}}" as="it" hint-placeholder-count="10">
+          <button type="button" class="rv-hbar-row" onClick="{{it.open}}" title="{{it.title}}">
+            <span class="rv-hbar-lbl"><span class="rv-accno">{{it.no}}</span><span class="nm">{{it.name}}</span></span>
+            <span class="rv-hbar-track"><span class="rv-hbar dr" style="width: {{it.dw}}%;"></span><span class="rv-hbar cr" style="width: {{it.cw}}%;"></span></span>
+            <span class="rv-hbar-val">{{it.total}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+</div>
+
+<!-- ============ Popovers / menus ============ -->
+<sc-if value="{{menu.open}}" hint-placeholder-val="{{false}}">
+<div class="{{menu.cls}}" style="top: {{menu.top}}px; right: {{menu.right}}px; width: {{menu.w}}px;" onMouseDown="{{stop}}" role="menu">
+  <!-- date range picker -->
+  <sc-if value="{{menu.isDate}}" hint-placeholder-val="{{false}}">
+  <div class="dp-wrap" role="dialog" aria-label="اختيار الفترة">
+    <div class="dp-presets">
+      <sc-for list="{{dp.presets}}" as="p" hint-placeholder-count="12">
+        <sc-if value="{{p.sep}}" hint-placeholder-val="{{false}}"><div class="dp-pre-sep"></div></sc-if>
+        <sc-if value="{{p.item}}" hint-placeholder-val="{{true}}"><button type="button" class="{{p.cls}}" onClick="{{p.pick}}">{{p.label}}</button></sc-if>
+      </sc-for>
+    </div>
+    <div class="dp-main">
+      <div class="dp-mode">
+        <div class="rv-seg" role="tablist" aria-label="نوع الفترة">
+          <button type="button" class="{{dp.mRange}}" onClick="{{dp.toRange}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>نطاق تواريخ</button>
+          <button type="button" class="{{dp.mFiscal}}" onClick="{{dp.toFiscal}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 20V10M9 20V6M14 20v-8M19 20V4"></path></svg>فترة مالية</button>
+        </div>
+      </div>
+      <sc-if value="{{dp.isFiscal}}" hint-placeholder-val="{{false}}">
+      <div class="dp-fy">
+        <div class="dp-fy-row"><span class="dp-fy-l">السنة المالية</span>
+          <div class="dp-step"><button type="button" class="dp-nav" aria-label="السنة السابقة" onClick="{{dp.fyPrev}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button><b class="ltr">{{dp.fyLabel}}</b><button type="button" class="dp-nav" aria-label="السنة التالية" onClick="{{dp.fyNext}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button></div>
+        </div>
+        <div class="dp-fy-row"><span class="dp-fy-l">تبدأ في</span>
+          <div class="dp-step"><button type="button" class="dp-nav" aria-label="الشهر السابق" onClick="{{dp.fsPrev}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button><b>{{dp.fsLabel}}</b><button type="button" class="dp-nav" aria-label="الشهر التالي" onClick="{{dp.fsNext}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button></div>
+          <span class="dp-fy-hint">من إعدادات السنة المالية للشركة</span>
+        </div>
+        <div class="dp-fy-row"><span class="dp-fy-l">الفترة</span>
+          <div class="rv-seg">
+            <sc-for list="{{dp.fps}}" as="f" hint-placeholder-count="7"><button type="button" class="{{f.cls}}" title="{{f.title}}" onClick="{{f.pick}}">{{f.label}}</button></sc-for>
+          </div>
+        </div>
+        <div class="dp-fy-row top"><span class="dp-fy-l">الأشهر</span>
+          <div class="dp-months">
+            <sc-for list="{{dp.mbars}}" as="b" hint-placeholder-count="12"><button type="button" class="{{b.cls}}" title="{{b.title}}" aria-label="{{b.title}}" onClick="{{b.pick}}"><i></i><span>{{b.n}}</span><small>{{b.short}}</small></button></sc-for>
+          </div>
+        </div>
+        <p class="dp-fy-note">{{dp.fyNote}}</p>
+      </div>
+      </sc-if>
+      <sc-if value="{{dp.isRange}}" hint-placeholder-val="{{true}}">
+      <div class="dp-inputs">
+        <div class="{{dp.fromCls}}"><span>من</span><input type="text" inputmode="numeric" aria-label="من تاريخ" placeholder="dd/mm/yyyy" value="{{dp.fromText}}" onChange="{{dp.onFrom}}"></div>
+        <svg class="dp-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>
+        <div class="{{dp.toCls}}"><span>إلى</span><input type="text" inputmode="numeric" aria-label="إلى تاريخ" placeholder="dd/mm/yyyy" value="{{dp.toText}}" onChange="{{dp.onTo}}"></div>
+      </div>
+      <div class="dp-cals" onMouseLeave="{{dp.leave}}">
+        <sc-for list="{{dp.months}}" as="mo" hint-placeholder-count="2">
+          <div>
+            <div class="dp-cal-hd">
+              <button type="button" class="{{mo.prevCls}}" aria-label="الشهر السابق" onClick="{{dp.prev}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+              <b>{{mo.title}}</b>
+              <button type="button" class="{{mo.nextCls}}" aria-label="الشهر التالي" onClick="{{dp.next}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+            </div>
+            <div class="dp-grid">
+              <sc-for list="{{dp.wd}}" as="w" hint-placeholder-count="7"><span class="dp-wd">{{w.l}}</span></sc-for>
+              <sc-for list="{{mo.cells}}" as="d" hint-placeholder-count="30">
+                <sc-if value="{{d.isDay}}" hint-placeholder-val="{{true}}"><button type="button" class="{{d.cls}}" aria-label="{{d.aria}}" onClick="{{d.pick}}" onMouseEnter="{{d.hover}}">{{d.n}}</button></sc-if>
+                <sc-if value="{{d.blank}}" hint-placeholder-val="{{false}}"><span class="dp-d blank"></span></sc-if>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+      <div class="dp-ft">
+        <span class="dp-rng">{{dp.rangeText}}</span>
+        <sc-if value="{{dp.picking}}" hint-placeholder-val="{{false}}"><span class="dp-hint">اختر تاريخ النهاية</span></sc-if>
+        <span class="sp"></span>
+        <span class="dp-days">{{dp.days}}</span>
+        <button type="button" class="rv-btn" onClick="{{dp.cancel}}">إلغاء</button>
+        <button type="button" class="rv-btn primary" onClick="{{dp.apply}}">تطبيق</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+  <sc-if value="{{menu.hasItems}}" hint-placeholder-val="{{false}}">
+    <sc-if value="{{menu.title}}" hint-placeholder-val="{{false}}"><div class="rv-pop-hd">{{menu.title}}</div></sc-if>
+    <sc-for list="{{menu.items}}" as="it" hint-placeholder-count="6">
+      <sc-if value="{{it.sep}}" hint-placeholder-val="{{false}}"><div class="rv-msep"></div></sc-if>
+      <sc-if value="{{it.item}}" hint-placeholder-val="{{true}}">
+        <button type="button" class="rv-mi" role="menuitem" disabled="{{it.disabled}}" onClick="{{it.act}}">
+          <span class="rv-mi-ic">
+            <sc-if value="{{it.check}}" hint-placeholder-val="{{false}}"><span class="rv-mi-check"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></span></sc-if>
+            <sc-if value="{{it.ic.pin}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"></path></svg></sc-if>
+            <sc-if value="{{it.ic.fit}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4"></path></svg></sc-if>
+            <sc-if value="{{it.ic.group}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M8 12h12M12 18h8"></path></svg></sc-if>
+            <sc-if value="{{it.ic.filter}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path></svg></sc-if>
+            <sc-if value="{{it.ic.sortA}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></sc-if>
+            <sc-if value="{{it.ic.sortD}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"></path></svg></sc-if>
+            <sc-if value="{{it.ic.hide}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c5 0 9 4.5 10 7a13 13 0 0 1-2.4 3.4M6.6 6.6C4.3 8 2.7 10.2 2 12c1 2.5 5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"></path></svg></sc-if>
+            <sc-if value="{{it.ic.reset}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg></sc-if>
+            <sc-if value="{{it.ic.copy}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg></sc-if>
+            <sc-if value="{{it.ic.export}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"></path><path d="M4 17v3h16v-3"></path></svg></sc-if>
+            <sc-if value="{{it.ic.chart}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M21 20H3"></path></svg></sc-if>
+            <sc-if value="{{it.ic.book}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"></path><path d="M4 19V5M9 7h6"></path></svg></sc-if>
+            <sc-if value="{{it.ic.plus}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></sc-if>
+            <sc-if value="{{it.ic.ext}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9"></path><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path></svg></sc-if>
+            <sc-if value="{{it.ic.doc}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5M9 13h6M9 17h4"></path></svg></sc-if>
+          </span>
+          <span class="rv-mi-lbl">{{it.label}}</span>
+          <span class="rv-mi-hint">{{it.hint}}</span>
+        </button>
+      </sc-if>
+    </sc-for>
+  </sc-if>
+
+  <!-- set filter -->
+  <sc-if value="{{menu.isSet}}" hint-placeholder-val="{{false}}">
+    <div class="rv-pop-hd"><span>فلتر القيم · {{menu.title2}}</span><button type="button" class="rv-link" onClick="{{menu.clearSet}}">مسح</button></div>
+    <div class="rv-pop-sec"><input type="text" class="rv-input sm" style="width: 100%;" aria-label="بحث في القيم" placeholder="ابحث في القيم…" value="{{menu.setQ}}" onChange="{{menu.onSetQ}}"></div>
+    <div class="rv-setlist" style="padding: 0 4px 4px;">
+      <label class="rv-setitem all"><span class="rv-check"><input type="checkbox" checked="{{menu.set.allOn}}" onChange="{{menu.set.toggleAll}}"><span>(تحديد الكل)</span></span><span class="cnt">{{menu.set.allCount}}</span></label>
+      <sc-for list="{{menu.set.items}}" as="it" hint-placeholder-count="6">
+        <label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked="{{it.on}}" onChange="{{it.toggle}}"><span>{{it.label}}</span></span><span class="cnt">{{it.count}}</span></label>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- favorites -->
+  <sc-if value="{{menu.isFav}}" hint-placeholder-val="{{false}}">
+    <div class="rv-pop-hd">عروض جاهزة</div>
+    <sc-for list="{{fav.ready}}" as="v" hint-placeholder-count="5">
+      <button type="button" class="{{v.cls}}" onClick="{{v.apply}}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"></path></svg>
+        <span><span class="t">{{v.name}}</span><br><span class="d">{{v.desc}}</span></span>
+      </button>
+    </sc-for>
+    <div class="rv-msep"></div>
+    <div class="rv-pop-hd">عروضي المحفوظة</div>
+    <sc-if value="{{fav.noMine}}" hint-placeholder-val="{{true}}"><div class="rv-zone-empty" style="padding: 0 10px 6px;">لم تحفظ أي عرض بعد. العرض يحفظ الفلاتر والتجميع والأعمدة الظاهرة ووضع التحليل.</div></sc-if>
+    <sc-for list="{{fav.mine}}" as="v" hint-placeholder-count="0">
+      <div style="display: flex; align-items: center; gap: 2px;">
+        <button type="button" class="{{v.cls}}" style="flex: 1;" onClick="{{v.apply}}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"></path></svg>
+          <span><span class="t">{{v.name}}</span><br><span class="d">{{v.desc}}</span></span>
+        </button>
+        <button type="button" class="rv-btn icon sm ghost" aria-label="حذف العرض" onClick="{{v.rm}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </div>
+    </sc-for>
+    <div class="rv-fav-save">
+      <span class="rv-zone-hd">حفظ العرض الحالي</span>
+      <div class="row">
+        <input type="text" class="rv-input sm" aria-label="اسم العرض" placeholder="مثال: ميزان الربع الثالث — مصروفات" value="{{fav.name}}" onChange="{{fav.onName}}" onKeyDown="{{fav.key}}">
+        <button type="button" class="rv-btn primary sm" onClick="{{fav.save}}">حفظ</button>
+      </div>
+      <span class="rv-zone-empty" style="padding: 0;">{{fav.summary}}</span>
+    </div>
+  </sc-if>
+
+  <!-- Odoo-style search dropdown -->
+  <sc-if value="{{menu.isSearch}}" hint-placeholder-val="{{false}}">
+    <sc-if value="{{sr.hasText}}" hint-placeholder-val="{{false}}">
+      <sc-for list="{{sr.sugg}}" as="it" hint-placeholder-count="4">
+        <button type="button" class="rv-mi rv-sugg" onClick="{{it.act}}">
+          <span class="rv-mi-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></span>
+          <span class="rv-mi-lbl">ابحث في <b>{{it.k}}</b> عن: «{{sr.text}}»</span>
+          <span class="rv-mi-hint">{{it.hint}}</span>
+        </button>
+      </sc-for>
+    </sc-if>
+    <sc-if value="{{sr.noText}}" hint-placeholder-val="{{true}}">
+      <div class="rv-sdrop">
+        <div class="rv-sdrop-col">
+          <div class="rv-sdrop-t"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path></svg>الفلاتر</div>
+          <sc-for list="{{sr.presets}}" as="it" hint-placeholder-count="4">
+            <button type="button" class="rv-mi" onClick="{{it.toggle}}"><span class="rv-mi-check"><sc-if value="{{it.on}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></sc-if></span><span class="rv-mi-lbl">{{it.label}}</span></button>
+          </sc-for>
+          <div class="rv-msep"></div>
+          <sc-for list="{{sr.roots}}" as="it" hint-placeholder-count="5">
+            <button type="button" class="rv-mi" onClick="{{it.toggle}}"><span class="rv-mi-check"><sc-if value="{{it.on}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></sc-if></span><span class="rv-mi-lbl">{{it.label}}</span></button>
+          </sc-for>
+        </div>
+        <div class="rv-sdrop-col">
+          <div class="rv-sdrop-t"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M8 12h12M12 18h8"></path></svg>تجميع حسب</div>
+          <sc-for list="{{sr.groupBy}}" as="it" hint-placeholder-count="5">
+            <button type="button" class="rv-mi" onClick="{{it.toggle}}"><span class="rv-mi-check"><sc-if value="{{it.on}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></sc-if></span><span class="rv-mi-lbl">{{it.label}}</span><span class="rv-mi-hint">{{it.order}}</span></button>
+          </sc-for>
+          <div class="rv-msep"></div>
+          <div class="rv-zone-empty" style="padding: 4px 8px;">اكتب نصاً للبحث في الحساب أو نوعه أو الحساب الرئيسي. Backspace يحذف آخر شريحة.</div>
+        </div>
+      </div>
+    </sc-if>
+  </sc-if>
+
+  <!-- pivot cell constituents -->
+  <sc-if value="{{menu.isPv}}" hint-placeholder-val="{{false}}">
+    <div class="rv-pop-hd"><span>{{pv.title}}</span><span class="ltr">{{pv.total}}</span></div>
+    <div class="rv-zone-empty" style="padding: 0 10px 6px;">{{pv.sub}} · {{pv.count}} حساب مكوّن — انقر لفتح الكشف</div>
+    <div class="rv-pv-list">
+      <sc-for list="{{pv.items}}" as="it" hint-placeholder-count="4">
+        <button type="button" class="rv-pv-item" onClick="{{it.open}}"><span class="rv-accno">{{it.no}}</span><span class="nm">{{it.name}}</span><span class="{{it.vCls}}">{{it.v}}</span></button>
+      </sc-for>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ============ Drill-down drawer: account statement ============ -->
+<sc-if value="{{dw.open}}" hint-placeholder-val="{{false}}">
+  <div class="rv-scrim" onClick="{{closeDrawer}}"></div>
+  <aside class="rv-drawer" role="dialog" aria-label="كشف الحساب" onMouseDown="{{stop}}">
+    <div class="rv-drawer-hd">
+      <div>
+        <div class="rv-crumbs">كشف حساب · {{dw.company}}</div>
+        <h2>{{dw.name}}</h2>
+        <div class="rv-meta">
+          <span class="rv-badge ltr">{{dw.no}}</span>
+          <span>{{dw.parent}}</span><span class="dot"></span>
+          <span>{{dw.rt}}</span><span class="dot"></span>
+          <span>{{dw.at}}</span><span class="dot"></span>
+          <span class="ltr">{{dw.period}}</span>
+        </div>
+      </div>
+      <div class="rv-actions">
+        <button type="button" class="rv-btn sm" onClick="{{dwExport}}">Excel</button>
+        <button type="button" class="rv-btn sm" onClick="{{dwOpen}}">فتح في دفتر الأستاذ</button>
+        <button type="button" class="rv-btn icon sm ghost" aria-label="إغلاق" onClick="{{closeDrawer}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </div>
+    </div>
+    <div class="rv-dtiles">
+      <sc-for list="{{dw.tiles}}" as="t" hint-placeholder-count="4">
+        <div class="rv-dtile"><span>{{t.label}}</span><b class="{{t.cls}}">{{t.val}}</b><small>{{t.sub}}</small></div>
+      </sc-for>
+    </div>
+    <div class="rv-dtable">
+      <div class="rv-dscroll">
+        <div class="rv-drow hd">
+          <div class="rv-dc" style="width: 96px;">التاريخ</div>
+          <div class="rv-dc" style="width: 150px;">رقم المستند</div>
+          <div class="rv-dc" style="width: 112px;">النوع</div>
+          <div class="rv-dc grow">البيان</div>
+          <div class="rv-dc" style="width: 150px;">الطرف</div>
+          <div class="rv-dc num" style="width: 112px;">مدين</div>
+          <div class="rv-dc num" style="width: 112px;">دائن</div>
+          <div class="rv-dc num" style="width: 150px;">الرصيد المتراكم</div>
+        </div>
+        <div class="rv-drow op">
+          <div class="rv-dc ltr" style="width: 96px;">{{dw.fromD}}</div>
+          <div class="rv-dc" style="width: 150px;">—</div>
+          <div class="rv-dc" style="width: 112px;">—</div>
+          <div class="rv-dc grow">رصيد افتتاحي منقول</div>
+          <div class="rv-dc" style="width: 150px;">—</div>
+          <div class="rv-dc num" style="width: 112px;"></div>
+          <div class="rv-dc num" style="width: 112px;"></div>
+          <div class="rv-dc num" style="width: 150px;">{{dw.opening}}<span class="{{dw.openTag}}">{{dw.openSide}}</span></div>
+        </div>
+        <sc-for list="{{dw.lines}}" as="ln" hint-placeholder-count="10">
+          <div class="{{ln.rowCls}}" onClick="{{ln.open}}" title="عرض تفاصيل المعاملة">
+            <div class="rv-dc ltr" style="width: 96px;">{{ln.date}}</div>
+            <div class="rv-dc" style="width: 150px;"><button type="button" class="rv-vno rv-vbtn" onClick="{{ln.open}}">{{ln.vno}}</button></div>
+            <div class="rv-dc" style="width: 112px;">{{ln.vt}}</div>
+            <div class="rv-dc grow" title="{{ln.rem}}">{{ln.rem}}</div>
+            <div class="{{ln.partyCls}}" style="width: 150px;">{{ln.party}}</div>
+            <div class="rv-dc num dr" style="width: 112px;">{{ln.dr}}</div>
+            <div class="rv-dc num cr" style="width: 112px;">{{ln.cr}}</div>
+            <div class="rv-dc num" style="width: 150px;">{{ln.bal}}<span class="{{ln.bcls}}">{{ln.bside}}</span></div>
+          </div>
+        </sc-for>
+        <sc-if value="{{dw.noLines}}" hint-placeholder-val="{{false}}"><div class="rv-zone-empty" style="padding: 24px; text-align: center;">لا توجد حركات على هذا الحساب خلال الفترة.</div></sc-if>
+      </div>
+      <div class="rv-drow ft">
+        <div class="rv-dc grow">الإجمالي · {{dw.count}} حركة</div>
+        <div class="rv-dc num dr" style="width: 112px;">{{dw.totDr}}</div>
+        <div class="rv-dc num cr" style="width: 112px;">{{dw.totCr}}</div>
+        <div class="rv-dc num" style="width: 150px;">{{dw.closing}}<span class="{{dw.closeTag}}">{{dw.closeSide}}</span></div>
+      </div>
+    </div>
+  </aside>
+</sc-if>
+
+<!-- ============ Transaction (voucher) details ============ -->
+<sc-if value="{{vc.open}}" hint-placeholder-val="{{false}}">
+<div class="rv-modal" style="z-index: 70;" onMouseDown="{{closeVoucher}}">
+  <div class="rv-dialog" style="width: 860px; max-height: 900px;" role="dialog" aria-label="تفاصيل المعاملة" onMouseDown="{{stop}}">
+    <div class="rv-dialog-hd" style="align-items: flex-start; padding: 18px 22px;">
+      <div>
+        <div class="rv-crumbs">{{vc.vt}} · {{vc.company}}</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <h3 class="ltr" style="font-size: 20px;">{{vc.vno}}</h3>
+          <span class="rv-pill ok">مُرحّل</span>
+          <span class="{{vc.balCls}}">{{vc.balText}}</span>
+        </div>
+        <p style="font-size: 13px; color: var(--tx-2); margin-top: 4px;">{{vc.rem}}</p>
+      </div>
+      <div class="rv-actions">
+        <button type="button" class="rv-btn icon sm ghost" aria-label="المعاملة السابقة" title="السابقة" disabled="{{vc.noPrev}}" onClick="{{vc.prev}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+        <span class="rv-status-hint" style="font-size: 12px;">{{vc.pos}}</span>
+        <button type="button" class="rv-btn icon sm ghost" aria-label="المعاملة التالية" title="التالية" disabled="{{vc.noNext}}" onClick="{{vc.next}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+        <span class="rv-vsep"></span>
+        <button type="button" class="rv-btn icon sm ghost" aria-label="إغلاق" onClick="{{closeVoucher}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+      </div>
+    </div>
+    <div style="padding: 16px 22px; display: flex; flex-direction: column; gap: 16px; overflow: auto;">
+      <div class="rv-vinfo">
+        <div><span>تاريخ الترحيل</span><b class="ltr">{{vc.date}}</b></div>
+        <div><span>نوع المستند</span><b>{{vc.vt}}</b></div>
+        <div><span>{{vc.partyType}}</span><b>{{vc.party}}</b></div>
+        <div><span>قيمة القيد</span><b class="ltr">{{vc.amount}}</b></div>
+        <div><span>أثره على {{vc.accName}}</span><b class="{{vc.effCls}}">{{vc.effect}}</b></div>
+        <div><span>الرصيد بعد المعاملة</span><b class="{{vc.afterCls}}">{{vc.after}}</b></div>
+      </div>
+      <div>
+        <div class="rv-zone-hd" style="margin-bottom: 8px;">القيد المحاسبي · {{vc.count}} أسطر — انقر حساباً لفتح كشفه</div>
+        <div class="rv-dtable" style="margin: 0; flex: none;">
+          <div class="rv-drow hd">
+            <div class="rv-dc grow">الحساب</div>
+            <div class="rv-dc" style="width: 170px;">الطرف</div>
+            <div class="rv-dc num" style="width: 130px;">مدين</div>
+            <div class="rv-dc num" style="width: 130px;">دائن</div>
+          </div>
+          <sc-for list="{{vc.lines}}" as="l" hint-placeholder-count="2">
+            <div class="{{l.cls}}" onClick="{{l.open}}" title="فتح كشف الحساب">
+              <div class="rv-dc grow"><span class="rv-accno">{{l.no}}</span>&nbsp; {{l.name}}<sc-if value="{{l.cur}}" hint-placeholder-val="{{false}}"><span class="rv-date-tag" style="margin-right: 8px;">هذا الحساب</span></sc-if></div>
+              <div class="{{l.partyCls}}" style="width: 170px;">{{l.party}}</div>
+              <div class="rv-dc num dr" style="width: 130px;">{{l.dr}}</div>
+              <div class="rv-dc num cr" style="width: 130px;">{{l.cr}}</div>
+            </div>
+          </sc-for>
+          <div class="rv-drow ft">
+            <div class="rv-dc grow">الإجمالي</div>
+            <div class="rv-dc" style="width: 170px;"></div>
+            <div class="rv-dc num dr" style="width: 130px;">{{vc.totDr}}</div>
+            <div class="rv-dc num cr" style="width: 130px;">{{vc.totCr}}</div>
+          </div>
+        </div>
+      </div>
+      <div class="rv-vmeta">
+        <span>الشركة: <b>{{vc.company}}</b></span>
+        <span>العملة: <b>SAR</b></span>
+        <span>مصدر البيانات: <b>GL Entry</b> · {{vc.count}} قيود</span>
+      </div>
+    </div>
+    <div class="rv-dialog-ft">
+      <button type="button" class="rv-btn sm" onClick="{{vc.copy}}">نسخ رقم المستند</button>
+      <button type="button" class="rv-btn sm" onClick="{{vc.print}}">طباعة المستند</button>
+      <span class="sp"></span>
+      <button type="button" class="rv-btn" onClick="{{closeVoucher}}">إغلاق</button>
+      <button type="button" class="rv-btn primary" onClick="{{vc.openErp}}">فتح المستند في ERPNext</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ Chart from selected range (integrated charts) ============ -->
+<sc-if value="{{cr.open}}" hint-placeholder-val="{{false}}">
+<div class="rv-modal" onMouseDown="{{closeChart}}">
+  <div class="rv-dialog" style="width: 1020px; height: 620px;" role="dialog" aria-label="رسم من النطاق المحدد" onMouseDown="{{stop}}">
+    <div class="rv-dialog-hd">
+      <div><h3>رسم من النطاق المحدد</h3><p>{{cr.sub}}</p></div>
+      <button type="button" class="rv-btn icon sm ghost" aria-label="إغلاق" onClick="{{closeChart}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+    </div>
+    <div style="flex: 1; min-height: 0; display: flex;">
+      <div style="flex: 1; min-width: 0; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px;">
+        <div class="rv-legend">
+          <sc-for list="{{cr.legend}}" as="lg" hint-placeholder-count="2"><span><i style="background: {{lg.color}};"></i>{{lg.label}}</span></sc-for>
+        </div>
+        <sc-if value="{{cr.empty}}" hint-placeholder-val="{{false}}"><div class="rv-state" style="margin: auto;"><h3>لا توجد قيم رقمية في النطاق</h3><p>حدّد خلايا من الأعمدة الرقمية بالسحب ثم أعد المحاولة.</p></div></sc-if>
+        <sc-if value="{{cr.isCol}}" hint-placeholder-val="{{true}}">
+          <div class="rv-plot" style="height: 380px;">
+            <div class="rv-yax"><sc-for list="{{cr.ticks}}" as="t" hint-placeholder-count="5"><span class="rv-ytick" style="bottom: {{t.p}}%;">{{t.label}}</span></sc-for></div>
+            <div class="rv-plot-area">
+              <sc-for list="{{cr.ticks}}" as="t" hint-placeholder-count="5"><div class="rv-gridline" style="bottom: {{t.p}}%;"></div></sc-for>
+              <div class="rv-colgroups">
+                <sc-for list="{{cr.cats}}" as="c" hint-placeholder-count="6">
+                  <div class="rv-colgroup"><div class="rv-colbars">
+                    <sc-for list="{{c.bars}}" as="b" hint-placeholder-count="2"><div class="rv-colbar" style="height: {{b.h}}%; width: {{cr.barW}}px; background: {{b.color}};" title="{{b.title}}"></div></sc-for>
+                  </div></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div class="rv-xlabels"><sc-for list="{{cr.cats}}" as="c" hint-placeholder-count="6"><span class="rv-xlabel" title="{{c.label}}">{{c.label}}</span></sc-for></div>
+        </sc-if>
+        <sc-if value="{{cr.isStack}}" hint-placeholder-val="{{false}}">
+          <div class="rv-plot" style="height: 380px;">
+            <div class="rv-yax"><sc-for list="{{cr.ticks}}" as="t" hint-placeholder-count="5"><span class="rv-ytick" style="bottom: {{t.p}}%;">{{t.label}}</span></sc-for></div>
+            <div class="rv-plot-area">
+              <sc-for list="{{cr.ticks}}" as="t" hint-placeholder-count="5"><div class="rv-gridline" style="bottom: {{t.p}}%;"></div></sc-for>
+              <div class="rv-colgroups">
+                <sc-for list="{{cr.cats}}" as="c" hint-placeholder-count="6">
+                  <div class="rv-colgroup"><div class="rv-colbars">
+                    <div class="rv-stackbar" style="height: {{c.stackH}}%;">
+                      <sc-for list="{{c.segs}}" as="b" hint-placeholder-count="2"><div style="flex-grow: {{b.grow}}; background: {{b.color}};" title="{{b.title}}"></div></sc-for>
+                    </div>
+                  </div></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div class="rv-xlabels"><sc-for list="{{cr.cats}}" as="c" hint-placeholder-count="6"><span class="rv-xlabel" title="{{c.label}}">{{c.label}}</span></sc-for></div>
+        </sc-if>
+        <sc-if value="{{cr.isBar}}" hint-placeholder-val="{{false}}">
+          <div class="rv-hbars" style="overflow: auto; flex: 1;">
+            <sc-for list="{{cr.cats}}" as="c" hint-placeholder-count="6">
+              <div class="rv-hbar-row" style="cursor: default; align-items: flex-start;">
+                <span class="rv-hbar-lbl" style="padding-top: 1px;"><span class="nm">{{c.label}}</span></span>
+                <span style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+                  <sc-for list="{{c.bars}}" as="b" hint-placeholder-count="2"><span style="display: flex; align-items: center; gap: 8px;"><span class="rv-hbar" style="width: {{b.h}}%; height: 12px; border-radius: 0 3px 3px 0; background: {{b.color}};"></span><span class="rv-hbar-val" style="width: auto;">{{b.v}}</span></span></sc-for>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{cr.isPie}}" hint-placeholder-val="{{false}}">
+          <div class="rv-donut-wrap" style="margin: auto 0;">
+            <div class="rv-donut" style="width: 280px; height: 280px;">
+              <svg width="280" height="280" viewBox="0 0 200 200"><circle cx="100" cy="100" r="72" fill="none" stroke-width="26" style="stroke: var(--surface-3);"></circle></svg>
+              <sc-for list="{{cr.segs}}" as="sg" hint-placeholder-count="5"><svg width="280" height="280" viewBox="0 0 200 200"><circle cx="100" cy="100" r="72" fill="none" stroke-width="26" style="stroke: {{sg.color}}; stroke-dasharray: {{sg.dash}}; stroke-dashoffset: {{sg.off}};"></circle></svg></sc-for>
+              <div class="rv-donut-c"><span>{{cr.pieSeries}}</span><b>{{cr.pieTotal}}</b></div>
+            </div>
+            <ul class="rv-dlegend">
+              <sc-for list="{{cr.pieLegend}}" as="it" hint-placeholder-count="5"><li><i style="background: {{it.color}};"></i><span class="nm">{{it.label}}</span><span class="v">{{it.v}}</span><span class="p">{{it.p}}</span></li></sc-for>
+            </ul>
+          </div>
+        </sc-if>
+      </div>
+      <div style="width: 250px; flex: none; border-right: 1px solid var(--line); background: var(--surface-2); padding: 16px; display: flex; flex-direction: column; gap: 16px; overflow: auto;">
+        <div>
+          <div class="rv-zone-hd" style="margin-bottom: 8px;">نوع الرسم</div>
+          <div class="rv-chart-types">
+            <sc-for list="{{cr.types}}" as="t" hint-placeholder-count="4">
+              <button type="button" class="{{t.cls}}" onClick="{{t.pick}}">
+                <sc-if value="{{t.isCol}}" hint-placeholder-val="{{false}}"><svg width="30" height="22" viewBox="0 0 30 22" fill="currentColor"><rect x="3" y="8" width="4" height="13" rx="1"></rect><rect x="8" y="3" width="4" height="18" rx="1" opacity=".5"></rect><rect x="16" y="11" width="4" height="10" rx="1"></rect><rect x="21" y="6" width="4" height="15" rx="1" opacity=".5"></rect></svg></sc-if>
+                <sc-if value="{{t.isStack}}" hint-placeholder-val="{{false}}"><svg width="30" height="22" viewBox="0 0 30 22" fill="currentColor"><rect x="4" y="10" width="6" height="11" rx="1"></rect><rect x="4" y="3" width="6" height="6" rx="1" opacity=".5"></rect><rect x="12" y="13" width="6" height="8" rx="1"></rect><rect x="12" y="7" width="6" height="5" rx="1" opacity=".5"></rect><rect x="20" y="9" width="6" height="12" rx="1"></rect><rect x="20" y="4" width="6" height="4" rx="1" opacity=".5"></rect></svg></sc-if>
+                <sc-if value="{{t.isBar}}" hint-placeholder-val="{{false}}"><svg width="30" height="22" viewBox="0 0 30 22" fill="currentColor"><rect x="10" y="2" width="18" height="4" rx="1"></rect><rect x="16" y="7" width="12" height="4" rx="1" opacity=".5"></rect><rect x="6" y="12" width="22" height="4" rx="1"></rect><rect x="13" y="17" width="15" height="4" rx="1" opacity=".5"></rect></svg></sc-if>
+                <sc-if value="{{t.isPie}}" hint-placeholder-val="{{false}}"><svg width="30" height="22" viewBox="0 0 30 22" fill="none" stroke="currentColor" stroke-width="4"><circle cx="15" cy="11" r="7.5"></circle></svg></sc-if>
+                {{t.label}}
+              </button>
+            </sc-for>
+          </div>
+        </div>
+        <div>
+          <div class="rv-zone-hd" style="margin-bottom: 8px;">السلاسل (الأعمدة المحددة)</div>
+          <sc-for list="{{cr.series}}" as="s" hint-placeholder-count="2">
+            <label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked="{{s.on}}" onChange="{{s.toggle}}"><i style="width: 10px; height: 10px; border-radius: 2px; background: {{s.color}}; display: inline-block; flex: none;"></i><span>{{s.label}}</span></span></label>
+          </sc-for>
+        </div>
+        <div class="rv-zone-empty" style="padding: 0;">الفئات: {{cr.catCount}} صفاً من النطاق. الصفوف بلا قيم رقمية تُستبعد تلقائياً.</div>
+      </div>
+    </div>
+    <div class="rv-dialog-ft">
+      <span class="rv-zone-empty" style="padding: 0;">الرسم مرتبط بالنطاق — غيّر التحديد في الجدول لتحديثه</span>
+      <span class="sp"></span>
+      <button type="button" class="rv-btn" onClick="{{crPng}}">تنزيل PNG</button>
+      <button type="button" class="rv-btn primary" onClick="{{closeChart}}">تم</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ Print preview (A4) ============ -->
+<sc-if value="{{pr.open}}" hint-placeholder-val="{{false}}">
+<div class="rv-print" onMouseDown="{{stop}}">
+  <div class="rv-print-side">
+    <div class="rv-panel-hd" style="height: 56px;">
+      <strong style="font-size: 15px;">{{pr.title}}</strong><span class="sp"></span>
+      <button type="button" class="rv-btn icon sm ghost" aria-label="إغلاق المعاينة" onClick="{{closePrint}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+    </div>
+    <div class="bd">
+      <div>
+        <h4>اتجاه الصفحة · A4</h4>
+        <div class="rv-orient">
+          <button type="button" class="{{pr.portCls}}" onClick="{{pr.toPort}}"><i style="width: 22px; height: 30px;"></i>عمودي</button>
+          <button type="button" class="{{pr.landCls}}" onClick="{{pr.toLand}}"><i style="width: 30px; height: 22px;"></i>أفقي</button>
+        </div>
+      </div>
+      <div>
+        <h4>الأعمدة المطبوعة</h4>
+        <div class="rv-setlist" style="max-height: none;">
+          <label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked="{{true}}" disabled="{{true}}"><span>الحساب (ثابت)</span></span></label>
+          <sc-for list="{{pr.colOpts}}" as="it" hint-placeholder-count="6">
+            <label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked="{{it.on}}" onChange="{{it.toggle}}"><span>{{it.label}}</span></span></label>
+          </sc-for>
+        </div>
+      </div>
+      <div>
+        <h4>المحتوى</h4>
+        <div class="rv-setlist" style="max-height: none;">
+          <label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked="{{pr.filters}}" onChange="{{pr.tFilters}}"><span>الفلاتر المطبقة</span></span></label>
+          <label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked="{{pr.subtotals}}" onChange="{{pr.tSub}}"><span>المجاميع الفرعية للمجموعات</span></span></label>
+          <label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked="{{pr.sign}}" onChange="{{pr.tSign}}"><span>خانات التوقيع</span></span></label>
+        </div>
+      </div>
+      <div class="rv-zone-empty" style="padding: 0;">تُطبع البيانات كما تظهر في الجدول: نفس الفلاتر والتجميع والمجموعات المطوية. {{pr.pagesNote}}</div>
+    </div>
+    <div class="rv-dialog-ft">
+      <button type="button" class="rv-btn" onClick="{{closePrint}}">إلغاء</button>
+      <button type="button" class="rv-btn primary" onClick="{{pr.go}}">{{pr.goLabel}}</button>
+    </div>
+  </div>
+  <div class="rv-print-stage">
+    <sc-for list="{{pr.pages}}" as="pg" hint-placeholder-count="1">
+      <div class="rv-page" style="width: {{pr.pw}}px; height: {{pr.ph}}px;">
+        <sc-if value="{{pg.first}}" hint-placeholder-val="{{true}}">
+          <div class="rv-page-hd">
+            <div>
+              <div class="co">{{pr.company}}</div>
+              <div class="ti">ميزان المراجعة</div>
+              <div class="pe">عن الفترة من <span class="rv-pnum">{{pr.from}}</span> إلى <span class="rv-pnum">{{pr.to}}</span> · المبالغ بالريال السعودي</div>
+            </div>
+            <div class="meta">تاريخ الطباعة: <span class="rv-pnum">{{pr.printed}}</span><br>التجميع: {{pr.grouping}}<br>عدد الحسابات: {{pr.accCount}}</div>
+          </div>
+          <sc-if value="{{pr.filters}}" hint-placeholder-val="{{true}}"><div class="rv-page-filt"><b>الفلاتر المطبقة: </b>{{pr.filterText}}</div></sc-if>
+        </sc-if>
+        <sc-if value="{{pr.hasBands}}" hint-placeholder-val="{{true}}">
+          <div class="rv-pt-band"><sc-for list="{{pr.bands}}" as="b" hint-placeholder-count="4"><div style="width: {{b.w}}px;">{{b.label}}</div></sc-for></div>
+        </sc-if>
+        <div class="rv-pt-hd"><sc-for list="{{pr.cols}}" as="c" hint-placeholder-count="7"><div class="{{c.cls}}" style="width: {{c.w}}px;">{{c.label}}</div></sc-for></div>
+        <sc-for list="{{pg.lines}}" as="ln" hint-placeholder-count="20">
+          <div class="{{ln.cls}}"><sc-for list="{{ln.cells}}" as="cl" hint-placeholder-count="7"><div class="{{cl.cls}}" style="width: {{cl.w}}px; padding-right: {{cl.ind}}px;">{{cl.text}}</div></sc-for></div>
+        </sc-for>
+        <sc-if value="{{pg.last}}" hint-placeholder-val="{{true}}">
+          <sc-if value="{{pr.hasTotal}}" hint-placeholder-val="{{true}}">
+            <div class="rv-pl total"><sc-for list="{{pr.total.cells}}" as="cl" hint-placeholder-count="7"><div class="{{cl.cls}}" style="width: {{cl.w}}px;">{{cl.text}}</div></sc-for></div>
+          </sc-if>
+          <sc-if value="{{pr.sign}}" hint-placeholder-val="{{true}}">
+            <div class="rv-page-sign">
+              <div>المحاسب<span>الاسم: ................................</span><span>التوقيع: ..............................</span></div>
+              <div>المدير المالي<span>الاسم: ................................</span><span>التوقيع: ..............................</span></div>
+              <div>المدير العام<span>الاسم: ................................</span><span>التوقيع: ..............................</span></div>
+            </div>
+          </sc-if>
+        </sc-if>
+        <div class="rv-page-foot"><span>ميزان المراجعة · {{pr.company}}</span><span>صفحة {{pg.n}} من {{pr.count}}</span></div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+  <div class="rv-toast" role="status"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg>{{toast}}</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"density":{"editor":"enum","options":["comfortable","compact"],"default":"comfortable","section":"العرض"},"theme":{"editor":"enum","options":["light","dark"],"default":"light","section":"العرض"},"initialView":{"editor":"enum","options":["grid","pivot","charts"],"default":"grid","section":"العرض"},"demoState":{"editor":"enum","options":["live","loading","empty","error"],"default":"live","section":"الحالات"},"$preview":{"width":1440,"height":1100}}'>
+const ROOT_AR={Asset:'الأصول',Liability:'الخصوم',Equity:'حقوق الملكية',Income:'الإيرادات',Expense:'المصروفات'};
+const ROOT_ORDER=['Asset','Liability','Equity','Income','Expense'];
+const TYPE_AR={'Cash':'نقدية','Bank':'بنك','Receivable':'ذمم مدينة','Stock':'مخزون','Tax':'ضريبة','Fixed Asset':'أصل ثابت','Accumulated Depreciation':'مجمع إهلاك','Payable':'ذمم دائنة','Equity':'حقوق ملكية','Income Account':'إيراد','Cost of Goods Sold':'تكلفة مبيعات','Expense Account':'مصروف','Depreciation':'إهلاك','':'بدون تصنيف'};
+const VT_AR={'Payment Entry':'سند دفع','Journal Entry':'قيد يومية','Sales Invoice':'فاتورة مبيعات','Purchase Invoice':'فاتورة مشتريات'};
+const COMPANIES=['شركة سند للمقاولات','شركة سند التجارية'];
+const BANDS={opening:'الرصيد الافتتاحي',period:'حركة الفترة',closing:'الرصيد الختامي'};
+const COLS=[
+  {id:'account',label:'الحساب',kind:'group',w:320},
+  {id:'root',label:'الحساب الجذري',kind:'text',w:190,dim:true},
+  {id:'parent',label:'الحساب الرئيسي',kind:'text',w:210,dim:true},
+  {id:'rtype',label:'نوع الجذر',kind:'text',w:130,dim:true},
+  {id:'atype',label:'نوع الحساب',kind:'text',w:140,dim:true},
+  {id:'nature',label:'طبيعة الرصيد',kind:'text',w:124,dim:true},
+  {id:'od',label:'مدين',full:'الافتتاحي · مدين',band:'opening',kind:'num',side:'dr',w:138},
+  {id:'oc',label:'دائن',full:'الافتتاحي · دائن',band:'opening',kind:'num',side:'cr',w:138},
+  {id:'dr',label:'مدين',full:'الحركة · مدين',band:'period',kind:'num',side:'dr',w:138},
+  {id:'cr',label:'دائن',full:'الحركة · دائن',band:'period',kind:'num',side:'cr',w:138},
+  {id:'cd',label:'مدين',full:'الختامي · مدين',band:'closing',kind:'num',side:'dr',w:138},
+  {id:'cc',label:'دائن',full:'الختامي · دائن',band:'closing',kind:'num',side:'cr',w:138},
+  {id:'cn',label:'صافي الختامي',full:'صافي الرصيد الختامي',kind:'num',side:'net',w:150},
+  {id:'actions',label:'إجراءات',full:'أزرار الإجراءات',kind:'actions',w:156}
+];
+const CM={}; COLS.forEach(function(c){ CM[c.id]=c; });
+const DIMS=COLS.filter(function(c){ return c.dim; }).map(function(c){ return c.id; });
+const DEF_VIS={account:true,actions:true,atype:true,od:true,oc:true,dr:true,cr:true,cd:true,cc:true};
+const FN_AR={sum:'مجموع',avg:'متوسط',count:'عدد',min:'الأدنى',max:'الأعلى'};
+const PRESETS=[{id:'moving',label:'حسابات عليها حركة'},{id:'nonzero',label:'إخفاء الحسابات الصفرية'},{id:'drOnly',label:'أرصدة ختامية مدينة'},{id:'crOnly',label:'أرصدة ختامية دائنة'}];
+const READY=[
+  {id:'def',name:'العرض الافتراضي',desc:'شجرة الحسابات بمستويين مع مجاميع فرعية',snap:{}},
+  {id:'pl',name:'حسابات قائمة الدخل',desc:'الإيرادات والمصروفات فقط',snap:{sets:{rtype:['الإيرادات','المصروفات']}}},
+  {id:'acr',name:'أصول بأرصدة دائنة',desc:'حسابات أصول رصيدها الختامي دائن — تحتاج مراجعة',snap:{sets:{rtype:['الأصول']},presets:{crOnly:true},groups:['parent']}},
+  {id:'mv',name:'حركة الفترة فقط',desc:'الحسابات التي عليها حركة، بدون أعمدة الافتتاحي',snap:{presets:{moving:true},hide:['od','oc']}},
+  {id:'pv',name:'تحليل طبيعة الأرصدة',desc:'Pivot: الحساب الرئيسي × طبيعة الرصيد',snap:{view:'pivot',groups:['parent'],pivotCols:['nature'],pivotVals:[{f:'cn',fn:'sum'}]}}
+];
+const PAL=['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)','var(--c6)','var(--c7)'];
+const W=1440, H=1100;
+const DEMO_ERR={title:'تعذّر تشغيل التقرير',msg:'انتهت مهلة الاتصال بالخادم أثناء تنفيذ الاستعلام. لم يتغير شيء في البيانات، ويمكنك إعادة المحاولة الآن.',code:'frappe.exceptions.QueryTimeoutError · HTTP 504'};
+
+function nf(n,d){ return Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function fmt(n){ if(n==null||isNaN(n)) return ''; if(Math.abs(n)<0.005) return '—'; return (n<0?'-':'')+nf(n,2); }
+function fmtP(n){ if(n==null||isNaN(n)) return ''; if(Math.abs(n)<0.005) return '—'; var s=nf(n,2); return n<0?'('+s+')':s; }
+function fmtS(n){ var a=Math.abs(n), s; if(a>=1e6){ s=(a/1e6).toFixed(2).replace(/0+$/,'').replace(/\.$/,'')+'M'; } else if(a>=1e3){ s=Math.round(a/1e3)+'K'; } else { s=String(Math.round(a)); } return (n<0?'-':'')+s; }
+function fd(iso){ if(!iso) return ''; var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function r2(n){ return Math.round(n*100)/100; }
+function pad(x){ return String(x).padStart(2,'0'); }
+function nowHM(){ var d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+function todayFull(){ var d=new Date(); return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+nowHM(); }
+function lc(a,b){ return String(a).localeCompare(String(b),'ar'); }
+function aggr(rs,f,fn){ if(fn==='count') return rs.length; if(!rs.length) return fn==='sum'?0:null; var s=0,mn=Infinity,mx=-Infinity; rs.forEach(function(r){ var v=r[f]||0; s+=v; if(v<mn) mn=v; if(v>mx) mx=v; }); if(fn==='avg') return s/rs.length; if(fn==='min') return mn; if(fn==='max') return mx; return s; }
+function norm(q){ return {r0:Math.min(q.r0,q.r1),r1:Math.max(q.r0,q.r1),c0:Math.min(q.c0,q.c1),c1:Math.max(q.c0,q.c1)}; }
+const MONTHS_AR=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const FPS=[{id:'full',label:'كاملة',name:'السنة المالية',r:[0,11]},{id:'q1',label:'ر1',name:'الربع الأول',r:[0,2]},{id:'q2',label:'ر2',name:'الربع الثاني',r:[3,5]},{id:'q3',label:'ر3',name:'الربع الثالث',r:[6,8]},{id:'q4',label:'ر4',name:'الربع الرابع',r:[9,11]},{id:'h1',label:'ن1',name:'النصف الأول',r:[0,5]},{id:'h2',label:'ن2',name:'النصف الثاني',r:[6,11]}];
+const WD=['ح','ن','ث','ر','خ','ج','س'];
+function iso(y,m,d){ return y+'-'+pad(m+1)+'-'+pad(d); }
+function parseIso(x){ var p=x.split('-'); return {y:+p[0],m:+p[1]-1,d:+p[2]}; }
+function ym(y,m){ var k=y*12+m; return [Math.floor(k/12),((k%12)+12)%12]; }
+function eom(y,m){ return iso(y,m,new Date(Date.UTC(y,m+1,0)).getUTCDate()); }
+function addDays(x,n){ var p=parseIso(x); return new Date(Date.UTC(p.y,p.m,p.d+n)).toISOString().slice(0,10); }
+function daysBetween(a,b){ return Math.round((Date.parse(b)-Date.parse(a))/864e5)+1; }
+function todayIso(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function parseDmy(v){ var m=/^\s*(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})\s*$/.exec(v||''); if(!m) return null; var d=+m[1], mo=+m[2]-1, y=+m[3]; var dt=new Date(Date.UTC(y,mo,d)); if(dt.getUTCMonth()!==mo||dt.getUTCDate()!==d) return null; return iso(y,mo,d); }
+function presetList(t){
+  var p=parseIso(t), y=p.y, m=p.m, dow=new Date(Date.UTC(y,m,p.d)).getUTCDay(), q=Math.floor(m/3)*3;
+  var lm=ym(y,m-1), lqs=ym(y,q-3), lqe=ym(y,q-1), s6=ym(y,m-5);
+  return [
+    {id:'today',label:'اليوم',r:[t,t]},
+    {id:'yday',label:'أمس',r:[addDays(t,-1),addDays(t,-1)]},
+    {id:'l7',label:'آخر 7 أيام',r:[addDays(t,-6),t]},
+    {id:'l30',label:'آخر 30 يوماً',r:[addDays(t,-29),t]},
+    {id:'week',label:'هذا الأسبوع',r:[addDays(t,-dow),addDays(t,6-dow)]},
+    {sep:true},
+    {id:'month',label:'هذا الشهر',r:[iso(y,m,1),eom(y,m)]},
+    {id:'lmonth',label:'الشهر الماضي',r:[iso(lm[0],lm[1],1),eom(lm[0],lm[1])]},
+    {id:'l6m',label:'آخر 6 أشهر',r:[iso(s6[0],s6[1],1),eom(y,m)]},
+    {id:'quarter',label:'هذا الربع',r:[iso(y,q,1),eom(y,q+2)]},
+    {id:'lquarter',label:'الربع الماضي',r:[iso(lqs[0],lqs[1],1),eom(lqe[0],lqe[1])]},
+    {sep:true},
+    {id:'ytd',label:'من بداية السنة حتى اليوم',r:[iso(y,0,1),t]},
+    {id:'year',label:'السنة المالية الحالية',r:[iso(y,0,1),iso(y,11,31)]},
+    {id:'lyear',label:'السنة الماضية',r:[iso(y-1,0,1),iso(y-1,11,31)]}
+  ];
+}
+function short(l){ return String(l).replace(/^\d+\s-\s/,''); }
+function niceMax(v){ if(v<=0) return 1; var p=Math.pow(10,Math.floor(Math.log10(v))); var n=v/p; var m=n<=1?1:(n<=2?2:(n<=2.5?2.5:(n<=5?5:10))); return m*p; }
+function donut(items,palIdx){ var C=2*Math.PI*72; var tot=items.reduce(function(a,it){ return a+it.v; },0); var acc=0; return items.map(function(it,i){ var len=tot?it.v/tot*C:0; var sg={color:PAL[palIdx?palIdx(i):i%7],dash:Math.max(len-2,0.01).toFixed(2)+' '+C.toFixed(2),off:(-acc).toFixed(2),pct:tot?(it.v/tot*100).toFixed(1)+'%':'0%'}; acc+=len; return sg; }); }
+
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.state=Object.assign({
+      company:0, from:'2026-04-01', to:'2026-09-30',
+      run:{company:0,from:'2026-04-01',to:'2026-09-30',at:''},
+      rows:null, loading:true, error:null, density:null, dark:null,
+      expanded:{}, pinned:{account:'start',actions:'end'}, widths:{}, sort:null,
+      side:null, colQ:'', fOpen:{},
+      sel:null, selecting:false, menu:null, setQ:'',
+      drawer:null, chart:null, print:null, toast:null,
+      favs:[], favName:'', activeView:'def', searchText:'', dragging:null
+    }, this.viewDefaults(), {view:null});
+    this.stop=function(e){ e.stopPropagation(); };
+    this.allow=function(e){ e.preventDefault(); };
+    this.setRoot=(el)=>{ this.root=el; };
+    this.setSearch=(el)=>{ this.searchEl=el; };
+  }
+  viewDefaults(){ return {q:'',sets:{},ranges:{},presets:{},groups:['root','parent'],visible:Object.assign({},DEF_VIS),pivotCols:['nature'],pivotVals:[{f:'cn',fn:'sum'}],aggFns:{},footers:true,view:'grid'}; }
+  componentDidMount(){
+    this._mu=()=>{ if(this.state.selecting) this.setState({selecting:false}); this._rz=null; };
+    this._mm=(e)=>{ var z=this._rz; if(!z) return; var w=Math.max(72,Math.round(z.w0+(z.x-e.clientX)/z.s)); if(w!==this.state.widths[z.id]){ var widths=Object.assign({},this.state.widths); widths[z.id]=w; this.setState({widths:widths}); } };
+    window.addEventListener('mouseup',this._mu);
+    window.addEventListener('mousemove',this._mm);
+    this.boot(0);
+  }
+  componentWillUnmount(){ window.removeEventListener('mouseup',this._mu); window.removeEventListener('mousemove',this._mm); clearTimeout(this._bt); clearTimeout(this._lt); clearTimeout(this._tt); }
+  boot(n){ if(window.TB_DATA){ this.doRun(true); } else if(n<80){ this._bt=setTimeout(()=>this.boot(n+1),100); } else { this.setState({loading:false,error:{title:'تعذّر تحميل بيانات التقرير',msg:'لم يصل رد من الخادم خلال المهلة المحددة.',code:'NetworkError'}}); } }
+
+  /* ---- "server": compute flat, ungrouped rows exactly like the query report returns them ---- */
+  compute(ci,from,to){
+    var d=window.TB_DATA, by={}, bal={};
+    d.accounts.forEach(function(a){ by[a[0]]={no:a[0],name:a[1],parent:a[2],rt:a[3],at:a[4],grp:a[5]}; if(!a[5]) bal[a[0]]={o:0,dr:0,cr:0}; });
+    d.opening.forEach(function(o){ if(o[0]===ci&&bal[o[1]]) bal[o[1]].o+=o[2]-o[3]; });
+    d.gl.forEach(function(g){ if(g[0]!==ci) return; var b=bal[g[2]]; if(!b) return; if(g[1]<from) b.o+=g[3]-g[4]; else if(g[1]<=to){ b.dr+=g[3]; b.cr+=g[4]; } });
+    return Object.keys(bal).sort().map(function(no){
+      var a=by[no], p=by[a.parent], root=p; while(root.parent&&by[root.parent]) root=by[root.parent];
+      var b=bal[no], o=r2(b.o), dr=r2(b.dr), cr=r2(b.cr), cn=r2(o+dr-cr);
+      return {id:no,no:no,name:a.name,label:no+' - '+a.name,parentLabel:p.no+' - '+p.name,parentName:p.name,rootLabel:root.no+' - '+root.name,rt:a.rt,rtLabel:ROOT_AR[a.rt],at:TYPE_AR[a.at]!=null?TYPE_AR[a.at]:a.at,
+        on:o,od:o>0?o:0,oc:o<0?-o:0,dr:dr,cr:cr,pn:r2(dr-cr),cn:cn,cd:cn>0?cn:0,cc:cn<0?-cn:0,nature:cn>0.004?'مدين':(cn<-0.004?'دائن':'صفري')};
+    });
+  }
+  doRun(quick){
+    var s=this.state;
+    if(s.from>s.to){ this.setState({loading:false,rows:null,error:{title:'تعذّر تشغيل التقرير',msg:'تاريخ البداية ('+fd(s.from)+') يقع بعد تاريخ النهاية ('+fd(s.to)+'). عدّل الفترة في شريط معايير التقرير ثم أعد التشغيل.',code:'frappe.exceptions.ValidationError'}}); return; }
+    var params={company:s.company,from:s.from,to:s.to};
+    this.setState({loading:true,error:null,menu:null,sel:null,drawer:null});
+    clearTimeout(this._lt);
+    this._lt=setTimeout(()=>{
+      var rows;
+      try{ rows=this.compute(params.company,params.from,params.to); }
+      catch(err){ this.setState({loading:false,error:{title:'تعذّر تشغيل التقرير',msg:String((err&&err.message)||err),code:'ClientError'}}); return; }
+      this.setState({rows:rows,loading:false,run:Object.assign({},params,{at:nowHM()})});
+    }, quick?500:1100);
+  }
+  openDate(e){
+    e.stopPropagation(); var s=this.state; if(s.menu&&s.menu.type==='date'){ this.setState({menu:null}); return; }
+    var a=this.anchor(e.currentTarget); var pos=this.place(a,880,500); var f=parseIso(s.from);
+    var t2=parseIso(s.to), fit=f.d===1&&s.to===eom(t2.y,t2.m)&&t2.y===f.y;
+    var tag=s.periodTag&&s.periodTag.from===s.from&&s.periodTag.to===s.to;
+    this.setState({menu:Object.assign({type:'date',key:'date',w:880},pos),dp:{mode:tag?'fiscal':'range',fy:f.y,fs:0,m0:fit?f.m:0,m1:fit?t2.m:11,mPick:false,from:s.from,to:s.to,hover:null,view:f.y*12+f.m,fromText:fd(s.from),toText:fd(s.to)}});
+  }
+  fyRange(q){ var a=ym(q.fy,q.fs+q.m0), b=ym(q.fy,q.fs+q.m1); return [iso(a[0],a[1],1),eom(b[0],b[1])]; }
+  fyLabel(q){ var f=FPS.find(function(x){ return x.r[0]===q.m0&&x.r[1]===q.m1; }); var yl=q.fs===0?String(q.fy):q.fy+'/'+(q.fy+1); if(f) return f.name+' '+yl; return 'الأشهر '+(q.m0+1)+'–'+(q.m1+1)+' · '+yl; }
+  dpFis(o){ var q=Object.assign({},this.state.dp,o,{mode:'fiscal',hover:null}); var r=this.fyRange(q); q.from=r[0]; q.to=r[1]; q.fromText=fd(r[0]); q.toText=fd(r[1]); var p=parseIso(r[0]); q.view=p.y*12+p.m; this.setState({dp:q}); }
+  dpSet(o){ this.setState({dp:Object.assign({},this.state.dp,o)}); }
+  dpPick(id){ var dp=this.state.dp; var f=dp.from, t=null; if(dp.to||!dp.from){ f=id; } else if(id<dp.from){ f=id; t=dp.from; } else { t=id; } this.dpSet({from:f,to:t,hover:null,fromText:fd(f),toText:t?fd(t):''}); }
+  dpModel(){
+    var self=this, dp=this.state.dp, t=todayIso();
+    var setRange=function(f,to){ var p=parseIso(f); self.dpSet({mode:'range',from:f,to:to,hover:null,view:p.y*12+p.m,fromText:fd(f),toText:fd(to)}); };
+    var preview=!dp.to, lo=dp.from, hi=dp.to||(dp.hover&&dp.hover>=dp.from?dp.hover:null);
+    var months=[0,1].map(function(k){
+      var v=dp.view+k, y=Math.floor(v/12), m=((v%12)+12)%12; var first=new Date(Date.UTC(y,m,1)).getUTCDay(), n=new Date(Date.UTC(y,m+1,0)).getUTCDate(); var cells=[];
+      for(var i=0;i<first;i++) cells.push({blank:true,isDay:false});
+      for(var d=1;d<=n;d++){ (function(d){ var id=iso(y,m,d); var c='dp-d';
+        if(id===lo) c+=' s';
+        if(dp.to&&id===dp.to) c+=' e'; else if(preview&&hi&&id===hi&&id!==lo) c+=' pe';
+        if(hi&&id>lo&&id<hi) c+=preview?' pv':' in';
+        if(id===t) c+=' t';
+        cells.push({isDay:true,blank:false,n:d,cls:c,aria:fd(id),pick:function(){ self.dpPick(id); },hover:function(){ var q=self.state.dp; if(q&&!q.to&&q.hover!==id) self.dpSet({hover:id}); }}); })(d); }
+      return {title:MONTHS_AR[m]+' '+y,cells:cells,prevCls:'dp-nav'+(k===0?'':' ph'),nextCls:'dp-nav'+(k===1?'':' ph')};
+    });
+    var end=dp.to||dp.from, isF=dp.mode==='fiscal';
+    var onTxt=function(key){ return function(e){ var v=e.target.value; var o={}; o[key+'Text']=v; var iv=parseDmy(v); if(iv){ o[key]=iv; if(key==='from'){ var p=parseIso(iv); o.view=p.y*12+p.m; if(dp.to&&dp.to<iv){ o.to=iv; o.toText=fd(iv); } } else if(iv<dp.from){ o.to=dp.from; o.from=iv; o.fromText=fd(iv); o.toText=fd(dp.from); } } self.dpSet(o); }; };
+    return {
+      presets:presetList(t).map(function(p){ if(p.sep) return {sep:true,item:false}; return {item:true,sep:false,label:p.label,cls:'dp-pre'+(dp.to&&p.r[0]===dp.from&&p.r[1]===dp.to?' on':''),pick:function(){ setRange(p.r[0],p.r[1]); }}; }),
+      wd:WD.map(function(l){ return {l:l}; }), months:months,
+      fromText:dp.fromText, toText:dp.toText, fromCls:'dp-in', toCls:'dp-in'+(preview?' on':''),
+      onFrom:onTxt('from'), onTo:onTxt('to'),
+      prev:function(){ self.dpSet({view:dp.view-1}); }, next:function(){ self.dpSet({view:dp.view+1}); },
+      leave:function(){ if(self.state.dp&&self.state.dp.hover) self.dpSet({hover:null}); },
+      rangeText:'من '+fd(dp.from)+' إلى '+fd(end), picking:preview, days:daysBetween(dp.from,end)+' يوماً',
+      cancel:function(){ self.setState({menu:null}); },
+      apply:function(){ self.setState({from:dp.from,to:end,menu:null,periodTag:isF?{from:dp.from,to:end,label:self.fyLabel(dp)}:null}); },
+      isFiscal:isF, isRange:!isF, mRange:isF?'':'on', mFiscal:isF?'on':'',
+      toRange:function(){ self.dpSet({mode:'range'}); }, toFiscal:function(){ self.dpFis({}); },
+      fyLabel:dp.fs===0?String(dp.fy):dp.fy+' / '+(dp.fy+1), fsLabel:MONTHS_AR[dp.fs],
+      fyPrev:function(){ self.dpFis({fy:dp.fy-1}); }, fyNext:function(){ self.dpFis({fy:dp.fy+1}); },
+      fsPrev:function(){ self.dpFis({fs:(dp.fs+11)%12}); }, fsNext:function(){ self.dpFis({fs:(dp.fs+1)%12}); },
+      fps:FPS.map(function(x){ return {label:x.label,title:x.name,cls:x.r[0]===dp.m0&&x.r[1]===dp.m1?'on':'',pick:function(){ self.dpFis({m0:x.r[0],m1:x.r[1],mPick:false}); }}; }),
+      mbars:Array.from({length:12},function(_,i){ var a=ym(dp.fy,dp.fs+i); var on=i>=dp.m0&&i<=dp.m1; return {n:i+1,short:MONTHS_AR[a[1]].slice(0,3),title:MONTHS_AR[a[1]]+' '+a[0],cls:'dp-mb'+(on?' on':'')+(dp.mPick&&i===dp.m0?' anchor':''),
+        pick:function(){ var q=self.state.dp; if(!q.mPick) self.dpFis({m0:i,m1:i,mPick:true}); else self.dpFis({m0:Math.min(q.m0,i),m1:Math.max(q.m0,i),mPick:false}); }}; }),
+      fyNote:dp.mPick?'انقر شهراً آخر لتحديد نطاق أشهر، أو «تطبيق» لشهر واحد':self.fyLabel(dp)+' · '+(dp.m1-dp.m0+1)+' أشهر · انقر على الأشهر لاختيار نطاق مخصص'
+    };
+  }
+  curView(){ return this.state.view||this.props.initialView||'grid'; }
+  toast(msg){ clearTimeout(this._tt); this.setState({toast:msg}); this._tt=setTimeout(()=>this.setState({toast:null}),2600); }
+
+  /* ---- filtering (all client side) ---- */
+  val(r,id){ switch(id){ case 'account': return r.label; case 'root': return r.rootLabel; case 'parent': return r.parentLabel; case 'rtype': return r.rtLabel; case 'atype': return r.at; case 'nature': return r.nature; default: return r[id]; } }
+  applyFilters(rows){
+    var s=this.state, q=s.q.trim(), self=this;
+    return rows.filter(function(r){
+      if(q&&r.label.indexOf(q)<0) return false;
+      for(var k in s.sets){ var a=s.sets[k]; if(a&&a.indexOf(self.val(r,k))<0) return false; }
+      for(var k2 in s.ranges){ var g=s.ranges[k2], v=r[k2]; if(g.min!==''&&isFinite(+g.min)&&v<+g.min) return false; if(g.max!==''&&isFinite(+g.max)&&v>+g.max) return false; }
+      var p=s.presets;
+      if(p.moving&&!(r.dr||r.cr)) return false;
+      if(p.nonzero&&!(r.od||r.oc||r.dr||r.cr||r.cd||r.cc)) return false;
+      if(p.drOnly&&!(r.cd>0)) return false;
+      if(p.crOnly&&!(r.cc>0)) return false;
+      return true;
+    });
+  }
+  upd(o){ this.setState(Object.assign({sel:null,activeView:null},o)); }
+  chips(){
+    var s=this.state, out=[], self=this;
+    if(s.q) out.push({key:'q',k:'الحساب',v:'يحتوي «'+s.q+'»',rm:()=>this.upd({q:''})});
+    Object.keys(s.sets).forEach(function(k){ var a=s.sets[k]; var v=!a.length?'لا شيء':(a.length>2?a.slice(0,2).join(' أو ')+' +'+(a.length-2):a.join(' أو ')); out.push({key:'s'+k,k:CM[k].label,v:v,rm:function(){ self.setSets(k,null); }}); });
+    Object.keys(s.ranges).forEach(function(k){ var g=s.ranges[k]; var a=g.min!==''&&isFinite(+g.min), b=g.max!==''&&isFinite(+g.max); if(!a&&!b) return; out.push({key:'r'+k,k:CM[k].full||CM[k].label,v:(a?'≥ '+nf(+g.min,0):'')+(a&&b?' و ':'')+(b?'≤ '+nf(+g.max,0):''),rm:function(){ var ranges=Object.assign({},self.state.ranges); delete ranges[k]; self.upd({ranges:ranges}); }}); });
+    PRESETS.forEach(function(p){ if(s.presets[p.id]) out.push({key:'p'+p.id,k:'فلتر',v:p.label,rm:function(){ self.togglePreset(p.id); }}); });
+    return out;
+  }
+  setSets(col,val){ var sets=Object.assign({},this.state.sets); if(val==null) delete sets[col]; else sets[col]=val; this.upd({sets:sets}); }
+  toggleSetVal(col,v,all){ var cur=this.state.sets[col]; var next=cur?cur.slice():all.slice(); next=next.indexOf(v)>=0?next.filter(function(x){ return x!==v; }):next.concat([v]); if(next.length===all.length) next=null; this.setSets(col,next); }
+  setRange(col,k,v){ var ranges=Object.assign({},this.state.ranges); var g=Object.assign({min:'',max:''},ranges[col]||{}); g[k]=v.trim?v.trim().replace(/,/g,''):v; if(g.min===''&&g.max==='') delete ranges[col]; else ranges[col]=g; this.upd({ranges:ranges}); }
+  togglePreset(id){ var presets=Object.assign({},this.state.presets); if(presets[id]) delete presets[id]; else { presets[id]=true; if(id==='drOnly') delete presets.crOnly; if(id==='crOnly') delete presets.drOnly; } this.upd({presets:presets}); }
+  colFiltered(id){ var s=this.state; if(id==='account') return !!s.q; return !!s.sets[id]||!!s.ranges[id]; }
+  allVals(col){ var m=new Map(), self=this; (this.state.rows||[]).forEach(function(r){ var v=self.val(r,col); m.set(v,(m.get(v)||0)+1); }); return m; }
+  setItems(col,query){
+    var m=this.allVals(col), all=Array.from(m.keys()).sort(lc), sel=this.state.sets[col], q=(query||'').trim(), self=this;
+    var shown=q?all.filter(function(v){ return String(v).indexOf(q)>=0; }):all;
+    return {items:shown.map(function(v){ return {label:v,count:m.get(v),on:!sel||sel.indexOf(v)>=0,toggle:function(){ self.toggleSetVal(col,v,all); }}; }),allOn:!sel,allCount:(sel?sel.length:all.length)+' / '+all.length,toggleAll:function(){ self.setSets(col,sel?null:[]); }};
+  }
+  searchSet(col,t){ var vals=Array.from(this.allVals(col).keys()).filter(function(v){ return String(v).indexOf(t)>=0; }); if(!vals.length){ this.toast('لا توجد قيم تطابق «'+t+'»'); return; } var sets=Object.assign({},this.state.sets); sets[col]=vals; this.upd({sets:sets,searchText:'',menu:null}); }
+  toggleRoot(l){ var a=this.state.sets.rtype; var n=a?a.slice():[]; n=n.indexOf(l)>=0?n.filter(function(x){ return x!==l; }):n.concat([l]); this.setSets('rtype',n.length?n:null); }
+  toggleGroupDim(k){ var g=this.state.groups; this.upd({groups:g.indexOf(k)>=0?g.filter(function(x){ return x!==k; }):g.concat([k]),expanded:{}}); }
+
+  /* ---- geometry for popovers (canvas may scale the artboard) ---- */
+  geo(){ var root=this.root; if(!root) return null; var rr=root.getBoundingClientRect(); var s=(rr.width/(root.offsetWidth||W))||1; return {rr:rr,s:s}; }
+  anchor(el){ var g=this.geo(); if(!g||!el) return {x:0,y:0,w:0,h:0,r:0,b:0}; var b=el.getBoundingClientRect(); return {x:(b.left-g.rr.left)/g.s,y:(b.top-g.rr.top)/g.s,w:b.width/g.s,h:b.height/g.s,r:(g.rr.right-b.right)/g.s,b:(b.bottom-g.rr.top)/g.s}; }
+  place(a,mw,mh){ var right=a.r; if(W-right-mw<8) right=Math.max(8,W-mw-8); if(right<8) right=8; var top=a.b+4; if(top+mh>H-8) top=Math.max(8,a.y-mh-4); return {top:Math.round(top),right:Math.round(right)}; }
+  openMenu(e,type,extra,mw,mh){ e.stopPropagation(); var key=type+':'+((extra&&extra.col)||''); var m=this.state.menu; if(m&&m.key===key){ this.setState({menu:null}); return; } var a=this.anchor(e.currentTarget); this.setState({menu:Object.assign({type:type,key:key,w:mw},this.place(a,mw,mh),extra||{}),setQ:''}); }
+  openMenuAtPoint(e,type,extra,mw,mh){ var g=this.geo(); if(!g) return; var x=(e.clientX-g.rr.left)/g.s, y=(e.clientY-g.rr.top)/g.s; var right=W-x; if(x-mw<8) right=Math.max(8,W-x-mw); var top=y; if(top+mh>H-8) top=H-mh-8; this.setState({menu:Object.assign({type:type,key:type,w:mw,top:Math.round(top),right:Math.round(right)},extra||{})}); }
+  openSearch(){ var m=this.state.menu; if(m&&m.type==='search') return; var a=this.anchor(this.searchEl); this.setState({menu:{type:'search',key:'search',top:Math.round(a.b+4),right:Math.round(a.r),w:Math.round(Math.max(a.w,560))}}); }
+
+  /* ---- tree / grouping ---- */
+  sortRows(rs){ var s=this.state.sort, self=this; if(!s) return rs; var k=s.id, dir=s.dir==='asc'?1:-1; return rs.slice().sort(function(a,b){ var x=self.val(a,k), y=self.val(b,k); if(typeof x==='number') return (x-y)*dir; return lc(x,y)*dir; }); }
+  buildTree(rows,dims){
+    var self=this;
+    var rec=function(rs,d,pv,path){
+      if(d>=dims.length) return self.sortRows(rs).map(function(r){ return {t:'leaf',r:r}; });
+      var dim=dims[d], direct=[], m=new Map();
+      rs.forEach(function(r){ var v=self.val(r,dim); if(v===pv) direct.push(r); else { if(!m.has(v)) m.set(v,[]); m.get(v).push(r); } });
+      var out=rec(direct,d+1,pv,path);
+      Array.from(m.keys()).sort(lc).forEach(function(k){ var p=path+'»'+k, rs2=m.get(k); out.push({t:'grp',key:k,dim:dim,path:p,rows:rs2,kids:rec(rs2,d+1,k,p)}); });
+      return out;
+    };
+    return rec(rows,0,null,'');
+  }
+  finishCols(out){
+    var off=0; out.forEach(function(c){ if(c.pin==='start'){ c.off=off; off+=c.W; } });
+    off=0; for(var i=out.length-1;i>=0;i--){ var c=out[i]; if(c.pin==='end'){ c.off=off; off+=c.W; } }
+    var starts=out.filter(function(c){ return c.pin==='start'; }); var lastS=starts[starts.length-1]; var firstE=out.find(function(c){ return c.pin==='end'; });
+    out.forEach(function(c){ c.sticky=c.pin==='start'?'position: sticky; right: '+c.off+'px;':(c.pin==='end'?'position: sticky; left: '+c.off+'px;':''); c.edge=(c===lastS?' pin-edge-s':'')+(c===firstE?' pin-edge-e':''); });
+    var gs=[]; out.forEach(function(c){ var l=gs[gs.length-1]; if(c.band&&l&&l.band===c.band&&l.pin===c.pin) l.cols.push(c); else gs.push({band:c.band||null,pin:c.pin,cols:[c],bandLabel:c.bandLabel}); });
+    gs.forEach(function(g){ g.cols.forEach(function(c){ c.bandEnd=false; }); g.cols[g.cols.length-1].bandEnd=!!g.band; });
+    out.groups=gs; return out;
+  }
+  colsOrdered(compact){
+    var s=this.state; var vis=COLS.filter(function(c){ return c.id==='account'||s.visible[c.id]; });
+    var pin=function(c){ return s.pinned[c.id]||null; };
+    var ord=vis.filter(function(c){ return pin(c)==='start'; }).concat(vis.filter(function(c){ return !pin(c); }),vis.filter(function(c){ return pin(c)==='end'; }));
+    var sc=compact?0.88:1;
+    return this.finishCols(ord.map(function(c){ return Object.assign({},c,{pin:pin(c),W:Math.round(s.widths[c.id]||c.w*sc)}); }));
+  }
+  gridModel(rows,compact){
+    var s=this.state, self=this; var cols=this.colsOrdered(compact); var totalW=cols.reduce(function(a,c){ return a+c.W; },0);
+    var numCols=cols.filter(function(c){ return c.kind==='num'; });
+    var aggFor=function(rs){ var o={}; numCols.forEach(function(c){ o[c.id]=aggr(rs,c.id,s.aggFns[c.id]||'sum'); }); return o; };
+    var disp=[], paths=[], grouped=s.groups.length>0;
+    var walk=function(nodes,depth){ nodes.forEach(function(n){
+      if(n.t==='leaf'){ disp.push({kind:'leaf',r:n.r,depth:depth,vals:n.r}); return; }
+      paths.push(n.path); var open=s.expanded[n.path]!==false; var agg=aggFor(n.rows);
+      disp.push({kind:'group',node:n,depth:depth,open:open,hasKids:true,pathKey:n.path,vals:(open&&s.footers)?{}:agg,count:n.rows.length});
+      if(open){ walk(n.kids,depth+1); if(s.footers) disp.push({kind:'foot',node:n,depth:depth,vals:agg}); }
+    }); };
+    walk(grouped?this.buildTree(rows,s.groups):this.sortRows(rows).map(function(r){ return {t:'leaf',r:r}; }),0);
+    if(rows.length) disp.push({kind:'total',depth:0,vals:aggFor(rows),count:rows.length});
+    this._paths=paths;
+    return {cols:cols,totalW:totalW,disp:disp,grouped:grouped,pivot:false};
+  }
+  pkey(r){ var self=this; return this.state.pivotCols.map(function(d){ return self.val(r,d); }).join(' · '); }
+  pivotModel(rows,compact){
+    var s=this.state, self=this; var dims=s.groups.length?s.groups:['parent']; var cd=s.pivotCols; var vals=s.pivotVals.length?s.pivotVals:[{f:'cn',fn:'sum'}];
+    var keys=cd.length?Array.from(new Set(rows.map(function(r){ return self.pkey(r); }))).sort(lc):[];
+    var sc=compact?0.88:1, vw=Math.round(156*sc);
+    var vlab=function(v){ return FN_AR[v.fn]+' '+(CM[v.f].full||CM[v.f].label); };
+    var cols=[{id:'__pg',kind:'group',label:dims.map(function(d){ return CM[d].label; }).join(' › '),W:Math.round(s.widths.__pg||300*sc),pin:'start'}];
+    keys.forEach(function(k,ki){ vals.forEach(function(v,vi){ var id='k'+ki+'_'+vi; cols.push({id:id,kind:'num',key:k,f:v.f,fn:v.fn,band:'k'+ki,bandLabel:k,label:vlab(v),full:k+' · '+vlab(v),W:s.widths[id]||vw,side:'pv',pin:null}); }); });
+    vals.forEach(function(v,vi){ var id='t_'+vi; cols.push({id:id,kind:'num',key:null,f:v.f,fn:v.fn,band:'tot',bandLabel:'الإجمالي',label:vlab(v),full:'الإجمالي · '+vlab(v),W:s.widths[id]||vw+12,side:'pv',pin:null}); });
+    this.finishCols(cols);
+    var totalW=cols.reduce(function(a,c){ return a+c.W; },0);
+    var valsFor=function(rs){ var o={}; cols.forEach(function(c){ if(c.kind!=='num') return; var sub=c.key==null?rs:rs.filter(function(r){ return self.pkey(r)===c.key; }); o[c.id]=sub.length?aggr(sub,c.f,c.fn):null; }); return o; };
+    var disp=[], paths=[];
+    var walk=function(nodes,depth){ nodes.forEach(function(n){ if(n.t!=='grp') return; var pk='pv'+n.path; var hasKids=n.kids.some(function(k){ return k.t==='grp'; }); if(hasKids) paths.push(pk); var open=hasKids&&s.expanded[pk]!==false; disp.push({kind:'group',node:n,depth:depth,open:open,hasKids:hasKids,pathKey:pk,count:n.rows.length,vals:valsFor(n.rows),rows:n.rows}); if(open) walk(n.kids,depth+1); }); };
+    walk(this.buildTree(rows,dims),0);
+    if(rows.length) disp.push({kind:'total',depth:0,count:rows.length,vals:valsFor(rows),rows:rows});
+    this._paths=paths;
+    return {cols:cols,totalW:totalW,disp:disp,grouped:true,pivot:true};
+  }
+  headGroups(cols,pivot){
+    var self=this;
+    return cols.groups.map(function(g){
+      var f=g.cols[0], l=g.cols[g.cols.length-1];
+      var w=g.cols.reduce(function(a,c){ return a+c.W; },0);
+      var sticky=g.pin==='start'?'position: sticky; right: '+f.off+'px; z-index: 8;':(g.pin==='end'?'position: sticky; left: '+l.off+'px; z-index: 8;':'');
+      var label=g.band?(pivot?g.bandLabel:BANDS[g.band]):'';
+      var k=pivot&&label?(label.indexOf('مدين')===0?' k-dr':(label.indexOf('دائن')===0?' k-cr':'')):'';
+      return {w:w,sticky:sticky,cls:'rv-hg'+g.cols.map(function(c){ return c.edge; }).join(''),label:label,bandCls:'rv-band'+(g.band?'':' empty')+k,cells:g.cols.map(function(c){ return self.hcell(c,pivot); })};
+    });
+  }
+  hcell(c,pivot){
+    var s=this.state, self=this; var so=s.sort&&s.sort.id===c.id?s.sort.dir:null; var menuOn=s.menu&&s.menu.type==='col'&&s.menu.col===c.id;
+    var h={w:c.W,label:c.label,cls:'rv-h'+(c.kind==='num'?' num':'')+(c.kind==='actions'?' act':'')+(c.bandEnd?' band-end':''),sortAsc:so==='asc',sortDesc:so==='desc',filtered:!pivot&&this.colFiltered(c.id),menuCls:'rv-hmenu'+(menuOn?' on':''),
+      sort:function(){ if(!pivot&&c.kind!=='actions') self.toggleSort(c.id); },
+      menu:function(e){ self.openMenu(e,'col',{col:c.id,pivot:pivot},236,380); },
+      dragStart:function(e){ self.dragStartCol(e,c.id); },
+      resize:function(e){ e.stopPropagation(); e.preventDefault(); var g=self.geo(); self._rz={id:c.id,x:e.clientX,w0:c.W,s:g?g.s:1}; },
+      fcls:'rv-fcell'+(c.bandEnd?' band-end':''),ffText:false,ffSet:false,ffNum:false};
+    if(!pivot){
+      if(c.id==='account'){ h.ffText=true; h.q=s.q; h.qCls='rv-ff-input'+(s.q?' on':''); h.onQ=function(e){ self.upd({q:e.target.value}); }; }
+      else if(c.kind==='text'){ var a=s.sets[c.id]; h.ffSet=true; h.setLabel=a?(a.length===1?a[0]:(a.length?a.length+' قيم محددة':'لا شيء')):'الكل'; h.setCls='rv-ff-set'+(a?' on':''); h.openSet=function(e){ self.openMenu(e,'set',{col:c.id},264,360); }; }
+      else if(c.kind==='num'){ var g=s.ranges[c.id]||{min:'',max:''}; h.ffNum=true; h.min=g.min; h.max=g.max; h.minCls='rv-ff-input num'+(g.min!==''?' on':''); h.maxCls='rv-ff-input num'+(g.max!==''?' on':''); h.onMin=function(e){ self.setRange(c.id,'min',e.target.value); }; h.onMax=function(e){ self.setRange(c.id,'max',e.target.value); }; }
+    }
+    return h;
+  }
+  toggleSort(id){ var s=this.state.sort; var next=!s||s.id!==id?{id:id,dir:'asc'}:(s.dir==='asc'?{id:id,dir:'desc'}:null); this.setState({sort:next,sel:null}); }
+  rowLabel(dr){ if(dr.kind==='leaf') return dr.r.name; if(dr.kind==='group') return short(dr.node.key); if(dr.kind==='foot') return 'إجمالي '+short(dr.node.key); return 'الإجمالي العام'; }
+  rowCells(m,dr,ri,sel,ind){
+    var s=this.state, self=this;
+    return m.cols.map(function(c,ci){
+      var cls='rv-c'+(c.bandEnd?' band-end':'')+c.edge+(c.pin?' pinned':'');
+      var cell={w:c.W,sticky:c.sticky,isGroup:false,isNum:false,isText:false};
+      if(c.kind==='group'){
+        cell.isGroup=true; cell.indent=dr.depth*ind;
+        if(dr.kind==='group'){ cell.hasCaret=dr.hasKids; cell.caretSpace=!dr.hasKids; cell.caretCls='rv-caret'+(dr.open?' open':''); cell.caretAria=dr.open?'طي المجموعة':'توسيع المجموعة'; cell.toggle=function(){ self.toggleGroup(dr.pathKey,dr.open); }; cell.isLabel=true; cell.text=dr.node.key; cell.hasCount=true; cell.count=dr.count; }
+        else if(dr.kind==='foot'){ cell.caretSpace=true; cell.isLabel=true; cell.text='إجمالي '+short(dr.node.key); }
+        else if(dr.kind==='total'){ cell.isLabel=true; cell.text='الإجمالي العام'; cell.hasCount=true; cell.count=dr.count; }
+        else { cell.caretSpace=m.grouped; cell.isLink=true; cell.no=dr.r.no; cell.text=dr.r.name; cell.open=function(){ self.openDrawer(dr.r.id); }; }
+      } else {
+        if(sel&&ri>=sel.r0&&ri<=sel.r1&&ci>=sel.c0&&ci<=sel.c1) cls+=' sel'+(ri===sel.r0?' st':'')+(ri===sel.r1?' sb':'')+(ci===sel.c0?' ss':'')+(ci===sel.c1?' se':'');
+        if(c.kind==='num'){
+          cell.isNum=true; cls+=' num'; var v=dr.vals?dr.vals[c.id]:undefined;
+          if(v==null){ cell.text=''; }
+          else { var fn=m.pivot?c.fn:(s.aggFns[c.id]||'sum'); if(fn==='count'&&(m.pivot||dr.kind!=='leaf')){ cell.text=String(v); } else { var net=m.pivot||c.side==='net'; cell.text=net?fmtP(v):fmt(v); cls+=Math.abs(v)<0.005?' zero':(net?(v<0?' neg':''):' '+c.side); } }
+          if(m.pivot&&v!=null){ cls+=' pv click'; cell.click=function(e){ self.openPivotCell(e,dr,c); }; }
+        } else if(c.kind==='actions'){
+          cls+=' act';
+          if(dr.kind==='leaf'){ var r=dr.r; cell.isActions=true; cell.moreCls='rv-cbtn'+(s.menu&&s.menu.type==='row'&&s.menu.acc===r.id?' on':'');
+            cell.a1=function(){ self.openDrawer(r.id); };
+            cell.a2=function(){ self.toast('سيُفتح دفتر الأستاذ العام مفلتراً بالحساب '+r.label); };
+            cell.more=function(e){ self.openMenu(e,'row',{col:r.id,acc:r.id},248,260); }; }
+          cell.cls=cls; return cell;
+        } else { cell.isText=true; cell.text=dr.kind==='leaf'?self.val(dr.r,c.id):''; }
+        cell.down=function(e){ self.cellDown(e,ri,ci); };
+        cell.enter=function(){ self.cellEnter(ri,ci); };
+        cell.ctx=function(e){ self.cellCtx(e,ri,ci,dr); };
+      }
+      cell.cls=cls; return cell;
+    });
+  }
+  toggleGroup(pk,open){ var expanded=Object.assign({},this.state.expanded); if(open) expanded[pk]=false; else delete expanded[pk]; this.setState({expanded:expanded,sel:null}); }
+  cellDown(e,ri,ci){ if(e.button!==0) return; e.preventDefault(); var s=this.state; if(e.shiftKey&&s.sel){ this.setState({sel:Object.assign({},s.sel,{r1:ri,c1:ci}),selecting:true,menu:null}); return; } this.setState({sel:{r0:ri,c0:ci,r1:ri,c1:ci},selecting:true,menu:null}); }
+  cellEnter(ri,ci){ var s=this.state; if(!s.selecting||!s.sel) return; if(s.sel.r1===ri&&s.sel.c1===ci) return; this.setState({sel:Object.assign({},s.sel,{r1:ri,c1:ci})}); }
+  cellCtx(e,ri,ci,dr){ e.preventDefault(); e.stopPropagation(); var s=this.state; var sel=s.sel; var n=sel?norm(sel):null; if(!n||ri<n.r0||ri>n.r1||ci<n.c0||ci>n.c1) sel={r0:ri,c0:ci,r1:ri,c1:ci}; this.setState({sel:sel,selecting:false}); this.openMenuAtPoint(e,'ctx',{acc:dr.kind==='leaf'?dr.r.id:null},264,300); }
+  selStats(m){ var s=this.state; if(!s.sel) return null; var n=norm(s.sel), cnt=0, sum=0, mn=Infinity, mx=-Infinity; for(var ri=n.r0;ri<=n.r1;ri++){ var dr=m.disp[ri]; if(!dr) continue; for(var ci=n.c0;ci<=n.c1;ci++){ var c=m.cols[ci]; if(!c||c.kind!=='num') continue; var v=dr.vals?dr.vals[c.id]:undefined; if(v==null) continue; cnt++; sum+=v; if(v<mn) mn=v; if(v>mx) mx=v; } } return {cnt:cnt,sum:sum,avg:cnt?sum/cnt:0,mn:cnt?mn:0,mx:cnt?mx:0,rows:n.r1-n.r0+1,cols:n.c1-n.c0+1}; }
+  rangeData(){ var m=this._m, s=this.state, self=this; if(!m||!s.sel) return null; var n=norm(s.sel); var cols=m.cols.slice(n.c0,n.c1+1).filter(function(c){ return c.kind==='num'; }); var cats=[]; for(var ri=n.r0;ri<=n.r1;ri++){ var dr=m.disp[ri]; if(!dr) continue; var vals=cols.map(function(c){ return dr.vals?dr.vals[c.id]:undefined; }); if(vals.every(function(v){ return v==null; })) continue; cats.push({label:self.rowLabel(dr),vals:vals.map(function(v){ return v||0; })}); } return {cols:cols,cats:cats,series:cols.map(function(c){ return c.full||c.label; })}; }
+  copySel(withHeaders){
+    var m=this._m, s=this.state, self=this; if(!m||!s.sel) return; var n=norm(s.sel); var cols=m.cols.slice(n.c0,n.c1+1).filter(function(c){ return c.kind!=='actions'; }); var lines=[];
+    if(withHeaders) lines.push(['الحساب'].concat(cols.map(function(c){ return c.full||c.label; })).join('\t'));
+    for(var ri=n.r0;ri<=n.r1;ri++){ var dr=m.disp[ri]; if(!dr) continue; var vals=cols.map(function(c){ if(c.kind==='num'){ var v=dr.vals?dr.vals[c.id]:undefined; return v==null?'':String(r2(v)); } return dr.kind==='leaf'?self.val(dr.r,c.id):''; }); lines.push((withHeaders?[self.rowLabel(dr)]:[]).concat(vals).join('\t')); }
+    try{ navigator.clipboard.writeText(lines.join('\n')).catch(function(){}); }catch(_){}
+    this.setState({menu:null}); this.toast('تم نسخ '+((n.r1-n.r0+1)*(n.c1-n.c0+1))+' خلية'+(withHeaders?' مع الرؤوس':''));
+  }
+  openPivotCell(e,dr,c){
+    var self=this; var rs=c.key==null?dr.rows:dr.rows.filter(function(r){ return self.pkey(r)===c.key; });
+    rs=rs.slice().sort(function(a,b){ return Math.abs(b[c.f])-Math.abs(a[c.f]); });
+    var a=this.anchor(e.currentTarget); var pos=this.place(a,360,340);
+    this.setState({menu:Object.assign({type:'pv',key:'pv',w:360},pos,{pv:{title:this.rowLabel(dr)+(c.key?' · '+c.key:' · الإجمالي'),sub:CM[c.f].full||CM[c.f].label,count:rs.length,total:fmtP(dr.vals[c.id]),items:rs.map(function(r){ var v=r[c.f]; return {no:r.no,name:r.name,v:fmtP(v),vCls:'v'+(v<0?' neg':''),open:function(){ self.openDrawer(r.id); }}; })}})});
+  }
+  dragStartCol(e,id){ this.dragItem={type:'col',id:id}; try{ e.dataTransfer.setData('text/plain',id); e.dataTransfer.effectAllowed='copyMove'; }catch(_){} setTimeout(()=>this.setState({dragging:'col'}),0); }
+  dragStartItem(e,type,idx,id){ e.stopPropagation(); this.dragItem={type:type,idx:idx,id:id}; try{ e.dataTransfer.setData('text/plain',id); e.dataTransfer.effectAllowed='move'; }catch(_){} setTimeout(()=>this.setState({dragging:type}),0); }
+  dropOn(zone,idx){ var self=this; return function(e){ e.preventDefault(); e.stopPropagation(); var d=self.dragItem; self.dragItem=null; self.setState({dragging:null}); if(d) self.handleDrop(zone,d,idx); }; }
+  handleDrop(zone,d,idx){
+    var s=this.state;
+    if(zone==='groups'||zone==='pcols'){
+      var key=zone==='groups'?'groups':'pivotCols', own=zone==='groups'?'grp':'pcol'; var arr=s[key].slice(); var o={};
+      var at=function(){ return idx==null?arr.length:Math.min(idx,arr.length); };
+      if(d.type===own){ var mv=arr.splice(d.idx,1)[0]; arr.splice(at(),0,mv); }
+      else if(d.type==='col'&&CM[d.id]&&CM[d.id].dim){ if(arr.indexOf(d.id)>=0) return; arr.splice(at(),0,d.id); }
+      else if(d.type==='grp'||d.type==='pcol'){ var fk=d.type==='grp'?'groups':'pivotCols'; var src=s[fk].slice(); var id=src.splice(d.idx,1)[0]; if(arr.indexOf(id)<0) arr.splice(at(),0,id); o[fk]=src; }
+      else return;
+      o[key]=arr; o.expanded={};
+      if(zone==='pcols'&&this.curView()!=='pivot') o.view='pivot';
+      this.upd(o); return;
+    }
+    if(zone==='values'&&d.type==='col'&&CM[d.id]&&CM[d.id].kind==='num'){
+      if(this.curView()==='pivot'){ if(!s.pivotVals.some(function(v){ return v.f===d.id; })) this.upd({pivotVals:s.pivotVals.concat([{f:d.id,fn:'sum'}])}); }
+      else { var visible=Object.assign({},s.visible); visible[d.id]=true; this.upd({visible:visible}); }
+    }
+  }
+  setPin(id,v){ var pinned=Object.assign({},this.state.pinned); if(v) pinned[id]=v; else delete pinned[id]; this.setState({pinned:pinned,sel:null}); }
+  autoSize(id){
+    var s=this.state, rows=s.rows||[], self=this; var widths=Object.assign({},s.widths);
+    var fit=function(c){ if(c.kind==='num') return 124; if(c.kind==='actions') return 156; if(c.id==='account'||c.id==='__pg'){ var l=rows.reduce(function(a,r){ return Math.max(a,r.name.length); },0); return Math.min(420,Math.round(l*7.6+120)); } var l2=rows.reduce(function(a,r){ return Math.max(a,String(self.val(r,c.id)).length); },c.label.length); return Math.min(320,Math.round(l2*7.4+56)); };
+    var list=id?[CM[id]||{id:id,kind:id.charAt(0)==='_'?'group':'num',label:''}]:(this._m?this._m.cols:[]);
+    list.forEach(function(c){ widths[c.id]=fit(c); });
+    this.setState({widths:widths});
+  }
+  colMenuItems(mn){
+    var s=this.state, self=this, id=mn.col, c=CM[id]||{id:id,label:'',kind:id==='__pg'?'group':'num'}, pv=mn.pivot, pin=s.pinned[id]||null;
+    var close=function(f){ return function(){ f(); self.setState({menu:null}); }; };
+    var it=function(label,act,o){ return Object.assign({item:true,label:label,act:close(act),ic:{},hint:''},o||{}); };
+    var out=[];
+    if(!pv){
+      out.push(it('تثبيت يمين',function(){ self.setPin(id,'start'); },{check:pin==='start',ic:pin==='start'?{}:{pin:true}}));
+      out.push(it('تثبيت يسار',function(){ self.setPin(id,'end'); },{check:pin==='end'}));
+      out.push(it('بدون تثبيت',function(){ self.setPin(id,null); },{check:!pin}));
+      out.push({sep:true});
+    }
+    out.push(it('ضبط العرض تلقائياً',function(){ self.autoSize(id); },{ic:{fit:true}}));
+    out.push(it('ضبط كل الأعمدة تلقائياً',function(){ self.autoSize(null); }));
+    if(!pv){
+      out.push({sep:true});
+      out.push(it(c.dim?'تجميع حسب «'+c.label+'»':'تجميع حسب هذا العمود',function(){ if(c.dim&&s.groups.indexOf(id)<0) self.upd({groups:s.groups.concat([id]),expanded:{}}); },{ic:{group:true},disabled:!c.dim||s.groups.indexOf(id)>=0}));
+      if(c.kind==='actions'){ out.push({sep:true}); out.push(it('إخفاء العمود',function(){ var visible=Object.assign({},s.visible); visible[id]=false; self.upd({visible:visible}); },{ic:{hide:true}})); out.push(it('إعادة ضبط الأعمدة',function(){ self.setState({visible:Object.assign({},DEF_VIS),pinned:{account:'start',actions:'end'},widths:{},sort:null,sel:null}); },{ic:{reset:true}})); return out; }
+      if(c.kind==='text') out.push({item:true,label:'فلترة القيم…',ic:{filter:true},hint:'',act:function(){ self.setState({menu:{type:'set',key:'set:'+id,col:id,top:mn.top,right:mn.right,w:264},setQ:''}); }});
+      out.push({sep:true});
+      out.push(it('ترتيب تصاعدي',function(){ self.setState({sort:{id:id,dir:'asc'},sel:null}); },{ic:{sortA:true}}));
+      out.push(it('ترتيب تنازلي',function(){ self.setState({sort:{id:id,dir:'desc'},sel:null}); },{ic:{sortD:true}}));
+      out.push({sep:true});
+      out.push(it('إخفاء العمود',function(){ var visible=Object.assign({},s.visible); visible[id]=false; self.upd({visible:visible}); },{ic:{hide:true},disabled:id==='account'}));
+    }
+    out.push(it('إعادة ضبط الأعمدة',function(){ self.setState({visible:Object.assign({},DEF_VIS),pinned:{account:'start',actions:'end'},widths:{},sort:null,sel:null}); },{ic:{reset:true}}));
+    return out;
+  }
+  ctxItems(mn){
+    var self=this; var close=function(f){ return function(){ f(); self.setState({menu:null}); }; };
+    var it=function(label,act,o){ return Object.assign({item:true,label:label,act:close(act),ic:{},hint:''},o||{}); };
+    return [
+      it('نسخ',function(){ self.copySel(false); },{ic:{copy:true},hint:'Ctrl+C'}),
+      it('نسخ مع الرؤوس',function(){ self.copySel(true); },{hint:'Ctrl+Shift+C'}),
+      {sep:true},
+      it('تصدير المحدد إلى Excel',function(){ self.toast('تم تجهيز ملف Excel بالنطاق المحدد'); },{ic:{export:true}}),
+      it('تصدير المحدد CSV',function(){ self.toast('تم تجهيز ملف CSV بالنطاق المحدد'); }),
+      {sep:true},
+      it('إنشاء رسم من النطاق المحدد',function(){ self.setState({chart:{type:'col',off:{}}}); },{ic:{chart:true}}),
+      {sep:true},
+      it('فتح كشف الحساب',function(){ self.openDrawer(mn.acc); },{ic:{doc:true},disabled:!mn.acc})
+    ];
+  }
+  rowItems(mn){
+    var self=this, r=(this.state.rows||[]).find(function(x){ return x.id===mn.acc; }); if(!r) return [];
+    var close=function(f){ return function(){ f(); self.setState({menu:null}); }; };
+    var it=function(label,act,o){ return Object.assign({item:true,label:label,act:close(act),ic:{},hint:''},o||{}); };
+    return [
+      it('فتح كشف الحساب',function(){ self.openDrawer(r.id); },{ic:{doc:true}}),
+      it('دفتر الأستاذ العام',function(){ self.toast('سيُفتح دفتر الأستاذ العام مفلتراً بالحساب '+r.label); },{ic:{book:true}}),
+      it('فتح الحساب في ERPNext',function(){ self.toast('سيُفتح سجل الحساب '+r.label); },{ic:{ext:true}}),
+      {sep:true},
+      it('فلترة التقرير بهذا الحساب',function(){ self.upd({q:r.no}); },{ic:{filter:true}}),
+      it('قيد يومية جديد على الحساب',function(){ self.toast('سيُفتح قيد يومية جديد مع الحساب '+r.label); },{ic:{plus:true}}),
+      {sep:true},
+      it('نسخ رقم الحساب',function(){ try{ navigator.clipboard.writeText(r.no).catch(function(){}); }catch(_){} self.toast('تم نسخ '+r.no); },{ic:{copy:true},hint:r.no})
+    ];
+  }
+  openDrawer(id){ if(id) this.setState({drawer:id,menu:null}); }
+  snapshot(){ var s=this.state; return JSON.parse(JSON.stringify({q:s.q,sets:s.sets,ranges:s.ranges,presets:s.presets,groups:s.groups,visible:s.visible,pivotCols:s.pivotCols,pivotVals:s.pivotVals,aggFns:s.aggFns,footers:s.footers,view:this.curView()})); }
+  applyView(v){ var d=this.viewDefaults(); var sn=JSON.parse(JSON.stringify(v.snap||{})); var visible=sn.visible?sn.visible:Object.assign({},d.visible); (sn.hide||[]).forEach(function(c){ visible[c]=false; }); var st=Object.assign({},d,sn,{visible:visible,expanded:{},sel:null,menu:null,activeView:v.id,searchText:''}); delete st.hide; this.setState(st); this.toast('تم تطبيق العرض «'+v.name+'»'); }
+  describe(sn){ var parts=[]; var nf2=Object.keys(sn.sets||{}).length+Object.keys(sn.ranges||{}).length+Object.keys(sn.presets||{}).length+(sn.q?1:0); parts.push(nf2?nf2+' فلاتر':'بدون فلاتر'); parts.push(sn.groups&&sn.groups.length?'تجميع: '+sn.groups.map(function(g){ return CM[g].label; }).join(' › '):'بدون تجميع'); if(sn.view==='pivot') parts.push('وضع التحليل'); return parts.join(' · '); }
+  saveView(){ var s=this.state; var name=s.favName.trim()||('عرض '+(s.favs.length+1)); var sn=this.snapshot(); var v={id:'u'+Date.now(),name:name,desc:this.describe(sn),snap:sn}; this.setState({favs:s.favs.concat([v]),favName:'',activeView:v.id,menu:null}); this.toast('تم حفظ العرض «'+name+'» في المفضلة'); }
+  printModel(m,chips){
+    var s=this.state, pr=s.print, self=this; var land=pr.orient==='land'; var pw=land?1060:750, ph=land?750:1060; var inner=pw-80;
+    var cols=m.cols.filter(function(c){ return c.kind==='group'||(c.kind!=='actions'&&pr.cols[c.id]!==false); });
+    var n=cols.length; var fw=Math.round(inner*(n>7?(land?0.24:0.30):(land?0.30:0.36))); var rw=n>1?Math.floor((inner-fw)/(n-1)):0;
+    var pc=cols.map(function(c,i){ return {c:c,w:i===0?fw:rw}; });
+    var bands=[]; pc.forEach(function(x){ var b=x.c.band||null; var l=bands[bands.length-1]; if(b&&l&&l.b===b) l.w+=x.w; else bands.push({b:b,w:x.w,label:b?(m.pivot?x.c.bandLabel:BANDS[b]):''}); });
+    var lineOf=function(dr){ return {cls:'rv-pl '+dr.kind,cells:pc.map(function(x,i){ var c=x.c; if(i===0) return {w:x.w,text:dr.kind==='leaf'?dr.r.label:(dr.kind==='foot'?'إجمالي '+short(dr.node.key):(dr.kind==='total'?'الإجمالي العام':dr.node.key)),cls:'',ind:4+dr.depth*12}; if(c.kind==='num'){ var v=dr.vals?dr.vals[c.id]:undefined; return {w:x.w,text:v==null?'':((m.pivot||c.side==='net')?fmtP(v):fmt(v)),cls:'rv-pnum',ind:4}; } return {w:x.w,text:dr.kind==='leaf'?self.val(dr.r,c.id):'',cls:'',ind:4}; })}; };
+    var body=m.disp.filter(function(dr){ return dr.kind!=='total'; }); if(!pr.subtotals) body=body.filter(function(dr){ return dr.kind!=='foot'; });
+    var totalDr=m.disp.find(function(dr){ return dr.kind==='total'; });
+    var lines=body.map(lineOf);
+    var per=land?25:42, firstPer=per-7, pages=[], i=0;
+    pages.push(lines.slice(0,firstPer)); i=firstPer; while(i<lines.length){ pages.push(lines.slice(i,i+per)); i+=per; }
+    var last=pages[pages.length-1]; var cap=pages.length===1?firstPer:per; if(pr.sign&&last.length>cap-7) pages.push([]);
+    var count=pages.length;
+    return {pw:pw,ph:ph,bands:bands.map(function(b){ return {w:b.w,label:b.label}; }),hasBands:bands.some(function(b){ return b.b; }),cols:pc.map(function(x){ return {w:x.w,label:x.c.label,cls:x.c.kind==='num'?'rv-pnum':''}; }),
+      pages:pages.map(function(ls,pi){ return {n:pi+1,first:pi===0,last:pi===count-1,lines:ls}; }),count:count,total:totalDr?lineOf(totalDr):{cells:[]},hasTotal:!!totalDr};
+  }
+
+  renderVals(){
+    var s=this.state, p=this.props, self=this;
+    var dens=s.density||p.density||'comfortable', compact=dens==='compact';
+    var dark=s.dark!=null?s.dark:(p.theme==='dark');
+    var demo=p.demoState||'live';
+    var view=this.curView(), isPivot=view==='pivot', isCharts=view==='charts';
+    var run=s.run, allRows=s.rows||[];
+    var rows=this.applyFilters(allRows); if(demo==='empty') rows=[];
+    var chips=this.chips();
+    var loading=demo==='loading'||(s.loading&&demo!=='error'&&demo!=='empty');
+    var error=demo==='error'?DEMO_ERR:(loading?null:s.error);
+    var ready=!loading&&!error;
+    var empty=ready&&rows.length===0;
+    var filtered=chips.length>0||demo==='empty';
+
+    /* grid or pivot model */
+    var m=isPivot?this.pivotModel(rows,compact):this.gridModel(rows,compact); this._m=m;
+    var ind=compact?14:18; var sel=s.sel?norm(s.sel):null;
+    var gRows=ready&&!empty?m.disp.map(function(dr,ri){ return {cls:'rv-row '+dr.kind+(dr.kind==='group'?' d'+Math.min(dr.depth,2)+(isPivot&&!dr.hasKids?' pvleaf':''):''),cells:self.rowCells(m,dr,ri,sel,ind),dbl:dr.kind==='leaf'?function(){ self.openDrawer(dr.r.id); }:null}; }):[];
+    var skel=loading?Array.from({length:16},function(_,i){ return {cells:m.cols.map(function(c,ci){ return {w:c.W,sticky:c.sticky,cls:'rv-c'+(c.kind==='num'?' num':'')+c.edge+(c.pin?' pinned':''),bw:(c.kind==='num'?38+((i*7+ci*13)%42):(c.kind==='group'?40+((i*11)%42):30+((i*5+ci*3)%40)))+'%'}; })}; }):[];
+    var g={totalW:m.totalW,hgroups:this.headGroups(m.cols,isPivot),showFloat:!isPivot};
+
+    /* summary cards */
+    var sumk=function(k){ return rows.reduce(function(a,r){ return a+r[k]; },0); };
+    var mk=function(label,dk,ck){ var dv=sumk(dk), cv=sumk(ck), diff=r2(dv-cv), bal=Math.abs(diff)<0.01; var o={label:label,loading:loading,notLoading:!loading,d:ready&&!empty?fmt(dv):'—',c:ready&&!empty?fmt(cv):'—',ok:false,neu:false,bad:false};
+      if(loading){ o.pill='rv-pill neu'; o.pillText='جارٍ الحساب…'; o.note='يُعاد احتساب الأرصدة من القيود'; }
+      else if(error){ o.pill='rv-pill neu'; o.pillText='غير متاح'; o.note='تعذّر تحميل البيانات'; }
+      else if(empty){ o.pill='rv-pill neu'; o.neu=true; o.pillText='لا توجد صفوف'; o.note='الفلاتر الحالية استبعدت كل الحسابات'; }
+      else if(bal){ o.pill='rv-pill ok'; o.ok=true; o.pillText='متوازن'; o.note=filtered?'متوازن ضمن '+rows.length+' من '+allRows.length+' حساباً':'الفرق 0.00 · جميع الحسابات ('+allRows.length+')'; }
+      else if(filtered){ o.pill='rv-pill neu'; o.neu=true; o.pillText='فرق بسبب الفلترة'; o.note='الفرق '+nf(diff,2)+' — ناتج عن استبعاد حسابات بالفلاتر، وليس خطأ في القيود'; }
+      else { o.pill='rv-pill err'; o.bad=true; o.pillText='غير متوازن'; o.note='الفرق '+nf(diff,2)+' — راجع القيود غير المتوازنة'; }
+      return o; };
+    var cards=[mk('الرصيد الافتتاحي','od','oc'),mk('حركة الفترة','dr','cr'),mk('الرصيد الختامي','cd','cc')];
+
+    /* server bar */
+    var pending=s.company!==run.company||s.from!==run.from||s.to!==run.to;
+    var srv={cls:'rv-server'+(pending?' pending':''),company:String(s.company),from:s.from,to:s.to,pending:pending,fresh:!pending,
+      note:loading?'جارٍ جلب البيانات من الخادم…':(s.rows?'البيانات محدّثة · '+allRows.length+' صفاً غير مجمّع من الخادم':'لم يتم التشغيل بعد'),
+      onCompany:function(e){ self.setState({company:+e.target.value}); },
+      periodText:fd(s.from)+' – '+fd(s.to),presetLabel:(s.periodTag&&s.periodTag.from===s.from&&s.periodTag.to===s.to)?s.periodTag.label:(presetList(todayIso()).find(function(pp){ return pp.r&&pp.r[0]===s.from&&pp.r[1]===s.to; })||{label:'فترة مخصصة'}).label,
+      dateCls:'rv-datefield'+(s.menu&&s.menu.type==='date'?' on':''),openDate:function(e){ self.openDate(e); }};
+    var hdr={company:COMPANIES[run.company],period:fd(run.from)+' – '+fd(run.to),runAt:run.at?'آخر تشغيل '+run.at:'جارٍ التشغيل…'};
+
+    /* group panel & pivot panel */
+    var gchips=s.groups.map(function(k,i){ return {label:CM[k].label,arrow:i<s.groups.length-1,rm:function(){ self.upd({groups:s.groups.filter(function(x){ return x!==k; }),expanded:{}}); },dragStart:function(e){ self.dragStartItem(e,'grp',i,k); },drop:self.dropOn('groups',i)}; });
+    var gp={cls:'rv-gp'+(s.dragging?' drop':''),title:isPivot?'صفوف التحليل':'مجموعات الصفوف',empty:!s.groups.length,chips:gchips,drop:this.dropOn('groups',null),showFooterToggle:!isPivot};
+    var vl=s.pivotVals.map(function(v){ return FN_AR[v.fn]+' '+(CM[v.f].full||CM[v.f].label); }).join('، ');
+    var pvp={show:isPivot,empty:!s.pivotCols.length,chips:s.pivotCols.map(function(k,i){ return {label:CM[k].label,rm:function(){ self.upd({pivotCols:s.pivotCols.filter(function(x){ return x!==k; })}); },dragStart:function(e){ self.dragStartItem(e,'pcol',i,k); },drop:self.dropOn('pcols',i)}; }),drop:this.dropOn('pcols',null),valueLabel:vl||'—'};
+
+    /* side panel */
+    var cq=s.colQ.trim();
+    var colList=COLS.filter(function(c){ var l=c.full||c.label; return !cq||l.indexOf(cq)>=0; }).map(function(c){ return {label:c.full||c.label,on:c.id==='account'||!!s.visible[c.id],locked:c.id==='account',tag:c.kind==='num'?'123':(c.kind==='actions'?'زر':(c.dim?'بُعد':'Aa')),tagCls:'rv-coltag'+(c.dim?' dim':''),toggle:function(){ if(c.id==='account') return; var visible=Object.assign({},s.visible); visible[c.id]=!visible[c.id]; self.upd({visible:visible}); },dragStart:function(e){ self.dragStartCol(e,c.id); }}; });
+    var vals=isPivot?s.pivotVals.map(function(v,i){ return {label:CM[v.f].full||CM[v.f].label,fn:v.fn,setFn:function(e){ var pv=s.pivotVals.slice(); pv[i]={f:v.f,fn:e.target.value}; self.upd({pivotVals:pv}); },rm:function(){ self.upd({pivotVals:s.pivotVals.filter(function(_,j){ return j!==i; })}); }}; })
+      :COLS.filter(function(c){ return c.kind==='num'&&s.visible[c.id]; }).map(function(c){ return {label:c.full||c.label,fn:s.aggFns[c.id]||'sum',setFn:function(e){ var aggFns=Object.assign({},s.aggFns); aggFns[c.id]=e.target.value; self.setState({aggFns:aggFns}); },rm:function(){ var visible=Object.assign({},s.visible); visible[c.id]=false; self.upd({visible:visible}); }}; });
+    var fOpen=function(id,def){ return s.fOpen[id]!=null?s.fOpen[id]:def; };
+    var fsecs=[];
+    var addSec=function(o){ o.open=fOpen(o.id,o.active||o.id==='q'||o.id==='atype'||o.id==='presets'); o.chevCls=o.open?'open':''; o.toggle=function(){ var f=Object.assign({},s.fOpen); f[o.id]=!o.open; self.setState({fOpen:f}); }; fsecs.push(o); };
+    addSec({id:'q',label:'الحساب',active:!!s.q,isText:true});
+    ['atype','rtype','nature','parent','root'].forEach(function(k){ addSec({id:k,label:CM[k].label,active:!!s.sets[k],isSet:true,set:self.setItems(k,'')}); });
+    COLS.filter(function(c){ return c.kind==='num'; }).forEach(function(c){ var gg=s.ranges[c.id]||{min:'',max:''}; addSec({id:c.id,label:c.full,active:!!s.ranges[c.id],isNum:true,min:gg.min,max:gg.max,onMin:function(e){ self.setRange(c.id,'min',e.target.value); },onMax:function(e){ self.setRange(c.id,'max',e.target.value); }}); });
+    addSec({id:'presets',label:'خيارات سريعة',active:PRESETS.some(function(pp){ return s.presets[pp.id]; }),isPreset:true,items:PRESETS.map(function(pp){ return {label:pp.label,on:!!s.presets[pp.id],toggle:function(){ self.togglePreset(pp.id); }}; })});
+    var side={cols:s.side==='cols',filters:s.side==='filters',tabCols:'rv-sidetab'+(s.side==='cols'?' on':''),tabFilt:'rv-sidetab'+(s.side==='filters'?' on':''),
+      openCols:function(){ self.setState({side:s.side==='cols'?null:'cols'}); },openFilters:function(){ self.setState({side:s.side==='filters'?null:'filters'}); },close:function(){ self.setState({side:null}); },
+      hasActive:chips.length>0,activeCount:chips.length,pivotSw:'rv-switch'+(isPivot?' on':''),colQ:s.colQ,onColQ:function(e){ self.setState({colQ:e.target.value}); },colList:colList,
+      zoneG:'rv-zone'+(s.dragging==='col'||s.dragging==='grp'||s.dragging==='pcol'?' drop':''),zoneV:'rv-zone'+(s.dragging==='col'?' drop':''),zoneP:'rv-zone'+(isPivot?'':' off')+(s.dragging?' drop':''),
+      dropG:this.dropOn('groups',null),dropV:this.dropOn('values',null),vals:vals,noVals:!vals.length,pivotOff:!isPivot,fsecs:fsecs};
+
+    /* status */
+    var stt=ready&&!empty?this.selStats(m):null;
+    var status={shown:rows.length,total:allRows.length,groups:(this._paths||[]).length,filtered:filtered,filters:chips.length,hasSel:!!stt,noSel:!stt,
+      dims:stt?stt.rows+' × '+stt.cols:'',cnt:stt?stt.cnt:0,sum:stt?fmt(stt.sum):'',avg:stt?fmt(stt.avg):'',mn:stt?fmt(stt.mn):'',mx:stt?fmt(stt.mx):''};
+    var st={empty:empty&&!isCharts,error:!!error&&!isCharts,ovCls:'rv-stateov'+(isPivot?' nofloat':''),total:allRows.length,errTitle:error?error.title:'',errMsg:error?error.msg:'',errCode:error?error.code:''};
+
+    /* charts */
+    var ch={ready:isCharts&&ready&&!empty,notReady:isCharts&&!(ready&&!empty)};
+    if(ch.notReady){ ch.stateTitle=loading?'جارٍ تجهيز الرسوم…':(error?error.title:'لا توجد بيانات للرسم'); ch.stateMsg=loading?'تُبنى الرسوم من نفس الصفوف بعد وصولها من الخادم.':(error?error.msg:'الفلاتر الحالية استبعدت كل الحسابات. أزل بعضها من شريط البحث.'); }
+    if(ch.ready){
+      var byRt=ROOT_ORDER.map(function(rt){ var rs=rows.filter(function(r){ return r.rt===rt; }); return {label:ROOT_AR[rt],d:aggr(rs,'cd','sum'),c:aggr(rs,'cc','sum')}; });
+      var mx=niceMax(Math.max.apply(null,[1].concat(byRt.map(function(x){ return Math.max(x.d,x.c); }))));
+      ch.ticks=[0,25,50,75,100].map(function(pp){ return {p:pp,label:fmtS(mx*pp/100)}; });
+      ch.byRoot=byRt.map(function(x){ return {label:x.label,dh:(x.d/mx*100).toFixed(2),ch:(x.c/mx*100).toFixed(2),dt:x.label+' · مدين: '+fmt(x.d),ct:x.label+' · دائن: '+fmt(x.c)}; });
+      var ex=rows.filter(function(r){ return r.rt==='Expense'&&r.cn>0; }).sort(function(a,b){ return b.cn-a.cn; });
+      var items=ex.slice(0,6).map(function(r){ return {label:r.name,v:r.cn}; }); var rest=ex.slice(6).reduce(function(a,r){ return a+r.cn; },0); if(rest>0) items.push({label:'أخرى',v:rest});
+      var pal=function(i){ return (rest>0&&i===items.length-1)?6:i; };
+      var segs=donut(items,pal); ch.segs=segs; var et=items.reduce(function(a,x){ return a+x.v; },0); ch.expTotal=fmtS(et);
+      ch.legend=items.map(function(it,i){ return {label:it.label,color:segs[i].color,v:fmt(it.v),p:segs[i].pct}; });
+      var mv=rows.filter(function(r){ return r.dr+r.cr>0; }).sort(function(a,b){ return (b.dr+b.cr)-(a.dr+a.cr); }).slice(0,10); var m2=Math.max.apply(null,[1].concat(mv.map(function(r){ return r.dr+r.cr; })));
+      ch.top=mv.map(function(r){ return {no:r.no,name:r.name,dw:(r.dr/m2*100).toFixed(2),cw:(r.cr/m2*100).toFixed(2),total:fmtS(r.dr)+' / '+fmtS(r.cr),title:r.label+' — مدين '+fmt(r.dr)+' · دائن '+fmt(r.cr),open:function(){ self.openDrawer(r.id); }}; });
+    }
+
+    /* popovers */
+    var mn=s.menu, dpv={}, menu={cls:'rv-pop',isDate:false,open:!!mn&&(ready||mn.type==='date'),top:0,right:0,w:240,hasItems:false,isSet:false,isFav:false,isSearch:false,isPv:false,title:''};
+    var fav={ready:[],mine:[],noMine:true}, sr={hasText:false,noText:true}, pv={};
+    if(menu.open){
+      menu.top=mn.top; menu.right=mn.right; menu.w=mn.w;
+      if(mn.type==='col'){ menu.hasItems=true; menu.items=this.colMenuItems(mn); menu.title=(CM[mn.col]&&(CM[mn.col].full||CM[mn.col].label))||'عمود التحليل'; }
+      if(mn.type==='ctx'){ menu.hasItems=true; menu.items=this.ctxItems(mn); var ss=this.selStats(m); menu.title=ss?'النطاق '+ss.rows+' × '+ss.cols+(ss.cnt?' · المجموع '+fmt(ss.sum):''):''; }
+      if(mn.type==='set'){ menu.isSet=true; menu.set=this.setItems(mn.col,s.setQ); menu.title2=CM[mn.col].label; menu.setQ=s.setQ; menu.onSetQ=function(e){ self.setState({setQ:e.target.value}); }; menu.clearSet=function(){ self.setSets(mn.col,null); }; }
+      if(mn.type==='row'){ menu.hasItems=true; menu.items=this.rowItems(mn); var rr=(s.rows||[]).find(function(x){ return x.id===mn.acc; }); menu.title=rr?rr.label:''; }
+      if(mn.type==='fav'){ menu.isFav=true; }
+      if(mn.type==='search'){ menu.isSearch=true; }
+      if(mn.type==='pv'){ menu.isPv=true; pv=mn.pv; }
+      if(mn.type==='date'&&s.dp){ menu.isDate=true; menu.cls='rv-pop dp'; dpv=this.dpModel(); }
+    }
+    fav={ready:READY.map(function(v){ return {name:v.name,desc:v.desc,cls:'rv-fav-item'+(s.activeView===v.id?' on':''),apply:function(){ self.applyView(v); }}; }),
+      mine:s.favs.map(function(v){ return {name:v.name,desc:v.desc,cls:'rv-fav-item'+(s.activeView===v.id?' on':''),apply:function(){ self.applyView(v); },rm:function(){ self.setState({favs:s.favs.filter(function(x){ return x.id!==v.id; })}); }}; }),
+      noMine:!s.favs.length,name:s.favName,onName:function(e){ self.setState({favName:e.target.value}); },key:function(e){ if(e.key==='Enter') self.saveView(); },save:function(){ self.saveView(); },summary:'سيُحفظ: '+this.describe(this.snapshot())};
+    var active=READY.concat(s.favs).find(function(v){ return v.id===s.activeView; });
+    var t=s.searchText.trim();
+    sr={hasText:!!t,noText:!t,text:t,
+      sugg:[{k:'الحساب',hint:'Enter',act:function(){ self.upd({q:t,searchText:'',menu:null}); }},{k:'نوع الحساب',hint:'',act:function(){ self.searchSet('atype',t); }},{k:'الحساب الرئيسي',hint:'',act:function(){ self.searchSet('parent',t); }},{k:'الحساب الجذري',hint:'',act:function(){ self.searchSet('root',t); }}],
+      presets:PRESETS.map(function(pp){ return {label:pp.label,on:!!s.presets[pp.id],toggle:function(){ self.togglePreset(pp.id); }}; }),
+      roots:ROOT_ORDER.map(function(rt){ var l=ROOT_AR[rt], a=s.sets.rtype; return {label:l,on:!!a&&a.indexOf(l)>=0,toggle:function(){ self.toggleRoot(l); }}; }),
+      groupBy:DIMS.map(function(k){ var i=s.groups.indexOf(k); return {label:CM[k].label,on:i>=0,order:i>=0?String(i+1):'',toggle:function(){ self.toggleGroupDim(k); }}; })};
+
+    /* drawer */
+    var dw={open:false};
+    var row=s.drawer?allRows.find(function(r){ return r.id===s.drawer; }):null;
+    if(row&&window.TB_DATA){
+      var d=window.TB_DATA, tx=[];
+      d.gl.forEach(function(gl){ if(gl[0]===run.company&&gl[2]===row.id&&gl[1]>=run.from&&gl[1]<=run.to) tx.push(gl); });
+      tx.sort(function(a,b){ return a[1]<b[1]?-1:(a[1]>b[1]?1:0); });
+      var bal=row.on, ndr=0, ncr=0;
+      self._dwTx=tx.map(function(gl){ return gl[6]; });
+      var balAfter={};
+      var lines=tx.map(function(gl,i){ bal=r2(bal+gl[3]-gl[4]); balAfter[i]=bal; if(gl[3]) ndr++; if(gl[4]) ncr++; var party=d.parties[gl[7]]; return {date:fd(gl[1]),vno:gl[6],vt:VT_AR[d.vts[gl[5]]]||d.vts[gl[5]],rem:d.remarks[gl[8]],party:party||'—',partyCls:'rv-dc'+(party?'':' mut'),dr:gl[3]?fmt(gl[3]):'',cr:gl[4]?fmt(gl[4]):'',bal:fmt(Math.abs(bal)),bside:Math.abs(bal)<0.005?'':(bal>0?'مدين':'دائن'),bcls:'rv-baltag '+(bal>=0?'dr':'cr'),rowCls:'rv-drow click'+(s.voucher&&s.voucher.i===i?' cur':''),open:function(e){ if(e&&e.stopPropagation) e.stopPropagation(); self.setState({voucher:{vno:gl[6],i:i}}); }}; });
+      self._dwBal=balAfter; self._dwRow=row; self._dwGl=tx;
+      var sideOf=function(v){ return Math.abs(v)<0.005?'صفري':(v>0?'مدين':'دائن'); };
+      dw={open:true,no:row.no,name:row.name,parent:row.parentName,rt:row.rtLabel,at:row.at,company:COMPANIES[run.company],period:fd(run.from)+' – '+fd(run.to),fromD:fd(run.from),
+        tiles:[{label:'الرصيد الافتتاحي',val:fmt(Math.abs(row.on)),cls:row.on>=0?'dr':'cr',sub:sideOf(row.on)},{label:'مدين الفترة',val:fmt(row.dr),cls:'dr',sub:ndr+' حركة مدينة'},{label:'دائن الفترة',val:fmt(row.cr),cls:'cr',sub:ncr+' حركة دائنة'},{label:'الرصيد الختامي',val:fmt(Math.abs(row.cn)),cls:row.cn>=0?'dr':'cr',sub:sideOf(row.cn)}],
+        lines:lines,count:lines.length,noLines:!lines.length,opening:fmt(Math.abs(row.on)),openTag:'rv-baltag '+(row.on>=0?'dr':'cr'),openSide:Math.abs(row.on)<0.005?'':(row.on>0?'مدين':'دائن'),
+        totDr:fmt(row.dr),totCr:fmt(row.cr),closing:fmt(Math.abs(row.cn)),closeTag:'rv-baltag '+(row.cn>=0?'dr':'cr'),closeSide:Math.abs(row.cn)<0.005?'':(row.cn>0?'مدين':'دائن')};
+    }
+
+    /* voucher details */
+    var vc={open:false};
+    if(s.voucher&&dw.open&&this._dwGl){
+      var D=window.TB_DATA, an={}; D.accounts.forEach(function(a){ an[a[0]]=a[1]; });
+      var vi=s.voucher.i, g0=this._dwGl[vi];
+      var ents=D.gl.filter(function(gl){ return gl[0]===run.company&&gl[6]===s.voucher.vno; });
+      var tDr=0, tCr=0; ents.forEach(function(gl){ tDr+=gl[3]; tCr+=gl[4]; });
+      var vtype=D.vts[g0[5]]; var pn=D.parties[g0[7]]||'';
+      var acc=ents.map(function(gl){ return gl[2]; });
+      var ptype=vtype==='Sales Invoice'||acc.indexOf('1130')>=0?'العميل':(vtype==='Purchase Invoice'||acc.indexOf('2110')>=0?'المورد':'الطرف');
+      var eff=r2(g0[3]-g0[4]), after=this._dwBal[vi];
+      var tot=this._dwTx.length;
+      var go=function(j){ if(j<0||j>=tot) return; self.setState({voucher:{vno:self._dwTx[j],i:j}}); };
+      var bal2=Math.abs(tDr-tCr)<0.01;
+      var cashIn=ents.some(function(gl){ return ['1110','1120','1121'].indexOf(gl[2])>=0&&gl[3]>0; });
+      vc={open:true,vno:s.voucher.vno,vt:vtype==='Payment Entry'?(cashIn?'سند قبض':'سند صرف'):(VT_AR[vtype]||vtype),company:COMPANIES[run.company],rem:D.remarks[g0[8]],date:fd(g0[1]),partyType:ptype,party:pn||'—',
+        amount:fmt(tDr),accName:row.name,effect:(eff>=0?'مدين ':'دائن ')+nf(eff,2),effCls:eff>=0?'dr':'cr',after:nf(after,2)+(after>=0?' مدين':' دائن'),afterCls:after>=0?'dr':'cr',
+        balCls:'rv-pill '+(bal2?'neu':'err'),balText:bal2?'القيد متوازن':'القيد غير متوازن',
+        lines:ents.map(function(gl){ var cur=gl[2]===row.id; var pp=D.parties[gl[7]]; return {no:gl[2],name:an[gl[2]]||gl[2],cur:cur,party:pp||'—',partyCls:'rv-dc'+(pp?'':' mut'),dr:gl[3]?fmt(gl[3]):'',cr:gl[4]?fmt(gl[4]):'',cls:'rv-drow click'+(cur?' cur':''),open:function(){ self.setState({voucher:null,drawer:gl[2]}); }}; }),
+        count:ents.length,totDr:fmt(tDr),totCr:fmt(tCr),pos:(vi+1)+' من '+tot,noPrev:vi<=0,noNext:vi>=tot-1,prev:function(){ go(vi-1); },next:function(){ go(vi+1); },
+        copy:function(){ try{ navigator.clipboard.writeText(s.voucher.vno).catch(function(){}); }catch(_){} self.toast('تم نسخ '+s.voucher.vno); },
+        print:function(){ self.toast('سيُفتح قالب طباعة '+(VT_AR[vtype]||vtype)); },
+        openErp:function(){ self.toast('سيُفتح '+s.voucher.vno+' في ERPNext'); }};
+    }
+
+    /* chart from range */
+    var cr={open:false};
+    if(s.chart){
+      var rd=this.rangeData(); var off=s.chart.off||{}; var type=s.chart.type;
+      var color=function(i){ return PAL[i%6]; };
+      cr={open:true,isCol:false,isStack:false,isBar:false,isPie:false,empty:false,legend:[],cats:[],ticks:[],segs:[],pieLegend:[],series:[],catCount:0,barW:18};
+      cr.types=[{id:'col',label:'أعمدة مجمّعة',isCol:true},{id:'stack',label:'أعمدة مكدّسة',isStack:true},{id:'bar',label:'أشرطة أفقية',isBar:true},{id:'pie',label:'دائري مجوّف',isPie:true}].map(function(tp){ return Object.assign({},tp,{cls:'rv-ctype'+(tp.id===type?' on':''),pick:function(){ self.setState({chart:Object.assign({},s.chart,{type:tp.id})}); }}); });
+      if(!rd||!rd.cols.length||!rd.cats.length){ cr.empty=true; cr.sub='لا يوجد نطاق رقمي محدد'; }
+      else {
+        var act=rd.series.map(function(l,i){ return i; }).filter(function(i){ return !off[i]; });
+        cr.series=rd.series.map(function(l,i){ return {label:l,color:color(i),on:!off[i],toggle:function(){ var o=Object.assign({},off); o[i]=!o[i]; self.setState({chart:Object.assign({},s.chart,{off:o})}); }}; });
+        cr.legend=act.map(function(i){ return {label:rd.series[i],color:color(i)}; });
+        var cats=rd.cats.slice(0,16); cr.catCount=cats.length;
+        cr.sub=rd.cats.length+' صفاً × '+rd.cols.length+' عموداً رقمياً · '+(rd.cats.length*rd.cols.length)+' قيمة';
+        var mxv=1; cats.forEach(function(c){ if(type==='stack') mxv=Math.max(mxv,act.reduce(function(a,i){ return a+Math.abs(c.vals[i]); },0)); else act.forEach(function(i){ mxv=Math.max(mxv,Math.abs(c.vals[i])); }); });
+        var nm=niceMax(mxv);
+        cr.ticks=[0,25,50,75,100].map(function(pp){ return {p:pp,label:fmtS(nm*pp/100)}; });
+        cr.barW=Math.max(8,Math.min(26,Math.floor(560/Math.max(1,cats.length*Math.max(1,act.length)))));
+        cr.cats=cats.map(function(c){ var tot=act.reduce(function(a,i){ return a+Math.abs(c.vals[i]); },0); return {label:c.label,bars:act.map(function(i){ return {h:(Math.abs(c.vals[i])/nm*100).toFixed(2),color:color(i),title:rd.series[i]+': '+fmt(c.vals[i]),v:fmt(c.vals[i])}; }),stackH:(tot/nm*100).toFixed(2),segs:act.map(function(i){ return {grow:Math.abs(c.vals[i]),color:color(i),title:rd.series[i]+': '+fmt(c.vals[i])}; })}; });
+        if(type==='pie'){ var si=act.length?act[0]:0; var pitems=cats.map(function(c){ return {label:c.label,v:Math.abs(c.vals[si])}; }).filter(function(x){ return x.v>0; }); var psegs=donut(pitems); cr.segs=psegs; cr.pieSeries=rd.series[si]; cr.pieTotal=fmtS(pitems.reduce(function(a,x){ return a+x.v; },0)); cr.pieLegend=pitems.map(function(x,i){ return {label:x.label,color:psegs[i].color,v:fmt(x.v),p:psegs[i].pct}; }); }
+        cr.isCol=type==='col'; cr.isStack=type==='stack'; cr.isBar=type==='bar'; cr.isPie=type==='pie';
+        if(type==='bar') cr.cats.forEach(function(c){ c.bars.forEach(function(b){ b.h=(parseFloat(b.h)*0.82).toFixed(2); }); });
+      }
+    }
+
+    /* print preview */
+    var pr={open:false};
+    if(s.print){
+      var pm=this.printModel(m,chips); var P=s.print;
+      var setP=function(o){ self.setState({print:Object.assign({},s.print,o)}); };
+      pr=Object.assign({open:true,title:P.pdf?'تصدير PDF':'معاينة الطباعة',goLabel:P.pdf?'تنزيل PDF':'طباعة',true:true,
+        portCls:P.orient==='port'?'on':'',landCls:P.orient==='land'?'on':'',toPort:function(){ setP({orient:'port'}); },toLand:function(){ setP({orient:'land'}); },
+        colOpts:m.cols.filter(function(c){ return c.kind!=='group'&&c.kind!=='actions'; }).map(function(c){ return {label:c.full||c.label,on:P.cols[c.id]!==false,toggle:function(){ var cols=Object.assign({},P.cols); cols[c.id]=P.cols[c.id]===false; setP({cols:cols}); }}; }),
+        filters:P.filters,subtotals:P.subtotals,sign:P.sign,tFilters:function(){ setP({filters:!P.filters}); },tSub:function(){ setP({subtotals:!P.subtotals}); },tSign:function(){ setP({sign:!P.sign}); },
+        go:function(){ self.setState({print:null}); self.toast(P.pdf?'تم تجهيز ملف PDF ('+pm.count+' صفحات)':'أُرسل التقرير إلى الطابعة ('+pm.count+' صفحات)'); },
+        company:COMPANIES[run.company],from:fd(run.from),to:fd(run.to),printed:todayFull(),grouping:(isPivot?'تحليل: ':'')+(s.groups.length?s.groups.map(function(k){ return CM[k].label; }).join(' › '):'بدون تجميع'),accCount:rows.length,
+        filterText:chips.length?chips.map(function(c){ return c.k+': '+c.v; }).join('  ·  '):'لا توجد فلاتر — جميع الحسابات',pagesNote:'عدد الصفحات: '+pm.count+'.'},pm);
+    }
+
+    return {
+      rootCls:'rv'+(compact?' compact':'')+(dark?' dark':''), dark:dark, light:!dark,
+      setRoot:this.setRoot, setSearch:this.setSearch, stop:this.stop, allow:this.allow,
+      closeMenus:function(){ if(self.state.menu) self.setState({menu:null}); },
+      densCmf:compact?'':'on', densCmp:compact?'on':'',
+      setComfortable:function(){ self.setState({density:'comfortable'}); }, setCompact:function(){ self.setState({density:'compact'}); },
+      toggleDark:function(){ self.setState({dark:!dark}); },
+      exportXlsx:function(){ self.toast('جارٍ تصدير ميزان المراجعة إلى Excel بالتجميع والمجاميع الحالية'); },
+      openPdf:function(){ self.setState({print:{orient:'port',cols:{},subtotals:true,sign:true,filters:true,pdf:true},menu:null}); },
+      openPrint:function(){ self.setState({print:{orient:'port',cols:{},subtotals:true,sign:true,filters:true,pdf:false},menu:null}); },
+      closePrint:function(){ self.setState({print:null}); },
+      hdr:hdr, srv:srv, run:function(){ self.doRun(false); }, cards:cards,
+      vw:{grid:view==='grid'?'on':'',pivot:isPivot?'on':'',charts:isCharts?'on':'',toGrid:function(){ self.setState({view:'grid',sel:null}); },toPivot:function(){ self.setState({view:'pivot',sel:null}); },toCharts:function(){ self.setState({view:'charts',sel:null}); }},
+      isPivot:isPivot, togglePivot:function(){ self.setState({view:isPivot?'grid':'pivot',sel:null}); },
+      chips:chips, searchText:s.searchText, searchPh:chips.length?'أضف فلتراً…':'ابحث أو فلتر: اسم الحساب، نوعه، الحساب الرئيسي…',
+      onSearch:function(e){ self.setState({searchText:e.target.value}); self.openSearch(); },
+      openSearch:function(){ self.openSearch(); },
+      toggleSearch:function(){ var mm=self.state.menu; if(mm&&mm.type==='search') self.setState({menu:null}); else self.openSearch(); },
+      searchDown:function(e){ e.stopPropagation(); },
+      searchKey:function(e){ var tt=self.state.searchText.trim(); if(e.key==='Enter'&&tt){ self.upd({q:tt,searchText:'',menu:null}); } else if(e.key==='Backspace'&&!self.state.searchText&&chips.length){ chips[chips.length-1].rm(); } else if(e.key==='Escape'){ self.setState({menu:null}); } },
+      favSub:active?active.name:'عرض مخصص',
+      openFav:function(e){ self.openMenu(e,'fav',{},360,560); },
+      showGrid:!isCharts, showCharts:isCharts,
+      gp:gp, pvp:pvp, footers:s.footers, toggleFooters:function(){ self.setState({footers:!s.footers,sel:null}); },
+      expandAll:function(){ self.setState({expanded:{},sel:null}); },
+      collapseAll:function(){ var ex={}; (self._paths||[]).forEach(function(pp){ ex[pp]=false; }); self.setState({expanded:ex,sel:null}); },
+      dragEnd:function(){ self.dragItem=null; if(self.state.dragging) self.setState({dragging:null}); },
+      g:g, skel:skel, gRows:gRows, st:st, side:side, status:status,
+      q:s.q, onQ:function(e){ self.upd({q:e.target.value}); },
+      clearAll:function(){ self.upd({q:'',sets:{},ranges:{},presets:{},searchText:''}); },
+      applyDefault:function(){ self.applyView(READY[0]); },
+      copyErr:function(){ try{ navigator.clipboard.writeText((error&&error.code)||'').catch(function(){}); }catch(_){} self.toast('تم نسخ تفاصيل الخطأ'); },
+      ch:ch, menu:menu, dp:dpv, fav:fav, sr:sr, pv:pv,
+      dw:dw, closeDrawer:function(){ self.setState({drawer:null,voucher:null}); }, vc:vc, closeVoucher:function(){ self.setState({voucher:null}); },
+      dwExport:function(){ self.toast('تم تجهيز كشف الحساب بصيغة Excel'); }, dwOpen:function(){ self.toast('سيُفتح تقرير دفتر الأستاذ العام مفلتراً بهذا الحساب'); },
+      cr:cr, closeChart:function(){ self.setState({chart:null}); }, crPng:function(){ self.toast('تم تنزيل الرسم كصورة PNG'); },
+      pr:pr, hasToast:!!s.toast, toast:s.toast||''
+    };
+  }
+}
+</script>
+</body>
+</html>

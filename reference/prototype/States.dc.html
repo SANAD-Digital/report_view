@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>حالات التقرير</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./rv.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EEEA}
+.s-cap{font-size:12px;font-weight:600;color:var(--tx-2);display:flex;align-items:center;gap:8px}
+.s-cap span{font-weight:400;color:var(--tx-3)}
+.s-frame{position:relative;height:420px;display:flex;flex-direction:column}
+.s-frame .rv-stateov{top:calc(var(--bh) + var(--hh) + var(--fh) + 1px)}
+</style>
+</helmet>
+<div class="rv" dir="rtl" style="width: 1440px; height: 900px; box-sizing: border-box; padding: 40px 48px; display: flex; flex-direction: column; gap: 28px;">
+  <div>
+    <h1 class="rv-title">حالات محرك العرض</h1>
+    <p style="font-size: 13px; color: var(--tx-2); margin-top: 4px;">التحميل، لا نتائج، خطأ التشغيل، وحالات شريط الملخص وشريط معايير الخادم. كل حالة تحتفظ برؤوس الأعمدة حتى يبقى السياق واضحاً.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+    <!-- loading -->
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="s-cap">تحميل <span>· هيكل رمادي بنفس أعمدة التقرير</span></div>
+      <div class="rv-gridwrap s-frame">
+        <div class="rv-body"><div class="rv-scroll">
+          <div class="rv-head" style="width: 100%;">
+            <div class="rv-hg" style="width: 40%;"><div class="rv-band empty"></div><div class="rv-hrow"><div class="rv-h" style="width: 100%;"><span class="rv-hlabel">الحساب</span></div></div><div class="rv-frow"><div class="rv-fcell" style="width: 100%;"><span class="rv-skel" style="width: 100%; height: 22px;"></span></div></div></div>
+            <div class="rv-hg" style="width: 60%;"><div class="rv-band">الرصيد الختامي</div><div class="rv-hrow"><div class="rv-h num" style="width: 50%;"><span class="rv-hlabel">مدين</span></div><div class="rv-h num band-end" style="width: 50%;"><span class="rv-hlabel">دائن</span></div></div><div class="rv-frow"><div class="rv-fcell" style="width: 50%;"><span class="rv-skel" style="width: 100%; height: 22px;"></span></div><div class="rv-fcell" style="width: 50%;"><span class="rv-skel" style="width: 100%; height: 22px;"></span></div></div></div>
+          </div>
+          <div class="rv-skel-row" style="width: 100%;"><div class="rv-c" style="width: 40%;"><span class="rv-skel" style="width: 70%;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 60%;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 35%;"></span></div></div>
+          <div class="rv-skel-row" style="width: 100%;"><div class="rv-c" style="width: 40%;"><span class="rv-skel" style="width: 55%; margin-right: 18px;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 48%;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 52%;"></span></div></div>
+          <div class="rv-skel-row" style="width: 100%;"><div class="rv-c" style="width: 40%;"><span class="rv-skel" style="width: 62%; margin-right: 36px;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 70%;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 30%;"></span></div></div>
+          <div class="rv-skel-row" style="width: 100%;"><div class="rv-c" style="width: 40%;"><span class="rv-skel" style="width: 48%; margin-right: 36px;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 40%;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 58%;"></span></div></div>
+          <div class="rv-skel-row" style="width: 100%;"><div class="rv-c" style="width: 40%;"><span class="rv-skel" style="width: 66%; margin-right: 36px;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 64%;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 44%;"></span></div></div>
+          <div class="rv-skel-row" style="width: 100%;"><div class="rv-c" style="width: 40%;"><span class="rv-skel" style="width: 50%; margin-right: 18px;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 36%;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 62%;"></span></div></div>
+          <div class="rv-skel-row" style="width: 100%;"><div class="rv-c" style="width: 40%;"><span class="rv-skel" style="width: 58%; margin-right: 36px;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 54%;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 42%;"></span></div></div>
+          <div class="rv-skel-row" style="width: 100%;"><div class="rv-c" style="width: 40%;"><span class="rv-skel" style="width: 44%; margin-right: 36px;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 46%;"></span></div><div class="rv-c num" style="width: 30%;"><span class="rv-skel" style="width: 66%;"></span></div></div>
+        </div></div>
+        <div class="rv-status"><span class="rv-status-hint">جارٍ جلب البيانات من الخادم…</span><span class="rv-status-hint">شركة سند للمقاولات · 01/04 – 30/09/2026</span></div>
+      </div>
+    </div>
+
+    <!-- empty -->
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="s-cap">لا توجد نتائج <span>· توجيه لإزالة الفلاتر</span></div>
+      <div class="rv-gridwrap s-frame">
+        <div class="rv-body"><div class="rv-scroll">
+          <div class="rv-head" style="width: 100%;">
+            <div class="rv-hg" style="width: 40%;"><div class="rv-band empty"></div><div class="rv-hrow"><div class="rv-h" style="width: 100%;"><span class="rv-hlabel">الحساب</span><span class="rv-hico"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path></svg></span></div></div><div class="rv-frow"><div class="rv-fcell" style="width: 100%;"><input type="text" class="rv-ff-input on" value="صندوق فرعي" aria-label="بحث في الحساب"></div></div></div>
+            <div class="rv-hg" style="width: 60%;"><div class="rv-band">الرصيد الختامي</div><div class="rv-hrow"><div class="rv-h num" style="width: 50%;"><span class="rv-hlabel">مدين</span></div><div class="rv-h num band-end" style="width: 50%;"><span class="rv-hlabel">دائن</span></div></div><div class="rv-frow"><div class="rv-fcell" style="width: 50%;"><input type="text" class="rv-ff-input num on" value="50000" aria-label="من"></div><div class="rv-fcell" style="width: 50%;"><input type="text" class="rv-ff-input num" placeholder="≥ من" aria-label="من"></div></div></div>
+          </div>
+        </div>
+        <div class="rv-stateov">
+          <div class="rv-state">
+            <div class="rv-state-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path></svg></div>
+            <h3>لا توجد حسابات تطابق الفلاتر الحالية</h3>
+            <p>البيانات محمّلة (35 حساباً)، لكن هذه الفلاتر استبعدتها كلها.</p>
+            <div class="rv-state-chips">
+              <span class="rv-facet"><span class="rv-facet-k">الحساب</span><span class="rv-facet-v">يحتوي «صندوق فرعي»</span><button type="button" class="rv-facet-x" aria-label="إزالة"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></span>
+              <span class="rv-facet"><span class="rv-facet-k">الختامي · مدين</span><span class="rv-facet-v">≥ 50,000</span><button type="button" class="rv-facet-x" aria-label="إزالة"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></span>
+            </div>
+            <div class="rv-state-actions"><button type="button" class="rv-btn primary">إزالة كل الفلاتر</button><button type="button" class="rv-btn">العرض الافتراضي</button></div>
+          </div>
+        </div>
+        </div>
+        <div class="rv-status"><span class="rv-status-item">الحسابات <b>0</b> من <b>35</b></span><span class="rv-status-flag">مفلتر (2)</span></div>
+      </div>
+    </div>
+
+    <!-- error -->
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="s-cap">خطأ في تشغيل التقرير <span>· الرسالة والرمز وإعادة المحاولة</span></div>
+      <div class="rv-gridwrap s-frame">
+        <div class="rv-body"><div class="rv-scroll">
+          <div class="rv-head" style="width: 100%;">
+            <div class="rv-hg" style="width: 40%;"><div class="rv-band empty"></div><div class="rv-hrow"><div class="rv-h" style="width: 100%;"><span class="rv-hlabel">الحساب</span></div></div><div class="rv-frow"><div class="rv-fcell" style="width: 100%;"></div></div></div>
+            <div class="rv-hg" style="width: 60%;"><div class="rv-band">الرصيد الختامي</div><div class="rv-hrow"><div class="rv-h num" style="width: 50%;"><span class="rv-hlabel">مدين</span></div><div class="rv-h num band-end" style="width: 50%;"><span class="rv-hlabel">دائن</span></div></div><div class="rv-frow"><div class="rv-fcell" style="width: 50%;"></div><div class="rv-fcell" style="width: 50%;"></div></div></div>
+          </div>
+        </div>
+        <div class="rv-stateov">
+          <div class="rv-state">
+            <div class="rv-state-ico err"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5.5M12 16.5v.5"></path></svg></div>
+            <h3>تعذّر تشغيل التقرير</h3>
+            <p>تاريخ البداية (01/10/2026) يقع بعد تاريخ النهاية (30/09/2026). عدّل الفترة في شريط معايير التقرير ثم أعد التشغيل.</p>
+            <code>frappe.exceptions.ValidationError</code>
+            <div class="rv-state-actions"><button type="button" class="rv-btn primary">إعادة المحاولة</button><button type="button" class="rv-btn">نسخ تفاصيل الخطأ</button></div>
+          </div>
+        </div>
+        </div>
+        <div class="rv-status"><span class="rv-status-hint">آخر تشغيل ناجح 10:42 — البيانات المعروضة سابقاً ما زالت في الذاكرة</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="s-cap">ملخص متوازن <span>· بدون فلاتر</span></div>
+      <div class="rv-sum">
+        <div class="rv-sum-hd"><span class="rv-sum-t">الرصيد الختامي</span><span class="rv-pill ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg>متوازن</span></div>
+        <div class="rv-sum-eq"><div class="rv-sum-side dr"><small>مدين</small><b>9,387,118.77</b></div><span class="rv-sum-op">=</span><div class="rv-sum-side cr"><small>دائن</small><b>9,387,118.77</b></div></div>
+        <div class="rv-sum-foot">الفرق 0.00 · جميع الحسابات (35)</div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="s-cap">فرق بسبب الفلترة <span>· لون محايد، ليس خطأ</span></div>
+      <div class="rv-sum">
+        <div class="rv-sum-hd"><span class="rv-sum-t">الرصيد الختامي</span><span class="rv-pill neu"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path></svg>فرق بسبب الفلترة</span></div>
+        <div class="rv-sum-eq"><div class="rv-sum-side dr"><small>مدين</small><b>0.00</b></div><span class="rv-sum-op">=</span><div class="rv-sum-side cr"><small>دائن</small><b>445,926.10</b></div></div>
+        <div class="rv-sum-foot">الفرق 445,926.10 — ناتج عن استبعاد حسابات بالفلاتر، وليس خطأ في القيود</div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="s-cap">غير متوازن <span>· بدون فلاتر = خطأ فعلي</span></div>
+      <div class="rv-sum">
+        <div class="rv-sum-hd"><span class="rv-sum-t">الرصيد الختامي</span><span class="rv-pill err"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5v.5"></path></svg>غير متوازن</span></div>
+        <div class="rv-sum-eq"><div class="rv-sum-side dr"><small>مدين</small><b>9,387,118.77</b></div><span class="rv-sum-op">≠</span><div class="rv-sum-side cr"><small>دائن</small><b>9,386,918.77</b></div></div>
+        <div class="rv-sum-foot">الفرق 200.00 — راجع القيود غير المتوازنة</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px;">
+    <div class="s-cap">معايير الخادم تغيّرت ولم يُعد التشغيل <span>· الشريط يتلوّن حتى يضغط المستخدم «تشغيل التقرير»</span></div>
+    <section class="rv-server pending">
+      <div class="rv-server-tag"><div class="rv-server-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"></ellipse><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path></svg></div><div><strong>معايير التقرير</strong><span>تعيد جلب البيانات من الخادم</span></div></div>
+      <label class="rv-field">الشركة<select class="rv-input" aria-label="الشركة"><option>شركة سند التجارية</option></select></label>
+      <label class="rv-field">من تاريخ<input type="date" class="rv-input date" value="2026-01-01" aria-label="من تاريخ"></label>
+      <label class="rv-field">إلى تاريخ<input type="date" class="rv-input date" value="2026-09-30" aria-label="إلى تاريخ"></label>
+      <div class="rv-server-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5v.5"></path></svg><span>تغيّرت المعايير — شغّل التقرير لجلب البيانات من جديد</span></div>
+      <button type="button" class="rv-btn primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 5v14L5 12z"></path></svg>تشغيل التقرير</button>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals(){ return {}; }
+}
+</script>
+</body>
+</html>

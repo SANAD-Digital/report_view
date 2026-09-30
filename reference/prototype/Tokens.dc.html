@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>رموز التصميم والمكونات</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="./rv.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EEEA}
+.tk-sec{display:flex;flex-direction:column;gap:16px}
+.tk-h2{font-size:18px;font-weight:600;display:flex;align-items:baseline;gap:10px}
+.tk-h2 span{font-size:12px;font-weight:400;color:var(--tx-3)}
+.tk-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:var(--tx-3);direction:ltr;unicode-bidi:isolate}
+.tk-box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.tk-box h3{font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tk-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.tk-sw{display:flex;align-items:center;gap:10px;min-width:0}
+.tk-chip{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);flex:none}
+.tk-sw b{display:block;font-size:12px;font-weight:500;color:var(--tx)}
+.tk-grid{display:grid;gap:10px 16px}
+.tk-theme{border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;border:1px solid var(--line)}
+.tk-theme h4{margin:0;font-size:11.5px;font-weight:600;color:var(--tx-3)}
+.tk-type{display:flex;align-items:baseline;gap:20px;padding:10px 0;border-bottom:1px solid var(--line)}
+.tk-type .m{width:190px;flex:none}
+.tk-dt{display:grid;grid-template-columns:180px repeat(2,minmax(0,1fr));font-size:12px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.tk-dt div{padding:7px 12px;border-bottom:1px solid var(--line)}
+.tk-dt .hd{background:var(--hdr);font-weight:600}
+.tk-mini{border:1px solid var(--line-2);border-radius:10px;overflow:hidden;background:var(--surface)}
+.tk-pop{position:static;box-shadow:var(--sh-2)}
+</style>
+</helmet>
+<div class="rv" dir="rtl" style="width: 1440px; height: 3000px; box-sizing: border-box; padding: 48px 56px; display: flex; flex-direction: column; gap: 44px;">
+
+  <header style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--line-2);">
+    <div>
+      <div class="rv-crumbs">محرك عرض التقارير · Report View Engine</div>
+      <h1 class="rv-title" style="font-size: 30px;">رموز التصميم والمكونات</h1>
+      <p style="font-size: 13.5px; color: var(--tx-2); margin-top: 6px; max-width: 760px; line-height: 1.8;">طبقة CSS واحدة (<span class="tk-code">rv.css</span>) فوق شبكة مبنية بعناصر div عادية، تُركّب لاحقاً على Tabulator: <span class="tk-code">.rv-head → .tabulator-header</span>، <span class="tk-code">.rv-row → .tabulator-row</span>، <span class="tk-code">.rv-c → .tabulator-cell</span>. الثيم عبر متغيرات CSS على <span class="tk-code">.rv</span> و<span class="tk-code">.rv.dark</span>، والكثافة عبر <span class="tk-code">.rv.compact</span>.</p>
+    </div>
+    <div class="tk-row"><span class="rv-tag">RTL</span><span class="rv-tag">IBM Plex Sans Arabic</span><span class="rv-tag">tabular-nums</span></div>
+  </header>
+
+  <!-- ============ Colors ============ -->
+  <section class="tk-sec">
+    <h2 class="tk-h2">الألوان <span>ألوان هادئة وفاتحة، والأخضر الداكن للإجراءات فقط، والأزرق/العنابي للمدين والدائن</span></h2>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;">
+      <div class="rv tk-theme" style="background: var(--bg);">
+        <h4>الوضع الفاتح · .rv</h4>
+        <div class="tk-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--bg);"></span><div><b>الخلفية</b><span class="tk-code">--bg #F3F6F4</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--surface);"></span><div><b>السطح</b><span class="tk-code">--surface #FFFFFF</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--hdr);"></span><div><b>رأس الجدول</b><span class="tk-code">--hdr #F7F9F8</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--line);"></span><div><b>حد خفيف</b><span class="tk-code">--line #E2E8E4</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--line-2);"></span><div><b>حد عادي</b><span class="tk-code">--line-2 #D3DBD6</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--tx);"></span><div><b>النص</b><span class="tk-code">--tx #17211C</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--pri);"></span><div><b>الأساسي</b><span class="tk-code">--pri #1E5C45</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--pri-soft);"></span><div><b>الأساسي الخفيف</b><span class="tk-code">--pri-soft #E6F1EB</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--tx-3);"></span><div><b>نص ثانوي</b><span class="tk-code">--tx-3 #627069</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--dr);"></span><div><b>مدين</b><span class="tk-code">--dr #2D5C93</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--cr);"></span><div><b>دائن</b><span class="tk-code">--cr #8A2D3B</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--sel);"></span><div><b>تحديد النطاق</b><span class="tk-code">--sel dr @10%</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--ok-soft);"></span><div><b>متوازن</b><span class="tk-code">--ok #1D7550</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--neu-soft);"></span><div><b>محايد (فرق فلترة)</b><span class="tk-code">--neu #56625B</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--err-soft);"></span><div><b>خطأ</b><span class="tk-code">--err #B02A21</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--grp-0);"></span><div><b>صف مجموعة</b><span class="tk-code">--grp-0 #F1F5F2</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--foot);"></span><div><b>مجموع فرعي</b><span class="tk-code">--foot #F4F7F5</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--total);"></span><div><b>الإجمالي المثبّت</b><span class="tk-code">--total #E7F0EA</span></div></div>
+        </div>
+        <div class="tk-row" style="gap: 6px;"><span class="tk-code" style="margin-left: 6px;">الرسوم</span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c1);"></span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c2);"></span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c3);"></span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c4);"></span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c5);"></span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c6);"></span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c7);"></span></div>
+      </div>
+      <div class="rv dark tk-theme" style="background: var(--bg);">
+        <h4>الوضع الداكن · .rv.dark</h4>
+        <div class="tk-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--bg);"></span><div><b>الخلفية</b><span class="tk-code">--bg #0E1411</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--surface);"></span><div><b>السطح</b><span class="tk-code">--surface #141B17</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--hdr);"></span><div><b>رأس الجدول</b><span class="tk-code">--hdr #18201C</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--line);"></span><div><b>حد خفيف</b><span class="tk-code">--line #25302A</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--line-2);"></span><div><b>حد عادي</b><span class="tk-code">--line-2 #2F3B34</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--tx);"></span><div><b>النص</b><span class="tk-code">--tx #E3EAE6</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--pri);"></span><div><b>الأساسي</b><span class="tk-code">--pri #2A7C5D</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--pri-tx);"></span><div><b>نص أساسي</b><span class="tk-code">--pri-tx #74C8A3</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--tx-3);"></span><div><b>نص ثانوي</b><span class="tk-code">--tx-3 #8E9B94</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--dr);"></span><div><b>مدين</b><span class="tk-code">--dr #8EB5E6</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--cr);"></span><div><b>دائن</b><span class="tk-code">--cr #E7A2AC</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--sel);"></span><div><b>تحديد النطاق</b><span class="tk-code">--sel dr @14%</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--ok-soft);"></span><div><b>متوازن</b><span class="tk-code">--ok #6CCB9B</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--neu-soft);"></span><div><b>محايد</b><span class="tk-code">--neu #A9B5AE</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--err-soft);"></span><div><b>خطأ</b><span class="tk-code">--err #F0918A</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--grp-0);"></span><div><b>صف مجموعة</b><span class="tk-code">--grp-0 #1C2621</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--foot);"></span><div><b>مجموع فرعي</b><span class="tk-code">--foot #1A231F</span></div></div>
+          <div class="tk-sw"><span class="tk-chip" style="background: var(--total);"></span><div><b>الإجمالي المثبّت</b><span class="tk-code">--total #1D3029</span></div></div>
+        </div>
+        <div class="tk-row" style="gap: 6px;"><span class="tk-code" style="margin-left: 6px;">الرسوم</span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c1);"></span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c2);"></span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c3);"></span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c4);"></span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c5);"></span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c6);"></span><span class="tk-chip" style="width: 44px; height: 14px; background: var(--c7);"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Type + density ============ -->
+  <section style="display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px;">
+    <div class="tk-sec">
+      <h2 class="tk-h2">الخط <span>IBM Plex Sans Arabic · الأرقام إنجليزية بمحاذاة اليسار و tabular-nums</span></h2>
+      <div class="tk-box" style="gap: 0;">
+        <div class="tk-type"><div class="m"><b style="font-size: 12px;">عنوان التقرير</b><br><span class="tk-code">24/600 · compact 20</span></div><span style="font-size: 24px; font-weight: 600;">ميزان المراجعة</span></div>
+        <div class="tk-type"><div class="m"><b style="font-size: 12px;">رقم الملخص</b><br><span class="tk-code">22/600 · compact 18</span></div><span class="ltr" style="font-size: 22px; font-weight: 600; color: var(--dr);">9,387,118.77</span></div>
+        <div class="tk-type"><div class="m"><b style="font-size: 12px;">عنوان لوحة / بطاقة</b><br><span class="tk-code">14/600</span></div><span style="font-size: 14px; font-weight: 600;">توزيع المصروفات</span></div>
+        <div class="tk-type"><div class="m"><b style="font-size: 12px;">خلية / متن</b><br><span class="tk-code">--fs 13 · compact 12.5</span></div><span style="font-size: 13px;">الصندوق الرئيسي <span class="ltr" style="color: var(--dr); margin-right: 16px;">76,872.78</span></span></div>
+        <div class="tk-type"><div class="m"><b style="font-size: 12px;">رأس عمود</b><br><span class="tk-code">--fs-sm 12.5/600</span></div><span style="font-size: 12.5px; font-weight: 600;">نوع الحساب</span></div>
+        <div class="tk-type" style="border-bottom: 0;"><div class="m"><b style="font-size: 12px;">تسمية / شريط الحالة</b><br><span class="tk-code">--fs-xs 11.5</span></div><span style="font-size: 11.5px; color: var(--tx-2);">الحسابات 35 من 35 · المجموعات 14</span></div>
+      </div>
+      <div class="tk-box">
+        <h3>تنسيق الأرقام</h3>
+        <div class="tk-dt" style="grid-template-columns: 1fr 1fr 1fr;">
+          <div class="hd">الحالة</div><div class="hd">الجدول</div><div class="hd">التحليل Pivot</div>
+          <div>موجب مدين</div><div class="ltr" style="color: var(--dr); text-align: left;">1,048,697.82</div><div class="ltr" style="text-align: left;">1,048,697.82</div>
+          <div>دائن</div><div class="ltr" style="color: var(--cr); text-align: left;">129,726.10</div><div class="ltr" style="color: var(--cr); text-align: left;">(129,726.10)</div>
+          <div style="border-bottom: 0;">صفر</div><div class="ltr" style="color: var(--tx-4); text-align: left; border-bottom: 0;">—</div><div class="ltr" style="color: var(--tx-4); text-align: left; border-bottom: 0;">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="tk-sec">
+      <h2 class="tk-h2">الكثافة <span>مريح للمراجعة، مضغوط للتحليل وشاشات البيانات الكثيفة</span></h2>
+      <div class="tk-dt">
+        <div class="hd">الرمز</div><div class="hd">مريح · .rv</div><div class="hd">مضغوط · .rv.compact</div>
+        <div class="tk-code">--rh ارتفاع الصف</div><div>36px</div><div>28px</div>
+        <div class="tk-code">--hh رأس العمود</div><div>34px</div><div>28px</div>
+        <div class="tk-code">--bh رأس المجموعة</div><div>30px</div><div>26px</div>
+        <div class="tk-code">--fh صف الفلاتر العائمة</div><div>38px</div><div>32px</div>
+        <div class="tk-code">--cp حشوة الخلية</div><div>12px</div><div>8px</div>
+        <div class="tk-code">--fs خط الخلية</div><div>13px</div><div>12.5px</div>
+        <div class="tk-code">--ctl ارتفاع الأدوات</div><div>34px</div><div>30px</div>
+        <div class="tk-code" style="border-bottom: 0;">--gap / --pad</div><div style="border-bottom: 0;">14 / 24px</div><div style="border-bottom: 0;">10 / 16px</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="tk-mini">
+          <div class="rv-row group d0" style="width: 100%;"><div class="rv-c" style="width: 60%;"><button type="button" class="rv-caret open" aria-label="طي"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button><span class="rv-glabel">1100 - الأصول المتداولة</span></div><div class="rv-c num" style="width: 40%;"></div></div>
+          <div class="rv-row" style="width: 100%;"><div class="rv-c" style="width: 60%;"><span class="rv-caret-sp"></span><span class="rv-accno">1110</span>&nbsp;الصندوق</div><div class="rv-c num dr" style="width: 40%;"><span class="rv-n">76,872.78</span></div></div>
+          <div class="rv-row" style="width: 100%;"><div class="rv-c" style="width: 60%;"><span class="rv-caret-sp"></span><span class="rv-accno">1120</span>&nbsp;الراجحي</div><div class="rv-c num dr" style="width: 40%;"><span class="rv-n">850,043.25</span></div></div>
+        </div>
+        <div class="rv compact tk-mini">
+          <div class="rv-row group d0" style="width: 100%;"><div class="rv-c" style="width: 60%;"><button type="button" class="rv-caret open" aria-label="طي"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button><span class="rv-glabel">1100 - الأصول المتداولة</span></div><div class="rv-c num" style="width: 40%;"></div></div>
+          <div class="rv-row" style="width: 100%;"><div class="rv-c" style="width: 60%;"><span class="rv-caret-sp"></span><span class="rv-accno">1110</span>&nbsp;الصندوق</div><div class="rv-c num dr" style="width: 40%;"><span class="rv-n">76,872.78</span></div></div>
+          <div class="rv-row" style="width: 100%;"><div class="rv-c" style="width: 60%;"><span class="rv-caret-sp"></span><span class="rv-accno">1120</span>&nbsp;الراجحي</div><div class="rv-c num dr" style="width: 40%;"><span class="rv-n">850,043.25</span></div></div>
+          <div class="rv-row" style="width: 100%;"><div class="rv-c" style="width: 60%;"><span class="rv-caret-sp"></span><span class="rv-accno">1121</span>&nbsp;الأهلي</div><div class="rv-c num zero" style="width: 40%;"><span class="rv-n">—</span></div></div>
+        </div>
+      </div>
+      <div class="tk-row"><span class="tk-code">radius</span><span class="rv-tag">--r-sm 5</span><span class="rv-tag">--r 7</span><span class="rv-tag">--r-lg 10</span><span class="rv-tag">--r-xl 14</span><span class="tk-code" style="margin-right: 12px;">shadow</span><span class="rv-tag">--sh-1</span><span class="rv-tag">--sh-pop</span><span class="rv-tag">--sh-drawer</span></div>
+    </div>
+  </section>
+
+  <!-- ============ Controls ============ -->
+  <section class="tk-sec">
+    <h2 class="tk-h2">الأزرار والشرائح والحقول</h2>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+      <div class="tk-box">
+        <h3>الأزرار <span class="tk-code">.rv-btn</span></h3>
+        <div class="tk-row">
+          <button type="button" class="rv-btn primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 5v14L5 12z"></path></svg>تشغيل التقرير</button>
+          <button type="button" class="rv-btn">Excel</button>
+          <button type="button" class="rv-btn soft">حفظ العرض</button>
+          <button type="button" class="rv-btn ghost">إلغاء</button>
+        </div>
+        <div class="tk-row">
+          <button type="button" class="rv-btn icon" aria-label="طباعة"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"></path><rect x="3" y="9" width="18" height="8" rx="2"></rect><path d="M7 14h10v7H7z"></path></svg></button>
+          <button type="button" class="rv-btn sm">صغير</button>
+          <button type="button" class="rv-btn primary sm">حفظ</button>
+          <button type="button" class="rv-btn" disabled="{{yes}}">معطّل</button>
+          <button type="button" class="rv-link">مسح الكل</button>
+        </div>
+        <span class="tk-code">.primary · (default) · .soft · .ghost · .icon · .sm · :disabled · .rv-link</span>
+        <div class="rv-seg"><button type="button" class="on">جدول</button><button type="button">تحليل Pivot</button><button type="button">رسوم</button></div>
+        <span class="tk-code">.rv-seg &gt; button.on</span>
+      </div>
+      <div class="tk-box">
+        <h3>الشرائح والحالات</h3>
+        <div class="tk-row">
+          <span class="rv-facet"><span class="rv-facet-k">نوع الجذر</span><span class="rv-facet-v">الأصول أو الخصوم</span><button type="button" class="rv-facet-x" aria-label="إزالة"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></span>
+          <span class="tk-code">.rv-facet (Odoo)</span>
+        </div>
+        <div class="tk-row">
+          <span class="rv-gchip"><span class="rv-grip"><svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"></circle><circle cx="7" cy="3" r="1.3"></circle><circle cx="3" cy="8" r="1.3"></circle><circle cx="7" cy="8" r="1.3"></circle><circle cx="3" cy="13" r="1.3"></circle><circle cx="7" cy="13" r="1.3"></circle></svg></span>الحساب الجذري<button type="button" class="rv-chip-x" aria-label="إزالة"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></span>
+          <span class="rv-gchip pv">طبيعة الرصيد<button type="button" class="rv-chip-x" aria-label="إزالة"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></span>
+          <span class="tk-code">.rv-gchip · .pv</span>
+        </div>
+        <div class="tk-row">
+          <span class="rv-pill ok">متوازن</span><span class="rv-pill neu">فرق بسبب الفلترة</span><span class="rv-pill err">غير متوازن</span><span class="rv-pill warn">معلّق</span>
+        </div>
+        <div class="tk-row"><span class="rv-count-badge">3</span><span class="rv-gcount">12</span><span class="rv-badge ltr">1120</span><span class="rv-baltag dr">مدين</span><span class="rv-baltag cr">دائن</span><span class="rv-tag">Query Report</span></div>
+      </div>
+      <div class="tk-box">
+        <h3>الحقول <span class="tk-code">.rv-input · .rv-ff-*</span></h3>
+        <div class="tk-row" style="align-items: flex-end;">
+          <label class="rv-field">من تاريخ<input type="date" class="rv-input date" value="2026-04-01" style="width: 150px;"></label>
+          <label class="rv-field">الشركة<select class="rv-input" style="width: 170px;"><option>شركة سند للمقاولات</option></select></label>
+        </div>
+        <div class="tk-row" style="background: var(--hdr); padding: 6px; border-radius: 6px;">
+          <input type="text" class="rv-ff-input" placeholder="يحتوي…" style="width: 120px;" aria-label="نص">
+          <input type="text" class="rv-ff-input on" value="بنك" style="width: 80px;" aria-label="نص">
+          <button type="button" class="rv-ff-set on" style="width: 110px;"><span>2 قيم محددة</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></button>
+          <input type="text" class="rv-ff-input num on" value="10000" style="width: 60px;" aria-label="من">
+        </div>
+        <div class="tk-row">
+          <label class="rv-check"><input type="checkbox" checked="{{yes}}"><span>مجاميع المجموعات</span></label>
+          <label class="rv-check"><input type="checkbox"><span>إخفاء الصفرية</span></label>
+          <button type="button" class="rv-switch on" aria-label="وضع التحليل"></button>
+          <button type="button" class="rv-switch" aria-label="مفتاح"></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Grid anatomy ============ -->
+  <section class="tk-sec">
+    <h2 class="tk-h2">تشريح الجدول <span>رؤوس مجمّعة، فلاتر عائمة، عمود مثبّت، صفوف مجموعات ومجاميع، تحديد نطاق، إجمالي مثبّت</span></h2>
+    <div class="rv-gridwrap" style="flex: none;">
+      <div class="rv-gp">
+        <span class="rv-gp-lbl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M8 12h12M12 18h8"></path></svg>مجموعات الصفوف</span>
+        <span class="rv-gchip">الحساب الجذري</span><span class="rv-gsep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></span><span class="rv-gchip">الحساب الرئيسي</span>
+        <span class="rv-gp-hint">اسحب عموداً هنا للتجميع</span>
+        <div class="rv-gp-tools"><span class="tk-code">.rv-gp</span></div>
+      </div>
+      <div class="rv-scroll" style="overflow: visible;">
+        <div class="rv-head" style="width: 100%;">
+          <div class="rv-hg pin-edge-s" style="width: 330px;"><div class="rv-band empty"></div><div class="rv-hrow"><div class="rv-h" style="width: 330px;"><span class="rv-hlabel">الحساب</span><span class="rv-hico"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"></path></svg></span><button type="button" class="rv-hmenu on" aria-label="قائمة العمود"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"></path></svg></button></div></div><div class="rv-frow"><div class="rv-fcell" style="width: 330px;"><input type="text" class="rv-ff-input on" value="بنك" aria-label="بحث"></div></div></div>
+          <div class="rv-hg" style="width: 150px;"><div class="rv-band empty"></div><div class="rv-hrow"><div class="rv-h" style="width: 150px;"><span class="rv-hlabel">نوع الحساب</span><span class="rv-hico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span></div></div><div class="rv-frow"><div class="rv-fcell" style="width: 150px;"><button type="button" class="rv-ff-set"><span>الكل</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></button></div></div></div>
+          <div class="rv-hg" style="width: 280px;"><div class="rv-band">حركة الفترة</div><div class="rv-hrow"><div class="rv-h num" style="width: 140px;"><span class="rv-hlabel">مدين</span></div><div class="rv-h num band-end" style="width: 140px;"><span class="rv-hlabel">دائن</span></div></div><div class="rv-frow"><div class="rv-fcell" style="width: 140px;"><input type="text" class="rv-ff-input num" placeholder="≥ من" aria-label="من"><input type="text" class="rv-ff-input num" placeholder="≤ إلى" aria-label="إلى"></div><div class="rv-fcell band-end" style="width: 140px;"><input type="text" class="rv-ff-input num" placeholder="≥ من" aria-label="من"><input type="text" class="rv-ff-input num" placeholder="≤ إلى" aria-label="إلى"></div></div></div>
+          <div class="rv-hg" style="width: 280px;"><div class="rv-band">الرصيد الختامي</div><div class="rv-hrow"><div class="rv-h num" style="width: 140px;"><span class="rv-hlabel">مدين</span></div><div class="rv-h num band-end" style="width: 140px;"><span class="rv-hlabel">دائن</span></div></div><div class="rv-frow"><div class="rv-fcell" style="width: 140px;"><input type="text" class="rv-ff-input num" placeholder="≥ من" aria-label="من"><input type="text" class="rv-ff-input num" placeholder="≤ إلى" aria-label="إلى"></div><div class="rv-fcell band-end" style="width: 140px;"><input type="text" class="rv-ff-input num" placeholder="≥ من" aria-label="من"><input type="text" class="rv-ff-input num" placeholder="≤ إلى" aria-label="إلى"></div></div></div>
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center;"><span class="tk-code">.rv-head › .rv-hg › .rv-band / .rv-hrow › .rv-h / .rv-frow › .rv-fcell</span></div>
+        </div>
+        <div class="rv-row group d0" style="width: 100%;"><div class="rv-c pinned pin-edge-s" style="width: 330px;"><button type="button" class="rv-caret open" aria-label="طي"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button><span class="rv-glabel">1000 - الأصول</span><span class="rv-gcount">3</span></div><div class="rv-c" style="width: 150px;"></div><div class="rv-c num" style="width: 140px;"></div><div class="rv-c num band-end" style="width: 140px;"></div><div class="rv-c num" style="width: 140px;"></div><div class="rv-c num band-end" style="width: 140px;"></div><div style="flex: 1; display: flex; align-items: center; padding: 0 12px;"><span class="tk-code">.rv-row.group.d0 — مفتوحة: القيم في صف المجموع</span></div></div>
+        <div class="rv-row" style="width: 100%;"><div class="rv-c pinned pin-edge-s" style="width: 330px;"><span class="rv-indent" style="width: 18px;"></span><span class="rv-caret-sp"></span><button type="button" class="rv-acc"><span class="rv-accno">1120</span><span class="rv-accname">بنك الراجحي - جاري</span></button></div><div class="rv-c" style="width: 150px;"><span class="rv-t">بنك</span></div><div class="rv-c num dr sel st ss" style="width: 140px;"><span class="rv-n">2,325,828.74</span></div><div class="rv-c num cr band-end sel st se" style="width: 140px;"><span class="rv-n">2,389,963.83</span></div><div class="rv-c num dr" style="width: 140px;"><span class="rv-n">850,043.25</span></div><div class="rv-c num zero band-end" style="width: 140px;"><span class="rv-n">—</span></div><div style="flex: 1; display: flex; align-items: center; padding: 0 12px;"><span class="tk-code">.rv-row.leaf · .rv-c.sel.st/.sb/.ss/.se</span></div></div>
+        <div class="rv-row" style="width: 100%;"><div class="rv-c pinned pin-edge-s" style="width: 330px;"><span class="rv-indent" style="width: 18px;"></span><span class="rv-caret-sp"></span><button type="button" class="rv-acc"><span class="rv-accno">1121</span><span class="rv-accname">البنك الأهلي - جاري</span></button></div><div class="rv-c" style="width: 150px;"><span class="rv-t">بنك</span></div><div class="rv-c num dr sel sb ss" style="width: 140px;"><span class="rv-n">477,378.69</span></div><div class="rv-c num cr band-end sel sb se" style="width: 140px;"><span class="rv-n">855,785.50</span></div><div class="rv-c num zero" style="width: 140px;"><span class="rv-n">—</span></div><div class="rv-c num cr band-end" style="width: 140px;"><span class="rv-n">129,726.10</span></div><div style="flex: 1;"></div></div>
+        <div class="rv-row foot" style="width: 100%;"><div class="rv-c pinned pin-edge-s" style="width: 330px;"><span class="rv-caret-sp"></span><span class="rv-glabel">إجمالي الأصول</span></div><div class="rv-c" style="width: 150px;"></div><div class="rv-c num dr" style="width: 140px;"><span class="rv-n">2,803,207.43</span></div><div class="rv-c num cr band-end" style="width: 140px;"><span class="rv-n">3,245,749.33</span></div><div class="rv-c num dr" style="width: 140px;"><span class="rv-n">850,043.25</span></div><div class="rv-c num cr band-end" style="width: 140px;"><span class="rv-n">129,726.10</span></div><div style="flex: 1; display: flex; align-items: center; padding: 0 12px;"><span class="tk-code">.rv-row.foot (group footer)</span></div></div>
+        <div class="rv-row group d1" style="width: 100%;"><div class="rv-c pinned pin-edge-s" style="width: 330px;"><span class="rv-indent" style="width: 18px;"></span><button type="button" class="rv-caret" aria-label="توسيع"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button><span class="rv-glabel">2100 - الخصوم المتداولة</span><span class="rv-gcount">4</span></div><div class="rv-c" style="width: 150px;"></div><div class="rv-c num dr" style="width: 140px;"><span class="rv-n">2,623,876.89</span></div><div class="rv-c num cr band-end" style="width: 140px;"><span class="rv-n">3,361,881.33</span></div><div class="rv-c num zero" style="width: 140px;"><span class="rv-n">—</span></div><div class="rv-c num cr band-end" style="width: 140px;"><span class="rv-n">1,806,018.55</span></div><div style="flex: 1; display: flex; align-items: center; padding: 0 12px;"><span class="tk-code">.rv-row.group.d1 — مطوية: القيم في صف المجموعة</span></div></div>
+        <div class="rv-row total" style="width: 100%; position: static;"><div class="rv-c pinned pin-edge-s" style="width: 330px;"><span class="rv-glabel">الإجمالي العام</span><span class="rv-gcount">35</span></div><div class="rv-c" style="width: 150px;"></div><div class="rv-c num dr" style="width: 140px;"><span class="rv-n">13,599,297.75</span></div><div class="rv-c num cr band-end" style="width: 140px;"><span class="rv-n">13,599,297.75</span></div><div class="rv-c num dr" style="width: 140px;"><span class="rv-n">9,387,118.77</span></div><div class="rv-c num cr band-end" style="width: 140px;"><span class="rv-n">9,387,118.77</span></div><div style="flex: 1; display: flex; align-items: center; padding: 0 12px;"><span class="tk-code">.rv-row.total (sticky bottom)</span></div></div>
+      </div>
+      <footer class="rv-status">
+        <div class="rv-status-grp"><span class="rv-status-item">الحسابات <b>35</b> من <b>35</b></span><span class="rv-status-item">المجموعات <b>14</b></span></div>
+        <div class="rv-status-grp"><span class="rv-status-item">النطاق <b class="ltr">2 × 2</b></span><span class="rv-status-item">العدد <b>4</b></span><span class="rv-status-item">المجموع <b class="ltr">6,048,956.76</b></span><span class="rv-status-item">المتوسط <b class="ltr">1,512,239.19</b></span><span class="tk-code">.rv-status</span></div>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ============ Menus, popovers, panels ============ -->
+  <section class="tk-sec">
+    <h2 class="tk-h2">القوائم واللوحات <span>كلها .rv-pop مطلقة الموضع بمحاذاة يمين المرساة</span></h2>
+    <div style="display: grid; grid-template-columns: 250px 270px 280px minmax(0, 1fr); gap: 20px; align-items: start;">
+      <div style="display: flex; flex-direction: column; gap: 6px;"><span class="tk-code">قائمة العمود · colMenu</span>
+        <div class="rv-pop tk-pop">
+          <div class="rv-pop-hd">نوع الحساب</div>
+          <button type="button" class="rv-mi"><span class="rv-mi-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z"></path></svg></span><span class="rv-mi-lbl">تثبيت يمين</span></button>
+          <button type="button" class="rv-mi"><span class="rv-mi-ic"></span><span class="rv-mi-lbl">تثبيت يسار</span></button>
+          <button type="button" class="rv-mi"><span class="rv-mi-ic"><span class="rv-mi-check"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></span></span><span class="rv-mi-lbl">بدون تثبيت</span></button>
+          <div class="rv-msep"></div>
+          <button type="button" class="rv-mi"><span class="rv-mi-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4"></path></svg></span><span class="rv-mi-lbl">ضبط العرض تلقائياً</span></button>
+          <button type="button" class="rv-mi"><span class="rv-mi-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M8 12h12M12 18h8"></path></svg></span><span class="rv-mi-lbl">تجميع حسب «نوع الحساب»</span></button>
+          <button type="button" class="rv-mi"><span class="rv-mi-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c5 0 9 4.5 10 7a13 13 0 0 1-2.4 3.4M6.6 6.6C4.3 8 2.7 10.2 2 12c1 2.5 5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"></path></svg></span><span class="rv-mi-lbl">إخفاء العمود</span></button>
+          <button type="button" class="rv-mi"><span class="rv-mi-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg></span><span class="rv-mi-lbl">إعادة الضبط</span></button>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;"><span class="tk-code">قائمة الزر الأيمن · ctxMenu</span>
+        <div class="rv-pop tk-pop">
+          <div class="rv-pop-hd">النطاق 2 × 2 · المجموع 6,048,956.76</div>
+          <button type="button" class="rv-mi"><span class="rv-mi-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg></span><span class="rv-mi-lbl">نسخ</span><span class="rv-mi-hint">Ctrl+C</span></button>
+          <button type="button" class="rv-mi"><span class="rv-mi-ic"></span><span class="rv-mi-lbl">نسخ مع الرؤوس</span><span class="rv-mi-hint">Ctrl+Shift+C</span></button>
+          <div class="rv-msep"></div>
+          <button type="button" class="rv-mi"><span class="rv-mi-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"></path><path d="M4 17v3h16v-3"></path></svg></span><span class="rv-mi-lbl">تصدير المحدد إلى Excel</span></button>
+          <div class="rv-msep"></div>
+          <button type="button" class="rv-mi"><span class="rv-mi-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M21 20H3"></path></svg></span><span class="rv-mi-lbl">إنشاء رسم من النطاق المحدد</span></button>
+          <div class="rv-msep"></div>
+          <button type="button" class="rv-mi"><span class="rv-mi-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5M9 13h6M9 17h4"></path></svg></span><span class="rv-mi-lbl">فتح كشف الحساب</span></button>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;"><span class="tk-code">فلتر القيم · Set Filter</span>
+        <div class="rv-pop tk-pop">
+          <div class="rv-pop-hd"><span>فلتر القيم · نوع الحساب</span><button type="button" class="rv-link">مسح</button></div>
+          <div class="rv-pop-sec"><input type="text" class="rv-input sm" style="width: 100%;" placeholder="ابحث في القيم…" aria-label="بحث"></div>
+          <div class="rv-setlist" style="padding: 0 4px 4px;">
+            <label class="rv-setitem all"><span class="rv-check"><input type="checkbox"><span>(تحديد الكل)</span></span><span class="cnt">3 / 14</span></label>
+            <label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked="{{yes}}"><span>بنك</span></span><span class="cnt">2</span></label>
+            <label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked="{{yes}}"><span>نقدية</span></span><span class="cnt">1</span></label>
+            <label class="rv-setitem"><span class="rv-check"><input type="checkbox"><span>ذمم مدينة</span></span><span class="cnt">1</span></label>
+            <label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked="{{yes}}"><span>مخزون</span></span><span class="cnt">2</span></label>
+            <label class="rv-setitem"><span class="rv-check"><input type="checkbox"><span>مصروف</span></span><span class="cnt">9</span></label>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;"><span class="tk-code">لوحة الأعمدة الجانبية · .rv-panel + .rv-sidetabs</span>
+        <div class="rv-gridwrap" style="flex: none; height: 520px;">
+          <div class="rv-body">
+            <div style="flex: 1; background: var(--surface-2); display: grid; place-items: center;"><span class="tk-code">‹ الجدول ›</span></div>
+            <aside class="rv-panel">
+              <div class="rv-panel-hd"><strong>الأعمدة</strong></div>
+              <div class="rv-panel-bd">
+                <div class="rv-switch-row"><div>وضع التحليل (Pivot)<small>تحويل قيم بُعد إلى أعمدة</small></div><button type="button" class="rv-switch" aria-label="وضع التحليل"></button></div>
+                <div class="rv-collist" style="max-height: 130px;">
+                  <div class="rv-colitem"><label class="rv-check"><input type="checkbox" checked="{{yes}}"><span>الحساب</span></label><span class="rv-coltag">Aa</span></div>
+                  <div class="rv-colitem"><label class="rv-check"><input type="checkbox"><span>الحساب الرئيسي</span></label><span class="rv-coltag dim">بُعد</span></div>
+                  <div class="rv-colitem"><label class="rv-check"><input type="checkbox" checked="{{yes}}"><span>الختامي · مدين</span></label><span class="rv-coltag">123</span></div>
+                </div>
+                <div class="rv-zone"><div class="rv-zone-hd">مجموعات الصفوف</div><div class="rv-zone-chips"><div class="rv-zchip"><span class="lbl">الحساب الجذري</span></div><div class="rv-zchip"><span class="lbl">الحساب الرئيسي</span></div></div></div>
+                <div class="rv-zone"><div class="rv-zone-hd">القيم</div><div class="rv-zone-chips"><div class="rv-zchip"><span class="lbl">الختامي · مدين</span><select aria-label="الدالة"><option>مجموع</option><option>متوسط</option><option>عدد</option></select></div></div></div>
+                <div class="rv-zone off"><div class="rv-zone-hd">أعمدة التحليل</div><div class="rv-zone-empty">فعّل وضع التحليل</div></div>
+              </div>
+            </aside>
+            <nav class="rv-sidetabs"><button type="button" class="rv-sidetab on">الأعمدة</button><button type="button" class="rv-sidetab">الفلاتر <i class="rv-tabcount">2</i></button></nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Summary + drawer tiles ============ -->
+  <section class="tk-sec">
+    <h2 class="tk-h2">الملخص وكشف الحساب</h2>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+      <div class="rv-sum">
+        <div class="rv-sum-hd"><span class="rv-sum-t">حركة الفترة</span><span class="rv-pill ok">متوازن</span></div>
+        <div class="rv-sum-eq"><div class="rv-sum-side dr"><small>مدين</small><b>13,599,297.75</b></div><span class="rv-sum-op">=</span><div class="rv-sum-side cr"><small>دائن</small><b>13,599,297.75</b></div></div>
+        <div class="rv-sum-foot">.rv-sum · .rv-sum-side.dr / .cr</div>
+      </div>
+      <div class="rv-dtile"><span>الرصيد الختامي</span><b class="cr">129,726.10</b><small>دائن · .rv-dtile</small></div>
+      <div class="rv-dtable" style="margin: 0; flex: none;">
+        <div class="rv-drow hd"><div class="rv-dc" style="width: 90px;">التاريخ</div><div class="rv-dc grow">البيان</div><div class="rv-dc num" style="width: 110px;">الرصيد</div></div>
+        <div class="rv-drow"><div class="rv-dc ltr" style="width: 90px;">10/04/2026</div><div class="rv-dc grow">فاتورة الاتصالات</div><div class="rv-dc num" style="width: 110px;">246,215.27<span class="rv-baltag dr">مدين</span></div></div>
+        <div class="rv-drow ft"><div class="rv-dc grow">الإجمالي</div><div class="rv-dc num" style="width: 110px;">129,726.10<span class="rv-baltag cr">دائن</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Tabulator mapping ============ -->
+  <section class="tk-sec">
+    <h2 class="tk-h2">الربط مع Tabulator <span>كل ميزة هنا قابلة للبناء فوق Tabulator بدون AG Grid</span></h2>
+    <div class="tk-dt" style="grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1.2fr);">
+      <div class="hd">الميزة</div><div class="hd">في النموذج</div><div class="hd">في Tabulator</div>
+      <div>رؤوس مجمّعة</div><div class="tk-code">.rv-hg › .rv-band</div><div>columns: [{title, columns:[…]}] + headerHozAlign</div>
+      <div>عمود مثبّت</div><div class="tk-code">position: sticky; right</div><div>frozen: true (مع textDirection: "rtl")</div>
+      <div>فلاتر عائمة</div><div class="tk-code">.rv-frow › .rv-fcell</div><div>headerFilter + headerFilterFunc مخصص لنطاق الأرقام</div>
+      <div>التجميع والمجاميع</div><div class="tk-code">.rv-row.group / .foot</div><div>groupBy: [..] + groupClosedShowCalcs + columnCalcs: "group"</div>
+      <div>الإجمالي المثبّت</div><div class="tk-code">.rv-row.total</div><div>bottomCalc + columnCalcs: "both"</div>
+      <div>تحديد نطاق</div><div class="tk-code">.rv-c.sel.st/.sb/.ss/.se</div><div>selectableRange: true + selectableRangeClearCells</div>
+      <div>قائمة العمود والزر الأيمن</div><div class="tk-code">.rv-pop › .rv-mi</div><div>headerMenu / rowContextMenu (أو popups مخصصة بنفس الأصناف)</div>
+      <div>Pivot والشريط الجانبي والرسوم</div><div class="tk-code">.rv-panel · .rv-charts</div><div>طبقة JS خارج الجدول تعيد بناء columns/data ثم setColumns / replaceData</div>
+      <div style="border-bottom: 0;">الطباعة</div><div class="tk-code" style="border-bottom: 0;">.rv-page</div><div style="border-bottom: 0;">printAsHtml + printHeader / printFooter بنفس القالب</div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3000}}'>
+class Component extends DCLogic {
+  renderVals(){ return { yes: true }; }
+}
+</script>
+</body>
+</html>

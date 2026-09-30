@@ -28,7 +28,7 @@ def parse_json_arg(value: Any, name: str, expected: type | tuple[type, ...], all
 	else:
 		try:
 			size = len(json.dumps(value, default=str).encode("utf-8"))
-		except (TypeError, ValueError):
+		except TypeError, ValueError:
 			frappe.throw(_("{0} is not valid JSON").format(name), RVInvalidInput)
 		if size > MAX_JSON_BYTES:
 			frappe.throw(_("{0} is too large").format(name), RVInvalidInput)

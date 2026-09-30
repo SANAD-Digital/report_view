@@ -8,7 +8,11 @@ frappe.pages["report-view"].on_page_load = function (wrapper) {
 		single_column: true,
 	});
 	wrapper.rv_ready = frappe
-		.require(["report_view.bundle.js", "report_view.bundle.css"])
+		.require([
+			"/assets/report_view/node_modules/arquero/dist/arquero.min.js",
+			"report_view.bundle.js",
+			"report_view.bundle.css",
+		])
 		.then(() => {
 			wrapper.rv_page = new report_view.ReportViewPage(wrapper);
 		});

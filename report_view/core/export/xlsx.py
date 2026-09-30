@@ -42,7 +42,7 @@ def _cell_value(value: Any, column: dict) -> Any:
 	if ft in NUMERIC_TYPES and not isinstance(value, bool):
 		try:
 			return float(value) if ft != "Int" else int(float(value))
-		except (TypeError, ValueError):
+		except TypeError, ValueError:
 			return str(value)
 	if ft == "Date" and isinstance(value, str) and len(value) >= 10:
 		try:
@@ -64,7 +64,7 @@ def _cell_value(value: Any, column: dict) -> Any:
 def _filters_text(filters: dict) -> str:
 	parts = []
 	for key, value in filters.items():
-		if value in (None, "", []) or value == 0 and isinstance(value, int) and not isinstance(value, bool):
+		if value in (None, "", []) or (value == 0 and isinstance(value, int) and not isinstance(value, bool)):
 			continue
 		if isinstance(value, list):
 			value = ", ".join(str(v) for v in value)
@@ -137,7 +137,9 @@ def build(
 			cell = ws.cell(row=band_row, column=start + 1, value=_(label))
 			cell.font, cell.fill, cell.border = bold, header_fill, header_border
 			cell.alignment = Alignment(horizontal="center")
-			ws.merge_cells(start_row=band_row, start_column=start + 1, end_row=band_row, end_column=start + span)
+			ws.merge_cells(
+				start_row=band_row, start_column=start + 1, end_row=band_row, end_column=start + span
+			)
 			covered.update(range(start, start + span))
 		for i in range(len(columns)):
 			if i not in covered:

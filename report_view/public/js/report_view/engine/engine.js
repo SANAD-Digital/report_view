@@ -5,7 +5,9 @@
 import { aggregate, shared_currencies } from "./aggregate.js";
 import { filter_rows, has_filters } from "./filter.js";
 import { sort_rows, make_compare } from "./sort.js";
-import { group_rows } from "./group.js";
+import { group_rows, use_arquero } from "./group.js";
+
+export { use_arquero };
 import { build_tree, tree_roots } from "./tree_view.js";
 
 const FLAT_KINDS = new Set(["data", "opening", "closing"]);

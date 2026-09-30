@@ -42,7 +42,7 @@ def _to_float(value: Any) -> float | None:
 		return None
 	try:
 		return float(value)
-	except (TypeError, ValueError):
+	except TypeError, ValueError:
 		return None
 
 
@@ -161,7 +161,9 @@ def _currency_values(rows: list[dict], column: dict) -> set:
 	cur = column.get("currency") or {}
 	if cur.get("kind") != "row":
 		return set()
-	return {r.get(cur["key"]) for r in rows if not _empty(r.get(column["key"])) and not _empty(r.get(cur["key"]))}
+	return {
+		r.get(cur["key"]) for r in rows if not _empty(r.get(column["key"])) and not _empty(r.get(cur["key"]))
+	}
 
 
 def aggregate(rows: list[dict], column: dict, agg: str | None = None) -> Any:
@@ -203,7 +205,9 @@ def totals_for(rows: list[dict], columns: list[dict]) -> dict:
 # ---------------------------------------------------------------- columns
 
 
-def export_columns(nr: dict, state: dict, layout_columns: list[dict] | None, column_keys: list[str] | None) -> list[dict]:
+def export_columns(
+	nr: dict, state: dict, layout_columns: list[dict] | None, column_keys: list[str] | None
+) -> list[dict]:
 	by_key = {c["key"]: c for c in nr["columns"]}
 	cols_state = state.get("columns") or {}
 	hidden = set(cols_state.get("hidden") or [])

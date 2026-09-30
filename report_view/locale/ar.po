@@ -1,0 +1,205 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: report_view\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ar\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5);\n"
+
+msgid "(empty)"
+msgstr "(فارغ)"
+
+msgid "At most {0} names can be enriched per request"
+msgstr "يمكن إثراء {0} اسم على الأكثر في كل طلب"
+
+msgid "Closing"
+msgstr "الختامي"
+
+msgid "Export format does not match"
+msgstr "صيغة التصدير غير مطابقة"
+
+msgid "Export refers to unknown columns: {0}"
+msgstr "التصدير يشير إلى أعمدة غير موجودة: {0}"
+
+msgid "Export totals do not match what is shown on screen: {0}"
+msgstr "إجماليات التصدير لا تطابق المعروض على الشاشة: {0}"
+
+msgid "Invalid document names"
+msgstr "أسماء مستندات غير صالحة"
+
+msgid "Invalid enrichment request"
+msgstr "طلب إثراء غير صالح"
+
+msgid "Invalid expected totals"
+msgstr "إجماليات متوقعة غير صالحة"
+
+msgid "Invalid export scope"
+msgstr "نطاق تصدير غير صالح"
+
+msgid "Invalid field name"
+msgstr "اسم حقل غير صالح"
+
+msgid "Invalid filter definition"
+msgstr "تعريف فلتر غير صالح"
+
+msgid "Invalid filter name"
+msgstr "اسم فلتر غير صالح"
+
+msgid "Invalid layout"
+msgstr "تخطيط غير صالح"
+
+msgid "Invalid prepared report name"
+msgstr "اسم تقرير معدّ غير صالح"
+
+msgid "Invalid row selection"
+msgstr "تحديد صفوف غير صالح"
+
+msgid "Invalid selection"
+msgstr "تحديد غير صالح"
+
+msgid "Invalid title"
+msgstr "عنوان غير صالح"
+
+msgid "Invalid value for filter {0}"
+msgstr "قيمة غير صالحة للفلتر {0}"
+
+msgid "Movement"
+msgstr "الحركة"
+
+msgid "Only the grid view can be exported in this version"
+msgstr "لا يمكن في هذا الإصدار إلا تصدير عرض الجدول"
+
+msgid "Opening"
+msgstr "الافتتاحي"
+
+msgid "Prepared report {0} is not available"
+msgstr "التقرير المعدّ {0} غير متاح"
+
+msgid "Report"
+msgstr "تقرير"
+
+msgid "Report execution failed"
+msgstr "فشل تشغيل التقرير"
+
+msgid "Report name is required"
+msgstr "اسم التقرير مطلوب"
+
+msgid "Report type {0} is not supported in Report View"
+msgstr "نوع التقرير {0} غير مدعوم في Report View"
+
+msgid "The prepared report result is not available"
+msgstr "نتيجة التقرير المعدّ غير متاحة"
+
+msgid "The report has {0} rows, more than the limit of {1}"
+msgstr "في التقرير {0} صف، وهذا أكثر من الحد {1}"
+
+msgid "This enrichment is not allowed for report {0}"
+msgstr "هذا الإثراء غير مسموح للتقرير {0}"
+
+msgid "This view was created with a newer version of Report View"
+msgstr "أُنشئ هذا العرض بإصدار أحدث من Report View"
+
+msgid "Total"
+msgstr "الإجمالي"
+
+msgid "Unknown keys in export model: {0}"
+msgstr "مفاتيح غير معروفة في نموذج التصدير: {0}"
+
+msgid "Unsupported export model version"
+msgstr "إصدار نموذج التصدير غير مدعوم"
+
+msgid "View state must be an object"
+msgstr "حالة العرض يجب أن تكون كائناً"
+
+msgid "View state refers to unknown columns: {0}"
+msgstr "حالة العرض تشير إلى أعمدة غير موجودة: {0}"
+
+msgid "View state: invalid chart"
+msgstr "حالة العرض: الرسم غير صالح"
+
+msgid "View state: invalid columns.widths"
+msgstr "حالة العرض: عروض الأعمدة غير صالحة"
+
+msgid "View state: invalid date filter"
+msgstr "حالة العرض: فلتر التاريخ غير صالح"
+
+msgid "View state: invalid filter"
+msgstr "حالة العرض: فلتر غير صالح"
+
+msgid "View state: invalid group.expanded"
+msgstr "حالة العرض: حالة توسيع المجموعات غير صالحة"
+
+msgid "View state: invalid group.subtotals"
+msgstr "حالة العرض: خيار المجاميع الفرعية غير صالح"
+
+msgid "View state: invalid mode"
+msgstr "حالة العرض: وضع العرض غير صالح"
+
+msgid "View state: invalid pivot.values"
+msgstr "حالة العرض: قيم التحليل غير صالحة"
+
+msgid "View state: invalid quick_filters"
+msgstr "حالة العرض: الفلاتر السريعة غير صالحة"
+
+msgid "View state: invalid range filter"
+msgstr "حالة العرض: فلتر النطاق غير صالح"
+
+msgid "View state: invalid search filter"
+msgstr "حالة العرض: فلتر البحث غير صالح"
+
+msgid "View state: invalid set filter"
+msgstr "حالة العرض: فلتر القيم غير صالح"
+
+msgid "View state: invalid sort"
+msgstr "حالة العرض: الفرز غير صالح"
+
+msgid "View state: invalid text filter"
+msgstr "حالة العرض: فلتر النص غير صالح"
+
+msgid "View state: invalid tree.depth"
+msgstr "حالة العرض: عمق الشجرة غير صالح"
+
+msgid "View state: invalid tree.expanded"
+msgstr "حالة العرض: حالة توسيع الشجرة غير صالحة"
+
+msgid "View state: invalid ui"
+msgstr "حالة العرض: إعدادات الواجهة غير صالحة"
+
+msgid "View state: invalid values"
+msgstr "حالة العرض: القيم غير صالحة"
+
+msgid "View state: report_filters must be an object"
+msgstr "حالة العرض: فلاتر التقرير يجب أن تكون كائناً"
+
+msgid "View state: too many filters"
+msgstr "حالة العرض: عدد الفلاتر كبير جداً"
+
+msgid "View state: unknown keys in {0}: {1}"
+msgstr "حالة العرض: مفاتيح غير معروفة في {0}: {1}"
+
+msgid "View state: unsupported filter type"
+msgstr "حالة العرض: نوع فلتر غير مدعوم"
+
+msgid "View state: {0} must be a list of column keys"
+msgstr "حالة العرض: {0} يجب أن تكون قائمة مفاتيح أعمدة"
+
+msgid "View state: {0} must be an object"
+msgstr "حالة العرض: {0} يجب أن يكون كائناً"
+
+msgid "You are not allowed to export {0}"
+msgstr "غير مسموح لك بتصدير {0}"
+
+msgid "You are not allowed to print {0}"
+msgstr "غير مسموح لك بطباعة {0}"
+
+msgid "{0} has an invalid type"
+msgstr "نوع {0} غير صالح"
+
+msgid "{0} is not valid JSON"
+msgstr "{0} ليس JSON صالحاً"
+
+msgid "{0} is required"
+msgstr "{0} مطلوب"
+
+msgid "{0} is too large"
+msgstr "{0} كبير جداً"

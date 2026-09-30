@@ -67,7 +67,11 @@ def load_settings(report_name: str) -> dict:
 	]
 	settings["drilldowns"] = list(data.get("drilldowns") or [])
 	settings["balance_pairs"] = [
-		{"label": p.get("label"), "debit_column": p.get("debit_column"), "credit_column": p.get("credit_column")}
+		{
+			"label": p.get("label"),
+			"debit_column": p.get("debit_column"),
+			"credit_column": p.get("credit_column"),
+		}
 		for p in data.get("balance_pairs") or []
 	]
 	settings["signatures"] = list(data.get("signatures") or [])

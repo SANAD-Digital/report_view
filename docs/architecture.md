@@ -429,6 +429,8 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 
 `runner.run` ← `normalize` ← `engine.apply(view_state)` (فلترة ← فرز ← تجميع/شجرة/تحليل ← إجماليات بقواعد ADR-008) ← `xlsx.build` أو `pdf.render`. التنسيق بـ `frappe.format_value` وإعدادات النظام، والعناوين بـ `_()`.
 
+**حدود محرك بايثون في المرحلة 3** (`core/engine.py`): وضع `grid` فقط (غيره ⇒ `RVInvalidViewState`). الجدول المسطح بلا فلتر ولا تحديد ولا فرز يُبقي صفوف التقرير الملخصة (`opening`/`internal_total`/`closing`) في أماكنها، ويستبدل صف المرجع (آخر `internal_total`) بصف الإجمالي الكلي. الشجرة لا تُفرز؛ الفلتر فيها يُبقي الأوراق المطابقة وأسلافها. التجميع بترتيب أول ظهور بعد الفرز. `expected.row_count` = عدد الحقائق بعد الفلاتر والتحديد. الأبعاد المشتقة `<k>__year` = `YYYY`، `__quarter` = `YYYY-Qn`، `__month` = `YYYY-MM`. `export_background_threshold` (المرحلة 6) غير مطبّق.
+
 ---
 
 ## 5. الإعدادات
@@ -497,6 +499,7 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 
 قواعد خاصة:
 - `enrich_rules` و `drilldowns` و `pdf_generator` و `filter_defs` و `default_saved_view`: **الخادم فقط** (2 و 4).
+- (المرحلة 3) `defaults/<report>.json` يحمل أيضاً `report_settings` (نسخة خادمية من `tree`/`name_field`/`parent_field`/`initial_depth`/`export_hidden_cols` في سكربت التقرير) لأن الخادم لا ينفّذ JS ويحتاجها في تطبيع التصدير. تقرير بلا إعداد يُطبَّع في الخادم بـ `report_settings = {}` (فلا تُصدَّر أعمدته المخفية). و `get_meta.settings` يعيد `enrich_rules[].fields` قائمةً لا نصاً متعدد الأسطر، ومفتاح `source` = `"defaults"` أو `null`.
 - الإعدادات مقروءة لكل مستخدمي Desk، فلا تُخزَّن فيها أسرار (مفاتيح، كلمات مرور، روابط موقّعة). اقتراحات `register` تظهر في شاشة الإعدادات كزر «اعتماد».
 - الجداول الفرعية (`column_rules`) تُدمج بمفتاح `fieldname`: قاعدة في 4 تغلب نظيرتها في 3 حقلاً بحقل؛ الحقل الفارغ أو `Auto` لا يغلب.
 - `enabled = 0` في 4، أو `enabled_for = Enabled Reports Only` بلا سجل ⇒ الصفحة تعرض «التقرير غير مفعّل في Report View» مع رابط للأصل. هذا ليس فحص صلاحية.

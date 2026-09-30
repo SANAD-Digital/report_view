@@ -84,7 +84,9 @@ def enrich(
 		if rule["source_column"] == source_column and rule["link_doctype"] == doctype:
 			allowed.update(rule["fields"])
 	if not set(fields) <= allowed:
-		frappe.throw(_("This enrichment is not allowed for report {0}").format(_(report.name)), RVEnrichNotAllowed)
+		frappe.throw(
+			_("This enrichment is not allowed for report {0}").format(_(report.name)), RVEnrichNotAllowed
+		)
 	if not all(isinstance(n, str) for n in names):
 		frappe.throw(_("Invalid document names"), RVInvalidInput)
 	if len(names) > MAX_ENRICH_NAMES:
@@ -114,7 +116,9 @@ def export_xlsx(report_name: str, export_model: dict | str) -> Any:
 	report = guard_report(report_name)
 	guard_export(report)
 	model = export_model_mod.parse(export_model, "xlsx")
-	response = runner.run(report, report_name, model["filters"], model["js_filters"], model["prepared_report_name"])
+	response = runner.run(
+		report, report_name, model["filters"], model["js_filters"], model["prepared_report_name"]
+	)
 	if response["status"] == "too_large":
 		frappe.throw(
 			_("The report has {0} rows, more than the limit of {1}").format(
@@ -126,9 +130,7 @@ def export_xlsx(report_name: str, export_model: dict | str) -> Any:
 		frappe.throw(_("The prepared report result is not available"), RVInvalidInput)
 
 	settings = load_settings(report.name)
-	nr = normalize.normalize(
-		response["raw"], model["filters"], settings["report_settings"], {}, translate=_
-	)
+	nr = normalize.normalize(response["raw"], model["filters"], settings["report_settings"], {}, translate=_)
 	export_model_mod.check_against_report(model, nr)
 	result = engine.apply(nr, model["view_state"], model["selection"], model["layout"]["columns"])
 	export_model_mod.compare_expected(model, result, nr, report.name)

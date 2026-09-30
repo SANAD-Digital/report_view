@@ -5,6 +5,7 @@ import json
 import os
 
 import frappe
+from frappe.tests import IntegrationTestCase
 
 COMPANY = "SND Accounting"
 OTHER_COMPANY = "SND Accounting 2"
@@ -62,6 +63,9 @@ def make_users() -> dict[str, str]:
 					"first_name": f"rv_t_{kind}",
 					"send_welcome_email": 0,
 					"user_type": "System User",
+					# Disabled: the site_quota app caps *active* users at 10. Permission
+					# checks (roles, DocPerm, User Permission) do not depend on `enabled`.
+					"enabled": 0,
 					"roles": [{"role": r} for r in roles],
 				}
 			).insert()
@@ -90,3 +94,25 @@ def load_fixtures() -> list[dict]:
 
 def as_json(value):
 	return json.loads(frappe.as_json(value))
+
+
+class RVTestCase(IntegrationTestCase):
+	"""Creates the rv_t_* users once per class; everything is rolled back afterwards."""
+
+	users: dict[str, str]
+
+	@classmethod
+	def setUpClass(cls) -> None:
+		super().setUpClass()
+		frappe.set_user("Administrator")
+		cls.users = make_users()
+		# Role/permission caches built while the test users exist must not outlive the rollback.
+		cls.addClassCleanup(_rollback_and_clear_cache)
+
+	def as_user(self, kind: str):
+		return self.set_user(self.users[kind])
+
+
+def _rollback_and_clear_cache() -> None:
+	frappe.db.rollback()
+	frappe.clear_cache()

@@ -1,7 +1,15 @@
 // User grouping over facts with per-group subtotals (Arquero rollups). Pure module.
 // Produces dataTree nodes: group rows carry the aggregated measures; leaves are fact rows.
 
-import * as aq from "arquero";
+// Arquero is injected, not imported: its source depends on BigInt literals that Frappe's
+// es2017 esbuild target cannot compile. The browser loads node_modules/arquero/dist/arquero.min.js
+// with frappe.require (see page/report_view/report_view.js); node tests pass the npm module.
+let aq_table = null;
+
+/** @param {{table: Function}} aq  the Arquero namespace */
+export function use_arquero(aq) {
+	aq_table = aq.table;
+}
 import { flt, cint, clean, row_currency_key } from "./aggregate.js";
 
 const AGG_OP = { sum: "sum", avg: "mean", min: "min", max: "max", count: "count" };
@@ -34,7 +42,13 @@ function to_table(facts, keys, plan, currency_keys) {
 		data[`c${i}`] = facts.map((r) => r[ck] || null);
 	});
 	data.__idx = facts.map((_, i) => i);
-	return aq.table(data);
+	if (!aq_table && globalThis.aq) {
+		aq_table = globalThis.aq.table;
+	}
+	if (!aq_table) {
+		throw new Error("report_view: Arquero is not loaded");
+	}
+	return aq_table(data);
 }
 
 function rollup_spec(plan, currency_keys) {

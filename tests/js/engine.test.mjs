@@ -9,7 +9,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { normalize } from "../../report_view/public/js/report_view/adapter/normalize.js";
-import { create_engine } from "../../report_view/public/js/report_view/engine/engine.js";
+import * as aq from "arquero";
+import { create_engine, use_arquero } from "../../report_view/public/js/report_view/engine/engine.js";
+
+use_arquero(aq);
 import { flt } from "../../report_view/public/js/report_view/engine/aggregate.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));

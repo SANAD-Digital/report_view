@@ -155,7 +155,12 @@ def main(site, company):
 			description="skip_total_row; bold party subtotals; unquoted bold 'Total'; {} separators",
 		)
 
-		sb = {"company": company, "from_date": "2026-01-01", "to_date": "2026-09-30", "valuation_field_type": "Currency"}
+		sb = {
+			"company": company,
+			"from_date": "2026-01-01",
+			"to_date": "2026-09-30",
+			"valuation_field_type": "Currency",
+		}
 		write_case(
 			"stock_balance",
 			run("Stock Balance", filters=dict(sb), ignore_prepared_report=True),
@@ -178,7 +183,12 @@ def main(site, company):
 				description="Result read from a Prepared Report file (flags.prepared)",
 			)
 
-		elb = {"from_date": "2026-01-01", "to_date": "2026-12-31", "company": company, "employee_status": "Active"}
+		elb = {
+			"from_date": "2026-01-01",
+			"to_date": "2026-12-31",
+			"company": company,
+			"employee_status": "Active",
+		}
 		write_case(
 			"employee_leave_balance_float",
 			run("Employee Leave Balance", filters=dict(elb)),

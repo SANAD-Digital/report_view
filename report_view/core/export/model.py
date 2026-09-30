@@ -81,7 +81,8 @@ def parse(export_model: Any, fmt: str) -> dict:
 		rids = selection.get("row_rids")
 		keys = selection.get("column_keys")
 		if rids is not None and (
-			not isinstance(rids, list) or not all(isinstance(r, int) and not isinstance(r, bool) for r in rids)
+			not isinstance(rids, list)
+			or not all(isinstance(r, int) and not isinstance(r, bool) for r in rids)
 		):
 			_bad(_("Invalid selection"))
 		if keys is not None and (not isinstance(keys, list) or not all(isinstance(k, str) for k in keys)):

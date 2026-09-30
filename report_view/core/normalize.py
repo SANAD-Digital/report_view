@@ -123,7 +123,9 @@ def normalize(
 		frappe_total_raw = raw_rows.pop()
 
 	first_dict = next((r for r in raw_rows if isinstance(r, dict) and r), None)
-	columns = _build_columns(raw.get("columns") or [], first_dict, filters, report_settings, register, notices)
+	columns = _build_columns(
+		raw.get("columns") or [], first_dict, filters, report_settings, register, notices
+	)
 
 	# N2.2: every row becomes a dict keyed by column key.
 	has_list = any(isinstance(r, list | tuple) for r in raw_rows)
@@ -232,7 +234,7 @@ def _to_int_or_none(value: Any) -> int | None:
 		return None
 	try:
 		return int(float(value))
-	except (TypeError, ValueError):
+	except TypeError, ValueError:
 		return None
 
 
@@ -461,7 +463,7 @@ def _num(value: Any) -> float:
 		return 0
 	try:
 		return float(value)
-	except (TypeError, ValueError):
+	except TypeError, ValueError:
 		return 0
 
 

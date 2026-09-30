@@ -1,9 +1,10 @@
 // View state v1 (docs/architecture.md §7.1), minimal subset used in phase 3:
-// mode, columns, sort, group, tree. Unknown keys are dropped (not rejected) in the browser.
+// mode, columns, sort, group, tree, ui.density. Unknown keys are dropped (not rejected) in the browser.
 
 export const VERSION = 1;
 const MODES = ["grid", "pivot", "charts"];
 const LIMIT_GROUP = 50;
+const DENSITIES = ["comfortable", "compact"];
 
 export function default_state(config = {}) {
 	return {
@@ -15,6 +16,7 @@ export function default_state(config = {}) {
 		filters: [],
 		group: { by: [], subtotals: true, expanded: "all" },
 		tree: { depth: null, expanded: null },
+		ui: { density: "comfortable", side_panel: null },
 	};
 }
 
@@ -60,6 +62,7 @@ export function sanitize(state, config = {}) {
 	const tree = state.tree || {};
 	if (Number.isInteger(tree.depth) && tree.depth >= 0) out.tree.depth = tree.depth;
 	if (Array.isArray(tree.expanded)) out.tree.expanded = tree.expanded;
+	if (DENSITIES.includes(state.ui?.density)) out.ui.density = state.ui.density;
 	return out;
 }
 

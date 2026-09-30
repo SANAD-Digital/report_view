@@ -107,7 +107,22 @@ def enrich(
 			limit_page_length=0,
 		):
 			rows[doc["name"]] = {f: doc.get(f) for f in permitted}
-	return {"doctype": doctype, "rows": rows, "dropped_fields": dropped, "missing": len(unique) - len(rows)}
+	meta = frappe.get_meta(doctype)
+	field_meta = {}
+	for f in permitted:
+		df = meta.get_field(f)
+		field_meta[f] = {
+			"fieldtype": df.fieldtype if df else "Data",
+			"options": df.options if df and df.fieldtype in ("Select", "Link") else None,
+			"label": _(df.label) if df and df.label else f,
+		}
+	return {
+		"doctype": doctype,
+		"rows": rows,
+		"fields": field_meta,
+		"dropped_fields": dropped,
+		"missing": len(unique) - len(rows),
+	}
 
 
 @frappe.whitelist(methods=["POST"])

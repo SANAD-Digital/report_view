@@ -1,0 +1,98 @@
+/* Report View page: layout of the design frame inside a Frappe page, Frappe controls styled
+   as the design's fields (.rv-field / .rv-input), states and narrow screens.
+   Logical properties only; colours from the tokens only. */
+
+.rv [hidden]{display:none !important}
+
+.rv{border-radius:var(--r-lg)}
+.rv-muted{color:var(--tx-4)}
+.rv-mixed{color:var(--tx-4);cursor:help}
+
+/* ---------- header ---------- */
+.rv-top{flex-wrap:wrap}
+.rv-top-main{min-width:0}
+.rv-meta:empty{display:none}
+.rv-title{overflow-wrap:anywhere}
+.rv-tag{white-space:nowrap}
+.rv-actions{flex-wrap:wrap}
+.rv-seg button[aria-disabled=true]{opacity:.45;cursor:default}
+.rv-seg button[aria-disabled=true]:hover{color:var(--tx-2)}
+.rv-btn .ico-dr{display:inline-flex}
+
+/* ---------- server bar with Frappe controls ---------- */
+.rv-server{flex-wrap:wrap}
+.rv-server-tag{flex:none}
+.rv-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px;flex:1 1 420px;min-width:0}
+.rv-server-side{display:flex;align-items:center;gap:14px;margin-inline-start:auto;align-self:flex-end;min-height:var(--ctl)}
+.rv-server-side .rv-server-note{margin-inline-start:0}
+.rv-server-note:empty{display:none}
+.rv-filter.rv-field{width:190px;min-width:0}
+.rv-filter.rv-field[data-fieldtype=Date]{width:160px}
+.rv-filter.hide-control,.rv-filter .hide-control{display:none}
+.rv-field-lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv-field-lbl.reqd::after{content:" *";color:var(--err)}
+.rv-field-ctl{position:relative;min-width:0}
+.rv-filter-check{display:flex;align-items:center;min-height:var(--ctl)}
+
+.rv .rv-field .frappe-control,.rv .rv-field .form-group,
+.rv .rv-filter-check .frappe-control,.rv .rv-filter-check .form-group,
+.rv .rv-group .frappe-control,.rv .rv-group .form-group{margin:0;padding:0}
+.rv .rv-field .form-control,.rv .rv-group .form-control{height:var(--ctl);padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:var(--tx);font-family:inherit;font-size:var(--fs-sm);font-weight:400;letter-spacing:0;line-height:calc(var(--ctl) - 2px);box-shadow:none}
+.rv .rv-field .form-control:focus,.rv .rv-group .form-control:focus,
+.rv .rv-group .multiselect-list.show .form-control{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft);outline:0}
+.rv .rv-server .rv-field .rv-input{width:100%}
+.rv .rv-field .form-control::placeholder{color:var(--tx-4)}
+.rv .rv-field select.form-control{padding-inline-end:28px}
+.rv .rv-field .select-icon{top:0;bottom:0;display:flex;align-items:center;color:var(--tx-3)}
+.rv .rv-field .select-icon .icon{stroke:currentColor}
+.rv .rv-field .placeholder{position:absolute;top:0;bottom:0;inset-inline:10px 28px;display:flex;align-items:center;font-size:var(--fs-sm);color:var(--tx-4);pointer-events:none}
+.rv .rv-field .link-btn{top:1px;bottom:1px;height:auto;background:var(--surface)}
+.rv .rv-field .link-btn .icon{stroke:var(--tx-3)}
+.rv .rv-field input[type=date],.rv .rv-field [data-fieldtype=Date] .form-control{font-variant-numeric:tabular-nums}
+.rv .rv-filter-check .checkbox label{display:inline-flex;align-items:center;gap:0;padding:0;font-size:var(--fs-xs);font-weight:500;color:var(--tx-2);white-space:nowrap;cursor:pointer}
+.rv .rv-filter-check .label-area{color:var(--tx-2)}
+.rv .rv-filter-check .checkbox input[type=checkbox]{accent-color:var(--pri);margin-block:0}
+.rv .rv-filter-check .help-box,.rv .rv-filter-check .help{display:none}
+
+/* ---------- toolbar ---------- */
+.rv-toolbar{flex-wrap:wrap}
+.rv-tb-group{display:flex;align-items:center;gap:8px;min-width:0}
+.rv-group{width:280px;min-width:0}
+.rv .rv-group .multiselect-list .form-control{position:relative}
+.rv .rv-group .multiselect-list .status-text{top:0;bottom:0;left:10px;right:10px;display:flex;align-items:center;font-size:var(--fs-sm);color:var(--tx)}
+.rv .rv-group .multiselect-list .status-text .text-extra-muted{color:var(--tx-4)}
+.rv-message{font-size:var(--fs-sm);color:var(--tx-2)}
+.rv-message:empty{display:none}
+
+/* ---------- grid frame ---------- */
+/* inline-size containment: the table never widens the Frappe layout (390px phones, wide reports) */
+.rv-gridwrap{flex:none;min-height:360px;contain:inline-size}
+.rv-grid{flex:1;min-height:0;position:relative}
+.rv-tabulator{height:100%}
+.rv-status{flex-wrap:wrap}
+
+/* ---------- states (the overlay covers the whole grid frame) ---------- */
+.rv-gridwrap > .rv-stateov{inset:0;z-index:12}
+.rv-stateov[hidden]{display:none}
+.rv-state-ico{font-size:22px;font-weight:600}
+.rv-state-ico.warn{background:var(--warn-soft);color:var(--warn)}
+.rv-state p{white-space:pre-line}
+.rv-state-actions{flex-wrap:wrap;justify-content:center}
+.rv-state .rv-skel{width:220px}
+
+/* ---------- narrow screens (390px phones) ---------- */
+@media (max-width:600px){
+  .rv{--pad:12px}
+  .rv-shell{padding:var(--pad)}
+  .rv-top{flex-direction:column;align-items:stretch;gap:10px}
+  .rv-title{font-size:20px}
+  .rv-server{padding:10px;gap:10px}
+  .rv-server-tag{flex:1 1 100%;border-inline-end:0;padding-inline-end:0}
+  .rv-filters{flex:1 1 100%}
+  .rv-filter.rv-field,.rv-filter.rv-field[data-fieldtype=Date]{width:calc(50% - 7px)}
+  .rv-server-side{width:100%;justify-content:space-between;margin-inline-start:0}
+  .rv-server-side .rv-btn.primary{margin-inline-start:auto}
+  .rv-tb-group{flex:1 1 100%}
+  .rv-group{flex:1;width:auto}
+  .rv-status{height:auto;min-height:34px;padding-block:6px}
+}

@@ -15,20 +15,27 @@ export function enrich_batches(report, source_column, size = 5000) {
  * @param {object} values {name: {field: value}} merged from api.enrich responses
  * @param {Array<string>} fields fields actually returned (dropped_fields removed)
  * @param {Function} label_of (field) => label
+ * @param {object} field_meta {field: {fieldtype, options, label}} from api.enrich
  */
-export function apply_enrichment(report, rule, values, fields, label_of = (f) => f) {
+export function apply_enrichment(report, rule, values, fields, label_of = (f) => f, field_meta = {}) {
 	const source = report.columns.find((c) => c.key === rule.source_column);
 	if (!source) return [];
 	const added = [];
 	fields.forEach((field, i) => {
 		const key = `${rule.source_column}__${field}`;
 		if (report.columns.some((c) => c.key === key)) return;
+		// Select and Link keep their type so frappe.format translates or links the value;
+		// everything else is shown as plain text.
+		const fm = field_meta[field] || {};
+		const fieldtype = ["Select", "Link"].includes(fm.fieldtype) ? fm.fieldtype : "Data";
+		const options = fieldtype === "Data" ? null : fm.options || null;
+		const label = fm.label || label_of(field);
 		const column = {
 			key,
 			fieldname: key,
-			label: label_of(field),
-			fieldtype: "Data",
-			options: null,
+			label,
+			fieldtype,
+			options,
 			width: 140,
 			hidden: false,
 			export_hidden: false,
@@ -38,7 +45,7 @@ export function apply_enrichment(report, rule, values, fields, label_of = (f) =>
 			link: null,
 			date: false,
 			source_index: report.columns.length + i,
-			original: { fieldname: key, label: label_of(field), fieldtype: "Data" },
+			original: { fieldname: key, label, fieldtype, options },
 			enriched: { source: rule.source_column, doctype: rule.link_doctype, field },
 		};
 		report.columns.push(column);

@@ -50,24 +50,39 @@ export class ReportFilters {
 		this.refresh_dependency();
 	}
 
+	// Each filter is a design field (.rv-field): its label above a Frappe control. Check
+	// filters keep Frappe's own label beside the box.
 	make(def) {
 		const df = def;
+		const label = __(df.label, null, df.parent);
 		if (!df.placeholder) df.placeholder = df.label;
-		df.input_class = "input-xs";
+		df.input_class = "input-xs rv-input";
+		const is_check = df.fieldtype === "Check";
 		const wrap = document.createElement("div");
-		wrap.className = "rv-filter";
+		wrap.className = `rv-filter${is_check ? " rv-filter-check" : " rv-field"}`;
 		wrap.dataset.fieldtype = df.fieldtype;
+		wrap.dataset.fieldname = df.fieldname;
+		let control_parent = wrap;
+		if (!is_check) {
+			const lbl = document.createElement("span");
+			lbl.className = `rv-field-lbl${df.reqd ? " reqd" : ""}`;
+			lbl.textContent = label;
+			control_parent = document.createElement("div");
+			control_parent.className = "rv-field-ctl";
+			wrap.append(lbl, control_parent);
+		}
 		this.parent.appendChild(wrap);
 		const f = frappe.ui.form.make_control({
 			df,
-			parent: wrap,
-			only_input: df.fieldtype !== "Check",
+			parent: control_parent,
+			only_input: !is_check,
 		});
 		f.refresh();
 		if (df.fieldtype !== "HTML") {
 			if (!f.$input) f.make_input();
-			f.$input.attr("placeholder", __(df.label, null, df.parent));
-			$(f.wrapper).attr("title", __(df.label, null, df.parent));
+			f.$input.attr("placeholder", label);
+			if (!is_check) f.$input.attr("aria-label", label);
+			$(f.wrapper).attr("title", label);
 		}
 		if (df.default) f.set_input(df.default);
 		if (df.get_query) f.get_query = df.get_query;

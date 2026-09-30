@@ -2,7 +2,7 @@
    Every colour used by the app comes from these variables. */
 
 .rv{
-  --font:'IBM Plex Sans Arabic',system-ui,sans-serif;
+  --font:'IBM Plex Sans Arabic',var(--font-stack,system-ui),sans-serif;
   /* surfaces */
   --bg:#F3F6F4; --surface:#FFFFFF; --surface-2:#F8FAF9; --surface-3:#EEF2EF; --hdr:#F7F9F8;
   --line:#E2E8E4; --line-2:#D3DBD6; --line-3:#B9C4BD;

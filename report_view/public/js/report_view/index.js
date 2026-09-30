@@ -13,8 +13,31 @@ import { install_facade, make_facade } from "./filters/facade.js";
 import { make_formatter } from "./format.js";
 import { GridView } from "./views/grid_view.js";
 import { StateOverlay } from "./components/states.js";
+import { Header } from "./components/header.js";
+import { Toolbar } from "./components/toolbar.js";
+import { StatusBar } from "./components/status_bar.js";
+import { icons } from "./components/icons.js";
 
 const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
+// Local preferences of this browser (the theme is not part of the view state, §7.1).
+const THEME_KEY = "report_view:theme";
+const DENSITY_KEY = "report_view:density";
+
+function read_pref(key) {
+	try {
+		return window.localStorage.getItem(key);
+	} catch {
+		return null;
+	}
+}
+
+function write_pref(key, value) {
+	try {
+		window.localStorage.setItem(key, value);
+	} catch {
+		// storage disabled: the choice lasts for this page only
+	}
+}
 
 const ERROR_TITLES = {
 	PermissionError: () => __("You do not have permission to open this report"),
@@ -49,8 +72,16 @@ export class ReportViewPage {
 		this.facade = make_facade(this);
 		this.update_url = make_url_updater(window);
 		this.run_token = 0;
+		this.has_run = false;
+		this.density = read_pref(DENSITY_KEY) === "compact" ? "compact" : "comfortable";
 		this.make_dom();
 		this.watch_theme();
+		this.fit_height = this.fit_height.bind(this);
+		window.addEventListener("resize", this.fit_height);
+		// The server bar grows or shrinks with its note and filters: keep the grid in the window.
+		this.resize_observer = new ResizeObserver(() => this.fit_height());
+		this.resize_observer.observe(this.$(".rv-server"));
+		this.resize_observer.observe(this.header.el);
 		$(wrapper).on("hide", () => this.hide());
 	}
 
@@ -60,45 +91,141 @@ export class ReportViewPage {
 		root.dir = this.rtl ? "rtl" : "ltr";
 		root.innerHTML = `
 			<div class="rv-shell">
-				<div class="rv-server">
+				<div class="rv-header-slot"></div>
+				<section class="rv-server" aria-label="${esc(__("Report criteria"))}">
+					<div class="rv-server-tag">
+						<div class="rv-server-ico">${icons.database()}</div>
+						<div><strong>${esc(__("Report criteria"))}</strong><span>${esc(__("Fetch the data again from the server"))}</span></div>
+					</div>
 					<div class="rv-filters"></div>
-					<div class="rv-server-actions">
-						<span class="rv-server-note"></span>
-						<button type="button" class="rv-btn primary" data-action="run">${esc(__("Refresh"))}</button>
+					<div class="rv-server-side">
+						<div class="rv-server-note" aria-live="polite"></div>
+						<button type="button" class="rv-btn primary" data-action="run">${icons.play()}<span>${esc(__("Run report"))}</span></button>
 					</div>
-				</div>
+				</section>
 				<div class="rv-message"></div>
-				<div class="rv-toolbar">
-					<span class="rv-toolbar-lbl">${esc(__("Group by"))}</span>
-					<div class="rv-group"></div>
-					<div class="rv-toolbar-end">
-						<span class="rv-count"></span>
-						<button type="button" class="rv-btn" data-action="export" hidden>${esc(__("Excel"))}</button>
-					</div>
-				</div>
+				<div class="rv-toolbar-slot"></div>
 				<div class="rv-gridwrap"><div class="rv-grid"></div></div>
 			</div>`;
 		this.page.main.get(0).replaceChildren(root);
 		this.root = root;
 		this.$ = (sel) => root.querySelector(sel);
-		this.overlay = new StateOverlay(this.$(".rv-gridwrap"));
+		this.header = new Header({
+			parent: this.$(".rv-header-slot"),
+			on_density: (d) => this.set_density(d),
+			on_theme: () => this.toggle_theme(),
+			on_export: () => this.export_xlsx(),
+		});
+		this.$(".rv-header-slot").replaceWith(this.header.el);
+		this.toolbar = new Toolbar({ parent: this.$(".rv-toolbar-slot") });
+		this.$(".rv-toolbar-slot").replaceWith(this.toolbar.el);
+		const wrap = this.$(".rv-gridwrap");
+		this.overlay = new StateOverlay(wrap);
 		this.grid = new GridView({ parent: this.$(".rv-grid"), rtl: this.rtl });
+		this.status = new StatusBar({ parent: wrap });
 		this.$('[data-action="run"]').addEventListener("click", () => this.run());
-		this.$('[data-action="export"]').addEventListener("click", () => this.export_xlsx());
+		this.apply_density();
+		this.set_note("idle");
 	}
 
-	// The theme follows the Desk theme of the user (§7.1).
+	// Theme: the Desk theme by default (data-theme is the resolved light/dark value, also in
+	// "automatic" mode); the header button stores a local choice in localStorage.
 	watch_theme() {
-		const apply = () => {
-			const theme = document.documentElement.getAttribute("data-theme");
-			this.root.classList.toggle("dark", theme === "dark");
-		};
-		apply();
-		this.theme_observer = new MutationObserver(apply);
+		this.apply_theme();
+		this.theme_observer = new MutationObserver(() => this.apply_theme());
 		this.theme_observer.observe(document.documentElement, {
 			attributes: true,
 			attributeFilter: ["data-theme"],
 		});
+	}
+
+	is_dark() {
+		const saved = read_pref(THEME_KEY);
+		if (saved === "dark" || saved === "light") return saved === "dark";
+		return document.documentElement.getAttribute("data-theme") === "dark";
+	}
+
+	apply_theme() {
+		const dark = this.is_dark();
+		this.root.classList.toggle("dark", dark);
+		this.header.set_theme(dark);
+	}
+
+	toggle_theme() {
+		write_pref(THEME_KEY, this.is_dark() ? "light" : "dark");
+		this.apply_theme();
+	}
+
+	apply_density() {
+		this.root.classList.toggle("compact", this.density === "compact");
+		this.header.set_density(this.density);
+		if (this.state) this.state.ui.density = this.density;
+	}
+
+	set_density(density) {
+		if (density === this.density) return;
+		this.density = density;
+		write_pref(DENSITY_KEY, density);
+		this.apply_density();
+		this.fit_height();
+		this.render();
+	}
+
+	// The grid fills the window below the page header; on small screens it keeps a
+	// minimum height and the page scrolls.
+	fit_height() {
+		const wrap = this.$(".rv-gridwrap");
+		if (!wrap || !wrap.isConnected) return;
+		const top = wrap.getBoundingClientRect().top + window.scrollY;
+		const h = Math.max(360, Math.round(window.innerHeight - top - 16));
+		wrap.style.height = `${h}px`;
+	}
+
+	/**
+	 * Server bar note (§11.1 #12, #16).
+	 * @param {"idle"|"loading"|"fresh"|"pending"|"missing"|"error"} kind
+	 */
+	set_note(kind, text = "") {
+		const bar = this.$(".rv-server");
+		const pending = kind === "pending" || kind === "missing";
+		bar.classList.toggle("pending", pending);
+		const messages = {
+			idle: __("Not run yet"),
+			loading: __("Fetching data from the server…"),
+			pending: __("Criteria changed: run the report to fetch the data again"),
+			missing: __("Please set filters"),
+			error: __("The last run failed"),
+		};
+		const msg = text || messages[kind] || "";
+		const icon = pending || kind === "error" ? icons.alert() : kind === "fresh" && msg ? icons.check() : "";
+		this.$(".rv-server-note").innerHTML = msg ? `${icon}<span>${esc(msg)}</span>` : "";
+	}
+
+	// Filters changed: before the first run the report runs by itself (like query-report);
+	// after it, the bar shows the pending state until the user runs the report.
+	on_filters_changed() {
+		if (!this.has_run) {
+			this.schedule_run();
+			return;
+		}
+		this.update_pending();
+	}
+
+	request_refresh() {
+		this.on_filters_changed();
+	}
+
+	update_pending() {
+		if (!this.filters || !this.has_run) return;
+		const same = JSON.stringify(this.filters.get_values()) === JSON.stringify(this.last_filters);
+		if (!same) this.set_note("pending");
+		else if (this.last_error) this.set_note("error");
+		else this.set_note("fresh", this.fresh_note());
+	}
+
+	fresh_note() {
+		if (!this.report) return "";
+		return __("Data is up to date · {0} rows from the server", [format_int(this.report.rows.length)]);
 	}
 
 	show() {
@@ -126,7 +253,9 @@ export class ReportViewPage {
 		this.report_name = name;
 		this.report = null;
 		this.raw = null;
+		this.has_run = false;
 		this.page.set_title(__(name));
+		this.header.set_report({ name });
 		this.overlay.loading();
 		const route_options = frappe.route_options || {};
 		frappe.route_options = null;
@@ -148,24 +277,32 @@ export class ReportViewPage {
 			return;
 		}
 		this.config = get_config(name);
-		this.$('[data-action="export"]').hidden = !this.meta.perms?.can_export;
+		this.header.set_report({
+			name,
+			module: this.meta.report?.module,
+			report_type: this.meta.report?.report_type,
+			can_export: Boolean(this.meta.perms?.can_export),
+		});
+		if (frappe.breadcrumbs && this.meta.report?.module) frappe.breadcrumbs.add(this.meta.report.module);
 
 		const params = new URLSearchParams(window.location.search);
 		const from_url = decode_state(params.get("rv"));
 		this.state = sanitize(from_url || default_state(this.config), this.config);
+		this.state.ui.density = this.density;
 		this.prepared_report_name = route_options.prepared_report_name || null;
 
 		this.filters = new ReportFilters({
 			parent: this.$(".rv-filters"),
 			host: this,
 			defs: this.report_settings.filters || [],
-			on_change: () => this.schedule_run(),
+			on_change: () => this.on_filters_changed(),
 		});
 		const filter_options = Object.fromEntries(
 			Object.entries(route_options).filter(([k]) => !RESERVED_PARAMS.has(k))
 		);
 		await this.filters.set_route_values(filter_options);
 		this.make_group_control();
+		this.fit_height();
 
 		if (typeof this.report_settings.onload === "function") {
 			this.filters._no_refresh = true;
@@ -179,14 +316,15 @@ export class ReportViewPage {
 	}
 
 	make_group_control() {
-		const parent = this.$(".rv-group");
+		const parent = this.toolbar.group_parent;
 		parent.replaceChildren();
 		this.group_control = frappe.ui.form.make_control({
 			df: {
 				fieldtype: "MultiSelectList",
 				fieldname: "rv_group_by",
 				label: __("Group by"),
-				placeholder: __("Group by"),
+				placeholder: esc(__("No grouping")),
+				input_class: "rv-input",
 				get_data: () => this.group_options(),
 				onchange: () => {
 					const by = (this.group_control.get_value() || []).filter(Boolean);
@@ -223,8 +361,8 @@ export class ReportViewPage {
 			values = this.filters.get_values(true);
 		} catch (e) {
 			if (e instanceof MissingFiltersError) {
-				this.$(".rv-server").classList.add("pending");
-				this.$(".rv-server-note").textContent = __("Please set filters");
+				this.set_note("missing");
+				this.status.clear();
 				this.overlay.show({
 					kind: "missing_filters",
 					icon: "!",
@@ -236,18 +374,25 @@ export class ReportViewPage {
 			}
 			throw e;
 		}
-		this.$(".rv-server").classList.remove("pending");
-		this.$(".rv-server-note").textContent = "";
+		this.has_run = true;
+		this.last_error = false;
 		this.last_filters = values;
+		this.set_note("loading");
+		this.header.set_meta({ filters: values, running: true });
 		this.overlay.loading();
-		this.$(".rv-count").textContent = "";
+		this.status.clear();
 		try {
 			const res = await api.run(this.report_name, values, this.filters.js_filters(), this.prepared_report_name);
 			if (token !== this.run_token) return;
 			await this.handle_response(res.message, res.server_messages, values, token);
 		} catch (e) {
-			if (token === this.run_token) this.show_error(e);
+			if (token === this.run_token) {
+				this.last_error = true;
+				this.show_error(e);
+				this.header.set_meta({ filters: values });
+			}
 		} finally {
+			if (token === this.run_token) this.update_pending();
 			if (token === this.run_token && typeof this.report_settings.after_refresh === "function") {
 				this.report_settings.after_refresh(this.facade);
 			}
@@ -256,6 +401,12 @@ export class ReportViewPage {
 
 	async handle_response(res, server_messages, values, token) {
 		const status = res?.status;
+		if (status === "too_large" || status === "prepared_pending" || status === "prepared_missing") {
+			this.report = null;
+			this.result = null;
+			this.grid.destroy();
+			this.header.set_meta({ filters: values });
+		}
 		if (status === "too_large") {
 			this.overlay.show({
 				kind: "too_large",
@@ -309,6 +460,7 @@ export class ReportViewPage {
 		this.engine = create_engine(report, { locale: frappe.boot.lang });
 		this.formatter = make_formatter({ report_settings: this.report_settings, columns: report.columns });
 		this.$(".rv-message").innerHTML = report.message ? frappe.dom.remove_script_and_style(String(report.message)) : "";
+		this.run_at = frappe.format(frappe.datetime.now_datetime(), { fieldtype: "Datetime" }, { inline: true });
 		await this.render();
 	}
 
@@ -318,11 +470,13 @@ export class ReportViewPage {
 			const source = report.columns.find((c) => c.key === rule.source_column);
 			if (!source || source.link?.kind !== "static" || !rule.fields?.length) continue;
 			const values = {};
+			const field_meta = {};
 			let fields = [...rule.fields];
 			try {
 				for (const names of enrich_batches(report, rule.source_column)) {
 					const r = await api.enrich(this.report_name, rule.source_column, rule.link_doctype, names, fields);
 					Object.assign(values, r.rows || {});
+					Object.assign(field_meta, r.fields || {});
 					const dropped = new Set(r.dropped_fields || []);
 					fields = fields.filter((f) => !dropped.has(f));
 				}
@@ -330,7 +484,7 @@ export class ReportViewPage {
 				frappe.show_alert({ message: __("Extra columns could not be loaded: {0}", [e.message]), indicator: "orange" });
 				continue;
 			}
-			apply_enrichment(report, rule, values, fields, (f) => __(frappe.unscrub(f)));
+			apply_enrichment(report, rule, values, fields, (f) => __(frappe.unscrub(f)), field_meta);
 		}
 	}
 
@@ -346,13 +500,15 @@ export class ReportViewPage {
 				title: __("No results"),
 				text: notes.length ? frappe.utils.html2text(notes.join("\n")) : __("Nothing matches these filters."),
 			});
-			this.$(".rv-count").textContent = "";
+			this.status.clear();
+			this.header.set_meta({ filters: this.last_filters, run_at: this.run_at });
 			return;
 		}
 		this.result = this.engine.apply(this.state);
+		this.header.set_meta({ filters: this.last_filters, currency: this.result.currency, run_at: this.run_at });
 		this.overlay.hide();
 		await this.grid.render(report, this.result, this.state, this.config, this.formatter);
-		this.$(".rv-count").innerHTML = __("{0} rows", [`<b>${format_int(this.result.row_count)}</b>`]);
+		this.status.update(this.result);
 		this.update_url(this.last_filters, this.state);
 	}
 
@@ -360,6 +516,7 @@ export class ReportViewPage {
 		const exc = e?.exc_type || null;
 		const title = (ERROR_TITLES[exc] || (() => __("Something went wrong")))();
 		this.grid.destroy();
+		this.status.clear();
 		this.overlay.show({
 			kind: "error",
 			icon: "!",
@@ -399,7 +556,7 @@ export class ReportViewPage {
 
 	async export_xlsx() {
 		if (!this.result) return;
-		const btn = this.$('[data-action="export"]');
+		const btn = this.header.export_button;
 		btn.disabled = true;
 		try {
 			const out = await api.export_xlsx(this.report_name, this.export_model());

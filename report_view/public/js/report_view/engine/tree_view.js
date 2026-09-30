@@ -35,6 +35,16 @@ export function build_tree(rows, keep = null, sort_siblings = null) {
 		else tops.push(node);
 	}
 
+	// Leaf count of every parent node (the count badge of the grid).
+	const count = (node) => {
+		if (!node._children) return 1;
+		let n = 0;
+		for (const c of node._children) n += count(c);
+		node.__count = n;
+		return n;
+	};
+	for (const t of tops) count(t);
+
 	if (sort_siblings) {
 		const walk = (list) => {
 			const sorted = sort_siblings(list);

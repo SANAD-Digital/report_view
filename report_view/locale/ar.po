@@ -261,8 +261,6 @@ msgid "Please set filters"
 msgstr "يرجى تعيين الفلاتر"
 
 #: report_view/public/js/report_view
-msgid "Refresh"
-msgstr "تحديث"
 
 #: report_view/public/js/report_view
 msgid "Report View"
@@ -337,5 +335,114 @@ msgid "You do not have permission to open this report"
 msgstr "لا تملك صلاحية فتح هذا التقرير"
 
 #: report_view/public/js/report_view
-msgid "{0} rows"
-msgstr "{0} صف"
+
+msgid "Opening Balance"
+msgstr "الرصيد الافتتاحي"
+
+msgid "Period Movement"
+msgstr "حركة الفترة"
+
+msgid "Closing Balance"
+msgstr "الرصيد الختامي"
+
+msgid "Debit"
+msgstr "مدين"
+
+msgid "Credit"
+msgstr "دائن"
+
+msgid "Collapse group"
+msgstr "طي المجموعة"
+
+msgid "Expand group"
+msgstr "توسيع المجموعة"
+
+msgid "Grand Total"
+msgstr "الإجمالي العام"
+
+msgid "Breadcrumbs"
+msgstr "مسار التنقل"
+
+msgid "Density"
+msgstr "الكثافة"
+
+msgid "Comfortable"
+msgstr "مريح"
+
+msgid "Compact"
+msgstr "مضغوط"
+
+msgid "Reports"
+msgstr "التقارير"
+
+msgid "Period"
+msgstr "الفترة"
+
+msgid "As on"
+msgstr "بتاريخ"
+
+msgid "Fiscal Year"
+msgstr "السنة المالية"
+
+msgid "Currency"
+msgstr "العملة"
+
+msgid "Running…"
+msgstr "جارٍ التشغيل…"
+
+msgid "Last run {0}"
+msgstr "آخر تشغيل {0}"
+
+msgid "Switch to light mode"
+msgstr "التبديل إلى الوضع الفاتح"
+
+msgid "Switch to dark mode"
+msgstr "التبديل إلى الوضع الداكن"
+
+msgid "Coming soon"
+msgstr "قريباً"
+
+msgid "View"
+msgstr "طريقة العرض"
+
+msgid "Table"
+msgstr "جدول"
+
+msgid "Pivot"
+msgstr "تحليل Pivot"
+
+msgid "Charts"
+msgstr "رسوم"
+
+msgid "Rows {0} of {1}"
+msgstr "الصفوف {0} من {1}"
+
+msgid "Groups {0}"
+msgstr "المجموعات {0}"
+
+msgid "Report criteria"
+msgstr "معايير التقرير"
+
+msgid "Fetch the data again from the server"
+msgstr "تعيد جلب البيانات من الخادم"
+
+msgid "Run report"
+msgstr "تشغيل التقرير"
+
+msgid "Not run yet"
+msgstr "لم يتم التشغيل بعد"
+
+msgid "Fetching data from the server…"
+msgstr "جارٍ جلب البيانات من الخادم…"
+
+msgid "Criteria changed: run the report to fetch the data again"
+msgstr "تغيّرت المعايير — شغّل التقرير لجلب البيانات من جديد"
+
+msgid "The last run failed"
+msgstr "فشل آخر تشغيل"
+
+msgid "Data is up to date · {0} rows from the server"
+msgstr "البيانات محدّثة · {0} صفاً من الخادم"
+
+msgid "No grouping"
+msgstr "بلا تجميع"

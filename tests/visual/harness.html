@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report View — visual harness</title>
+<script>
+	// Same stylesheet order as Desk: Frappe's desk CSS (RTL build for Arabic), then the app.
+	(function () {
+		var lang = new URLSearchParams(location.search).get("lang") || "ar";
+		var rtl = lang === "ar";
+		document.documentElement.lang = lang;
+		document.documentElement.dir = rtl ? "rtl" : "ltr";
+		["dist/desk-" + (rtl ? "rtl" : "ltr") + ".css", "dist/fonts.css", "dist/app.css"].forEach(function (href) {
+			var l = document.createElement("link");
+			l.rel = "stylesheet";
+			l.href = href;
+			document.head.appendChild(l);
+		});
+	})();
+</script>
+<script src="dist/messages-ar.js"></script>
+</head>
+<body>
+	<div class="page-container" id="page-report-view" data-page-route="report-view">
+		<div class="page-body">
+			<div class="layout-main">
+				<div class="layout-main-section-wrapper">
+					<div class="layout-main-section"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script src="dist/harness.js"></script>
+</body>
+</html>

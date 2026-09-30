@@ -60,11 +60,13 @@ export class ReportViewQueryReportFacade {
 	toggle_filter_display(fieldname, flag) {
 		return this._host.filters?.toggle_filter_display(fieldname, flag);
 	}
+	// After the first run, a refresh asked by the report script marks the criteria as
+	// pending instead of re-running (the user runs the report with the button).
 	refresh() {
-		return this._host.schedule_run();
+		return this._host.request_refresh();
 	}
 	trigger_refresh() {
-		return this._host.schedule_run();
+		return this._host.request_refresh();
 	}
 }
 

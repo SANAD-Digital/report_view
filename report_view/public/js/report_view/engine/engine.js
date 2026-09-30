@@ -2,7 +2,7 @@
 // grid plus the totals shown in the pinned total row (docs/architecture.md §4.3, §11.2).
 // Pure module: no frappe, no DOM. Views only render what this returns.
 
-import { aggregate, shared_currencies } from "./aggregate.js";
+import { aggregate, shared_currencies, row_currency_key } from "./aggregate.js";
 import { filter_rows, has_filters } from "./filter.js";
 import { sort_rows, make_compare } from "./sort.js";
 import { group_rows, use_arquero } from "./group.js";
@@ -50,6 +50,33 @@ export function compute_totals(report, basis) {
 	return { row, values };
 }
 
+// Rows that have children (user groups or report tree parents), for the status bar.
+export function count_parents(rows) {
+	let n = 0;
+	const walk = (list) => {
+		for (const r of list) {
+			if (r._children?.length) {
+				n++;
+				walk(r._children);
+			}
+		}
+	};
+	walk(rows);
+	return n;
+}
+
+// The one currency shared by every measure of the total row, or null (header meta line).
+function single_currency(columns, total_row) {
+	const found = new Set();
+	for (const c of measure_columns(columns)) {
+		const key = row_currency_key(c);
+		if (!key) continue;
+		if (!total_row[key]) return null;
+		found.add(total_row[key]);
+	}
+	return found.size === 1 ? [...found][0] : null;
+}
+
 export function create_engine(report, opts = {}) {
 	const compare = make_compare(opts.locale);
 
@@ -94,6 +121,9 @@ export function create_engine(report, opts = {}) {
 			totals: totals.row,
 			total_values: totals.values,
 			row_count: facts.length,
+			fact_count: report.facts.length,
+			group_count: count_parents(rows),
+			currency: single_currency(report.columns, totals.row),
 			notices,
 		};
 	}

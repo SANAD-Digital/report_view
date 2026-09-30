@@ -59,3 +59,6 @@ report_view/public/node_modules
 # Playwright output
 test-results/
 playwright-report/
+
+# visual harness build (tests/visual/build.mjs)
+tests/visual/dist/

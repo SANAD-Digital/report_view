@@ -130,3 +130,15 @@ test("mixed currencies give no total", () => {
 	assert.equal(out.totals.__mixed.debit, true);
 	assert.equal(out.totals.debit, null);
 });
+
+test("display counts: tree parents carry their leaf count; groups, facts and currency for the page", () => {
+	const report = load("trial_balance_fy2026");
+	const out = create_engine(report).apply({});
+	assert.equal(out.mode, "tree");
+	assert.equal(out.fact_count, report.facts.length);
+	assert.ok(out.group_count > 0);
+	const top = out.rows.find((r) => r._children?.length);
+	const leaves = (n) => (n._children ? n._children.reduce((s, c) => s + leaves(c), 0) : 1);
+	assert.equal(top.__count, leaves(top));
+	assert.equal(out.currency, "YER");
+});

@@ -15,7 +15,7 @@
 | `app_include_js` | `["report_view_entry.bundle.js"]` | زر «Report View» في صفحة query-report. ملف صغير بلا مكتبات يستمع لـ `frappe.router.on("change")`، وإذا كان المسار `query-report/<name>` يطلب `report_view.api.get_entry_state` (مخزّن مؤقتاً في الجلسة) ويضيف زراً بـ `frappe.query_report.page.add_inner_button` (يمنع التكرار بـ `data-label`، `ui/page.js:622-660`) ويعيد إضافته بعد كل `load_report` لأن `clear_inner_toolbar` يُستدعى فيه (`query_report.js:163`) | 6 |
 | `app_include_css` | لا شيء | CSS الصفحة يُحمَّل مع bundle الصفحة | — |
 | `permission_query_conditions` | `{"Report View Saved View": "report_view.report_view.doctype.report_view_saved_view.report_view_saved_view.get_permission_query_conditions"}` | الخاص لا يظهر في أي قائمة لغير مالكه | 4 |
-| `has_permission` | `{"Report View Saved View": "...report_view_saved_view.has_permission"}` | الخاص لا يُقرأ ولا يُعدَّل من غير مالكه حتى بالرابط المباشر | 4 |
+| `has_permission` | `{"Report View Saved View": "...report_view_saved_view.has_permission"}` | الخاص لا يُقرأ ولا يُعدَّل من غير مالكه، بالرابط المباشر وعبر REST القياسي؛ القيم لكل ptype في `docs/architecture.md` §6 | 4 |
 | `after_install` | `report_view.install.after_install` | تحميل الإعدادات الافتراضية المشحونة (ميزان المراجعة) | 4 |
 | `report_view_include_js` (مفتاح خاص بنا) | قائمة bundles من أي تطبيق | يسمح للتطبيقات الأخرى بتسجيل `report_view.register` لتقاريرها؛ يُقرأ في `get_meta` ويُحمَّل بـ `frappe.require` | 4 |
 

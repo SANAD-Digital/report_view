@@ -56,7 +56,7 @@ apps/report_view/
     │       ├── report_view_signature/         # جدول فرعي
     │       ├── report_view_saved_view/
     │       ├── report_view_saved_view_role/   # جدول فرعي (Table MultiSelect)
-    │       └── report_view_user_default/
+    │       └── report_view_filter_def/        # جدول فرعي: تعريفات فلاتر خادمية (§2.1)
     ├── tests/                 # اختبارات بايثون (bench run-tests --app report_view)
     │   ├── fixtures/normalize/*.json   # حالات مشتركة مع tests/js
     │   ├── test_guard.py  test_api_run.py  test_get_meta.py  test_enrich.py
@@ -103,8 +103,8 @@ apps/report_view/
 |---|---|---|---|
 | `PermissionError` (من Frappe) | — | 403 | رفض من `get_report_doc` نفسه (أدوار التقرير، `report` على `ref_doctype`) |
 | `DoesNotExistError` (من Frappe) | — | 404 | التقرير غير موجود |
-| `RVReportDisabled` | `frappe.ValidationError` | 417 | التقرير معطّل (`Q:55`) |
-| `RVUnsupportedReport` | `frappe.ValidationError` | 417 | Report Builder أو نوع غير مدعوم، أو بلا `ref_doctype` |
+| `RVUnsupportedReport` | `frappe.ValidationError` | 417 | Report Builder أو نوع غير مدعوم |
+| `ValidationError` (من Frappe) | — | 417 | التقرير معطّل: يرميه `get_report_doc` نفسه برسالته (`Q:55-56`)، ولا نغلّفه |
 | `RVNoExport` | `frappe.PermissionError` | 403 | `can_export` فشل |
 | `RVNoPrint` | `frappe.PermissionError` | 403 | لا صلاحية `print` على `ref_doctype` |
 | `RVInvalidInput` | `frappe.ValidationError` | 417 | مدخل غير صالح (JSON، نوع، حجم) |
@@ -112,7 +112,7 @@ apps/report_view/
 | `RVEnrichNotAllowed` | `frappe.PermissionError` | 403 | ثلاثية إثراء خارج قائمة السماح |
 | `RVLimitExceeded` | `frappe.ValidationError` | 417 | تجاوز حد (أسماء الإثراء، حجم النموذج) |
 | `RVExportMismatch` | `frappe.ValidationError` + `http_status_code=409` | 409 | إجماليات الخادم ≠ `expected_totals` (ADR-001) |
-| `RVViewNotFound` | `frappe.DoesNotExistError` | 404 | عرض غير موجود، **أو** خاص لغير مالكه (لا نكشف وجوده) |
+| `RVViewNotFound` | `frappe.DoesNotExistError` | 404 | عرض غير موجود، **أو** غير مرئي للمستخدم، **أو** لتقرير آخر. `get_view` يحوّل `PermissionError` الصادر من `check_permission('read')` إلى هذا الرمز حتى لا يكشف الوجود |
 | `RVNotOwner` | `frappe.PermissionError` | 403 | تعديل/حذف عرض لست مالكه وتستطيع رؤيته (عام أو أدوار) |
 | `RVReportError` | `frappe.ValidationError` | 417 | استثناء من كود التقرير نفسه؛ الرسالة الأصلية تُمرَّر، و Error Log يُسجَّل |
 
@@ -127,12 +127,18 @@ guard_report(report_name) -> Report
        # has_permission(ref_doctype, "report")، disabled. لا نعيد تنفيذ شيء.
   2. if report.report_type not in ("Script Report", "Query Report"): raise RVUnsupportedReport
        # get_report_doc يحوّل Custom Report إلى تقريره المرجعي (Q:28-41)، فهو مدعوم ضمنياً.
-  3. if not report.ref_doctype: raise RVUnsupportedReport
-       # بدل AttributeError/DoesNotExistError (500) في has_permission(None) و can_export(None) (permissions.md §6)
-  4. return report
+  3. return report
+  # ref_doctype إلزامي في Report (reqd=1)؛ تقرير بلا ref_doctype يفشل داخل get_report_doc نفسه
+  # (has_permission(None) ⇒ DoesNotExistError) قبل أي فحص لاحق. لا نضيف فحصاً لا يُبلغ.
 
 guard_export(report) : frappe.permissions.can_export(report.ref_doctype, raise_exception=False) or raise RVNoExport
-guard_print(report)  : frappe.has_permission(report.ref_doctype, "print") or raise RVNoPrint
+guard_print(report)  : frappe.has_permission(report.ref_doctype, "print", ignore_share_permissions=True) or raise RVNoPrint
+  # ignore_share_permissions ضروري: بدونه ينجح الفحص لأي مستخدم شُورك معه مستند واحد من ref_doctype
+  # (permissions.py:178-209؛ ثبت على acc.dev لعشرة مستخدمين، docs/progress/phase-2-review.md ع1)
+
+guard_report_quiet(report_name) -> Report | None
+  # لـ get_entry_state فقط: guard_report داخل try، ثم مسح ما أضافه الفشل إلى
+  # frappe.local.message_log حتى لا تصل رسائل الرفض إلى _server_messages.
 ```
 
 - كل الدوال `@frappe.whitelist(methods=[...])` بلا `allow_guest`. GET للقراءة، POST لما يغيّر حالة أو يرسل نموذجاً كبيراً.
@@ -144,10 +150,10 @@ guard_print(report)  : frappe.has_permission(report.ref_doctype, "print") or rai
 | البند | المواصفة |
 |---|---|
 | الطريقة | POST (الفلاتر قد تكون كبيرة) |
-| المدخلات | `report_name: str`؛ `filters: dict \| str(JSON)`؛ `js_filters: list[dict] \| str(JSON) \| None` = تعريفات الفلاتر كما حمّلتها الواجهة (`fieldname`, `fieldtype`, `options`)؛ `prepared_report_name: str \| None` |
-| الفحوص بالترتيب | (1) `guard_report`؛ (2) تحقق شكل `filters` (قاموس، مفاتيح نصية، قيم بدائية أو قوائم)؛ (3) `js_filters` إلزامي: إن كان `None` يُبنى من `get_script(report_name)["filters"]` إن وُجد (فلاتر `Report.filters`)، وإلا قائمة فارغة، **ويُسجَّل تحذير في وضع التطوير**؛ (4) استدعاء `frappe.desk.query_report.run(report_name, filters=filters, js_filters=js_filters, are_default_filters=False)` مع `prepared_report_name` داخل `filters` كما تفعل الواجهة الأصلية (`Q:282`)؛ فيه تحدث طبقات Frappe: `validate_filters_permissions` (`Q:261`)، `get_report_doc` مرة ثانية، `get_filtered_data` (`Q:122`) |
+| المدخلات | `report_name: str`؛ `filters: dict \| str(JSON)`؛ `js_filters: list[dict] \| str(JSON) \| None` = تعريفات فلاتر سكربت التقرير كما حمّلتها الواجهة (`fieldname`, `fieldtype`, `options`)؛ `prepared_report_name: str \| None` |
+| الفحوص بالترتيب | (1) `guard_report`؛ (2) تحقق شكل `filters` (قاموس، مفاتيح نصية، قيم بدائية أو قوائم)؛ (3) `js_filters` = **اتحاد** ما يرسله المتصفح مع `Report View Settings.filter_defs` الخادمية (الخادمية تغلب عند تعارض نفس `fieldname`). للصدق: `Report.filters` يُفحص في Frappe أصلاً (`Q:1146`)، وتعريفات المتصفح قابلة للتزوير (`fieldtype: Data` يعطّل فحص الحقل)، فهي تساوي حماية الصفحة الأصلية لا أكثر. الحماية التي لا يستطيع المستخدم إسقاطها هي `filter_defs` الخادمية فقط، ويُشحن منها لميزان المراجعة `company` و `fiscal_year`؛ (4) `prepared_report_name` إن وُجد: `frappe.get_list("Prepared Report", filters={"name": n, "report_name": report.name, "owner": frappe.session.user}, limit=1)` وإلا `RVInvalidInput`، لأن Frappe لا يقارنه بالتقرير ولا بالمالك (`Q:282-284,360`) وقد يكشف نتيجة ولّدها مستخدم غير مقيّد (ADR-009)؛ (5) استدعاء `frappe.desk.query_report.run(report_name, filters=filters, js_filters=js_filters, are_default_filters=False)` مع `prepared_report_name` داخل `filters` كما تفعل الواجهة الأصلية (`Q:282`)؛ فيه تحدث طبقات Frappe: `validate_filters_permissions` (`Q:261`)، `get_report_doc` مرة ثانية، `get_filtered_data` (`Q:122`) |
 | المخرجات | `{"status": "ok", "raw": <رد run كما هو>, "row_count": int, "limit": int, "execution_time": float}`؛ أو `{"status": "too_large", "row_count", "limit"}` بلا `raw` (ADR-009)؛ أو `{"status": "prepared_pending" \| "prepared_missing", "prepared_report_name": str \| None, "doc": {...} \| None}` حين يأتي رد Prepared بلا `result` (`Q:370`) |
-| الأخطاء | `PermissionError`، `DoesNotExistError`، `RVReportDisabled`، `RVUnsupportedReport`، `RVInvalidInput`، `frappe.ValidationError` من `validate_filters_permissions` أو من الفلاتر الإلزامية، `RVReportError` (يغلّف أي استثناء آخر من كود التقرير مع الرسالة) |
+| الأخطاء | `PermissionError`، `DoesNotExistError`، `ValidationError` (معطّل)، `RVUnsupportedReport`، `RVInvalidInput`، `frappe.ValidationError` من `validate_filters_permissions` أو من الفلاتر الإلزامية، `RVReportError` (يغلّف أي استثناء آخر من كود التقرير مع الرسالة) |
 | ملاحظات | لا يطبّع الخادم الرد هنا: التطبيع في المتصفح (ADR-001). `row_count` = طول `result` بعد استبعاد صف مجموع Frappe. الرسائل في `frappe.local.message_log` تمر كما هي في `_server_messages`. |
 
 ### 2.2 `report_view.api.get_meta(report_name)`
@@ -155,8 +161,8 @@ guard_print(report)  : frappe.has_permission(report.ref_doctype, "print") or rai
 | البند | المواصفة |
 |---|---|
 | الطريقة | GET |
-| الفحوص بالترتيب | (1) `guard_report`؛ (2) قراءة `Report View Global Settings` و `Report View Settings` لهذا التقرير بـ `frappe.get_doc` + `check_permission("read")` (القراءة مسموحة لكل مستخدمي Desk)؛ (3) حساب `perms` بـ `can_export` و `has_permission(..., "print")` دون رمي |
-| المخرجات | ```{"report": {"name", "report_type", "ref_doctype", "module", "is_standard", "prepared_report", "add_total_row", "reference_report"}, "script": <مخرج frappe.desk.query_report.get_script(report_name) كما هو: script, html_format, filters, custom_report_name, execution_time>, "perms": {"can_export": bool, "can_print": bool}, "settings": <الإعدادات الخادمية المدمجة §5.3>, "include_js": [bundle...] (من hook report_view_include_js), "limits": {"max_rows": int, "worker_threshold": int}, "defaults": {"saved_view": name \| null, "source": "user" \| "global" \| null}}``` |
+| الفحوص بالترتيب | (1) `guard_report`؛ (2) قراءة `Report View Global Settings` و `Report View Settings` لهذا التقرير بـ `frappe.get_doc` + `check_permission("read")` (القراءة مسموحة لكل مستخدمي Desk)؛ (3) حساب `perms` بـ `can_export` و `has_permission(..., "print", ignore_share_permissions=True)` دون رمي |
+| المخرجات | ```{"report": {"name", "report_type", "ref_doctype", "module", "is_standard", "prepared_report", "add_total_row", "reference_report"}, "script": <مخرج frappe.desk.query_report.get_script(report_name) كما هو: script, html_format, filters, custom_report_name, execution_time>, "perms": {"can_export": bool, "can_print": bool}, "settings": <الإعدادات الخادمية المدمجة §5.3>, "include_js": [bundle...] (من hook report_view_include_js), "limits": {"max_rows": int, "worker_threshold": int}, "defaults": {"saved_view": name \| null, "source": "user" \| "global" \| null}}``` — الافتراضي يُعاد فقط إن كان العرض مرئياً للمستخدم الآن (§6)، وإلا `null` |
 | الأخطاء | كما `guard_report` |
 | ملاحظات | `perms` للعرض فقط (إخفاء الأزرار). الفحص الحقيقي يتكرر في `export_xlsx` و `export_pdf`. `script` يُنفَّذ في المتصفح بـ `frappe.dom.eval` كما في الأصل (`QJ:425-427`). |
 
@@ -166,7 +172,7 @@ guard_print(report)  : frappe.has_permission(report.ref_doctype, "print") or rai
 |---|---|
 | الطريقة | POST |
 | المدخلات | `report_name: str`، `source_column: str` (fieldname العمود في التقرير)، `doctype: str`، `names: list[str]` (≤ 5,000)، `fields: list[str]` |
-| الفحوص بالترتيب | (1) `guard_report`؛ (2) الثلاثية (`source_column`, `doctype`, كل حقل) موجودة في `enrich_rules` المدمجة للتقرير، وإلا `RVEnrichNotAllowed`؛ (3) `len(names) <= 5000` وإلا `RVLimitExceeded`؛ (4) `fields ∩ frappe.get_meta(doctype).get_permitted_fieldnames(user=frappe.session.user)` (`frappe/model/meta.py:684`)؛ الحقول المحذوفة تُذكر في `dropped_fields`؛ (5) `frappe.get_list(doctype, filters={"name": ["in", names]}, fields=["name", *permitted], limit_page_length=0)` |
+| الفحوص بالترتيب | (1) `guard_report`؛ (2) الثلاثية (`source_column`, `doctype`, كل حقل) موجودة في `enrich_rules` المدمجة للتقرير، وإلا `RVEnrichNotAllowed`؛ أي حقل بصيغة `link.field` أو فيه أقواس أو مسافات يُرفض؛ (3) `len(names) <= 5000` وإلا `RVLimitExceeded`؛ (4) `fields ∩ frappe.get_meta(doctype).get_permitted_fieldnames(user=frappe.session.user)` (`frappe/model/meta.py:684`)؛ الحقول المحذوفة تُذكر في `dropped_fields`؛ (5) `frappe.get_list(doctype, filters={"name": ["in", names]}, fields=["name", *permitted], limit_page_length=0)`؛ في v16 يطبّق `get_list` صلاحيات الحقول و User Permissions بنفسه (`frappe/database/query.py:352-353,1376`)، فالخطوة (4) دفاع إضافي |
 | المخرجات | `{"doctype", "rows": {name: {field: value}}, "dropped_fields": [..], "missing": int}` (`missing` = أسماء لم يعدها `get_list` لغياب الصلاحية أو الوجود؛ بلا تفاصيل) |
 | الأخطاء | `RVEnrichNotAllowed`، `RVLimitExceeded`، `RVInvalidInput` + أخطاء `guard_report` |
 
@@ -181,11 +187,11 @@ guard_print(report)  : frappe.has_permission(report.ref_doctype, "print") or rai
 
 ### 2.5 `report_view.api.export_pdf(report_name, export_model)`
 
-مثل §2.4 تماماً، مع استبدال (2) بـ `guard_print` **ثم** `guard_export` (الـ PDF ملف يُنزَّل، فيحتاج الصلاحيتين). المخرجات ملف PDF بقالب `templates/report_view/print.html` و `frappe.utils.pdf.get_pdf` أو chrome حسب `settings.pdf_generator` (ADR-004). حقول إضافية في النموذج: `orientation`، `signatures: bool`، `page_size`.
+مثل §2.4 تماماً، مع استبدال (2) بـ `guard_print` وحده. القرار: PDF طباعة، فيحتاج `print` فقط كما في الأصل (زرا الطباعة و PDF في query-report مشروطان بـ `can_print` وحده، `QJ:1956,1974`)؛ اشتراط `export` أيضاً أشد من الأصل بلا سبب. Excel و CSV تصدير ويحتاجان `export`. المخرجات ملف PDF بقالب `templates/report_view/print.html` و `frappe.utils.pdf.get_pdf` أو chrome حسب `settings.pdf_generator` (ADR-004). حقول إضافية في النموذج: `orientation`، `signatures: bool`، `page_size`.
 
 ### 2.6 `report_view.api.get_entry_state(report_name)`
 
-للزر في query-report (ADR-007). GET. الفحوص: `guard_report` بصيغة لا ترمي (أي فشل ⇒ `{"show": false}`). المخرجات: `{"show": bool, "url": "/desk/report-view/<name>"}` حسب `Global Settings.entry_button_scope` و `Report View Settings.show_entry_button`.
+للزر في query-report (ADR-007). GET. الفحوص: `guard_report_quiet` (أي فشل ⇒ `{"show": false}` بلا رسائل في `_server_messages`). لا يكشف أكثر من الأصل: من يرى الزر فتح query-report للتقرير نفسه. المخرجات: `{"show": bool, "url": "/desk/report-view/<name>"}` حسب `Global Settings.entry_button_scope` و `Report View Settings.show_entry_button`.
 
 ### 2.7 العروض المحفوظة: `report_view.api.views.*`
 
@@ -193,11 +199,13 @@ guard_print(report)  : frappe.has_permission(report.ref_doctype, "print") or rai
 
 | الدالة | الطريقة | المدخلات | الفحوص بعد `guard_report` | المخرجات | الأخطاء |
 |---|---|---|---|---|---|
-| `list_views(report_name)` | GET | — | `frappe.get_list("Report View Saved View", filters={"report": report_name}, fields=[...])`؛ `permission_query_conditions` يحصر النتائج في: المالك، أو `Public`، أو `Roles` مع دور مشترك | `[{name, title, visibility, owner, is_owner, is_global_default, is_user_default, modified}]` | — |
-| `get_view(report_name, name)` | GET | `name` | `frappe.get_doc` ثم `check_permission("read")` (hook `has_permission`)؛ `doc.report == report_name` | `{name, title, visibility, roles, state (بعد الترحيل §7.3), is_owner}` | `RVViewNotFound` لغير الموجود أو غير المرئي أو لتقرير آخر |
+| `list_views(report_name)` | GET | — | `frappe.get_list("Report View Saved View", filters={"report": report_name}, fields=[...])`؛ الـ pqc (§6) يحصر النتائج، ثم يُطبَّق `is_visible` صراحة على النتيجة (Administrator يتجاوز hook القراءة) | `[{name, title, visibility, owner, is_owner, is_global_default, is_user_default, modified}]`؛ `is_global_default` محسوب من `Report View Settings.default_saved_view`، و `is_user_default` من `frappe.defaults` | — |
+| `get_view(report_name, name)` | GET | `name` | `frappe.get_doc` ثم `check_permission("read")` (hook `has_permission`)، ثم `is_visible` صراحة، ثم `doc.report == report_name`. `PermissionError` و `DoesNotExistError` ⇒ `RVViewNotFound` | `{name, title, visibility, roles, state (بعد الترحيل §7.3), is_owner}` | `RVViewNotFound` |
 | `save_view(report_name, title, state, visibility="Private", roles=None, name=None)` | POST | `state: dict` | تحقق `view_state` (§7)؛ `visibility=Roles` ⇒ `roles` غير فارغة ومن أدوار موجودة؛ جديد: `insert()` بصلاحيات افتراضية؛ تعديل: `get_doc` + `check_permission("write")` (المالك فقط) ثم `save()` | `{name, modified}` | `RVInvalidViewState`، `RVInvalidInput`، `RVViewNotFound`، `RVNotOwner` |
-| `delete_view(report_name, name)` | POST | `name` | `get_doc` + `check_permission("delete")` (المالك فقط)؛ حذف افتراضيات المستخدمين المرتبطة عبر `on_trash` | `{"ok": true}` | `RVViewNotFound`، `RVNotOwner` |
-| `set_default(report_name, name=None, scope="user")` | POST | `name` أو `None` للإلغاء؛ `scope`: `user` \| `global` | العرض مرئي للمستخدم (`get_view`)؛ `global` يتطلب دور `Report View Manager` أو `System Manager` و `visibility != Private`؛ `user` يكتب `Report View User Default` للمستخدم الحالي بـ `insert/save` | `{"ok": true}` | `RVViewNotFound`، `frappe.PermissionError` |
+| `delete_view(report_name, name)` | POST | `name` | `get_doc` + `check_permission("delete")` (المالك فقط) ثم `delete()`. لا روابط Link إليه من مستخدمين آخرين، فلا `LinkExistsError` (§6) | `{"ok": true}` | `RVViewNotFound`، `RVNotOwner` |
+| `set_default(report_name, name=None)` | POST | `name` أو `None` للإلغاء | العرض مرئي للمستخدم (`get_view`)، ثم `frappe.defaults.set_user_default("report_view_default::" + report_name, name)` للمستخدم الحالي فقط (أو `clear_user_default` عند `None`). لا مسار لضبط افتراضي مستخدم آخر. الافتراضي العام في `Report View Settings.default_saved_view` بصلاحيات ذلك النوع (§5.2) | `{"ok": true}` | `RVViewNotFound` |
+
+**واجهات Frappe القياسية.** `/api/resource/Report View Saved View` و `frappe.client.get_list/get` و `frappe.desk.reportview.get` لا تمر بـ `guard_report`. لذلك قاعدة «رؤية العرض مشروطة برؤية التقرير» تُنفَّذ أيضاً في الـ pqc و hook القراءة (§6)، لا في الـ API وحده.
 
 ---
 
@@ -449,7 +457,7 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 | `enabled` | Check | 1 |
 | `show_entry_button` | Select: `Default` / `Show` / `Hide` | |
 | `default_mode` | Select: `grid` / `pivot` / `charts` | |
-| `default_saved_view` | Link Report View Saved View | عرض عام أو أدوار فقط |
+| `default_saved_view` | Link Report View Saved View | الافتراضي العام الوحيد. `validate`: العرض لنفس التقرير و `visibility != Private`. يُعدَّل بصلاحيات هذا النوع (System Manager، Report View Manager)، ولا يتطلب ملكية العرض لأنه لا يكتب على العرض |
 | `drilldown_target` | Select: `query-report` / `report-view` | افتراضي `query-report` حتى لا نغيّر روابط ERPNext ضمنياً |
 | `pdf_generator` | Select: `Default` / `wkhtmltopdf` / `chrome` | |
 | `default_orientation` | Select: `portrait` / `landscape` | |
@@ -458,6 +466,7 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 | `drilldowns` | Table `Report View Drilldown`: `source_column`, `target_report` (Link Report), `filter_map` (JSON: `{"target_filter": "row:<key>" \| "filter:<name>" \| "const:<value>"}`), `open_as` | |
 | `balance_pairs` | Table `Report View Balance Pair`: `label`, `debit_column`, `credit_column` | معادلة التوازن (المرحلة 6) |
 | `signatures` | Table `Report View Signature`: `label`, `idx` | خانات التوقيع في PDF |
+| `filter_defs` | Table `Report View Filter Def`: `fieldname`, `fieldtype` (Link / Dynamic Link / MultiSelectList)، `options` | تعريفات فلاتر خادمية تُدمج في `js_filters` (§2.1) ولا يستطيع المتصفح إسقاطها |
 
 ### 5.3 ترتيب الأولوية
 
@@ -469,7 +478,8 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 4. `Report View Settings`.
 
 قواعد خاصة:
-- `enrich_rules` و `drilldowns` و `pdf_generator`: **الخادم فقط** (2 و 4). اقتراحات `register` تظهر في شاشة الإعدادات كزر «اعتماد».
+- `enrich_rules` و `drilldowns` و `pdf_generator` و `filter_defs` و `default_saved_view`: **الخادم فقط** (2 و 4).
+- الإعدادات مقروءة لكل مستخدمي Desk، فلا تُخزَّن فيها أسرار (مفاتيح، كلمات مرور، روابط موقّعة). اقتراحات `register` تظهر في شاشة الإعدادات كزر «اعتماد».
 - الجداول الفرعية (`column_rules`) تُدمج بمفتاح `fieldname`: قاعدة في 4 تغلب نظيرتها في 3 حقلاً بحقل؛ الحقل الفارغ أو `Auto` لا يغلب.
 - `enabled = 0` في 4، أو `enabled_for = Enabled Reports Only` بلا سجل ⇒ الصفحة تعرض «التقرير غير مفعّل في Report View» مع رابط للأصل. هذا ليس فحص صلاحية.
 
@@ -483,26 +493,62 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 
 | الحقل | النوع | ملاحظة |
 |---|---|---|
-| `title` | Data، إلزامي | فريد لكل (مالك، تقرير) — يُتحقق في `validate` |
-| `report` | Link Report، إلزامي | |
+| `title` | Data، إلزامي | فريد لكل (مالك، تقرير)، يُتحقق في `validate` |
+| `report` | Link Report، إلزامي | `set_only_once` |
 | `visibility` | Select: `Private` / `Roles` / `Public` | `Private` |
 | `roles` | Table MultiSelect `Report View Saved View Role` (`role`: Link Role) | إلزامي عند `Roles` |
 | `state` | JSON | حالة العرض (§7) |
 | `state_version` | Int، للقراءة فقط | |
 | `columns_ref` | JSON، للقراءة فقط | `{key: {label, fieldtype, source_index}}` وقت الحفظ (§7.3) |
-| `is_global_default` | Check | يضبطه `set_default(scope="global")` فقط |
 | `description` | Small Text | |
 
-`naming`: hash. `owner` هو المالك. `track_changes`: 1.
+`naming`: hash. `owner` هو المالك. `track_changes`: 1. لا حقل «افتراضي» على العرض نفسه.
 
-**`Report View User Default`**: `user` (Link User)، `report` (Link Report)، `saved_view` (Link Report View Saved View)؛ فريد لكل (`user`, `report`) في `validate`.
+**الافتراضيات بلا DocType.**
+- افتراضي المستخدم: `frappe.defaults` للمستخدم الحالي بالمفتاح `report_view_default::<report_name>`. لا يمكن ضبطه لمستخدم آخر، ولا روابط Link، فالحذف لا يتعطل. إن كان العرض محذوفاً أو لم يعد مرئياً يُتجاهل ويُمسح المفتاح عند أول قراءة.
+- الافتراضي العام: `Report View Settings.default_saved_view` (§5.2).
+- الأولوية: افتراضي المستخدم ← الافتراضي العام ← لا شيء. كلاهما يُعاد فقط إن كان مرئياً للمستخدم الآن.
 
-**قواعد الصلاحية** (ADR-010):
-- DocPerm للنوعين: الدور `All`: `read`, `create`، و `write`, `delete` مع `if_owner = 1`. `share`، `export`، `print`، `report`، `import`: غير مفعّلة. System Manager بنفس القيود (لا استثناء).
-- `permission_query_conditions`: `owner = <user> OR visibility = 'Public' OR (visibility = 'Roles' AND name IN (SELECT parent FROM Report View Saved View Role WHERE role IN <roles of user>))` تُبنى بـ `frappe.qb` وقيم مُهرَّبة.
-- `has_permission(doc, ptype, user)`: `read` ⇐ نفس شرط الاستعلام؛ `write`/`delete`/`share`/`submit` ⇐ `doc.owner == user` فقط.
-- الـ API يضيف فوق ذلك `guard_report(report_name)` (رؤية العرض مشروطة برؤية التقرير).
-- `on_trash`: حذف `Report View User Default` المرتبطة عبر `frappe.get_list` + `frappe.delete_doc` بصلاحيات المستخدم؛ افتراضيات المستخدمين الآخرين لا يستطيع المالك حذفها بصلاحياته ⇒ تبقى معلّقة وتُتجاهل عند القراءة (العرض محذوف) وتُنظَّف بمهمة مجدولة أسبوعية تعمل كـ Administrator **داخل scheduler** (ليست واجهة تعيد بيانات؛ تُوثَّق في ADR لاحق إن أُضيفت).
+**DocPerm** (للنوع وجدوله الفرعي): الدور `Desk User` (`SYSTEM_USER_ROLE`، `frappe/permissions.py:35`): `read`، `create`، و `write`، `delete` مع `if_owner = 1`. لا `share`، `export`، `print`، `report`، `import`. لا دور `All` لأنه يشمل مستخدمي الموقع. System Manager بلا صلاحية إضافية.
+
+**شرط الرؤية** (دالة واحدة `is_visible(doc, user)` تستخدمها كل الطبقات):
+```
+owner == user
+OR ( report ∈ DeskViews.get_allowed_report_names(user=user)        # frappe/desk/desk_views.py:111
+     AND ( visibility == "Public"
+           OR (visibility == "Roles" AND roles ∩ frappe.get_roles(user) ≠ ∅) ) )
+```
+المالك يرى عرضه حتى لو فقد صلاحية التقرير (ليحذفه)، لكن `get_view` يمر بـ `guard_report` أولاً فلن يطبّقه.
+
+**`permission_query_conditions`**، التوقيع `get_permission_query_conditions(user: str | None) -> str`:
+```sql
+`tabReport View Saved View`.owner = {user}
+OR ( `tabReport View Saved View`.report IN ({allowed_reports})
+     AND ( `tabReport View Saved View`.visibility = 'Public'
+           OR ( `tabReport View Saved View`.visibility = 'Roles'
+                AND `tabReport View Saved View`.name IN (
+                    SELECT parent FROM `tabReport View Saved View Role`
+                    WHERE parenttype = 'Report View Saved View'
+                      AND parentfield = 'roles'
+                      AND role IN ({user_roles}) ) ) ) )
+```
+كل القيم بـ `frappe.db.escape`، على نمط Frappe في Prepared Report (`prepared_report.py:320-334`). يُطبَّق على Administrator أيضاً (لا نعيد `None` له)، فلا يرى الخاص في القوائم.
+
+**hook `has_permission`**، التوقيع `has_permission(doc, ptype: str, user: str | None, debug: bool = False) -> bool`. القيمة `None` منعٌ في Frappe (`permissions.py:492-496`)، فكل فرع يعيد `bool` صريحاً:
+
+| ptype | القيمة |
+|---|---|
+| `read`، `email`، `print` | `is_visible(doc, user)`؛ وتقرير غير مسموح ⇒ `False` (يُفحص بـ `get_report_doc(doc.report)` داخل `try` مع مسح `message_log`) |
+| `write`، `delete`، `cancel`، `submit`، `amend`، `share` | `doc.owner == user` |
+| `create` | `True` (تحكمه DocPerm؛ و `validate` يتحقق أن `guard_report(doc.report)` ينجح) |
+| أي نوع آخر | `True` (تحكمه DocPerm) |
+
+**حقائق مثبتة من الكود** (`docs/progress/phase-2-review.md` ع6):
+- Administrator يتجاوز الـ hook عند فتح مستند بالاسم (`permissions.py:107`)، لكن الـ pqc يُطبَّق عليه في القوائم. لذلك `get_view` و `list_views` يطبّقان `is_visible` صراحة. وصوله للخاص عبر REST بالاسم قيد معروف موثّق (حساب صيانة).
+- System Manager لا يتجاوز الـ hook ولا الـ pqc.
+- DocShare يتغلب على الـ hook والـ pqc (`permissions.py:208-209`، `database/query.py:1592-1596`). بلا صلاحية `share` لأي دور لا ينشئه إلا Administrator. يُختبر في المرحلة 4.
+
+**النصوص المشتركة.** `title` و `description` يكتبهما مستخدم ويراهما غيره، فتُعرض دائماً عبر `frappe.utils.escape_html` في JS ولا تُحقن كـ HTML.
 
 ---
 
@@ -707,19 +753,22 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 
 | الدالة | الفحص الأول | فحوص إضافية بالترتيب | ما يرفضه |
 |---|---|---|---|
-| `run` | `guard_report` | `js_filters` إلزامي ⇒ `query_report.run` (طبقات Frappe كلها) ⇒ حد الصفوف | مستخدم بلا دور التقرير أو بلا `report` على `ref_doctype`، تقرير معطّل أو غير مدعوم، قيم فلاتر Link غير مسموحة، صفوف تمنعها User Permissions (حسب حدود Frappe) |
+| `run` | `guard_report` | اتحاد `js_filters` مع `filter_defs` ⇒ تحقق `prepared_report_name` ⇒ `query_report.run` (طبقات Frappe كلها) ⇒ حد الصفوف | مستخدم بلا دور التقرير أو بلا `report` على `ref_doctype`، تقرير معطّل أو غير مدعوم، قيم فلاتر Link غير مسموحة، صفوف تمنعها User Permissions (حسب حدود Frappe) |
 | `get_meta` | `guard_report` | قراءة الإعدادات بـ `check_permission` | كما `guard_report` |
 | `enrich` | `guard_report` | قائمة السماح ⇒ حد الأسماء ⇒ `get_permitted_fieldnames` ⇒ `frappe.get_list` | ثلاثيات غير مسموحة، حقول permlevel أعلى، مستندات بلا read أو خارج User Permissions |
 | `export_xlsx` | `guard_report` | `guard_export` ⇒ نموذج ⇒ إعادة `run` ⇒ مقارنة الإجماليات | بلا `export`، نماذج مزوّرة أو غير متسقة |
-| `export_pdf` | `guard_report` | `guard_print` ⇒ `guard_export` ⇒ كما سبق | بلا `print` أو بلا `export` |
+| `export_pdf` | `guard_report` | `guard_print` (بلا مشاركات) ⇒ كما سبق | بلا `print`، ولو شُورك معه مستند |
 | `get_entry_state` | `guard_report` (لا يرمي) | الإعدادات | لا يكشف إلا `show: false` |
-| `views.*` | `guard_report` | `permission_query_conditions` + `has_permission` (المالك للكتابة والحذف) | قراءة أو تعديل الخاص من غير مالكه، رؤية أي عرض لتقرير غير مسموح |
+| `views.*` | `guard_report` | pqc + hook `has_permission` + `is_visible` صراحة (المالك للكتابة والحذف) | قراءة أو تعديل الخاص من غير مالكه، رؤية أي عرض لتقرير غير مسموح |
+| REST القياسي على `Report View Saved View` | — (لا يمر بنا) | DocPerm `Desk User` + pqc + hook (§6) | نفس ما سبق، عدا Administrator بالاسم (قيد معروف) |
+| `frappe.desk.desk_page.getpage` لصفحتنا | — | `Page.is_permitted` بأدوار `Desk User` | الضيف ومستخدمو الموقع لا يحمّلون سكربت الصفحة |
 
-المعروف والمقبول (حدود Frappe، لا نعيد تنفيذها؛ `docs/research/risks.md`): تصفية الصفوف تفحص أعمدة Link فقط (`Q:1049`)، ولا فحص عند غياب User Permissions (`Q:934-935`)؛ `run` يتجاهل `user` (`Q:235-244`)؛ Prepared Report يُصفّى وقت التوليد بمستخدم المالك (`Q:274-287`).
+المعروف والمقبول (حدود Frappe، لا نعيد تنفيذها؛ `docs/research/risks.md`): تصفية الصفوف تفحص أعمدة Link فقط (`Q:1049`)، ولا فحص عند غياب User Permissions (`Q:934-935`)؛ `validate_filters_permissions` لا يفحص فلاتر `MultiSelectList` إطلاقاً ويثق بـ `fieldtype` القادم من المتصفح (`Q:1131-1160`؛ الحماية الخادمية الوحيدة `filter_defs` لأنواع Link)؛ `run` يتجاهل `user` (`Q:235-244`)؛ Prepared Report يُصفّى وقت التوليد بمستخدم المالك (`Q:274-287`).
 
 ---
 
 ## 13. أسئلة مفتوحة
+0. (قرار لا سؤال) مهمة التصدير في الخلفية (المرحلة 6) تعيد `guard_report` و `guard_export` داخل المهمة بمستخدم الطلب، ولا تثق بفحص وقت الطلب.
 1. هل يُقبل شحن خط Noto Naskh Arabic داخل التطبيق (ADR-004)؟
 2. `frappe.format(..., {inline: true})` يُفترض أنه يتجاوز غلاف `text-align:right` في `_right` (`formatters.js:11-17`)؛ يُتحقق منه في المرحلة 3 قبل اعتماده.
 3. هل يبني نظام bundles في frappe 16 ملف Worker قابلاً للتحميل بـ `new Worker(frappe.assets.bundled_asset(...))` (IIFE)؟ يُتحقق في المرحلة 4؛ البديل تشغيل المحرك في الخيط الرئيسي مع تقطيع.

@@ -15,7 +15,7 @@
 
 ## القرار
 الخيار 3. `desk_page.getpage` يحمّل سكربت الصفحة عند أول فتح فقط، ويفحص `Page.is_permitted()` (`frappe/desk/desk_page.py:7-25`، `frappe/core/doctype/page/page.py:126`). سكربت الصفحة صغير ويستدعي `frappe.require("report_view.bundle.js")` لتحميل المكتبات.
-أدوار الصفحة: فارغة (كل مستخدمي Desk)، لأن الصلاحية الحقيقية هي صلاحية التقرير المفحوصة في `run` و `get_meta`.
+أدوار الصفحة: `Desk User` فقط. `getpage` معرّف بـ `allow_guest=True`، والأدوار الفارغة تجعل `is_permitted` يسمح للجميع؛ تحديد `Desk User` يمنع الضيف ومستخدمي الموقع من تحميل السكربت. الصلاحية الحقيقية تبقى صلاحية التقرير في `run` و `get_meta`.
 
 ## العواقب
 - الرابط `/desk/report-view/Trial%20Balance?company=...`.

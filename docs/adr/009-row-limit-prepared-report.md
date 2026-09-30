@@ -14,6 +14,7 @@
 - الحد = `min(Report View Global Settings.max_rows (افتراضي 50,000), System Settings.max_report_rows)`.
 - `api.run` يحسب عدد الصفوف بعد `run`. فوق الحد: لا يعيد الصفوف، ويعيد `{"status": "too_large", "row_count": n, "limit": l}`، والواجهة تعرض حالة «أكبر من الحد» بخيارات: تضييق الفلاتر، أو فتح التقرير في query-report الأصلية، أو (إن كان `prepared_report=1` أصلاً) توليد نتيجة معدّة.
 - التقارير المعدّة أصلاً (`prepared_report=1`، مثل Stock Balance): `api.run` يمرّر `prepared_report_name` إن وُجد، ويحوّل الرد بلا نتيجة إلى `{"status": "prepared_pending" | "prepared_missing", ...}`. زر «توليد» يستدعي `frappe.core.doctype.prepared_report.prepared_report.make_prepared_report` كما تفعل الصفحة الأصلية، ويستطلع الحالة بـ `frappe.realtime` (`prepared_report_update`).
+- `prepared_report_name` القادم من المتصفح يُقبل فقط إن كانت النتيجة لنفس التقرير **ويملكها المستخدم الحالي** (`frappe.get_list` على Prepared Report). Frappe لا يقارن التقرير ولا المالك (`Q:282-284,360`)، و hook الـ Prepared Report يسمح بقراءة نتيجة أي مالك لنفس التقرير، فقد يرى مستخدم مقيّد نتيجة صُفّيت بصلاحيات مستخدم غير مقيّد. هذا أشد من الأصل عن قصد.
 - لا نكتب على مستند Report أبداً. التفعيل التلقائي بعد 15 ث سلوك Frappe، ويُوثَّق ولا يُمنع.
 
 ## العواقب

@@ -10,11 +10,13 @@
 
 ## القرار
 - حقل `visibility`: `Private` | `Roles` | `Public`، وجدول فرعي `roles` للخيار الثاني.
-- القراءة: المالك دائماً؛ غيره فقط إذا (`Public`) أو (`Roles` ويحمل دوراً مشتركاً)، **و** يملك صلاحية التقرير نفسه (`Report.is_permitted` + `has_permission(ref_doctype, "report")`). الشرط الثاني يُفحص في الـ API لأن `permission_query_conditions` لا يستطيع فحصه بكفاءة.
-- الكتابة والحذف: المالك فقط، في كل حالات `visibility`. لا استثناء لـ System Manager عبر واجهتنا. `has_permission` hook يعيد `False` لغير المالك في `write/delete/share`.
-- `DocShare` معطّل للنوع (`allow_share` غير مفعّل في الأدوار) حتى لا يكون هناك مسار ثانٍ.
-- الافتراضي: `Report View User Default` (مستخدم، تقرير، عرض) فريد لكل (مستخدم، تقرير)، وحقل `is_global_default` على العرض لا يضبطه إلا حامل دور `Report View Manager`. الأولوية: افتراضي المستخدم ← الافتراضي العام ← لا شيء.
+- DocPerm للدور `Desk User` لا `All` (`All` يشمل مستخدمي الموقع، `permissions.py:558`): `read`, `create`، و `write`, `delete` بـ `if_owner`. لا `share`.
+- شرط رؤية واحد (`is_visible`) يُطبَّق في ثلاث طبقات: الـ pqc (يشمل التقارير المسموحة عبر `DeskViews.get_allowed_report_names`، `frappe/desk/desk_views.py:111`)، و hook `has_permission` لـ `read`، والـ API صراحة. السبب: واجهات REST القياسية لا تمر بـ `guard_report`، و Administrator يتجاوز الـ hook بالاسم (`permissions.py:107`).
+- الكتابة والحذف: المالك فقط. System Manager لا يتجاوز الـ hook، فلا استثناء له.
+- **الافتراضيات بلا DocType:** افتراضي المستخدم في `frappe.defaults` للمستخدم الحالي (`report_view_default::<report>`)، والافتراضي العام في `Report View Settings.default_saved_view`. هذا يمنع فرض افتراضي على مستخدم آخر، ويمنع `LinkExistsError` عند حذف عرض (`frappe/model/delete_doc.py:164-172`)، ويلغي الحاجة لمهمة تنظيف مجدولة.
+- التفاصيل وجدول القيم لكل ptype في `docs/architecture.md` §6.
 
 ## العواقب
-- Administrator يتجاوز hooks الصلاحية في بعض مسارات Frappe. يُختبر في المرحلة 4؛ إن ثبت أنه يرى الخاص فيُوثَّق كقيد معروف (Administrator حساب صيانة لا مستخدم يومي).
-- دور جديد `Report View Manager` يُشحن مع التطبيق.
+- Administrator يستطيع فتح عرض خاص بالاسم عبر REST: قيد معروف (حساب صيانة). القوائم تُصفّى له بالـ pqc، وواجهاتنا تطبّق `is_visible` عليه.
+- DocShare يتغلب على كل الطبقات (`permissions.py:208-209`)، ولا ينشئه إلا Administrator لغياب `share`. يُختبر في المرحلة 4.
+- دور جديد `Report View Manager` يُشحن مع التطبيق لتعديل الإعدادات والافتراضي العام.

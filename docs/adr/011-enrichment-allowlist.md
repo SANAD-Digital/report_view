@@ -9,6 +9,7 @@
 
 ## القرار
 - `api.enrich` يقبل فقط ثلاثيات (عمود المصدر، الـ DocType، الحقول) الموجودة في `Report View Settings.enrich_rules` للتقرير، أو في الإعدادات الافتراضية المشحونة.
+- الحقول بصيغة `link.field` أو بأقواس أو مسافات تُرفض.
 - الحقول تُقاطع مع `frappe.get_meta(doctype).get_permitted_fieldnames(user=...)` (`frappe/model/meta.py:684`)، أي أن permlevel يُحترم.
 - القراءة بـ `frappe.get_list(doctype, filters={"name": ["in", names]}, fields=["name", *fields])`، فتُطبَّق صلاحية read و User Permissions على المستندات المرتبطة.
 - حد 5,000 اسم لكل استدعاء؛ الواجهة تقسّم.

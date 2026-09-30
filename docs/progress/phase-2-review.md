@@ -177,3 +177,104 @@
 8. ع5: جدول `ptype` للـ hook بقيمة افتراضية `True`، وتوقيعَا pqc و hook.
 9. ع6: تحديث ADR-010 بحقائق Administrator و DocShare، وتطبيق شرط الرؤية صراحة في `get_view` و `list_views`.
 10. البنود المتوسطة والمنخفضة تُعدَّل في نفس التحديث، ولا تمنع القبول وحدها.
+
+---
+
+## المراجعة الثانية
+
+- التاريخ: 2026-09-30. المراجَع: commit `ac4bfa7` (`docs: address phase 2 permissions review …`)، يعدّل `docs/architecture.md` و ADR-005 و 007 و 009 و 010 و 011.
+- سكربتات إضافية (قراءة فقط، `rollback`، دون أي `save`): `review2_probe3.py` إلى `review2_probe6.py` في مجلد الـ scratchpad المذكور أعلاه.
+
+### الحكم النهائي: **رفض**
+
+عولجت كل بنود المراجعة الأولى عدا ثلاثة. لكن التحقق من التصميم الجديد كشف ثغرة حرجة لم ترد في المراجعة الأولى: **ح4**. يكفي لإصلاحها قاعدة واحدة في §6. بعد إصلاح ح4 وتعديل ع7-ع9 يصبح الحكم **قبولاً**، ولا تمنع البنود المنخفضة القبول.
+
+### حالة بنود المراجعة الأولى
+
+| البند | الحالة | الموضع |
+|---|---|---|
+| ح1 REST و `All` | عولج: DocPerm على `Desk User`، و `is_visible` بثلاث طبقات مع `get_allowed_report_names`، وصف REST في §12 | `architecture.md:512-535`، `:208`، `:762` |
+| ح2 User Default | عولج: نُقل إلى `frappe.defaults` للمستخدم الحالي. لا توجد واجهة whitelisted في Frappe تكتب افتراضياً لمستخدم آخر (`F/defaults.py:12-13` تكتب لـ `session.user` افتراضياً). والمفتاح بصيغة `::` لا يتداخل مع مفاتيح User Permission | `architecture.md:507-510`، `:206` |
+| ح3 `is_global_default` | عولج: حُذف الحقل، والمصدر الوحيد `Report View Settings.default_saved_view` | `architecture.md:460`، `:505` |
+| ع1 print والمشاركة | عولج في `guard_print` و `perms.can_print` | `architecture.md:135`، `:164` |
+| ع2 `prepared_report_name` | عولج، مع ملاحظة ن8 أدناه | `architecture.md:154` (4)، ADR-009:17 |
+| ع3 `js_filters` | عولج في الصياغة والاتحاد (الخادمي يغلب عند التعارض)، **لكن** §5.2 تسمح بأنواع لا يفحصها Frappe (ع8) | `architecture.md:154` (3)، `:469`، `:764` |
+| ع4 LinkExistsError | عولج **جزئياً**: افتراضي المستخدم لم يعد Link، لكن `default_saved_view` ما زال Link (ع9) | `architecture.md:205`، `:460` |
+| ع5 جدول ptype | عولج، والتوقيعات صحيحة لأن `frappe.call` يمرر فقط المعاملات التي تقبلها الدالة (`F/__init__.py:1140-1147`، `:1168-1180`)، مع ملاحظة ن6 | `architecture.md:537-544` |
+| ع6 Administrator و DocShare | عولج في §6 و ADR-010، **لكن** §13 ما زال يعرضه سؤالاً (ن7) | `architecture.md:546-549`، `:775` |
+| م1 التهريب | عولج | `architecture.md:551` |
+| م2 `RVReportDisabled` والخطوة 3 | عولج | `architecture.md:107`، `:130-132` |
+| م3 PDF | عولج: `print` وحده كالأصل | `architecture.md:190` |
+| م4 `guard_report_quiet` | عولج، مع ملاحظة ن7 عن §12 | `architecture.md:139-141`، `:194` |
+| م5 404 | عولج | `architecture.md:115`، `:203` |
+| م6 `parenttype` | عولج | `architecture.md:531-532` |
+| ن1 Page | عولج (ADR-005، §12) | ADR-005، `architecture.md:763` |
+| ن2 الإعدادات | عولج (لا أسرار فيها). الدور في DocPerm لـ Settings لم يُحدَّد باسمه (`:441` «كل مستخدمي Desk»)، والمطلوب `Desk User` صراحة | `architecture.md:441`، `:482` |
+| ن3 الإثراء | عولج رفض `link.field`. ولم يُطبَّق `permission_type=None`، وهذا مقبول لأن `get_list` يفرض صلاحيات الحقول بنفسه | `architecture.md:175`، ADR-011 |
+| ن4، ن5 | لا تعديل مطلوب | — |
+| ن6 الخلفية | عولج | `architecture.md:771` |
+
+### مشاكل المراجعة الثانية
+
+#### حرج
+
+**ح4. أي مستخدم Desk يستولي على عرض غيره (ومنه الخاص) بتغيير حقل `owner` عبر REST**
+- الموضع: §6 جدول الـ hook (`architecture.md:542`: «`write`… ⇐ `doc.owner == user`»)، و DocPerm `write` مع `if_owner` (`:512`).
+- الدليل:
+  - `PUT /api/resource/<doctype>/<name>` = `frappe.get_doc` ثم `doc.update(data)` ثم `doc.save()` (`F/api/v1.py:49-57`). لا يُفحص `read` قبل ذلك.
+  - `update` لا يحمي `owner`، فـ `RESERVED_KEYWORDS` لا تضمه (`F/model/base_document.py:292`، `:1598-1607`).
+  - `_save` يفحص `check_permission("write")` على المستند **بعد التعديل في الذاكرة** (`F/model/document.py:577`). `is_user_owner` يقرأ `doc.owner` من الذاكرة (`P:233-234`، `P:241`)، فتتحول `if_owner` لصالح المهاجم، وكذلك يفعل الـ hook المقترح (`doc.owner == user`).
+  - `set_user_and_timestamp` لا يعيد `owner` إلا للمستند الجديد (`F/model/document.py:797-801`)، و `db_update` يكتب كل الحقول ومنها `owner` (`F/model/base_document.py:804-827`).
+  - تحقق فعلي في الذاكرة دون حفظ (`review2_probe6.py`) على نوعين في Frappe بنفس النمط (`All` + `write` مع `if_owner`): `Contact` و `Address` لمستخدم `a.kuhlani@sanad-erp.com` ومالكهما Administrator: `has_permission("write")` = `False`، وبعد `doc.update({"owner": user})` = `True`. في المقابل، تطبيق `ai_agent` يمنع ذلك في hook خاص (`review2_probe5.py`)، فالمنع ممكن من الـ hook.
+- الأثر: مستخدم يعرف اسم عرض خاص لغيره (الاسم hash يصل عبر روابط أو سجلات) يرسل `{"owner": "<me>"}`. ينجح الحفظ، ويعيد الرد المستند كاملاً بما فيه `state`، ثم يملك العرض ويستطيع حذفه. وإن لم يعرف الاسم فيستطيع ذلك مع أي عرض `Public` أو `Roles` يراه. هذا يكسر «الخاص لا يراه ولا يعدّله إلا مالكه» مباشرة.
+- التعديل المطلوب في §6 وفي ADR-010:
+  1. الـ hook لـ `write/delete/cancel/submit/amend/share` يقارن **بالمالك المخزّن** لا بالذاكرة: `(frappe.db.get_value(doc.doctype, doc.name, "owner") if not doc.is_new() else doc.owner) == user`. هذه قراءة قيمة واحدة للمقارنة، لا تعيد بيانات للمستخدم. ويُسجَّل استثناؤها من قاعدة «لا db» صراحة.
+  2. `validate`: `if not self.is_new() and self.has_value_changed("owner"): frappe.throw(..., frappe.PermissionError)`.
+  3. اختبار خادمي في المرحلة 4: مستخدم B يرسل `owner=B` إلى عرض خاص لـ A عبر `frappe.client.save` ويجب أن يُرفض. واختبار مماثل عبر `/api/resource`.
+- ملاحظة خارج النطاق لصاحب المشروع: النمط نفسه ظاهر في `Contact` و `Address` في Frappe، ولا نعدّله (حدود التعديل في `CLAUDE.md`).
+
+#### متوسط
+
+**ع7. تحقق `state` و `roles` و `visibility` غير مذكور في `validate` للمتحكم، فمسار REST يتجاوزه**
+- الموضع: §6 (`architecture.md:496` و `:543`: `validate` يذكر فقط تفرد العنوان و `guard_report`)، و §2.7 `save_view` (`:204`: التحقق في الـ API).
+- الدليل: `POST/PUT /api/resource` يمر بـ `insert/save` ← `_validate` مباشرة (`F/model/document.py:590-591`) دون `api.views.save_view`. فيُخزَّن `state` لا يطابق المخطط، أو `visibility=Roles` بلا أدوار، ثم يُعرض على مستخدمين آخرين.
+- التعديل المطلوب: نص في §6: «`validate` يستدعي `core/view_state.py` (§7.2)، ويفرض `roles` غير فارغة عند `Roles` ومن أدوار موجودة، ويحسب `state_version` و `columns_ref` على الخادم. الـ API لا يكرر هذه القواعد بل يعتمد عليها».
+
+**ع8. `filter_defs` تقبل `Dynamic Link` و `MultiSelectList` ولا يفحصها Frappe**
+- الموضع: `architecture.md:469` («`fieldtype` (Link / Dynamic Link / MultiSelectList)… لا يستطيع المتصفح إسقاطها»)، ويناقضه `:764` («`filter_defs` لأنواع Link»).
+- الدليل: `validate_filters_permissions` يفحص `fieldtype == "Link"` فقط (`Q:1149`).
+- التعديل المطلوب: حصر `fieldtype` في `Link` في §5.2 وفي `validate` لـ Settings، أو توثيق أن الأنواع الأخرى بلا أثر أمني. ولا يجوز تحويلها إلى `Link` بقوائم قيم، لأن ذلك يمرر قائمة إلى `has_permission(doc=list)`، وهو سلوك غير معرّف.
+
+**ع9. حذف عرض هو الافتراضي العام يفشل بـ `LinkExistsError`، و §2.7 يقول عكس ذلك**
+- الموضع: `architecture.md:205` («لا روابط Link إليه من مستخدمين آخرين، فلا `LinkExistsError`») مقابل `:460` (`default_saved_view` من نوع Link Report View Saved View).
+- الدليل: `F/model/delete_doc.py:170-172` يفحص كل روابط Link بعد `on_trash`. مالك العرض لا يملك `write` على Settings، فلا يستطيع فك الرابط، وستذكر رسالة الخطأ اسم سجل Settings.
+- التعديل المطلوب: إمّا Data بدل Link مع تحقق في `validate` لـ Settings، وتجاهل المرجع المعلّق عند القراءة كما في افتراضي المستخدم. وإمّا إبقاء Link وتوثيق أن حذف الافتراضي العام يتطلب من المدير تغييره أولاً، مع رسالة `RVViewInUse` واضحة بدل `LinkExistsError`. ويُصحَّح نص `:205` في الحالتين.
+
+#### منخفض
+
+**ن6. الـ pqc بقائمة فارغة يولّد `IN ()`**
+- الموضع: `architecture.md:526`، `:533`.
+- الدليل: مستخدم Desk بلا أي تقرير مسموح يجعل `get_allowed_report_names` فارغة، فيصير الـ SQL غير صالح ويفشل كل `get_list` على النوع بخطأ 500. السابقة المقتبسة فيها العيب نفسه (`prepared_report.py:332-334`).
+- المطلوب: عند القائمة الفارغة يُحذف الفرع ويبقى `owner = {user}`.
+- ومعه: ترتيب جدول الـ hook لـ `read` (`:541`) يوحي بأن فحص التقرير يمنع المالك أيضاً، بينما `:521` يقول إن المالك يرى عرضه دائماً. يُكتب الترتيب صراحة: المالك أولاً، ثم التقرير، ثم `visibility`.
+
+**ن7. بقايا نصية**
+- `architecture.md:775` (§13 سؤال 4) ما زال يعرض Administrator سؤالاً مفتوحاً، وقد حُسم في §6 و ADR-010.
+- `architecture.md:761` (§12) يكتب `guard_report (لا يرمي)` بدل `guard_report_quiet`.
+- `architecture.md:441` لا يسمّي الدور `Desk User` في DocPerm للإعدادات (ن2).
+
+**ن8. `prepared_report_name` مع Custom Report**
+- الموضع: `architecture.md:154` (4): `"report_name": report.name`.
+- الدليل: بعد `get_report_doc` يكون `report.name` اسم التقرير المرجعي، بينما Prepared Report يخزّن الاسم المرسل. Frappe نفسه يبحث بـ `report.get("custom_report") or report.get("report_name")` (`Q:356-358`).
+- المطلوب: استخدام التعبير نفسه، وإلا يُرفض كل Prepared Report لتقرير مخصص (منع زائد لا تسريب).
+
+**ن9. مسح افتراضي المستخدم عند القراءة كتابة في طلب GET**
+- الموضع: `architecture.md:508` («يُمسح المفتاح عند أول قراءة»)، و `get_meta` طريقته GET (`:163`).
+- المطلوب: الاكتفاء بالتجاهل عند القراءة، والمسح في `set_default` أو عند طلب POST.
+
+### التعديلات المطلوبة للقبول
+1. ح4: مقارنة المالك المخزّن في الـ hook، ومنع تغيير `owner` في `validate`، مع اختبار REST.
+2. ع7: نقل تحقق `state` و `roles` و `visibility` إلى `validate` للمتحكم.
+3. ع8: حصر `filter_defs.fieldtype` في `Link`.
+4. ع9: قرار `default_saved_view` (Data أو رسالة واضحة) وتصحيح `:205`.
+5. ن6 إلى ن9: تعديلات نصية في نفس التحديث.

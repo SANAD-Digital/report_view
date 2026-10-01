@@ -8,7 +8,7 @@
      for LTR at the end of this file;
    - the switch knob uses --on-pri instead of a literal white (print page and toast keep
      the prototype's own paper/contrast colours).
-   Tabulator mapping: rv_tabulator.css. Frappe controls and page layout: rv_page.css. */
+   regular-table mapping: rv_table.css. Frappe controls and page layout: rv_page.css. */
 
 .rv *{box-sizing:border-box}
 .rv button,.rv input,.rv select{font-family:inherit;color:inherit}

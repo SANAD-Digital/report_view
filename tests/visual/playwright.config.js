@@ -15,7 +15,7 @@ module.exports = defineConfig({
 	outputDir: "../../test-results/visual",
 	use: { baseURL: `http://127.0.0.1:${PORT}` },
 	webServer: {
-		command: `python3 -m http.server ${PORT} --bind 127.0.0.1 --directory ${__dirname}`,
+		command: `node ${__dirname}/serve.mjs ${PORT}`,
 		url: `http://127.0.0.1:${PORT}/harness.html`,
 		reuseExistingServer: false,
 		stdout: "ignore",

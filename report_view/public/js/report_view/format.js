@@ -1,6 +1,6 @@
 // Cell formatting (docs/architecture.md §9.3). Numbers, dates and currencies go through
 // frappe.format with {inline: true}; the report's own formatter is used for the rows the
-// report produced, never for rows built by the engine (groups, grand total).
+// report produced, never for rows Perspective computed (groups, grand total).
 // Display rules of the design (§11.1 #51): a zero shows "—" (class .zero), a negative value
 // gets .neg. The precision stays the one of System Settings (the zero test uses it too).
 
@@ -103,6 +103,23 @@ export function make_formatter({ report_settings, columns }) {
 		return `<span class="rv-acc">${no}${name_html}</span>`;
 	}
 
+	// Label of a group that stands for a node of the report tree (re-grouped tree): the
+	// node's number and name as text; the report's formatter is for report rows only.
+	function node_label_html(column, row, parts) {
+		const name = parts?.name_key ? row[parts.name_key] : null;
+		if (name) {
+			const number = parts.number_key ? row[parts.number_key] : null;
+			const no = number ? `<bdi class="rv-accno">${esc(number)}</bdi>` : "";
+			return `<span class="rv-acc">${no}<span class="rv-accname">${esc(name)}</span></span>`;
+		}
+		const value = row[column.key];
+		const text =
+			value === null || value === undefined || value === ""
+				? `<span class="rv-muted">${esc(__("Not Set"))}</span>`
+				: esc(Array.isArray(value) ? value.join(", ") : value);
+		return `<span class="rv-glabel">${text}</span>`;
+	}
+
 	// Label of an engine group row: the group value formatted with its own column.
 	function group_label_html(row) {
 		const column = by_key.get(row.__group_key);
@@ -121,5 +138,5 @@ export function make_formatter({ report_settings, columns }) {
 		return `<span class="rv-gcount">${esc(frappe.format(n, { fieldtype: "Int" }, { inline: true }))}</span>`;
 	}
 
-	return { value_html, label_html, group_label_html, count_html, sign_of, default_formatter };
+	return { value_html, label_html, node_label_html, group_label_html, count_html, sign_of, default_formatter };
 }

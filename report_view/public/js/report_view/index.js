@@ -1,11 +1,21 @@
 // Report View page (/desk/report-view/<report_name>, ADR-005).
-// Flow: get_meta -> report script -> filters -> api.run -> adapter -> enrichment -> engine -> grid.
+// Flow: get_meta -> report script -> filters -> api.run -> adapter -> enrichment ->
+// Perspective tables (engine/perspective_engine.js) -> view of the view state -> grid.
 
 import { api } from "./api.js";
 import { register, get_config } from "./register.js";
 import { normalize } from "./adapter/normalize.js";
 import { enrich_batches, apply_enrichment } from "./adapter/enrich.js";
-import { create_engine } from "./engine/engine.js";
+import {
+	get_engine,
+	warm_up,
+	schedule_dispose,
+	cancel_dispose,
+	dispose_engine,
+	debug_handles,
+	ReportSession,
+} from "./engine/perspective_engine.js";
+import { toggle_tree_node, visible_columns } from "./engine/view_config.js";
 import { default_state, sanitize, reconcile } from "./state/view_state.js";
 import { decode_state, make_url_updater } from "./state/url.js";
 import { load_report_settings, ReportFilters, MissingFiltersError } from "./filters/report_filters.js";
@@ -54,6 +64,13 @@ function esc(s) {
 	return frappe.utils.escape_html(String(s ?? ""));
 }
 
+// The one currency of the totals shown, or null (header info line).
+function single_currency(currencies) {
+	const values = Object.values(currencies || {});
+	if (!values.length || values.some((v) => !v)) return null;
+	return new Set(values).size === 1 ? values[0] : null;
+}
+
 function query_report_url(name, filters) {
 	const params = new URLSearchParams();
 	for (const [k, v] of Object.entries(filters || {})) {
@@ -72,6 +89,10 @@ export class ReportViewPage {
 		this.facade = make_facade(this);
 		this.update_url = make_url_updater(window);
 		this.run_token = 0;
+		this.render_token = 0;
+		this.session = null;
+		this.opened = null;
+		this.visible = false;
 		this.has_run = false;
 		this.density = read_pref(DENSITY_KEY) === "compact" ? "compact" : "comfortable";
 		this.make_dom();
@@ -121,7 +142,12 @@ export class ReportViewPage {
 		this.$(".rv-toolbar-slot").replaceWith(this.toolbar.el);
 		const wrap = this.$(".rv-gridwrap");
 		this.overlay = new StateOverlay(wrap);
-		this.grid = new GridView({ parent: this.$(".rv-grid"), rtl: this.rtl });
+		this.grid = new GridView({
+			parent: this.$(".rv-grid"),
+			rtl: this.rtl,
+			on_tree_toggle: (rid) => this.toggle_tree(rid),
+			on_rows_changed: (counts) => this.update_status(counts),
+		});
 		this.status = new StatusBar({ parent: wrap });
 		this.$('[data-action="run"]').addEventListener("click", () => this.run());
 		this.apply_density();
@@ -230,6 +256,8 @@ export class ReportViewPage {
 
 	show() {
 		this.restore_facade = install_facade(this);
+		this.visible = true;
+		cancel_dispose();
 		const name = frappe.get_route()[1];
 		if (!name) {
 			this.overlay.show({ kind: "error", icon: "!", tone: "err", title: __("Report not found") });
@@ -241,12 +269,52 @@ export class ReportViewPage {
 			const options = frappe.route_options;
 			frappe.route_options = null;
 			this.filters.set_route_values(options).then(() => this.run());
+		} else if (this.report && !this.session) {
+			this.reopen();
 		}
 	}
 
+	// Leaving the page: every view and table is deleted now; the worker is terminated if the
+	// user does not come back within a minute (docs/architecture.md §8أ.3).
 	hide() {
 		if (this.restore_facade) this.restore_facade();
 		this.restore_facade = null;
+		this.visible = false;
+		this.close_session().finally(() => schedule_dispose());
+	}
+
+	/** Deletes the main view and the tables of the current result (views first). */
+	async close_session() {
+		const session = this.session;
+		this.session = null;
+		this.opened = null;
+		this.result = null;
+		this.render_token += 1;
+		this.grid.destroy();
+		if (session) await session.close();
+	}
+
+	/** Loads the normalized report into Perspective tables (explicit schema, in batches). */
+	async open_session(token) {
+		const { handles } = await get_engine();
+		const session = await ReportSession.create(handles, this.report, { locale: frappe.boot.lang });
+		if (token !== this.run_token || !this.visible || this.session) {
+			await session.close();
+			return;
+		}
+		this.session = session;
+	}
+
+	// Back on the page with the same report: its tables were deleted on leaving.
+	async reopen() {
+		const token = this.run_token;
+		this.overlay.loading();
+		try {
+			await this.open_session(token);
+			if (token === this.run_token) await this.render();
+		} catch (e) {
+			if (token === this.run_token) this.show_error(e);
+		}
 	}
 
 	async load(name) {
@@ -254,6 +322,9 @@ export class ReportViewPage {
 		this.report = null;
 		this.raw = null;
 		this.has_run = false;
+		this.run_token += 1;
+		warm_up();
+		await this.close_session();
 		this.page.set_title(__(name));
 		this.header.set_report({ name });
 		this.overlay.loading();
@@ -403,8 +474,7 @@ export class ReportViewPage {
 		const status = res?.status;
 		if (status === "too_large" || status === "prepared_pending" || status === "prepared_missing") {
 			this.report = null;
-			this.result = null;
-			this.grid.destroy();
+			await this.close_session();
 			this.header.set_meta({ filters: values });
 		}
 		if (status === "too_large") {
@@ -455,10 +525,14 @@ export class ReportViewPage {
 		report.__report_type = this.meta.report?.report_type;
 		await this.enrich(report);
 		if (token !== this.run_token) return;
+		// A new result: the views and tables of the previous one go first.
+		await this.close_session();
+		if (token !== this.run_token) return;
 		this.report = report;
 		reconcile(this.state, report.columns);
-		this.engine = create_engine(report, { locale: frappe.boot.lang });
 		this.formatter = make_formatter({ report_settings: this.report_settings, columns: report.columns });
+		await this.open_session(token);
+		if (token !== this.run_token) return;
 		this.$(".rv-message").innerHTML = report.message ? frappe.dom.remove_script_and_style(String(report.message)) : "";
 		this.run_at = frappe.format(frappe.datetime.now_datetime(), { fieldtype: "Datetime" }, { inline: true });
 		await this.render();
@@ -488,9 +562,20 @@ export class ReportViewPage {
 		}
 	}
 
+	// A view state change: the new view is opened, swapped into the grid, then the old one
+	// is deleted (no flicker). A newer render() supersedes this one.
 	async render() {
+		try {
+			await this.render_view();
+		} catch (e) {
+			this.show_error(e);
+		}
+	}
+
+	async render_view() {
 		if (!this.report) return;
 		const report = this.report;
+		const session = this.session;
 		if (!report.rows.length) {
 			this.grid.destroy();
 			const notes = report.notices.filter((n) => n.code === "SERVER_MESSAGE").map((n) => n.detail);
@@ -504,18 +589,57 @@ export class ReportViewPage {
 			this.header.set_meta({ filters: this.last_filters, run_at: this.run_at });
 			return;
 		}
-		this.result = this.engine.apply(this.state);
+		if (!session) return;
+		const token = ++this.render_token;
+		let opened;
+		try {
+			opened = await session.open(this.state, this.state.mode);
+		} catch (e) {
+			// The result was replaced (its tables deleted) while this view was being opened.
+			if (session !== this.session) return;
+			throw e;
+		}
+		if (!opened) return;
+		if (token !== this.render_token || session !== this.session) {
+			await session.close_view(opened);
+			return;
+		}
+		const previous = this.opened;
+		this.opened = opened;
+		const mode = { tree: "tree", levels: "tree", group: "group", flat: "flat" }[opened.post.shape];
+		this.result = { mode, currency: single_currency(opened.totals.currencies) };
 		this.header.set_meta({ filters: this.last_filters, currency: this.result.currency, run_at: this.run_at });
 		this.overlay.hide();
-		await this.grid.render(report, this.result, this.state, this.config, this.formatter);
-		this.status.update(this.result);
+		await this.grid.show({
+			report,
+			opened,
+			session,
+			state: this.state,
+			config: this.config,
+			fmt: this.formatter,
+		});
+		if (previous) await session.close_view(previous);
+		if (this.opened === opened) this.update_status(opened.counts);
 		this.update_url(this.last_filters, this.state);
+	}
+
+	// Status bar (§8أ.5): rows of the view (without its total row) of the rows of its table.
+	update_status(counts) {
+		this.status.update({ row_count: counts.shown, fact_count: counts.total, group_count: counts.groups });
+	}
+
+	// A parent of the report tree was opened or closed: the fold is an engine filter.
+	toggle_tree(rid) {
+		if (!this.report?.tree) return;
+		this.state.tree.expanded = toggle_tree_node(this.state, this.report, rid);
+		this.render();
 	}
 
 	show_error(e) {
 		const exc = e?.exc_type || null;
 		const title = (ERROR_TITLES[exc] || (() => __("Something went wrong")))();
-		this.grid.destroy();
+		// What was on screen no longer stands for the criteria: its view and tables go.
+		this.close_session().catch(() => {});
 		this.status.clear();
 		this.overlay.show({
 			kind: "error",
@@ -530,7 +654,7 @@ export class ReportViewPage {
 
 	// Export model v1 (docs/architecture.md §4.1).
 	export_model() {
-		const cols = this.grid.visible_columns(this.report, this.state);
+		const cols = visible_columns(this.report, this.state);
 		return {
 			version: 1,
 			format: "xlsx",
@@ -540,7 +664,8 @@ export class ReportViewPage {
 			view_state: { ...this.state, report_filters: this.last_filters },
 			scope: "all",
 			selection: null,
-			expected: this.engine.expected(this.result),
+			// Read from the view (§8أ.6): the rows that pass the filters and its total row.
+			expected: this.opened.expected,
 			layout: {
 				title: __(this.report_name),
 				orientation: "landscape",
@@ -555,7 +680,7 @@ export class ReportViewPage {
 	}
 
 	async export_xlsx() {
-		if (!this.result) return;
+		if (!this.opened) return;
 		const btn = this.header.export_button;
 		btn.disabled = true;
 		try {
@@ -581,9 +706,19 @@ export class ReportViewPage {
 		}
 	}
 
-	// Raw values read by the Playwright test: engine totals of the current view.
+	// Raw values read by the Playwright test: totals of the current view.
 	debug_totals() {
-		return this.result ? { mode: this.result.mode, totals: this.engine.expected(this.result).totals } : null;
+		return this.opened ? { mode: this.result.mode, totals: this.opened.expected.totals } : null;
+	}
+
+	// Views and tables not deleted yet (development counter, §8أ.3).
+	debug_handles() {
+		return debug_handles();
+	}
+
+	// What the idle timer does a minute after the page was left: used by the tests.
+	debug_dispose_engine() {
+		return dispose_engine();
 	}
 }
 

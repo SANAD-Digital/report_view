@@ -68,7 +68,6 @@
 /* inline-size containment: the table never widens the Frappe layout (390px phones, wide reports) */
 .rv-gridwrap{flex:none;min-height:360px;contain:inline-size}
 .rv-grid{flex:1;min-height:0;position:relative}
-.rv-tabulator{height:100%}
 .rv-status{flex-wrap:wrap}
 
 /* ---------- states (the overlay covers the whole grid frame) ---------- */

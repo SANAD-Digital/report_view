@@ -1,6 +1,7 @@
 // Builds the visual harness (tests/visual/dist, git-ignored):
 // - dist/harness.js: the real page modules (index.js, grid_view.js, ...) + stubs of frappe;
-// - dist/app.css: tabulator.min.css + the app's CSS files, in the bundle's order;
+// - dist/harness_built.js: the stubs only, for the bundle written by `bench build` (?built=1);
+// - dist/app.css: the app's CSS files, in the bundle's order;
 // - dist/desk-ltr.css / desk-rtl.css: Frappe's built desk CSS, so Frappe controls look real;
 // - dist/messages-ar.js: Arabic translations of frappe, erpnext and report_view (.po files);
 // - dist/fonts.css + dist/fonts/: IBM Plex Sans Arabic (the design font) for the screenshots.
@@ -19,27 +20,28 @@ const esbuild = path.join(bench, "apps/frappe/node_modules/.bin/esbuild");
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(path.join(dist, "fonts"), { recursive: true });
 
-// 1. JS bundle (esnext target: Arquero's BigInt code is fine here, unlike Frappe's es2017).
-execFileSync(
-	esbuild,
-	[
-		path.join(here, "harness.mjs"),
-		"--bundle",
-		"--format=iife",
-		"--target=es2022",
-		`--outfile=${path.join(dist, "harness.js")}`,
-		"--log-level=warning",
-	],
-	{ stdio: "inherit" }
-);
+// 1. JS bundle, with Frappe's own target (es2017): what does not build here does not build
+//    in `bench build` either. @finos/perspective resolves to its browser build (JS only);
+//    its WASM files and worker are served by serve.mjs from node_modules, as on the site.
+for (const entry of ["harness", "harness_built"]) {
+	execFileSync(
+		esbuild,
+		[
+			path.join(here, `${entry}.mjs`),
+			"--bundle",
+			"--format=iife",
+			"--target=es2017",
+			`--outfile=${path.join(dist, `${entry}.js`)}`,
+			"--log-level=warning",
+		],
+		{ stdio: "inherit" }
+	);
+}
 
 // 2. App CSS, same order as report_view.bundle.scss.
 const css_dir = path.join(app, "report_view/public/css");
-const app_css = [
-	path.join(app, "node_modules/tabulator-tables/dist/css/tabulator.min.css"),
-	...["rv_tokens.css", "rv_components.css", "rv_tabulator.css", "rv_page.css"].map((f) => path.join(css_dir, f)),
-]
-	.map((f) => fs.readFileSync(f, "utf8"))
+const app_css = ["rv_tokens.css", "rv_components.css", "rv_table.css", "rv_page.css"]
+	.map((f) => fs.readFileSync(path.join(css_dir, f), "utf8"))
 	.join("\n");
 fs.writeFileSync(path.join(dist, "app.css"), app_css);
 

@@ -1,0 +1,75 @@
+/* <regular-table> mapped onto the design (reference/design/rv.css; mapping table in
+   docs/research/prototype-mapping.md §2). regular-table renders a plain <table> in the light
+   DOM; the style listener of views/grid_view.js puts these classes on its rows and cells:
+     .rv-head  -> thead            .rv-band -> th.rv-hb (first header row)
+     .rv-h     -> th.rv-hd (last header row; .num, .band-end)
+     .rv-row   -> tbody tr.rv-tr (+ .group.d0-2 / .bold)
+     .rv-c     -> tbody td (+ .num .dr .cr .zero .neg .band-end), label cell = tbody th
+     .rv-row.total -> .rv-rt-total, a separate element outside the scrolling area
+   The table itself never scrolls: regular-table re-draws the visible window, so the label
+   column (its row header) is pinned by construction. Logical properties only; colours from
+   the tokens only. */
+
+.rv-rt{position:absolute;inset:0;display:flex;flex-direction:column;min-height:0}
+.rv-rt-scroll{position:relative;flex:1;min-height:0;background:var(--surface)}
+.rv regular-table{overflow:auto;outline:0;background:var(--surface);scrollbar-width:thin;scrollbar-color:var(--line-3) transparent}
+.rv regular-table table{border-collapse:separate;border-spacing:0;table-layout:auto;color:var(--tx);font-size:var(--fs)}
+
+/* Row-wise scrolling moves by fractions of a row: the body is shifted by the fraction and
+   the part of its first row that would cover the header is clipped (variables written by
+   regular-table on its slotted table). */
+.rv regular-table tbody{transform:translate(0,var(--regular-table--transform-y,0px))}
+.rv regular-table tbody tr:first-child > *{clip-path:polygon(0 var(--regular-table--clip-y,0),0 100%,100% 100%,100% var(--regular-table--clip-y,0))}
+
+/* ---------- header (.rv-head) ---------- */
+.rv regular-table thead th{position:relative;height:var(--hh);padding:0 var(--cp);background:var(--hdr);color:var(--tx);font-size:var(--fs-sm);font-weight:600;text-align:start;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none}
+.rv regular-table thead tr:last-child th{border-bottom:1px solid var(--line-2)}
+.rv regular-table thead th.num{text-align:end}
+/* short separator of .rv-h::after; full height at the end of a band */
+.rv regular-table thead th.rv-hd::after{content:'';position:absolute;inset-inline-end:0;top:28%;height:44%;width:1px;background:var(--line-2)}
+.rv regular-table thead th.rv-hd.band-end::after{top:0;height:100%;background:var(--line)}
+/* bands (.rv-hg > .rv-band) */
+.rv regular-table thead th.rv-hb{height:var(--bh);font-size:var(--fs-xs);color:var(--tx-2);text-align:center;border-bottom:1px solid var(--line);border-inline-end:1px solid var(--line)}
+.rv regular-table thead th.rv-hb.empty{border-bottom-color:transparent}
+/* Column resizing arrives with the column menu (phase 5a); the library's own handle
+   assumes LTR. */
+.rv regular-table .rt-column-resize{display:none}
+
+/* ---------- rows (.rv-row) and cells (.rv-c) ---------- */
+.rv regular-table tbody th,
+.rv regular-table tbody td{height:calc(var(--rh) + 1px);padding:0 var(--cp);border-bottom:1px solid var(--line);background:var(--surface);color:var(--tx);font-size:var(--fs);font-weight:400;text-align:start;vertical-align:middle;white-space:nowrap;overflow:hidden;cursor:default}
+.rv regular-table tbody td.num{text-align:end}
+.rv regular-table tbody td.band-end{border-inline-end:1px solid var(--line)}
+.rv regular-table tbody tr.group > *{background:var(--grp);font-weight:600}
+.rv regular-table tbody tr.group.d0 > *{background:var(--grp-0)}
+.rv regular-table tbody tr.bold > *{font-weight:600}
+.rv regular-table tbody tr:hover > *{background:var(--hover)}
+.rv regular-table tbody tr.stale{visibility:hidden}
+.rv regular-table .rv-cc{display:flex;align-items:center;min-width:0;overflow:hidden}
+.rv regular-table .rv-cc > *{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.rv regular-table td.num .rv-cc{justify-content:flex-end}
+.rv regular-table td.dr .rv-n{color:var(--dr)}
+.rv regular-table td.cr .rv-n,.rv regular-table td.neg .rv-n{color:var(--cr)}
+.rv regular-table td.zero .rv-n{color:var(--tx-4)}
+.rv regular-table tbody p{margin:0}
+.rv regular-table tbody a{color:inherit;text-decoration:none}
+.rv regular-table tbody a:hover{color:var(--pri-tx);text-decoration:underline;text-underline-offset:3px}
+.rv regular-table tbody .text-danger{color:var(--cr)}
+
+/* label cell: indent, caret, "number + name", count (.rv-indent / .rv-caret / .rv-acc / .rv-gcount) */
+.rv regular-table .rv-lc{display:flex;align-items:center;min-width:0;padding-inline-start:calc(var(--lv,0) * var(--ind))}
+.rv regular-table .rv-lc > *{flex:none}
+.rv regular-table .rv-lc > .rv-acc,
+.rv regular-table .rv-lc > .rv-glabel,
+.rv regular-table .rv-lc > a,
+.rv regular-table .rv-lc > p{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.rv regular-table .rv-acc{cursor:inherit}
+.rv regular-table .rv-accname{color:var(--tx)}
+.rv regular-table .rv-acc a.rv-accname:hover{color:var(--pri-tx)}
+
+/* ---------- pinned label column: edge shadow (.pin-edge-s) ---------- */
+.rv-rt-edge{position:absolute;top:0;bottom:0;inset-inline-start:0;width:var(--rv-label-w,0);pointer-events:none;z-index:4}
+
+/* ---------- pinned grand total (.rv-row.total), outside the scrolling area ---------- */
+.rv-row.rv-rt-total{overflow:hidden}
+.rv-rt-total .rv-c{cursor:default;user-select:text}

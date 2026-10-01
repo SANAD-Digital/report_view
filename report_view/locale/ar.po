@@ -480,8 +480,26 @@ msgstr "الفلتر على «{0}» لا يجمع الخلايا الفارغة 
 msgid "A filter refers to a column that is not in this report: {0}"
 msgstr "فلتر يشير إلى عمود غير موجود في هذا التقرير: {0}"
 
-msgid "The exported file applies these filters, so the export can be refused."
-msgstr "الملف المصدَّر يطبّق هذه الفلاتر، فقد يُرفض التصدير."
+msgid "Excel export is refused while these filters are set. Remove them to export."
+msgstr "يُرفض تصدير Excel ما دامت هذه الفلاتر مفعّلة. احذفها لتتمكن من التصدير."
 
-msgid "{0} subtotal rows of the report itself (opening, total and closing of its own groups) are not shown here; the Excel file contains them."
-msgstr "{0} صفاً من مجاميع التقرير نفسه (افتتاحي وإجمالي وختامي مجموعاته) غير معروضة هنا؛ ملف Excel يحتويها."
+msgid "{0} subtotal rows of the report itself (opening, total and closing of its own groups) are hidden while a filter, a grouping or a sort is applied: they describe the report as it came, not the rows shown now."
+msgstr "{0} صفاً من مجاميع التقرير نفسه (افتتاحي وإجمالي وختامي مجموعاته) مخفية ما دام فلتر أو تجميع أو فرز مطبّقاً: هي تصف التقرير كما ورد، لا الصفوف المعروضة الآن."
+
+msgid "Cannot export: date parts ({0}) cannot be used to sort, filter or group yet."
+msgstr "تعذّر التصدير: أجزاء التاريخ ({0}) لا تُستخدم بعد في الفرز أو الفلترة أو التجميع."
+
+msgid "Remove it and export again."
+msgstr "احذفه ثم أعد التصدير."
+
+msgid "Cannot export: the free-text search is not applied on screen."
+msgstr "تعذّر التصدير: البحث الحر غير مطبّق على الشاشة."
+
+msgid "Cannot export: the filter on {0} uses an operator that is not applied on screen."
+msgstr "تعذّر التصدير: الفلتر على «{0}» يستخدم عملية غير مطبّقة على الشاشة."
+
+msgid "Cannot export: the filter on {0} does not fit the type of the column and is not applied on screen."
+msgstr "تعذّر التصدير: الفلتر على «{0}» لا يناسب نوع العمود وغير مطبّق على الشاشة."
+
+msgid "Cannot export: the filter on {0} combines empty cells with other values, which is not applied on screen."
+msgstr "تعذّر التصدير: الفلتر على «{0}» يجمع الخلايا الفارغة مع قيم أخرى، وهذا غير مطبّق على الشاشة."

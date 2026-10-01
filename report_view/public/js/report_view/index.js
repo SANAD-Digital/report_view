@@ -624,13 +624,13 @@ export class ReportViewPage {
 		}
 		const previous = this.opened;
 		this.opened = opened;
-		const mode = { tree: "tree", levels: "tree", group: "group", flat: "flat" }[opened.post.shape];
+		const mode = { tree: "tree", levels: "tree", group: "group", flat: "flat", report: "flat" }[opened.post.shape];
 		this.result = { mode, currency: single_currency(opened.totals.currencies) };
 		this.header.set_meta({ filters: this.last_filters, currency: this.result.currency, run_at: this.run_at });
 		this.overlay.hide();
 		// What the view state asks for and the screen does not do is said, once, not dropped.
 		this.notices.show(describe_notices(opened.post.notices, report.columns));
-		this.toolbar.set_fold({ foldable: opened.post.shape !== "flat", subtotals: opened.post.subtotals });
+		this.toolbar.set_fold({ foldable: mode !== "flat", subtotals: opened.post.subtotals });
 		await this.grid.show({
 			report,
 			opened,
@@ -717,7 +717,7 @@ export class ReportViewPage {
 			view_state: { ...this.state, report_filters: this.last_filters },
 			scope: "all",
 			selection: null,
-			// Read from the view (§8أ.6): the rows that pass the filters and its total row.
+			// Read from the view (§8أ.6): the facts that pass the filters and the total shown.
 			expected: this.opened.expected,
 			layout: {
 				title: __(this.report_name),

@@ -5,7 +5,9 @@
      .rv-h     -> th.rv-hd (last header row; .num, .band-end)
      .rv-row   -> tbody tr.rv-tr (+ .group.d0-2 / .bold)
      .rv-c     -> tbody td (+ .num .dr .cr .zero .neg .band-end), label cell = tbody th
-     .rv-row.foot  -> tbody tr.rv-tr.foot (subtotal row of an open group)
+     .rv-row.foot  -> tbody tr.rv-tr.foot (subtotal row of an open group; total and closing
+                      rows of the report's own groups, shown as reported)
+     .rv-drow.op   -> tbody tr.rv-tr.opening (opening row of a group of the report)
      .rv-resize    -> thead th.rv-hd > .rt-column-resize (the span regular-table puts there)
      .rv-row.total -> .rv-rt-total, a separate element outside the scrolling area, with the
                       report's own closing rows above it (.rv-rt-bottom) and its opening rows
@@ -58,6 +60,10 @@
 .rv regular-table tbody tr.foot > *{background:var(--foot);font-weight:600}
 .rv regular-table tbody tr.foot .rv-glabel{color:var(--tx-2)}
 .rv regular-table tbody tr.bold > *{font-weight:600}
+/* the report's own rows between its facts (rows as reported): the opening of a group, and the
+   closing that ends it */
+.rv regular-table tbody tr.opening > *{background:var(--grp-0);font-weight:500;color:var(--tx-2);border-bottom-color:var(--line-2)}
+.rv regular-table tbody tr.closing > *{border-bottom-color:var(--line-3)}
 .rv regular-table tbody tr:hover > *{background:var(--hover)}
 .rv regular-table tbody tr.stale{visibility:hidden}
 .rv regular-table tbody tr.spacer > *{background:var(--surface)}

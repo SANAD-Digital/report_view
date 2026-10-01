@@ -248,7 +248,7 @@ test("(c) accounts receivable, flat: column totals = Frappe's total row", async 
 	await no_leak();
 });
 
-test("reports with internal totals: shown total = the reference row, engine total = the same sums", async () => {
+test("reports with internal totals: the total shown, and sent with an export, is the reference row", async () => {
 	for (const name of ["accounts_receivable_group_by_party", "general_ledger_by_account", "general_ledger_consolidated"]) {
 		const report = load(name);
 		const reference = report.report_totals.internal.at(-1);
@@ -256,13 +256,22 @@ test("reports with internal totals: shown total = the reference row, engine tota
 			const opened = await session.open(state());
 			// on screen: the report's own total row, as the report returned it (ADR-008)
 			assert.deepEqual(opened.post.total, { source: "row", rid: reference.__rid });
+			const shown = {};
 			for (const key of opened.post.measures) {
 				const ref = typeof reference[key] === "number" ? reference[key] : null;
 				assert.equal(opened.totals.values[key], ref, `${name} ${key}`);
+				if (ref !== null) shown[key] = ref;
 			}
-			// for the export: what Perspective sums from the facts, equal on every additive column
-			check_reference(report, { values: opened.expected.totals }, reference);
+			// for the export: the total as shown, and the facts
+			assert.deepEqual(opened.expected.totals, shown, name);
 			assert.equal(opened.expected.row_count, report.facts.length);
+			// what Perspective sums from the facts is the same on every additive column
+			const engine = await queries.totals(handles, session.tables.facts, {
+				group_by: ["__kind"],
+				columns: opened.post.measures,
+				aggregates: Object.fromEntries(opened.post.measures.map((k) => [k, "sum"])),
+			});
+			check_reference(report, { values: engine }, reference);
 			await session.close_view(opened);
 		});
 	}
@@ -559,5 +568,181 @@ test("general ledger: with a browser filter the shown total is the engine's, of 
 		assert.equal(opened.counts.total, report.facts.length);
 		await session.close_view(opened);
 	});
+	await no_leak();
+});
+
+// ---------------------------------------------------------------- rows as reported
+
+const SUMMARY_KINDS = new Set(["opening", "internal_total", "closing", "group_header"]);
+
+// Every row of a view of the rows table against the row of the report it stands for.
+async function check_as_reported(report, session, opened) {
+	const by_rid = new Map(report.rows.map((r) => [r.__rid, r]));
+	const pinned = new Set([...opened.post.pinned_rows.top, ...opened.post.pinned_rows.bottom, opened.post.total.rid]);
+	const expected = report.rows.filter((r) => r.__kind !== "separator" && !pinned.has(r.__rid));
+	const cols = await opened.view.to_columns();
+	// every row of the report but the separators and the pinned ones, in the report's order
+	assert.deepEqual(cols.__rid, expected.map((r) => r.__rid));
+	assert.equal(opened.body_rows, expected.length);
+	const measures = report.columns.filter((c) => c.role === "measure" && !c.hidden).map((c) => c.key);
+	let summary = 0;
+	cols.__rid.forEach((rid, i) => {
+		const row = by_rid.get(rid);
+		if (SUMMARY_KINDS.has(row.__kind)) summary += 1;
+		// the report's own values, not sums made here: an empty cell stays empty
+		for (const key of measures) {
+			const value = typeof row[key] === "number" ? row[key] : null;
+			assert.equal(cols[key][i], value, `${row.__kind} ${rid} ${key}`);
+		}
+	});
+	return { summary, expected, cols };
+}
+
+test("rows as reported, general ledger by account: the 24 rows of its accounts in their places, with their values", async () => {
+	const report = load("general_ledger_by_account");
+	await with_session(report, async (session) => {
+		const schema = await session.tables.rows.schema();
+		assert.equal(schema.debit, "float");
+		assert.equal(schema.posting_date, "date");
+		assert.equal(schema.account, "string");
+		assert.equal(schema.__rid, "float");
+		assert.equal(schema.__kind, "string");
+		assert.equal(await session.tables.rows.size(), report.rows.filter((r) => r.__kind !== "separator").length);
+		assert.equal(await session.tables.facts.size(), 48);
+
+		const opened = await session.open(state());
+		assert.equal(opened.post.shape, "report");
+		assert.equal(opened.spec.table, "rows");
+		const { summary, expected, cols } = await check_as_reported(report, session, opened);
+		assert.equal(summary, 24);
+		assert.equal(expected.length, 48 + 24);
+		// per account: its opening, its facts, its total, its closing
+		const kinds = expected.map((r) => r.__kind);
+		assert.equal(kinds[0], "opening");
+		assert.deepEqual(kinds.slice(-2), ["internal_total", "closing"]);
+		assert.equal(kinds.filter((k) => k === "opening").length, 8);
+		assert.equal(kinds.filter((k) => k === "internal_total").length, 8);
+		assert.equal(kinds.filter((k) => k === "closing").length, 8);
+		kinds.forEach((k, i) => {
+			if (k === "opening") assert.equal(kinds[i + 1], "data", `opening at ${i}`);
+			if (k === "internal_total") {
+				assert.equal(kinds[i - 1], "data", `total at ${i}`);
+				assert.equal(kinds[i + 1], "closing", `total at ${i}`);
+			}
+		});
+		// the opening balance of the first account is on screen with the report's value
+		assert.equal(expected[0].__rid, 2);
+		assert.equal(cols.account[0], "Opening");
+		assert.equal(cols.debit[0], 469);
+		assert.equal(cols.balance[0], 469);
+		// the rows of the whole report are pinned, not in the body
+		assert.deepEqual(opened.post.pinned_rows.top, [0]);
+		assert.deepEqual(opened.post.pinned_rows.bottom, [report.rows.at(-1).__rid]);
+		assert.equal(opened.post.total.rid, report.report_totals.internal.at(-1).__rid);
+		// rows = the facts everywhere; the summary rows are not counted
+		assert.deepEqual(opened.counts, { shown: 48, total: 48, facts: 48, groups: null });
+		assert.equal(opened.expected.row_count, 48);
+		assert.equal(opened.expected.totals.debit, report.report_totals.internal.at(-1).debit);
+		assert.equal(opened.depths, null);
+		await session.close_view(opened);
+	});
+	await no_leak();
+});
+
+test("rows as reported, receivables by party: the total of every party after its facts", async () => {
+	const report = load("accounts_receivable_group_by_party");
+	const reference = report.report_totals.internal.at(-1);
+	await with_session(report, async (session) => {
+		const opened = await session.open(state());
+		assert.equal(opened.post.shape, "report");
+		const { summary, expected, cols } = await check_as_reported(report, session, opened);
+		assert.equal(summary, report.report_totals.internal.length - 1);
+		assert.equal(summary, 6);
+		// a party total stands right after the facts of its party and carries their sums
+		expected.forEach((row, i) => {
+			if (row.__kind !== "internal_total") return;
+			assert.equal(expected[i - 1].__kind, "data");
+			assert.equal(expected[i - 1].party, row.party);
+			assert.equal(cols.party[i], row.party);
+			const facts = report.facts.filter((f) => f.party === row.party);
+			close(cols.outstanding[i], facts.reduce((s, f) => s + (f.outstanding || 0), 0), `${row.party} outstanding`);
+		});
+		assert.deepEqual(opened.post.pinned_rows, { top: [], bottom: [] });
+		assert.equal(opened.totals.values.outstanding, reference.outstanding);
+		assert.equal(opened.expected.totals.outstanding, -66056);
+		assert.deepEqual(opened.counts, { shown: 66, total: 66, facts: 66, groups: null });
+		await session.close_view(opened);
+	});
+	await no_leak();
+});
+
+test("rows as reported: a filter, a grouping or a sort moves the view to the facts; nothing is left behind", async () => {
+	const report = load("general_ledger_by_account");
+	const reference = report.report_totals.internal.at(-1);
+	const tables = () => handles.debug_handles().filter((h) => h.kind === "table").length;
+	const views = () => handles.debug_handles().filter((h) => h.kind === "view").length;
+	await with_session(report, async (session) => {
+		assert.equal(tables(), 2);
+		// a sort: the facts sorted, the rows of the whole report still pinned, the reference total
+		const sorted = await session.open(state({ sort: [{ key: "debit", dir: "desc" }] }));
+		assert.equal(sorted.spec.table, "facts");
+		const s = await sorted.view.to_columns();
+		assert.equal(s.__rid.length, 48);
+		assert.deepEqual([...s.__rid].sort((a, b) => a - b), report.facts.map((f) => f.__rid));
+		assert.deepEqual(s.debit, [...s.debit].sort((a, b) => b - a));
+		assert.deepEqual(sorted.post.pinned_rows.top, [0]);
+		assert.equal(sorted.totals.values.debit, reference.debit);
+		assert.equal(sorted.expected.totals.debit, reference.debit);
+		assert.equal(sorted.expected.row_count, 48);
+		assert.deepEqual(sorted.post.notices, [{ code: "REPORT_ROWS_HIDDEN", detail: 24 }]);
+		await session.close_view(sorted);
+
+		// a filter: the matching facts, the engine's total of them
+		const narrowed = await session.open(state({ filters: [{ key: "debit", type: "range", min: 100, max: null }] }));
+		const kept = report.facts.filter((f) => f.debit >= 100);
+		assert.ok(kept.length > 0 && kept.length < 48);
+		assert.deepEqual((await narrowed.view.to_columns()).__rid, kept.map((f) => f.__rid));
+		assert.deepEqual(narrowed.post.pinned_rows, { top: [], bottom: [] });
+		close(narrowed.totals.values.debit, kept.reduce((t, f) => t + f.debit, 0), "debit");
+		close(narrowed.expected.totals.debit, kept.reduce((t, f) => t + f.debit, 0), "expected debit");
+		assert.equal(narrowed.expected.row_count, kept.length);
+		assert.deepEqual(narrowed.counts, { shown: kept.length, total: 48, facts: kept.length, groups: null });
+		await session.close_view(narrowed);
+
+		// a grouping: Perspective's groups of the facts
+		const grouped = await session.open(state({ group: { by: ["account"], subtotals: true, expanded: "all" } }));
+		assert.equal(grouped.spec.table, "facts");
+		const accounts = new Set(report.facts.map((f) => f.account));
+		assert.equal(grouped.counts.groups, accounts.size);
+		assert.equal(grouped.body_rows, accounts.size + 48);
+		close(grouped.totals.values.debit, report.facts.reduce((t, f) => t + f.debit, 0), "grouped debit");
+		assert.equal(grouped.expected.row_count, 48);
+		await session.close_view(grouped);
+
+		// and back: the rows as reported again
+		const back = await session.open(state());
+		assert.equal(back.spec.table, "rows");
+		assert.equal(back.body_rows, 72);
+		await session.close_view(back);
+		assert.equal(views(), 0);
+		assert.equal(tables(), 2);
+
+		// 20 changes between the shapes, each view opened before the previous one is deleted
+		const states = [
+			state(),
+			state({ sort: [{ key: "debit", dir: "desc" }] }),
+			state({ filters: [{ key: "debit", type: "range", min: 100, max: null }] }),
+			state({ group: { by: ["account"], subtotals: true, expanded: "all" } }),
+		];
+		let previous = null;
+		for (let i = 0; i < 20; i++) {
+			const next = await session.open(states[i % states.length]);
+			if (previous) await session.close_view(previous);
+			previous = next;
+			assert.equal(views(), 1, `change ${i}`);
+			assert.equal(tables(), 2, `change ${i}`);
+		}
+	});
+	// the session deletes the view left open, then its two tables
 	await no_leak();
 });

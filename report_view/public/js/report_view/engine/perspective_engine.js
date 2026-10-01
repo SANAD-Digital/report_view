@@ -9,6 +9,7 @@
 import perspective from "@finos/perspective";
 import { build_table_input, batches } from "./schema.js";
 import { build_nodes, build_facts } from "./tree_nodes.js";
+import { build_report_rows } from "./report_rows.js";
 import { to_view_config, CURRENCY_COUNT_PREFIX } from "./view_config.js";
 import * as queries from "./queries.js";
 
@@ -281,9 +282,10 @@ function numeric_totals(values, mixed) {
 }
 
 /**
- * The tables of one normalized report (facts, and nodes for a tree report) and the views
- * opened on them. Every number a view shows is computed by Perspective, or is the report's
- * own value in the nodes table.
+ * The tables of one normalized report and the views opened on them: the facts, and the table
+ * of the report "as it came" (nodes of a tree report; rows of a report with summary rows
+ * between its facts). Every number a view shows is computed by Perspective, or is the
+ * report's own value in the nodes or rows table.
  */
 export class ReportSession {
 	constructor(handles, normalized, opts = {}) {
@@ -326,6 +328,8 @@ export class ReportSession {
 			await this._load_table("facts", facts.rows, facts.extras);
 		} else {
 			await this._load_table("facts", this.normalized.facts, []);
+			const reported = build_report_rows(this.normalized);
+			if (reported) await this._load_table("rows", reported.rows, []);
 		}
 	}
 
@@ -369,17 +373,13 @@ export class ReportSession {
 		try {
 			if (post.depth !== null) await queries.set_depth(view, post, this.level_rids);
 			const facts = this.tables.facts;
-			const [body_rows, structure, totals, engine_totals, fact_rows, groups] = await Promise.all([
+			const [body_rows, structure, totals, fact_rows, groups] = await Promise.all([
 				queries.body_rows(view, post),
 				queries.row_depths(view, post),
 				this._totals(view, post),
-				this._expected_totals(post),
 				post.fact_filter.length ? queries.count_rows(this.handles, facts, post.fact_filter) : this.sizes.facts,
 				this._groups(post),
 			]);
-			// What the server compares with its own engine before it builds a file (§8أ.6): the
-			// engine's total of the facts, also when the screen shows the report's reference row.
-			const compared = engine_totals || totals;
 			return {
 				spec,
 				post,
@@ -392,19 +392,15 @@ export class ReportSession {
 				// and the badge of the grand total. "shown" are the facts that pass the browser
 				// filters; folding a group or a parent hides rows but filters nothing.
 				counts: { shown: fact_rows, total: this.sizes.facts, facts: fact_rows, groups },
-				expected: { row_count: fact_rows, totals: numeric_totals(compared.values, compared.mixed) },
+				// What the server compares before it builds a file (§8أ.6): the facts that pass
+				// the filters, and the grand total as shown (the report's reference row when it
+				// is the one shown, else the engine's total).
+				expected: { row_count: fact_rows, totals: numeric_totals(totals.values, totals.mixed) },
 			};
 		} catch (e) {
 			if (this.handles.is_alive(view)) await this.handles.delete(view);
 			throw e;
 		}
-	}
-
-	async _expected_totals(post) {
-		if (!post.expected_total || post.total.view === post.expected_total) return null;
-		const target = post.expected_total;
-		const row = await queries.totals(this.handles, this.tables[target.table], target.config);
-		return this._engine_totals(post, row);
 	}
 
 	async _totals(view, post) {

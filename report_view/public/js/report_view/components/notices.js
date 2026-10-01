@@ -1,5 +1,6 @@
 // Notices of the current view above the grid: what the view state asks for and the screen
-// does not do (filters Perspective cannot express, rows of the report that are not shown).
+// does not do (filters Perspective cannot express), and the report's own subtotal rows that
+// left the screen with a filter, a grouping or a sort.
 // One bar, built once per distinct set of notices; closing it keeps that set closed.
 
 import { icons } from "./icons.js";
@@ -31,16 +32,16 @@ export function describe_notices(notices, columns) {
 		if (FILTER_TEXTS[n.code]) {
 			lines.push(FILTER_TEXTS[n.code](__(label_of(n.detail))));
 			filters += 1;
-		} else if (n.code === "REPORT_ROWS_NOT_SHOWN") {
+		} else if (n.code === "REPORT_ROWS_HIDDEN") {
 			lines.push(
-				__("{0} subtotal rows of the report itself (opening, total and closing of its own groups) are not shown here; the Excel file contains them.", [
+				__("{0} subtotal rows of the report itself (opening, total and closing of its own groups) are hidden while a filter, a grouping or a sort is applied: they describe the report as it came, not the rows shown now.", [
 					n.detail,
 				])
 			);
 		}
 	}
 	if (!lines.length) return null;
-	if (filters) lines.push(__("The exported file applies these filters, so the export can be refused."));
+	if (filters) lines.push(__("Excel export is refused while these filters are set. Remove them to export."));
 	return { signature: JSON.stringify(notices), tone: filters ? "warn" : "info", lines: [...new Set(lines)] };
 }
 

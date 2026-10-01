@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { normalize } from "../../report_view/public/js/report_view/adapter/normalize.js";
 import { build_layout, entry_at, expanded_from_paths } from "../../report_view/public/js/report_view/engine/row_layout.js";
-import { edge_rows } from "../../report_view/public/js/report_view/engine/report_rows.js";
+import { edge_rows, build_report_rows } from "../../report_view/public/js/report_view/engine/report_rows.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dir = path.resolve(here, "../../report_view/tests/fixtures/normalize");
@@ -95,4 +95,62 @@ test("report summary rows: receivables by party, a frappe total row, and a tree"
 
 	assert.deepEqual(edge_rows(load("accounts_receivable_frappe_total")), { top: [], bottom: [], reference: null, inner: 0 });
 	assert.deepEqual(edge_rows(load("trial_balance_fy2026")), { top: [], bottom: [], reference: null, inner: 0 });
+});
+
+// A report as the adapter gives it, from the kinds of its rows alone:
+// d = fact, O = opening, T = internal total, C = closing, G = group header, - = separator.
+const KINDS = { d: "data", O: "opening", T: "internal_total", C: "closing", G: "group_header", "-": "separator" };
+function sketch(kinds) {
+	const rows = kinds.split(" ").map((k, i) => ({ __rid: i, __kind: KINDS[k] }));
+	return {
+		tree: null,
+		rows,
+		facts: rows.filter((r) => r.__kind === "data"),
+		report_totals: { frappe_total: null, internal: rows.filter((r) => r.__kind === "internal_total") },
+	};
+}
+
+test("report summary rows: the same rows with the separators taken out of the report", () => {
+	for (const name of ["general_ledger_consolidated", "general_ledger_by_account", "accounts_receivable_group_by_party"]) {
+		const report = load(name);
+		const bare = { ...report, rows: report.rows.filter((r) => r.__kind !== "separator") };
+		assert.ok(name === "general_ledger_consolidated" || bare.rows.length < report.rows.length, name);
+		assert.deepEqual(edge_rows(bare), edge_rows(report), name);
+	}
+});
+
+test("report summary rows: groups of the report without separators between them", () => {
+	// the report's opening, then per group: opening, facts, total, closing; then total, closing
+	assert.deepEqual(edge_rows(sketch("O O d d T C O d T C O d d T C T C")), { top: [0], bottom: [16], reference: 15, inner: 9 });
+	// no row of the whole report: the first opening and the last total and closing belong to
+	// the first and the last group, nothing is pinned
+	assert.deepEqual(edge_rows(sketch("O d d T C O d T C")), { top: [], bottom: [], reference: null, inner: 6 });
+	// groups closed by a total, then the report's total (receivables by party)
+	assert.deepEqual(edge_rows(sketch("d d T d T d d d T T")), { top: [], bottom: [], reference: 9, inner: 3 });
+	assert.deepEqual(edge_rows(sketch("d d T d T")), { top: [], bottom: [], reference: null, inner: 2 });
+	// groups opened by a header only: the total after the last fact is the report's
+	assert.deepEqual(edge_rows(sketch("G d d G d T")), { top: [], bottom: [], reference: 5, inner: 2 });
+	// no groups: one opening, the facts, total and closing (with or without separators)
+	assert.deepEqual(edge_rows(sketch("O d d d T C")), { top: [0], bottom: [5], reference: 4, inner: 0 });
+	assert.deepEqual(edge_rows(sketch("O - d d d - T C")), { top: [0], bottom: [7], reference: 6, inner: 0 });
+	// only the first opening is the report's
+	assert.deepEqual(edge_rows(sketch("O O d T")).top, [0]);
+	// nothing but facts, and no fact at all
+	assert.deepEqual(edge_rows(sketch("d d d")), { top: [], bottom: [], reference: null, inner: 0 });
+	assert.deepEqual(edge_rows(sketch("O T C")), { top: [], bottom: [], reference: null, inner: 0 });
+});
+
+test("rows table: every row of the report but the separators, only when rows stand between the facts", () => {
+	const by_account = load("general_ledger_by_account");
+	const reported = build_report_rows(by_account);
+	assert.deepEqual(reported.rows, by_account.rows.filter((r) => r.__kind !== "separator"));
+	assert.equal(reported.rows.length, 48 + 27);
+	assert.deepEqual(reported.edges, edge_rows(by_account));
+	assert.equal(build_report_rows(load("accounts_receivable_group_by_party")).rows.length, 66 + 7);
+	// the facts table already shows all of these
+	assert.equal(build_report_rows(load("general_ledger_consolidated")), null);
+	assert.equal(build_report_rows(load("accounts_receivable_frappe_total")), null);
+	assert.equal(build_report_rows(load("trial_balance_fy2026")), null);
+	// group headers between the facts count as rows of the report's own groups
+	assert.equal(build_report_rows(sketch("G d d G d")).rows.length, 5);
 });

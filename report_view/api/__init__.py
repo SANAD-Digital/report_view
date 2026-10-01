@@ -147,7 +147,9 @@ def export_xlsx(report_name: str, export_model: dict | str) -> Any:
 	settings = load_settings(report.name)
 	nr = normalize.normalize(response["raw"], model["filters"], settings["report_settings"], {}, translate=_)
 	export_model_mod.check_against_report(model, nr)
-	result = engine.apply(nr, model["view_state"], model["selection"], model["layout"]["columns"])
+	result = engine.apply(
+		nr, model["view_state"], model["selection"], model["layout"]["columns"], lang=frappe.local.lang
+	)
 	export_model_mod.compare_expected(model, result, nr, report.name)
 
 	content = xlsx.build(report.name, nr, result, model, settings)

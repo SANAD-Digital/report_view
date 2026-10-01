@@ -3,6 +3,10 @@
 Values are raw (never HTML from a formatter). Numbers keep their numeric type
 with a number format built from the system precision; dates are real dates
 with the system date format.
+
+Rows follow the screen (``core/engine.py``): every row is written with its outline
+level; the rows under a folded group or parent are hidden and the folded row is
+marked collapsed, so Excel opens them with its own outline buttons.
 """
 
 import datetime
@@ -70,6 +74,23 @@ def _filters_text(filters: dict) -> str:
 			value = ", ".join(str(v) for v in value)
 		parts.append(f"{_(frappe.unscrub(key))}: {value}")
 	return " | ".join(parts)
+
+
+def _group_label(out: dict, by_key: dict[str, dict]) -> str:
+	"""Text that names a group row or the group of a subtotal row."""
+	if out["label"] is not None:
+		return out["label"]
+	value = out["group_value"]
+	if value is None or value == "":
+		return _("Not Set")
+	fieldtype = (by_key.get(out["group_key"]) or {}).get("fieldtype")
+	if fieldtype == "Date":
+		return frappe.utils.formatdate(value)
+	if fieldtype == "Datetime":
+		return frappe.utils.format_datetime(value)
+	if isinstance(value, list):
+		return ", ".join(str(v) for v in value)
+	return str(value)
 
 
 def _bands(columns: list[dict], balance_pairs: list[dict]) -> dict[int, tuple[int, str]]:
@@ -156,23 +177,24 @@ def build(
 	row += 1
 	ws.freeze_panes = ws.cell(row=row, column=1)
 
-	label_index = 0
-	label_key = (nr.get("tree") or {}).get("label_key")
-	for i, col in enumerate(columns):
-		if col["key"] == label_key:
-			label_index = i
-			break
+	# The column that names a row on screen: group titles, subtotal titles and the indent.
+	label_index = next((i for i, c in enumerate(columns) if c["key"] == result["label_key"]), 0)
+	by_key = {c["key"]: c for c in nr["columns"]}
 
 	include_subtotals = layout.get("include_subtotals", True)
 	for out in result["rows"]:
-		if out["kind"] == "group" and not include_subtotals:
-			values = {c["key"]: None for c in columns}
-			values.update({k: v for k, v in out["values"].items() if k not in number_formats})
-		else:
-			values = out["values"]
+		kind = out["kind"]
+		if kind == "foot" and not include_subtotals:
+			continue
+		values = {} if kind == "group" and not include_subtotals else out["values"]
+		title = None
+		if kind == "group":
+			title = f"{_group_label(out, by_key)} ({out['count']})"
+		elif kind == "foot":
+			title = _("Total {0}").format(_group_label(out, by_key))
 		for i, col in enumerate(columns):
-			if out["kind"] == "group" and i == 0:
-				value = f"{out['label'] or _('(empty)')} ({out['count']})"
+			if title is not None and i == label_index:
+				value = title
 			else:
 				value = _cell_value(values.get(col["key"]), col)
 			cell = ws.cell(row=row, column=i + 1, value=value)
@@ -186,18 +208,23 @@ def build(
 				cell.font = bold
 			if i == label_index and out["level"]:
 				cell.alignment = Alignment(indent=min(out["level"], 15))
+		dimension = ws.row_dimensions[row]
 		level = min(out["level"], 7)
 		if level:
-			ws.row_dimensions[row].outline_level = level
-		if out.get("collapsed"):
-			ws.row_dimensions[row].hidden = True
+			dimension.outline_level = level
+		if out["hidden"]:
+			dimension.hidden = True
+		if out["open"] is False:
+			# A folded group or parent: its rows are in the sheet, hidden under it.
+			dimension.collapsed = True
 		row += 1
 
-	# Grand total (ADR-008), always a wide bold row.
+	# Grand total (ADR-008), always a wide bold row: the report's own reference row when it
+	# is the total on screen, else the engine's total.
 	total_fill = PatternFill("solid", fgColor="E7E6E6")
 	for i, col in enumerate(columns):
 		value = _cell_value(result["totals"].get(col["key"]), col) if col["key"] in result["totals"] else None
-		if i == 0 and value is None:
+		if i == label_index and value is None:
 			value = _("Total")
 		cell = ws.cell(row=row, column=i + 1, value=value)
 		cell.font, cell.fill, cell.border = bold, total_fill, header_border

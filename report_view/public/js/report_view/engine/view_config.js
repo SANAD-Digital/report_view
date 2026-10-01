@@ -194,7 +194,7 @@ function unique(list) {
  * @param {object} view_state §7.1
  * @param {object} normalized NormalizedReport
  * @param {"grid"|"pivot"|"charts"} [mode]
- * @returns {{table: "nodes"|"facts", config: object, post: object}}
+ * @returns {{table: "nodes"|"rows"|"facts", config: object, post: object}}
  */
 export function to_view_config(view_state, normalized, mode = "grid") {
 	if (mode !== "grid") throw new Error(`report_view: view mode "${mode}" is not available yet`);
@@ -209,14 +209,21 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 	const group_keys = (state.group?.by || []).filter((k) => by_key.has(k));
 	const { filter: browser_filter, notices } = to_filter(state.filters, normalized.columns);
 	const is_tree = Boolean(normalized.tree?.enabled);
-
-	let shape = "flat";
-	if (group_keys.length) shape = "group";
-	else if (is_tree) shape = browser_filter.length ? "levels" : "tree";
-
 	const user_sort = (state.sort || [])
 		.filter((s) => by_key.has(s.key) && !group_keys.includes(s.key))
 		.map((s) => [sort_column(s.key, by_key), s.dir === "desc" ? "desc" : "asc"]);
+	// The report's own summary rows (a report without a tree): those of the whole report,
+	// and the number of those of its own groups, between the facts.
+	const edges = edge_rows(normalized);
+
+	// "report" = the rows as the report returned them (rows table), the default view of a
+	// report that has summary rows between its facts. A browser filter, a grouping or a sort
+	// of the user reads the facts instead: the rows between them no longer stand for what is
+	// shown (a sort breaks the groups they close).
+	let shape = "flat";
+	if (group_keys.length) shape = "group";
+	else if (is_tree) shape = browser_filter.length ? "levels" : "tree";
+	else if (edges.inner && !browser_filter.length && !user_sort.length) shape = "report";
 	const totalled = visible.filter((c) => aggregate_of(c, state));
 	const currency_keys = unique(totalled.map(row_currency_key).filter(Boolean));
 	const currency_counts = currency_keys.filter((k) => !k.includes('"')).map((k) => CURRENCY_COUNT_PREFIX + k);
@@ -244,7 +251,6 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 		expanded: null,
 		pinned_rows: { top: [], bottom: [] },
 		total: null,
-		expected_total: null,
 		fact_filter: shape === "tree" ? [] : browser_filter,
 		groups: null,
 		notices,
@@ -282,23 +288,31 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 		else if (normalized.report_totals?.frappe_total) post.total = { source: "frappe_total" };
 		else post.total = { source: "view", view: totals_view("nodes", [[TOP, "==", true]]) };
 		post.groups = { table: "nodes", filter: [[HAS_CHILDREN, "==", true]] };
+	} else if (shape === "report") {
+		// Every row of the report in its place, with the report's own values. The rows of the
+		// whole report are pinned outside the body, so the view leaves them out.
+		const pinned_rids = [...edges.top, ...edges.bottom, ...(edges.reference === null ? [] : [edges.reference])];
+		config.filter = pinned_rids.length ? [[RID, "not in", pinned_rids]] : [];
+		post.technical = [RID];
+		post.pinned_rows = { top: edges.top, bottom: edges.bottom };
+		post.total =
+			edges.reference !== null ? { source: "row", rid: edges.reference } : { source: "view", view: totals_view("facts", []) };
 	} else if (shape === "flat") {
 		config.filter = browser_filter;
 		config.sort = user_sort.length ? [...user_sort, [RID, "asc"]] : [];
 		post.technical = [RID];
-		// What the server compares before an export is always the engine's own total (§8أ.6).
-		post.expected_total = totals_view("facts", browser_filter);
-		post.total = { source: "view", view: post.expected_total };
+		post.total = { source: "view", view: totals_view("facts", browser_filter) };
 		// The report's own summary rows stand for the whole report: with a browser filter
 		// they no longer describe what is shown, so they leave the screen (as in the export)
-		// and the grand total is the engine's. Without one, the report's reference row is the
-		// grand total shown (ADR-008).
-		const edges = edge_rows(normalized);
+		// and the grand total is the engine's. Without one (also under a sort: they stay
+		// outside the sorted body), the report's reference row is the grand total shown
+		// (ADR-008).
 		if (!browser_filter.length) {
 			post.pinned_rows = { top: edges.top, bottom: edges.bottom };
 			if (edges.reference !== null) post.total = { source: "row", rid: edges.reference };
-			if (edges.inner) notices.push({ code: "REPORT_ROWS_NOT_SHOWN", detail: edges.inner });
 		}
+		// A filter or a sort took the view off the rows as reported: said, not done in silence.
+		if (edges.inner) notices.push({ code: "REPORT_ROWS_HIDDEN", detail: edges.inner });
 	} else {
 		// Fact rows are the last level (their __rid), so groups open down to the report rows.
 		const levels = shape === "levels" ? tree_index(normalized).max_depth : 0;
@@ -338,6 +352,7 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 				table: "facts",
 				config: { group_by: group_keys, columns: [KIND], aggregates: { [KIND]: "count" }, filter: browser_filter },
 			};
+			if (edges.inner) notices.push({ code: "REPORT_ROWS_HIDDEN", detail: edges.inner });
 		}
 	}
 
@@ -350,5 +365,5 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 		for (const name of sort_columns) if (!Object.hasOwn(config.aggregates, name)) config.aggregates[name] = "min";
 	}
 	post.index = Object.fromEntries(config.columns.map((name, i) => [name, i]));
-	return { table: shape === "tree" ? "nodes" : "facts", config, post };
+	return { table: { tree: "nodes", report: "rows" }[shape] || "facts", config, post };
 }

@@ -16,6 +16,9 @@ const ALLOWED = [/Unknown browser detected/];
 const rv = (state) => Buffer.from(JSON.stringify({ v: 1, ...state })).toString("base64url");
 const NO_SUBTOTALS = rv({ group: { subtotals: false } });
 const PINNED = rv({ columns: { pinned: { start: ["voucher_no", "voucher_type"] } } });
+// Receivables with the text columns between the party and the amounts hidden, so that the
+// amounts of a party total are on screen without a horizontal scroll.
+const AR_AMOUNTS = rv({ columns: { hidden: ["party_type", "party_account", "customer_primary_contact", "cost_center", "project", "due_date"] } });
 
 const SHOTS = [
 	// subtotal rows of the report tree (on by default), light and dark, RTL and LTR
@@ -36,9 +39,13 @@ const SHOTS = [
 	{ name: "gl-pinned-rows-dark-rtl", query: "report=gl&lang=ar&desk=dark" },
 	{ name: "gl-pinned-rows-light-ltr", query: "report=gl&lang=en" },
 	{ name: "gl-pinned-rows-dark-ltr", query: "report=gl&lang=en&desk=dark" },
-	{ name: "gl-by-account-light-rtl", query: "report=gl_account&lang=ar" },
-	{ name: "gl-by-account-dark-ltr", query: "report=gl_account&lang=en&desk=dark" },
-	{ name: "ar-by-party-report-light-rtl", query: "report=ar_party&lang=ar" },
+	// rows as reported: the report's own opening / total / closing rows between its facts
+	{ name: "gl-by-account-as-reported-light-rtl", query: "report=gl_account&lang=ar", height: 1500 },
+	{ name: "gl-by-account-as-reported-dark-ltr", query: "report=gl_account&lang=en&desk=dark", height: 1500 },
+	{ name: "ar-by-party-as-reported-light-rtl", query: `report=ar_party&lang=ar&rv=${AR_AMOUNTS}` },
+	{ name: "ar-by-party-as-reported-dark-ltr", query: `report=ar_party&lang=en&desk=dark&rv=${AR_AMOUNTS}` },
+	{ name: "ar-by-party-as-reported-all-columns-light-rtl", query: "report=ar_party&lang=ar" },
+	{ name: "gl-by-account-as-reported-390-rtl", query: "report=gl_account&lang=ar", width: 390, height: 844, full: true },
 	// columns pinned next to the label column
 	{ name: "ar-pinned-columns-light-rtl", query: `report=ar&lang=ar&rv=${PINNED}` },
 	{ name: "ar-pinned-columns-dark-ltr", query: `report=ar&lang=en&desk=dark&rv=${PINNED}` },
@@ -584,9 +591,10 @@ test("general ledger: the report's opening row under the headers, its closing ro
 	expect(at_top.total.slice(0, 3)).toEqual(["2,521,940.00", "2,521,940.00", "—"]);
 	expect(at_top.closing.slice(0, 3)).toEqual(["2,521,940.00", "2,521,940.00", "—"]);
 	expect(at_top.counts).toEqual({ shown: 47, total: 47, facts: 47, groups: null });
-	// the export is compared with the engine's sums of the 47 facts
+	// the export is compared with the 47 facts and the grand total as shown
 	expect(at_top.expected.row_count).toBe(47);
 	expect(at_top.expected.totals.debit).toBe(2521940);
+	expect(at_top.expected.totals.balance).toBe(0);
 
 	// scrolled to the end: the opening row stays, the last fact ends above the closing row
 	await page.locator("regular-table").hover();
@@ -625,22 +633,165 @@ test("general ledger: the report's opening row under the headers, its closing ro
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
-test("the report's own subtotals between the facts are announced once, not dropped in silence", async ({ page }) => {
+test("rows as reported: the opening, total and closing of every account stand between its entries", async ({ page }) => {
 	const problems = watch_console(page);
+	await open(page, "report=gl_account&lang=ar", { width: 1440, height: 1500 });
+	// they are on screen: nothing to announce
+	await expect(page.locator(".rv-notice")).toBeHidden();
+	const info = await page.evaluate(() => ({
+		shape: window.rv_page.opened.post.shape,
+		counts: window.rv_page.opened.counts,
+		expected: window.rv_page.export_model().expected,
+		rows: window.rv_page.grid.body_rows,
+		top: [...document.querySelectorAll(".rv-rt-top .rv-row .rv-pin-label")].map((el) => el.textContent.trim()),
+		bottom: [...document.querySelectorAll(".rv-rt-bottom .rv-row .rv-pin-label")].map((el) => el.textContent.trim()),
+		total: [...document.querySelectorAll(".rv-rt-total .rv-c.num")].map((el) => el.textContent.trim()),
+		tools: Boolean(document.querySelector(".rv-gp-tools:not([hidden])")),
+	}));
+	expect(info.shape).toBe("report");
+	// the report's own opening (pinned), then 48 entries and the 24 rows of the 8 accounts
+	expect(info.rows).toBe(1 + 48 + 24);
+	expect(info.top).toEqual(["Opening"]);
+	expect(info.bottom[0]).toBe("Closing (Opening + Total)");
+	expect(info.bottom[1]).toContain("الإجمالي العام");
+	expect(info.total.slice(0, 2)).toEqual(["2,521,940.00", "2,521,940.00"]);
+	// rows = the entries, in the status bar, in the badge of the grand total and in the export
+	expect(info.counts).toEqual({ shown: 48, total: 48, facts: 48, groups: null });
+	expect(info.bottom[1]).toContain("48");
+	expect(info.expected.row_count).toBe(48);
+	expect(info.expected.totals.debit).toBe(2521940);
+	// nothing to fold in a list of report rows
+	expect(info.tools).toBe(false);
+
+	const rows = (await body(page)).filter((r) => r.cls !== "spacer");
+	// the first account: its opening balance, its 21 entries, its total, its closing
+	expect(rows[0].cls).toBe("opening");
+	expect(rows[0].label).toBe("Opening");
+	expect(rows[0].nums.slice(0, 3)).toEqual(["469.00", "—", "469.00"]);
+	expect(rows.slice(1, 22).every((r) => r.cls === "")).toBe(true);
+	expect(rows[22].cls).toBe("foot");
+	expect(rows[22].label).toBe("Total");
+	expect(rows[22].nums.slice(0, 3)).toEqual(["53,831.00", "100.00", "53,731.00"]);
+	expect(rows[23].cls).toBe("foot closing");
+	expect(rows[23].label).toBe("Closing (Opening + Total)");
+	expect(rows[23].nums.slice(0, 3)).toEqual(["54,300.00", "100.00", "54,200.00"]);
+	// then the opening of the next account
+	expect(rows[24].cls).toBe("opening");
+	expect(rows[24].nums.slice(0, 3)).toEqual(["—", "469.00", "-469.00"]);
+	// a summary row carries captions, never a link
+	expect(await page.locator("regular-table tbody tr.opening a, regular-table tbody tr.foot a").count()).toBe(0);
+
+	// the end of the report: the last account closes right above the pinned rows
+	await page.locator("regular-table").hover();
+	await page.mouse.wheel(0, 100000);
+	await page.waitForTimeout(300);
+	await settle(page);
+	const last = (await body(page)).filter((r) => r.cls !== "spacer").slice(-2);
+	expect(last.map((r) => r.cls)).toEqual(["foot", "foot closing"]);
+	await shot(page, "gl-by-account-as-reported-scrolled-end-light-rtl");
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("rows as reported: the total of every party stands after its invoices", async ({ page }) => {
+	const problems = watch_console(page);
+	// hidden columns are no filter: the rows stay as reported
+	await open(page, `report=ar_party&lang=ar&rv=${AR_AMOUNTS}`);
+	await expect(page.locator(".rv-notice")).toBeHidden();
+	const info = await page.evaluate(() => ({
+		shape: window.rv_page.opened.post.shape,
+		rows: window.rv_page.grid.body_rows,
+		counts: window.rv_page.opened.counts,
+		pinned: document.querySelectorAll(".rv-rt-top .rv-row, .rv-rt-closing").length,
+	}));
+	expect(info.shape).toBe("report");
+	expect(info.rows).toBe(66 + 6);
+	expect(info.counts).toEqual({ shown: 66, total: 66, facts: 66, groups: null });
+	expect(info.pinned).toBe(0);
+	const rows = await body(page);
+	// Clint: four invoices, then the party's own total as the report returned it
+	expect(rows.slice(0, 4).every((r) => r.cls === "")).toBe(true);
+	expect(rows[4].cls).toBe("foot");
+	expect(rows[4].label).toBe("Clint");
+	// invoiced, paid, credit note, outstanding: the values of the report's own row
+	expect(rows[4].nums.slice(0, 4)).toEqual(["—", "11,275.00", "—", "-11,275.00"]);
+	expect(rows[7].cls).toBe("foot");
+	expect(rows[7].label).toBe("f");
+	expect(rows[7].nums.slice(0, 4)).toEqual(["—", "200.00", "—", "-200.00"]);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("rows as reported: a filter, a grouping or a sort reads the facts, and says that the report's rows are hidden", async ({ page }) => {
+	const problems = watch_console(page);
+	const kinds = () => page.evaluate(() => window.rv_page.debug_handles().map((h) => h.kind).sort());
+	const look = () =>
+		page.evaluate(() => ({
+			shape: window.rv_page.opened.post.shape,
+			table: window.rv_page.opened.spec.table,
+			rows: window.rv_page.grid.body_rows,
+			top: document.querySelectorAll(".rv-rt-top .rv-row").length,
+			closing: document.querySelectorAll(".rv-rt-closing").length,
+			summary: document.querySelectorAll("regular-table tbody tr.opening, regular-table tbody tr.foot").length,
+			expected: window.rv_page.export_model().expected,
+		}));
+	const set = async (patch) => {
+		await page.evaluate(async (p) => {
+			Object.assign(window.rv_page.state, { filters: [], sort: [], ...p.state });
+			window.rv_page.state.group.by = p.by || [];
+			await window.rv_page.render();
+		}, patch);
+		await shown(page);
+		await settle(page);
+	};
 	await open(page, "report=gl_account&lang=ar");
+	// the facts table and the rows table of the report, one view
+	expect(await kinds()).toEqual(["table", "table", "view"]);
 	const bar = page.locator(".rv-notice");
+	await expect(bar).toBeHidden();
+
+	// a sort: the entries sorted; the report's opening, closing and total stay pinned
+	await set({ state: { sort: [{ key: "debit", dir: "desc" }] } });
+	const sorted = await look();
+	expect(sorted).toMatchObject({ shape: "flat", table: "facts", rows: 1 + 48, top: 1, closing: 1, summary: 0 });
+	expect(sorted.expected).toMatchObject({ row_count: 48, totals: { debit: 2521940 } });
 	await expect(bar).toBeVisible();
 	await expect(bar).toHaveClass(/info/);
 	await expect(bar).toContainText("24");
-	await expect(bar).toContainText("Excel");
-	expect(await page.locator(".rv-rt-top .rv-row").count()).toBe(1);
-	expect(await page.locator(".rv-rt-closing").count()).toBe(1);
-	// closed by the user: it stays closed while the notice is the same
+	await expect(bar).toContainText("مخفية");
+	await shot(page, "gl-by-account-sorted-facts-light-rtl");
+
+	// a filter: the matching entries and the engine's total; nothing of the report is pinned
+	await set({ state: { filters: [{ key: "debit", type: "range", min: 100, max: null }] } });
+	const narrowed = await look();
+	expect(narrowed).toMatchObject({ shape: "flat", table: "facts", top: 0, closing: 0, summary: 0 });
+	expect(narrowed.rows).toBeLessThan(48);
+	expect(narrowed.expected.row_count).toBe(narrowed.rows);
+	// the same notice: one bar; closed by the user, it stays closed while the notice is the same
+	expect(await page.locator(".rv-notice").count()).toBe(1);
+	expect(await bar.locator("p").count()).toBe(1);
 	await bar.locator(".rv-chip-x").click();
 	await expect(bar).toBeHidden();
-	await page.evaluate(() => window.rv_page.render());
-	await shown(page);
+
+	// a grouping: groups of the entries, computed by the engine
+	await set({ by: ["account"] });
+	const grouped = await look();
+	expect(grouped).toMatchObject({ shape: "group", table: "facts", top: 0, closing: 0 });
 	await expect(bar).toBeHidden();
+
+	// back to the default view: the rows as reported again, and no bar
+	await set({});
+	const back = await look();
+	expect(back).toMatchObject({ shape: "report", table: "rows", rows: 1 + 48 + 24, top: 1, closing: 1 });
+	expect(back.summary).toBeGreaterThan(0);
+	await expect(bar).toBeHidden();
+
+	// no handle is left behind by 20 changes between the four views
+	const steps = [{ state: { sort: [{ key: "credit", dir: "asc" }] } }, { state: { filters: [{ key: "credit", type: "range", min: 1, max: null }] } }, { by: ["voucher_type"] }, {}];
+	for (let i = 0; i < 20; i++) {
+		await set(steps[i % steps.length]);
+		expect(await kinds(), `change ${i}`).toEqual(["table", "table", "view"]);
+	}
+	await page.evaluate(() => window.rv_page.hide());
+	await page.waitForFunction(() => window.rv_page.debug_handles().length === 0);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 

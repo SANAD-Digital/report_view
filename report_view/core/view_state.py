@@ -1,9 +1,13 @@
 """View state schema v1: validation and migration (docs/architecture.md §7).
 
-Phase 3 implements the keys used by the export: ``v``, ``mode``, ``columns``,
-``sort``, ``filters`` (text / set / range / date), ``group`` and ``tree``. The
-remaining schema keys are type-checked and ignored by the engine. Unknown keys
-are rejected on the server (§7.2).
+The export uses ``v``, ``mode``, ``columns``, ``sort``, ``filters`` (text / set /
+range / date), ``group``, ``tree`` and ``values``. The remaining schema keys are
+type-checked and ignored by the engine. Unknown keys are rejected on the server
+(§7.2).
+
+``check_exportable`` refuses, for an export only, what the schema allows but the
+browser engine does not apply yet (§4.2 step 4): the file must not differ from
+the screen.
 """
 
 import math
@@ -13,6 +17,7 @@ from typing import Any
 import frappe
 from frappe import _
 
+from report_view.core.engine import value_type
 from report_view.core.errors import RVInvalidViewState
 
 VERSION = 1
@@ -21,6 +26,7 @@ MAX_SET_VALUES = 5000
 MAX_GROUP_BY = 50
 MAX_PIVOT_DIMS = 20
 MAX_KEYS = 1000
+MAX_EXPANDED = 5000
 
 TOP_KEYS = frozenset(
 	(
@@ -139,7 +145,10 @@ def validate(state: Any) -> dict:
 		if "subtotals" in group and not isinstance(group["subtotals"], bool):
 			_fail(_("View state: invalid group.subtotals"))
 		expanded = group.get("expanded", "all")
-		if expanded not in ("all", "none") and not isinstance(expanded, list):
+		if isinstance(expanded, list):
+			if len(expanded) > MAX_EXPANDED or not all(_is_group_path(path) for path in expanded):
+				_fail(_("View state: invalid group.expanded"))
+		elif expanded not in ("all", "none"):
 			_fail(_("View state: invalid group.expanded"))
 
 	tree = state.get("tree")
@@ -148,7 +157,12 @@ def validate(state: Any) -> dict:
 		depth = tree.get("depth")
 		if depth is not None and (not isinstance(depth, int) or isinstance(depth, bool) or depth < 0):
 			_fail(_("View state: invalid tree.depth"))
-		if tree.get("expanded") is not None and not isinstance(tree["expanded"], list):
+		expanded = tree.get("expanded")
+		if expanded is not None and (
+			not isinstance(expanded, list)
+			or len(expanded) > MAX_EXPANDED
+			or not all(isinstance(rid, int) and not isinstance(rid, bool) and rid >= 0 for rid in expanded)
+		):
 			_fail(_("View state: invalid tree.expanded"))
 
 	values = state.get("values")
@@ -175,6 +189,15 @@ def validate(state: Any) -> dict:
 	if state.get("ui") is not None and not isinstance(state["ui"], dict):
 		_fail(_("View state: invalid ui"))
 	return state
+
+
+def _is_group_path(path: Any) -> bool:
+	"""A group path: the values of the group keys, top-down (text, number, boolean or null)."""
+	return (
+		isinstance(path, list)
+		and 0 < len(path) <= MAX_GROUP_BY
+		and all(isinstance(v, _PRIMITIVES) and (not isinstance(v, float) or math.isfinite(v)) for v in path)
+	)
 
 
 def _validate_filter(flt: Any) -> None:
@@ -249,3 +272,67 @@ def check_against_columns(state: dict, columns: list[dict]) -> None:
 		missing.append(key)
 	if missing:
 		_fail(_("View state refers to unknown columns: {0}").format(", ".join(sorted(missing))))
+
+
+# Perspective types of the columns a filter type can be applied to (engine/view_config.js
+# ``to_filter``): the browser leaves any other combination out and says so in a notice.
+_FILTER_COLUMN_TYPES = {
+	"text": ("string",),
+	"set": ("string",),
+	"range": ("float",),
+	"date": ("date", "datetime"),
+}
+
+
+def check_exportable(state: dict, columns: list[dict]) -> None:
+	"""§4.2 step 4: refuse a view state the screen does not show as it is written.
+
+	The browser engine does not apply these and only shows a notice; applying them on the
+	server would make the file differ from the screen. They are refused, with the reason,
+	until both sides support them:
+	- the free-text search (``key: "*"``) and the text operator ``not_contains``;
+	- a filter whose type does not fit the column (text or set on a non-text column, range
+	  on a non-number column, date on a non-date column);
+	- a set filter that asks for empty cells together with other values;
+	- derived date keys (``<key>__year``, ``__quarter``, ``__month``) in ``sort``,
+	  ``filters`` or ``group.by``.
+	"""
+	by_key = {c["key"]: c for c in columns}
+	derived = [
+		key
+		for key in (
+			*(s["key"] for s in state.get("sort") or []),
+			*(f["key"] for f in state.get("filters") or []),
+			*((state.get("group") or {}).get("by") or []),
+		)
+		if key != "*" and key not in by_key
+	]
+	if derived:
+		_fail(
+			_("Cannot export: date parts ({0}) cannot be used to sort, filter or group yet.").format(
+				", ".join(sorted(set(derived)))
+			)
+		)
+	again = _("Remove it and export again.")
+	for flt in state.get("filters") or []:
+		if flt["key"] == "*":
+			_fail(_("Cannot export: the free-text search is not applied on screen.") + " " + again)
+		column = by_key[flt["key"]]
+		label = _(column.get("label") or flt["key"])
+		ftype = flt["type"]
+		reason = None
+		if ftype == "text" and flt.get("op") == "not_contains":
+			reason = _("Cannot export: the filter on {0} uses an operator that is not applied on screen.")
+		elif value_type(column["fieldtype"]) not in _FILTER_COLUMN_TYPES[ftype]:
+			reason = _(
+				"Cannot export: the filter on {0} does not fit the type of the column and is not applied on screen."
+			)
+		elif ftype == "set" and not flt.get("exclude"):
+			values = flt.get("values") or []
+			has_empty = any(v is None or v == "" for v in values)
+			if has_empty and any(v is not None and v != "" for v in values):
+				reason = _(
+					"Cannot export: the filter on {0} combines empty cells with other values, which is not applied on screen."
+				)
+		if reason:
+			_fail(reason.format(label) + " " + again)

@@ -6,8 +6,14 @@ import frappe
 from openpyxl import load_workbook
 
 from report_view import api
+from report_view.core import engine
+from report_view.core import view_state as vs
 from report_view.core.errors import RVExportMismatch, RVInvalidInput, RVInvalidViewState, RVNoExport
-from report_view.tests.utils import AR_FILTERS, TB_FILTERS, TB_JS_FILTERS, RVTestCase
+from report_view.core.export import model as export_model
+from report_view.core.export import xlsx
+from report_view.core.normalize import normalize
+from report_view.core.settings import empty_settings
+from report_view.tests.utils import AR_FILTERS, TB_FILTERS, TB_JS_FILTERS, RVTestCase, load_fixtures
 
 
 def tb_model(**overrides) -> dict:
@@ -25,6 +31,31 @@ def tb_model(**overrides) -> dict:
 	}
 	model.update(overrides)
 	return model
+
+
+def fixture_report(name: str) -> tuple[dict, dict]:
+	"""NormalizedReport of a shared fixture (a real run on acc.dev) and its report filters."""
+	case = next(c for c in load_fixtures() if c["name"] == name)
+	i = case["input"]
+	return normalize(i["raw"], i["filters"], i["report_settings"], i["register"]), i["filters"]
+
+
+def fixture_workbook(name: str, state: dict, report_name: str = "General Ledger") -> tuple:
+	"""The workbook the export builds for a fixture and a view state: (sheet, result, nr)."""
+	nr, filters = fixture_report(name)
+	model = export_model.parse(
+		{"version": 1, "format": "xlsx", "filters": filters, "view_state": {"v": 1, **state}}, "xlsx"
+	)
+	export_model.check_against_report(model, nr)
+	result = engine.apply(nr, model["view_state"], lang=frappe.local.lang)
+	content = xlsx.build(report_name, nr, result, model, empty_settings(report_name))
+	return load_workbook(BytesIO(content)).active, result, nr
+
+
+def body_rows(ws) -> list[tuple]:
+	"""(row number, values) of the sheet rows below the frozen header."""
+	first = ws[ws.freeze_panes].row
+	return [(r, [c.value for c in ws[r]]) for r in range(first, ws.max_row + 1)]
 
 
 class TestExportXlsx(RVTestCase):
@@ -110,10 +141,183 @@ class TestExportXlsx(RVTestCase):
 				api.export_xlsx("Trial Balance", "x" * (257 * 1024))
 
 	def test_group_export(self):
-		model = tb_model(view_state={"v": 1, "group": {"by": ["currency"], "subtotals": True}})
+		model = tb_model(view_state={"v": 1, "group": {"by": ["currency"], "subtotals": False}})
 		with self.as_user("accountant"):
-			wb = self._export("Trial Balance", model)
-		self.assertGreater(wb.active.max_row, 5)
+			ws = self._export("Trial Balance", model).active
+		rows = body_rows(ws)
+		# The group row carries its numbers (no subtotal row), and they are the grand total.
+		self.assertRegex(rows[0][1][0], r"^.+ \(\d+\)$")
+		numbers = [v for v in rows[0][1] if isinstance(v, int | float)]
+		self.assertEqual(numbers, [v for v in rows[-1][1] if isinstance(v, int | float)])
+		self.assertTrue(all(ws.row_dimensions[r].outline_level == 1 for r, _values in rows[1:-1]))
+
+	def test_expected_is_what_the_screen_shows(self):
+		"""§4.2 (7): row_count = facts that pass the filters; totals = the grand total shown."""
+		with self.as_user("accountant"):
+			raw = api.run("Trial Balance", TB_FILTERS, TB_JS_FILTERS)["raw"]
+		leaves = [r for r in raw["result"] if r.get("account") != "'Total'"]
+		facts = sum(
+			1 for i, r in enumerate(leaves) if i + 1 == len(leaves) or leaves[i + 1]["indent"] <= r["indent"]
+		)
+		expected = {"row_count": facts, "totals": self._reference_totals()}
+		with self.as_user("accountant"):
+			self._export("Trial Balance", tb_model(expected=expected))
+			with (
+				patch("report_view.core.export.model.frappe.log_error"),
+				self.assertRaises(RVExportMismatch),
+			):
+				self._export("Trial Balance", tb_model(expected={**expected, "row_count": facts + 1}))
+
+	def test_tree_fold_is_written_as_outline(self):
+		"""tree.depth: every row is in the sheet; rows under a folded parent are hidden."""
+		with self.as_user("accountant"):
+			full = self._export("Trial Balance", tb_model(view_state={"v": 1, "tree": {"depth": 9}})).active
+			ws = self._export("Trial Balance", tb_model(view_state={"v": 1, "tree": {"depth": 1}})).active
+		rows = body_rows(ws)[:-1]
+		dims = [ws.row_dimensions[r] for r, _values in rows]
+		levels = [d.outline_level or 0 for d in dims]
+		self.assertGreater(max(levels), 1)
+		# Depth 1: the roots and their children are shown, everything deeper is hidden.
+		self.assertTrue(all(bool(d.hidden) == (level > 1) for d, level in zip(dims, levels, strict=True)))
+		self.assertTrue(any(d.collapsed for d in dims))
+		# A folded parent is marked collapsed: at depth 1 that is every parent below the roots.
+		shown_folded = [level for d, level in zip(dims, levels, strict=True) if d.collapsed and not d.hidden]
+		self.assertTrue(shown_folded)
+		self.assertEqual(set(shown_folded), {1})
+		# Folding hides rows, it removes none: the open roots add their subtotal rows only.
+		labels = [values[0] for _r, values in rows]
+		feet = [label for label in labels if isinstance(label, str) and label.startswith("Total ")]
+		self.assertTrue(feet)
+		self.assertEqual(len(body_rows(full)[:-1]) - len(rows), self._open_parents(full) - len(feet))
+		# The grand total row is the report's own 'Total' row.
+		last = body_rows(ws)[-1][1]
+		self.assertEqual(last[0], "Total")
+		self.assertIn(self._reference_totals()["closing_debit"], last)
+
+	def _open_parents(self, ws) -> int:
+		labels = [values[0] for _r, values in body_rows(ws)[:-1]]
+		return sum(1 for label in labels if isinstance(label, str) and label.startswith("Total "))
+
+	def test_group_fold_and_subtotals(self):
+		state = {"v": 1, "group": {"by": ["currency"], "subtotals": True, "expanded": "none"}}
+		with self.as_user("accountant"):
+			folded = self._export("Trial Balance", tb_model(view_state=state)).active
+			state["group"]["expanded"] = "all"
+			opened = self._export("Trial Balance", tb_model(view_state=state)).active
+		rows = body_rows(folded)[:-1]
+		head = folded.row_dimensions[rows[0][0]]
+		self.assertTrue(head.collapsed and not head.hidden)
+		self.assertTrue(all(folded.row_dimensions[r].hidden for r, _values in rows[1:]))
+		# A folded group carries its numbers; an open one leaves them to its subtotal row.
+		self.assertTrue(any(isinstance(v, int | float) for v in rows[0][1][1:]))
+		open_rows = body_rows(opened)[:-1]
+		self.assertFalse(any(isinstance(v, int | float) for v in open_rows[0][1][1:]))
+		self.assertTrue(str(open_rows[-1][1][0]).startswith("Total "))
+		self.assertEqual(
+			[v for v in open_rows[-1][1] if isinstance(v, int | float)],
+			[v for v in rows[0][1] if isinstance(v, int | float)],
+		)
+		self.assertEqual(len(open_rows), len(rows) + 1)
+
+	def test_filters_the_screen_does_not_apply_are_refused(self):
+		"""§4.2 (4): refused with a reason instead of a file that differs from the screen."""
+		filters = (
+			{"key": "account", "type": "text", "op": "not_contains", "value": "x"},
+			{"key": "*", "type": "text", "op": "contains", "value": "x", "source": "search"},
+			{"key": "debit", "type": "text", "op": "contains", "value": "1"},
+			{"key": "debit", "type": "set", "values": [1], "exclude": False},
+			{"key": "account", "type": "range", "min": 1, "max": None},
+			{"key": "account", "type": "date", "from": "2026-01-01", "to": None},
+			{"key": "account", "type": "set", "values": [None, "x"], "exclude": False},
+		)
+		with self.as_user("accountant"):
+			for flt in filters:
+				with self.subTest(filter=flt), self.assertRaises(RVInvalidViewState):
+					self._export("Trial Balance", tb_model(view_state={"v": 1, "filters": [flt]}))
+		# The same state is a valid view state (a saved view may hold it); only the export refuses.
+		vs.validate({"v": 1, "filters": list(filters[:2])})
+		nr, _filters = fixture_report("general_ledger_consolidated")
+		for state in (
+			{"v": 1, "group": {"by": ["posting_date__month"]}},
+			{"v": 1, "sort": [{"key": "posting_date__year", "dir": "asc"}]},
+		):
+			vs.check_against_columns(state, nr["columns"])
+			with self.subTest(state=state), self.assertRaises(RVInvalidViewState):
+				vs.check_exportable(state, nr["columns"])
+		vs.check_exportable(
+			{"v": 1, "filters": [{"key": "account", "type": "set", "values": [None, "x"], "exclude": True}]},
+			nr["columns"],
+		)
+
+	def test_fold_lists_are_validated(self):
+		for state in (
+			{"v": 1, "group": {"by": [], "expanded": [["a", 1, None, True]]}},
+			{"v": 1, "tree": {"depth": None, "expanded": [0, 5]}},
+		):
+			vs.validate(state)
+		for state in (
+			{"v": 1, "group": {"by": [], "expanded": ["a"]}},
+			{"v": 1, "group": {"by": [], "expanded": [[{"a": 1}]]}},
+			{"v": 1, "group": {"by": [], "expanded": [[]]}},
+			{"v": 1, "tree": {"expanded": ["0"]}},
+			{"v": 1, "tree": {"expanded": [-1]}},
+			{"v": 1, "tree": {"expanded": [1.5]}},
+		):
+			with self.subTest(state=state), self.assertRaises(RVInvalidViewState):
+				vs.validate(state)
+
+	def test_general_ledger_rows_and_total(self):
+		"""Opening first, closing last, and the report's own 'Total' row as the grand total."""
+		with self.as_user("accountant"):
+			for sort in ([], [{"key": "debit", "dir": "desc"}]):
+				ws, result, nr = fixture_workbook("general_ledger_consolidated", {"sort": sort})
+				rows = body_rows(ws)
+				keys = [c["key"] for c in result["columns"]]
+				account, balance, debit = keys.index("account"), keys.index("balance"), keys.index("debit")
+				reference = nr["report_totals"]["internal"][-1]
+				with self.subTest(sort=sort):
+					self.assertEqual(len(rows), len(nr["facts"]) + 3)
+					self.assertEqual(rows[0][1][account], "Opening")
+					self.assertEqual(rows[-2][1][account], "Closing (Opening + Total)")
+					self.assertEqual(rows[-1][1][balance], reference["balance"])
+					self.assertEqual(rows[-1][1][debit], reference["debit"])
+			debits = [values[debit] or 0 for _r, values in rows[1:-2]]
+			self.assertEqual(debits, sorted(debits, reverse=True))
+			# With a filter the report's own rows leave and the total is the engine's.
+			flt = {"key": "debit", "type": "range", "min": 1, "max": None}
+			ws, result, nr = fixture_workbook("general_ledger_consolidated", {"filters": [flt]})
+			rows = body_rows(ws)
+			self.assertEqual(len(rows), result["row_count"] + 1)
+			self.assertAlmostEqual(rows[-1][1][debit], sum(v[debit] for _r, v in rows[:-1]), places=2)
+
+	def test_pinned_columns_and_group_rows_in_the_sheet(self):
+		parties = None
+		with self.as_user("accountant"):
+			nr, _filters = fixture_report("accounts_receivable_group_by_party")
+			parties = list(dict.fromkeys(r["party"] for r in nr["facts"]))
+			state = {
+				"columns": {"pinned": {"start": ["voucher_no", "party"]}},
+				"group": {"by": ["party"], "subtotals": True, "expanded": [[parties[0]]]},
+			}
+			ws, result, nr = fixture_workbook(
+				"accounts_receivable_group_by_party", state, "Accounts Receivable"
+			)
+		header = [c.value for c in ws[ws[ws.freeze_panes].row - 1]]
+		labels = {c["key"]: c["label"] for c in nr["columns"]}
+		first = next(c["key"] for c in nr["columns"] if not c["hidden"])
+		self.assertEqual(header[:3], [labels[first], labels["voucher_no"], labels["party"]])
+		rows = body_rows(ws)[:-1]
+		self.assertEqual(len(rows), len(result["rows"]))
+		for (r, values), out in zip(rows, result["rows"], strict=True):
+			dimension = ws.row_dimensions[r]
+			self.assertEqual(bool(dimension.hidden), out["hidden"])
+			self.assertEqual(bool(dimension.collapsed), out["open"] is False)
+			self.assertEqual(dimension.outline_level or 0, out["level"])
+			if out["kind"] == "group":
+				self.assertEqual(values[0], f"{out['group_value']} ({out['count']})")
+			elif out["kind"] == "foot":
+				self.assertEqual(values[0], f"Total {parties[0]}")
+		self.assertEqual([out["kind"] for out in result["rows"]].count("foot"), 1)
 
 	def test_user_without_export_rejected(self):
 		model = tb_model(filters=AR_FILTERS, js_filters=[], view_state={"v": 1})

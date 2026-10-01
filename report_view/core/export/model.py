@@ -136,8 +136,10 @@ def parse(export_model: Any, fmt: str) -> dict:
 
 
 def check_against_report(model: dict, nr: dict) -> None:
-	"""§4.2 steps 3 and 5: keys exist in the server-built NormalizedReport."""
+	"""§4.2 steps 3-5: keys exist in the server-built NormalizedReport, and the view state
+	holds nothing the screen does not apply."""
 	vs.check_against_columns(model["view_state"], nr["columns"])
+	vs.check_exportable(model["view_state"], nr["columns"])
 	known = {c["key"] for c in nr["columns"]}
 	unknown = [c["key"] for c in model["layout"]["columns"] if c["key"] not in known]
 	selection = model["selection"] or {}
@@ -169,7 +171,13 @@ def column_precision(column: dict) -> int:
 
 
 def compare_expected(model: dict, result: dict, nr: dict, report_name: str) -> None:
-	"""ADR-001 / §4.2 step 7: raise RVExportMismatch when server and browser disagree."""
+	"""ADR-001 / §4.2 step 7: raise RVExportMismatch when server and browser disagree.
+
+	``expected.row_count`` is the number of facts that pass the browser filters (and the
+	selection). ``expected.totals`` is the grand total as shown: the report's reference row
+	when it is the total on screen, else the engine's total; a column without a numeric
+	total (no aggregate, mixed currencies) is not sent and not compared.
+	"""
 	expected = model.get("expected")
 	if not expected:
 		return

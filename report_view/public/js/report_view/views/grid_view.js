@@ -5,8 +5,10 @@
 // values of the view. Classes and content of every cell are set in the style listener.
 //
 // Shapes of the view (engine/view_config.js): "tree" = the report tree as it came (nodes
-// table, folded by an engine filter); "flat" = the facts; "group" / "levels" = a grouped
-// view of the facts, opened and closed with view.expand / view.collapse.
+// table, folded by an engine filter); "report" = the rows of a report as it came, its own
+// opening / total / closing rows between the facts (rows table); "flat" = the facts;
+// "group" / "levels" = a grouped view of the facts, opened and closed with view.expand /
+// view.collapse.
 //
 // Rows of the body (engine/row_layout.js): the rows of the view, a subtotal row after every
 // open group (the values of the group's own row), and spacer rows under the report rows that
@@ -30,6 +32,12 @@ const RUN_GAP = 8;
 // A column without a band: not the empty string, so that regular-table does not merge its
 // band cell with the one of the pinned columns.
 const NO_BAND = " ";
+// Rows of the view that carry groups to fold (the others are plain lists of report rows).
+const HIERARCHICAL = new Set(["tree", "levels", "group"]);
+// Class of a summary row of the report, in the body and pinned: the design's subtotal row
+// (.rv-row.foot) for a total and a closing, the opening row of its statement drawer
+// (.rv-drow.op) for an opening.
+const SUMMARY_CLASS = { opening: "opening", internal_total: "foot", closing: "foot closing", group_header: "group d0" };
 const CHEVRON =
 	'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>';
 
@@ -87,6 +95,7 @@ export class GridView {
 		this.windows = [];
 		this.rendered = new WeakMap();
 		this.html_cache = new Map();
+		this.captions = new Map();
 		this.cache_owner = null;
 		this.refocus = null;
 		this.listener = (x0, y0, x1, y1) => this.read(x0, y0, x1, y1);
@@ -139,8 +148,8 @@ export class GridView {
 		const levels = data.some((d) => d.band) ? 2 : 1;
 		return {
 			shape: post.shape,
-			hierarchical: post.shape !== "flat",
-			subtotals: post.subtotals && post.shape !== "flat",
+			hierarchical: HIERARCHICAL.has(post.shape),
+			subtotals: post.subtotals && HIERARCHICAL.has(post.shape),
 			label,
 			label_title: title(label),
 			label_width,
@@ -183,6 +192,8 @@ export class GridView {
 		this.fmt = fmt;
 		this.session = session;
 		this.model = model;
+		// Captions depend on the columns shown, not only on the report.
+		this.captions.clear();
 		this.current = opened;
 		this.counts = { ...opened.counts };
 		this.set_layout(opened);
@@ -649,12 +660,45 @@ export class GridView {
 						__group_value: group_value(m.by_key.get(rec.key), rec.value),
 				  });
 			inner = `${caret(rec.open)}${label}${fmt.count_html(rec.count)}`;
+		} else if (this.is_summary(rec)) {
+			inner = `<span class="rv-glabel">${this.caption_of(rec.row).html}</span>`;
 		} else {
 			const lead = !m.hierarchical ? "" : rec.parent ? caret(rec.open) : '<span class="rv-caret-sp"></span>';
 			const label = m.parts ? fmt.label_html(m.label, rec.row, m.parts) : fmt.value_html(m.label, rec.row);
 			inner = `${lead}${label}${rec.parent ? fmt.count_html(rec.count) : ""}`;
 		}
 		return `<div class="rv-lc" style="--lv:${Number(rec.depth) || 0}">${inner}</div>`;
+	}
+
+	// A summary row of the report standing in the body among the facts (shape "report").
+	is_summary(rec) {
+		return rec.type === "row" && this.model.shape === "report" && rec.row.__kind !== "data";
+	}
+
+	/**
+	 * Where the caption of a summary row is shown: in the label column, which stays on screen,
+	 * instead of the column the report wrote it in (General Ledger writes 'Opening' in the
+	 * account column while the label column is the date).
+	 * @returns {{key: string, html: string}} the column the caption comes from, and its markup
+	 */
+	caption_of(row) {
+		let out = this.captions.get(row.__rid);
+		if (out) return out;
+		const m = this.model;
+		const fmt = this.fmt;
+		out = { key: m.label.key, html: fmt.caption_html(m.label, row) };
+		if (empty(row[m.label.key])) {
+			const from = [...m.pinned, ...m.data].find((d) => !d.numeric && typeof row[d.column.key] === "string" && row[d.column.key]);
+			if (from) out = { key: from.column.key, html: fmt.caption_html(from.column, row) };
+		}
+		this.captions.set(row.__rid, out);
+		return out;
+	}
+
+	// A cell of a summary row of the report, as the report returned it (no link is built).
+	summary_cell(col, row) {
+		if (col.column.key === this.caption_of(row).key) return { html: "", sign: "" };
+		return { html: this.fmt.caption_html(col.column, row), sign: this.fmt.sign_of(col.column, row) };
 	}
 
 	report_cell(col, row) {
@@ -682,6 +726,7 @@ export class GridView {
 		// With subtotal rows, the header of an open group keeps its title and count only: its
 		// numbers stand in its subtotal row (design #46, #47).
 		const moved = this.model.subtotals && rec.open;
+		if (this.is_summary(rec)) return this.summary_cell(col, rec.row);
 		if (rec.type === "row") return moved && rec.parent && col.numeric ? blank : this.report_cell(col, rec.row);
 		if (rec.type === "group") return moved ? blank : this.group_cell(rec, col, value);
 		const of = rec.of;
@@ -693,6 +738,7 @@ export class GridView {
 		if (rec.type === "spacer") return "rv-tr spacer";
 		if (rec.type === "foot") return "rv-tr foot";
 		if (rec.type === "group" || rec.parent) return `rv-tr group d${Math.min(Number(rec.depth) || 0, 2)}`;
+		if (this.is_summary(rec)) return `rv-tr ${SUMMARY_CLASS[rec.row.__kind] || "foot"}`;
 		return rec.row.__bold ? "rv-tr bold" : "rv-tr";
 	}
 
@@ -801,21 +847,10 @@ export class GridView {
 		);
 	}
 
-	// A summary row of the report, as the report returned it. Its caption is shown in the
-	// label column (which stays on screen) instead of the column the report wrote it in.
+	// A summary row of the whole report, pinned, as the report returned it.
 	report_row_html(cls, row, xs) {
-		const m = this.model;
-		const fmt = this.fmt;
-		let caption = { key: m.label.key, html: fmt.caption_html(m.label, row) };
-		if (empty(row[m.label.key])) {
-			const from = [...m.pinned, ...m.data].find((d) => !d.numeric && typeof row[d.column.key] === "string" && row[d.column.key]);
-			if (from) caption = { key: from.column.key, html: fmt.caption_html(from.column, row) };
-		}
-		const cell_of = (d) =>
-			d.column.key === caption.key
-				? { html: "", sign: "" }
-				: { html: fmt.caption_html(d.column, row), sign: fmt.sign_of(d.column, row) };
-		return this.pinned_row_html(cls, `<span class="rv-glabel">${caption.html}</span>`, cell_of, xs);
+		const label = `<span class="rv-glabel">${this.caption_of(row).html}</span>`;
+		return this.pinned_row_html(cls, label, (d) => this.summary_cell(d, row), xs);
 	}
 
 	/**

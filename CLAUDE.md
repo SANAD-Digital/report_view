@@ -1,6 +1,6 @@
 # report_view — قواعد ثابتة لكل جلسة
 
-تطبيق Frappe اسمه `report_view`: طبقة عرض احترافية (نمط AG Grid Enterprise) فوق تقارير Frappe/ERPNext الحالية.
+تطبيق Frappe اسمه `report_view`: طبقة عرض احترافية (نمط AG Grid Enterprise) فوق تقارير Frappe/ERPNext الحالية. محرك الحساب في المتصفح هو Perspective (FINOS)، والعرض `regular-table` بواجهة نبنيها نحن.
 التفاصيل الكاملة في `docs/brief.md`. المرحلة الحالية في آخر ملف داخل `docs/progress/`.
 
 ## بروتوكول العمل
@@ -21,7 +21,10 @@
 
 ## حدود التعديل
 - ممنوع تعديل أي ملف في frappe أو erpnext أو أي تطبيق آخر، وممنوع monkey-patching. الربط يتم عبر `hooks.py` فقط، وكل hook يُوثَّق في ADR.
-- ممنوع إضافة مكتبة غير المذكورة في `docs/brief.md` دون ADR وموافقة.
+- المكتبات المسموحة في الواجهة: `@finos/perspective` (محرك الحساب فقط)، `regular-table` (العرض)، ECharts (الرسوم). ممنوع إضافة مكتبة غيرها أو غير المذكورة في `docs/brief.md` دون ADR وموافقة.
+- ممنوع `perspective-viewer` وإضافاته وثيماته في الواجهة النهائية. ممنوع Tabulator و Arquero.
+- لا منطق حساب (تجميع، تحليل، فلترة، فرز، إجماليات) خارج محرك Perspective في المتصفح. اللوحات تبني `view config` فقط.
+- كل `view` و `table` في Perspective يُحذف بـ `delete()` عند عدم الحاجة.
 
 ## أسلوب الكود
 - الكود وأسماء المتغيرات والتعليقات بالإنجليزية. التوثيق في `docs/` بالعربية.

@@ -44,3 +44,39 @@ test("URL: filters as plain params, rv only for a non-default view, dropped when
 	assert.equal(r.rv_dropped, true);
 	assert.ok(r.search.length < MAX_URL);
 });
+
+test("sanitize keeps fold, widths and pinned columns; widths never go under the minimum", () => {
+	const s = sanitize({
+		columns: { widths: { a: 40, b: 210.4, c: "x", d: -5 }, pinned: { start: ["a", 3], end: ["z"] } },
+		group: { by: ["g"], subtotals: false, expanded: [["A"], ["B", null, 3], "bad", [], [{}]] },
+		tree: { depth: 2, expanded: [3, "4", -1, 7.5, 9] },
+	});
+	assert.deepEqual(s.columns.widths, { a: 72, b: 210 });
+	assert.deepEqual(s.columns.pinned, { start: ["a"], end: ["z"] });
+	assert.equal(s.group.subtotals, false);
+	assert.deepEqual(s.group.expanded, [["A"], ["B", null, 3]]);
+	assert.deepEqual(s.tree, { depth: 2, expanded: [3, 9] });
+	assert.equal(sanitize({ group: { expanded: "none" } }).group.expanded, "none");
+	assert.equal(sanitize({ group: { expanded: "x" } }).group.expanded, "all");
+
+	reconcile(s, [{ key: "b" }]);
+	assert.deepEqual(s.columns.widths, { b: 210 });
+	assert.deepEqual(s.columns.pinned, { start: [], end: [] });
+});
+
+test("URL: a width, a fold, the subtotal option or a pinned column make the view non-default", () => {
+	const has_rv = (patch) => {
+		const s = sanitize(patch);
+		const { search } = build_search({}, s, "/p");
+		if (search) assert.deepEqual(sanitize(decode_state(new URLSearchParams(search).get("rv"))), s);
+		return search.startsWith("?rv=");
+	};
+	assert.equal(has_rv({}), false);
+	assert.equal(has_rv({ columns: { widths: { a: 200 } } }), true);
+	assert.equal(has_rv({ columns: { pinned: { start: ["a"] } } }), true);
+	assert.equal(has_rv({ group: { subtotals: false } }), true);
+	assert.equal(has_rv({ group: { by: ["g"], expanded: [["A", "x"], [null]] } }), true);
+	assert.equal(has_rv({ group: { expanded: "none" } }), true);
+	assert.equal(has_rv({ tree: { expanded: [] } }), true);
+	assert.equal(has_rv({ tree: { expanded: [0, 4] } }), true);
+});

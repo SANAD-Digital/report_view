@@ -13,6 +13,7 @@ import { default_state } from "../../report_view/public/js/report_view/state/vie
 import { EngineHandles, ReportSession, VERSION } from "../../report_view/public/js/report_view/engine/perspective_engine.js";
 import { tree_index } from "../../report_view/public/js/report_view/engine/tree_nodes.js";
 import * as queries from "../../report_view/public/js/report_view/engine/queries.js";
+import { build_layout, entry_at, expanded_from_paths } from "../../report_view/public/js/report_view/engine/row_layout.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../..");
@@ -112,7 +113,7 @@ test("(a) tree 'as is': the report's rows, every parent, all six columns; total 
 		}
 		assert.equal(opened.totals.values.closing_debit, 7553469);
 		assert.deepEqual(opened.totals.currencies, { currency: "YER" });
-		assert.deepEqual(opened.counts, { shown: 31, total: 31, facts: 16, groups: 15 });
+		assert.deepEqual(opened.counts, { shown: 16, total: 16, facts: 16, groups: 15 });
 		assert.equal(opened.expected.row_count, 16);
 		await session.close_view(opened);
 	});
@@ -247,12 +248,21 @@ test("(c) accounts receivable, flat: column totals = Frappe's total row", async 
 	await no_leak();
 });
 
-test("reports with internal totals: engine total = the last internal total row", async () => {
+test("reports with internal totals: shown total = the reference row, engine total = the same sums", async () => {
 	for (const name of ["accounts_receivable_group_by_party", "general_ledger_by_account", "general_ledger_consolidated"]) {
 		const report = load(name);
+		const reference = report.report_totals.internal.at(-1);
 		await with_session(report, async (session) => {
 			const opened = await session.open(state());
-			check_reference(report, opened.totals, report.report_totals.internal.at(-1));
+			// on screen: the report's own total row, as the report returned it (ADR-008)
+			assert.deepEqual(opened.post.total, { source: "row", rid: reference.__rid });
+			for (const key of opened.post.measures) {
+				const ref = typeof reference[key] === "number" ? reference[key] : null;
+				assert.equal(opened.totals.values[key], ref, `${name} ${key}`);
+			}
+			// for the export: what Perspective sums from the facts, equal on every additive column
+			check_reference(report, { values: opened.expected.totals }, reference);
+			assert.equal(opened.expected.row_count, report.facts.length);
 			await session.close_view(opened);
 		});
 	}
@@ -386,4 +396,168 @@ test("(d) lifecycle: nothing is left after 20 switches between two reports", asy
 	await no_leak();
 	const after_info = await perspective.system_info();
 	assert.ok(Number(after_info.used_size) <= Number(before.used_size) + 1024 * 1024, "engine memory grew");
+});
+
+// The rows of the grid body as views/grid_view.js places them: every display row with the
+// values of its view row (a subtotal row reads the row of its group).
+async function body(opened, measures) {
+	const cols = await opened.view.to_columns();
+	const off = opened.post.row_offset;
+	const layout = build_layout(opened.depths, { subtotals: opened.post.subtotals });
+	return Array.from({ length: layout.size }, (_, y) => {
+		const entry = entry_at(layout, y);
+		const at = off + entry.row;
+		return {
+			kind: entry.kind,
+			row: entry.row,
+			open: Boolean(layout.open[entry.row]),
+			path: cols.__ROW_PATH__ ? cols.__ROW_PATH__[at] : null,
+			rid: cols.__rid ? cols.__rid[at] : null,
+			values: Object.fromEntries(measures.map((k) => [k, cols[k][at]])),
+		};
+	});
+}
+
+test("subtotal rows, receivables by party: one after each open group, values = manual sums", async () => {
+	const report = load("accounts_receivable_frappe_total");
+	const sums = report.columns.filter((c) => c.role === "measure" && c.agg === "sum" && !c.hidden).map((c) => c.key);
+	const parties = [...new Set(report.facts.map((f) => f.party))];
+	await with_session(report, async (session) => {
+		const opened = await session.open(state({ group: { by: ["party"], subtotals: true, expanded: "all" } }));
+		assert.equal(opened.depths.length, opened.body_rows);
+		const rows = await body(opened, sums);
+		const feet = rows.filter((r) => r.kind === "foot");
+		assert.equal(feet.length, parties.length);
+		assert.equal(rows.length, opened.body_rows + parties.length);
+		rows.forEach((r, y) => {
+			if (r.kind !== "foot") return;
+			// right after the last fact of its group, before the next group
+			assert.equal(rows[y - 1].path.length, 2);
+			assert.equal(rows[y - 1].path[0], r.path[0]);
+			if (rows[y + 1]) assert.equal(rows[y + 1].path.length, 1);
+			const facts = report.facts.filter((f) => f.party === r.path[0]);
+			for (const key of sums) close(r.values[key], facts.reduce((s, f) => s + (f[key] || 0), 0), `${r.path[0]} ${key}`);
+		});
+		await session.close_view(opened);
+
+		// option off: the rows of the view, nothing else
+		const off = await session.open(state({ group: { by: ["party"], subtotals: false, expanded: "all" } }));
+		assert.equal((await body(off, sums)).filter((r) => r.kind === "foot").length, 0);
+		await session.close_view(off);
+
+		// a closed group has no subtotal row: its own row carries the numbers
+		const none = await session.open(state({ group: { by: ["party"], subtotals: true, expanded: "none" } }));
+		const closed = await body(none, sums);
+		assert.equal(closed.length, parties.length);
+		assert.equal(closed.some((r) => r.kind === "foot" || r.open), false);
+		await session.close_view(none);
+	});
+	await no_leak();
+});
+
+test("subtotal rows, trial balance: re-grouped parents = manual sums; 'as is' parents = the report's rows", async () => {
+	const report = load("trial_balance_fy2026");
+	const { info } = tree_index(report);
+	const by_rid = new Map(report.rows.map((r) => [r.__rid, r]));
+	await with_session(report, async (session) => {
+		const levels = await session.open(state({ filters: [{ key: "account", type: "text", op: "contains", value: " - SA" }] }));
+		const rows = await body(levels, MEASURES);
+		const feet = rows.filter((r) => r.kind === "foot");
+		// the tree opens to depth 3: every parent that shows its children has one subtotal row
+		const open_parents = rows.filter((r) => r.kind === "row" && r.open);
+		assert.ok(feet.length > 0);
+		assert.equal(feet.length, open_parents.length);
+		for (const foot of feet) {
+			const rid = session.level_rids.get(JSON.stringify(foot.path));
+			const leaves = report.facts.filter((f) => info.get(f.__rid).ancestors.includes(rid));
+			assert.ok(leaves.length > 0);
+			for (const key of MEASURES) close(foot.values[key], leaves.reduce((s, f) => s + f[key], 0), `${rid} ${key}`);
+		}
+		await session.close_view(levels);
+
+		const tree = await session.open(state());
+		const as_is = await body(tree, MEASURES);
+		const tree_feet = as_is.filter((r) => r.kind === "foot");
+		assert.equal(tree_feet.length, as_is.filter((r) => r.kind === "row" && r.open).length);
+		assert.equal(as_is.length, tree.body_rows + tree_feet.length);
+		as_is.forEach((r, y) => {
+			if (r.kind !== "foot") return;
+			const parent = by_rid.get(r.rid);
+			assert.equal(parent.__is_leaf, false);
+			// the report's own values of the parent, not a sum made here
+			for (const key of MEASURES) assert.equal(r.values[key], parent[key], `${parent.account} ${key}`);
+			// after its last visible descendant
+			assert.ok(info.get(as_is[y - 1].rid).ancestors.includes(r.rid) || as_is[y - 1].kind === "foot");
+			const next = as_is[y + 1];
+			if (next && next.kind === "row") assert.equal(info.get(next.rid).ancestors.includes(r.rid), false);
+		});
+		await session.close_view(tree);
+	});
+	await no_leak();
+});
+
+test("fold from the view state: the listed groups open, the view gives the same list back", async () => {
+	const report = load("accounts_receivable_frappe_total");
+	const parties = [...new Set(report.facts.map((f) => f.party))];
+	const count = (party) => report.facts.filter((f) => f.party === party).length;
+	await with_session(report, async (session) => {
+		const wanted = [[parties[0]], [parties[2]], ["no such party"]];
+		const opened = await session.open(state({ group: { by: ["party"], subtotals: true, expanded: wanted } }));
+		assert.equal(opened.body_rows, parties.length + count(parties[0]) + count(parties[2]));
+		const back = expanded_from_paths(opened.paths, opened.post.leaf_depth);
+		assert.deepEqual(new Set(back.map((p) => p[0])), new Set([parties[0], parties[2]]));
+
+		// closing one through the view, as a click does
+		const row = opened.paths.findIndex((p) => p.length === 1 && p[0] === parties[0]);
+		const after = await session.toggle_group(opened, 1 + row, false);
+		assert.deepEqual(expanded_from_paths(after.paths, opened.post.leaf_depth), [[parties[2]]]);
+		assert.equal(after.depths.length, parties.length + count(parties[2]));
+		await session.close_view(opened);
+
+		const all = await session.open(state({ group: { by: ["party"], subtotals: true, expanded: "all" } }));
+		assert.equal(expanded_from_paths(all.paths, all.post.leaf_depth), "all");
+		await session.close_view(all);
+		const none = await session.open(state({ group: { by: ["party"], subtotals: true, expanded: "none" } }));
+		assert.equal(expanded_from_paths(none.paths, none.post.leaf_depth), "none");
+		await session.close_view(none);
+	});
+	await no_leak();
+});
+
+test("fold of a re-grouped tree: the open parents of the view state, as in the tree 'as is'", async () => {
+	const report = load("trial_balance_fy2026");
+	const { info } = tree_index(report);
+	const filters = [{ key: "account", type: "text", op: "contains", value: " - SA" }];
+	await with_session(report, async (session) => {
+		const expanded = [0, 11, 12];
+		const tree = await session.open(state({ tree: { depth: null, expanded } }));
+		const as_is = (await tree.view.to_columns()).__rid;
+		await session.close_view(tree);
+
+		const levels = await session.open(state({ tree: { depth: null, expanded }, filters }));
+		assert.equal(levels.post.shape, "levels");
+		const shown = levels.paths.map((p) => (p.length === levels.post.leaf_depth ? p.at(-1) : session.level_rids.get(JSON.stringify(p))));
+		// every leaf matches the filter: the same nodes, in the same order
+		assert.deepEqual(shown, as_is);
+		const open = new Set(expanded);
+		assert.deepEqual(shown, [...info].filter(([, n]) => n.ancestors.every((a) => open.has(a))).map(([rid]) => rid));
+		await session.close_view(levels);
+	});
+	await no_leak();
+});
+
+test("general ledger: with a browser filter the shown total is the engine's, of the matching facts", async () => {
+	const report = load("general_ledger_consolidated");
+	await with_session(report, async (session) => {
+		const opened = await session.open(state({ filters: [{ key: "debit", type: "range", min: 100, max: null }] }));
+		const kept = report.facts.filter((f) => f.debit >= 100);
+		assert.ok(kept.length > 0 && kept.length < report.facts.length);
+		assert.deepEqual(opened.post.pinned_rows, { top: [], bottom: [] });
+		close(opened.totals.values.debit, kept.reduce((s, f) => s + f.debit, 0), "debit");
+		assert.deepEqual(opened.expected.totals, Object.fromEntries(Object.entries(opened.totals.values).filter(([, v]) => typeof v === "number")));
+		assert.equal(opened.counts.shown, kept.length);
+		assert.equal(opened.counts.total, report.facts.length);
+		await session.close_view(opened);
+	});
+	await no_leak();
 });

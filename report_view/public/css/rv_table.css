@@ -5,7 +5,11 @@
      .rv-h     -> th.rv-hd (last header row; .num, .band-end)
      .rv-row   -> tbody tr.rv-tr (+ .group.d0-2 / .bold)
      .rv-c     -> tbody td (+ .num .dr .cr .zero .neg .band-end), label cell = tbody th
-     .rv-row.total -> .rv-rt-total, a separate element outside the scrolling area
+     .rv-row.foot  -> tbody tr.rv-tr.foot (subtotal row of an open group)
+     .rv-resize    -> thead th.rv-hd > .rt-column-resize (the span regular-table puts there)
+     .rv-row.total -> .rv-rt-total, a separate element outside the scrolling area, with the
+                      report's own closing rows above it (.rv-rt-bottom) and its opening rows
+                      under the headers (.rv-rt-top)
    The table itself never scrolls: regular-table re-draws the visible window, so the label
    column (its row header) is pinned by construction. Logical properties only; colours from
    the tokens only. */
@@ -25,36 +29,52 @@
 .rv regular-table thead th{position:relative;height:var(--hh);padding:0 var(--cp);background:var(--hdr);color:var(--tx);font-size:var(--fs-sm);font-weight:600;text-align:start;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none}
 .rv regular-table thead tr:last-child th{border-bottom:1px solid var(--line-2)}
 .rv regular-table thead th.num{text-align:end}
+.rv regular-table thead th.rv-hd:hover{background:var(--hover)}
 /* short separator of .rv-h::after; full height at the end of a band */
 .rv regular-table thead th.rv-hd::after{content:'';position:absolute;inset-inline-end:0;top:28%;height:44%;width:1px;background:var(--line-2)}
 .rv regular-table thead th.rv-hd.band-end::after{top:0;height:100%;background:var(--line)}
 /* bands (.rv-hg > .rv-band) */
 .rv regular-table thead th.rv-hb{height:var(--bh);font-size:var(--fs-xs);color:var(--tx-2);text-align:center;border-bottom:1px solid var(--line);border-inline-end:1px solid var(--line)}
 .rv regular-table thead th.rv-hb.empty{border-bottom-color:transparent}
-/* Column resizing arrives with the column menu (phase 5a); the library's own handle
-   assumes LTR. */
-.rv regular-table .rt-column-resize{display:none}
+/* Resize handle (.rv-resize): 7px at the end edge of a column header. The header cell clips
+   its content, so the handle sits inside the edge instead of 3px over it. The drag itself is
+   ours (views/grid_view.js): the library's own assumes LTR. */
+.rv regular-table thead .rt-column-resize{display:none}
+.rv regular-table thead th.rv-hd > .rt-column-resize{display:block;position:absolute;inset-inline-end:0;top:0;bottom:0;width:7px;cursor:col-resize;z-index:2;touch-action:none}
+.rv regular-table thead th.rv-hd > .rt-column-resize::after{content:'';position:absolute;inset-block:0;inset-inline-end:0;width:2px;background:var(--pri);opacity:0}
+.rv regular-table thead th.rv-hd > .rt-column-resize:hover::after{opacity:1}
+.rv-rt.resizing,.rv-rt.resizing *{cursor:col-resize;user-select:none}
 
 /* ---------- rows (.rv-row) and cells (.rv-c) ---------- */
 .rv regular-table tbody th,
 .rv regular-table tbody td{height:calc(var(--rh) + 1px);padding:0 var(--cp);border-bottom:1px solid var(--line);background:var(--surface);color:var(--tx);font-size:var(--fs);font-weight:400;text-align:start;vertical-align:middle;white-space:nowrap;overflow:hidden;cursor:default}
 .rv regular-table tbody td.num{text-align:end}
 .rv regular-table tbody td.band-end{border-inline-end:1px solid var(--line)}
+/* text cells (.rv-t) */
+.rv regular-table tbody td:not(.num),
+.rv regular-table tbody th + th{color:var(--tx-2)}
 .rv regular-table tbody tr.group > *{background:var(--grp);font-weight:600}
 .rv regular-table tbody tr.group.d0 > *{background:var(--grp-0)}
+.rv regular-table tbody tr.foot > *{background:var(--foot);font-weight:600}
+.rv regular-table tbody tr.foot .rv-glabel{color:var(--tx-2)}
 .rv regular-table tbody tr.bold > *{font-weight:600}
 .rv regular-table tbody tr:hover > *{background:var(--hover)}
 .rv regular-table tbody tr.stale{visibility:hidden}
-.rv regular-table .rv-cc{display:flex;align-items:center;min-width:0;overflow:hidden}
-.rv regular-table .rv-cc > *{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.rv regular-table td.num .rv-cc{justify-content:flex-end}
+.rv regular-table tbody tr.spacer > *{background:var(--surface)}
+/* cell content: one line, cut with an ellipsis (plain text or the formatter's markup) */
+.rv regular-table .rv-cc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rv regular-table td.dr .rv-n{color:var(--dr)}
 .rv regular-table td.cr .rv-n,.rv regular-table td.neg .rv-n{color:var(--cr)}
 .rv regular-table td.zero .rv-n{color:var(--tx-4)}
-.rv regular-table tbody p{margin:0}
+/* a formatter may wrap a value in a <p> (ERPNext's bold accounts): it stays on the line */
+.rv regular-table tbody p{margin:0;display:inline}
 .rv regular-table tbody a{color:inherit;text-decoration:none}
 .rv regular-table tbody a:hover{color:var(--pri-tx);text-decoration:underline;text-underline-offset:3px}
 .rv regular-table tbody .text-danger{color:var(--cr)}
+/* A report formatter marks its own totals with inline bold (700): the design weight of an
+   emphasised row is 600. */
+.rv regular-table tbody b,.rv regular-table tbody strong,
+.rv regular-table tbody [style*="font-weight"]{font-weight:600 !important}
 
 /* label cell: indent, caret, "number + name", count (.rv-indent / .rv-caret / .rv-acc / .rv-gcount) */
 .rv regular-table .rv-lc{display:flex;align-items:center;min-width:0;padding-inline-start:calc(var(--lv,0) * var(--ind))}
@@ -66,10 +86,26 @@
 .rv regular-table .rv-acc{cursor:inherit}
 .rv regular-table .rv-accname{color:var(--tx)}
 .rv regular-table .rv-acc a.rv-accname:hover{color:var(--pri-tx)}
+.rv regular-table .rv-caret:focus-visible{outline:2px solid var(--pri);outline-offset:-1px}
 
-/* ---------- pinned label column: edge shadow (.pin-edge-s) ---------- */
-.rv-rt-edge{position:absolute;top:0;bottom:0;inset-inline-start:0;width:var(--rv-label-w,0);pointer-events:none;z-index:4}
+/* natural width of the content, while a double click on a resize handle measures it */
+.rv regular-table table.rv-measure .rv-lc{overflow:visible}
+.rv regular-table table.rv-measure .rv-lc > *{flex:none;overflow:visible}
 
-/* ---------- pinned grand total (.rv-row.total), outside the scrolling area ---------- */
-.rv-row.rv-rt-total{overflow:hidden}
-.rv-rt-total .rv-c{cursor:default;user-select:text}
+/* ---------- pinned columns: edge shadow (.pin-edge-s) ---------- */
+.rv-rt-edge{position:absolute;top:0;bottom:0;inset-inline-start:0;width:var(--rv-pin-w,0);pointer-events:none;z-index:4}
+
+/* ---------- rows pinned outside the scrolling body ---------- */
+/* the report's opening rows, under the headers (spacer rows keep their room in the body) */
+.rv-rt-top{position:absolute;inset-inline-start:0;z-index:3;overflow:hidden}
+.rv-rt-top:empty{display:none}
+.rv-row.rv-rt-opening{background:var(--grp-0);border-bottom-color:var(--line-2)}
+.rv-rt-opening .rv-c{font-weight:500;color:var(--tx-2)}
+/* the report's closing rows, then the grand total (.rv-row.total) */
+.rv-rt-bottom{flex:none}
+.rv-rt-bottom .rv-row,.rv-rt-top .rv-row{overflow:hidden}
+.rv-rt-bottom .rv-c,.rv-rt-top .rv-c{cursor:default;user-select:text}
+.rv-row.rv-rt-closing{border-bottom:0;border-top:1px solid var(--line)}
+.rv-row.rv-rt-closing:first-child{border-top-color:var(--line-3)}
+.rv-row.rv-rt-opening:hover{background:var(--grp-0)}
+.rv-row.rv-rt-closing:hover{background:var(--foot)}

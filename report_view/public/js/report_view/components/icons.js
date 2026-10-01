@@ -21,5 +21,10 @@ export const icons = {
 	pivot: () =>
 		svg(15, '<rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18M9 3v18"></path><path d="M13 14h4M15 12v4"></path>'),
 	chart: () => svg(15, '<path d="M4 20V11M10 20V5M16 20v-6M21 20H3"></path>'),
+	expand_all: () =>
+		svg(16, '<rect x="3.5" y="3.5" width="17" height="17" rx="3"></rect><path d="M8 12h8M12 8v8"></path>', 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"'),
+	collapse_all: () =>
+		svg(16, '<rect x="3.5" y="3.5" width="17" height="17" rx="3"></rect><path d="M8 12h8"></path>', 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"'),
+	close: () => svg(11, '<path d="M18 6 6 18M6 6l12 12"></path>', 'fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"'),
 	group: () => svg(15, '<path d="M4 6h16M8 12h12M12 18h8"></path>', 'fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"'),
 };

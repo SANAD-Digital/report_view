@@ -34,14 +34,20 @@ export function filters_to_params(filters) {
 	return params;
 }
 
+// Nothing of the view differs from the default one: the URL carries no `rv`.
 function is_default_view(state) {
 	return (
 		!state.sort.length &&
 		!state.filters.length &&
 		!state.group.by.length &&
+		state.group.subtotals !== false &&
+		state.group.expanded === "all" &&
 		!state.columns.order.length &&
 		!state.columns.hidden.length &&
-		state.tree.depth === null
+		!Object.keys(state.columns.widths).length &&
+		!state.columns.pinned.start.length &&
+		state.tree.depth === null &&
+		state.tree.expanded === null
 	);
 }
 

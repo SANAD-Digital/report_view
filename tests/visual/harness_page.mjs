@@ -2,7 +2,7 @@
 // toolbar, grid_view, status bar, the Perspective engine in its worker and the app CSS) with
 // fixture data and stubbed Frappe. The page code itself comes from harness.mjs (sources) or
 // from the bundle `bench build` produced (harness_built.mjs).
-// URL parameters: report=tb|ar, lang=ar|en, desk=light|dark (Desk theme), density=compact,
+// URL parameters: report=tb|ar|ar_party|gl|gl_account, lang=ar|en, desk=light|dark (Desk theme), density=compact,
 // pref=light|dark (the page's own theme button), group=<column key>[,<column key>].
 
 const params = new URLSearchParams(window.location.search);
@@ -62,6 +62,24 @@ const REPORTS = {
 		formatter: null,
 	},
 };
+REPORTS.ar_party = { ...REPORTS.ar, fixture: "accounts_receivable_group_by_party.json" };
+REPORTS.gl = {
+	name: "General Ledger",
+	fixture: "general_ledger_consolidated.json",
+	module: "Accounts",
+	report_type: "Script Report",
+	enrich_rules: [],
+	filters: (f) => [
+		{ fieldname: "company", label: "Company", fieldtype: "Link", options: "Company", default: f.company, reqd: 1 },
+		{ fieldname: "from_date", label: "From Date", fieldtype: "Date", default: f.from_date, reqd: 1 },
+		{ fieldname: "to_date", label: "To Date", fieldtype: "Date", default: f.to_date, reqd: 1 },
+		{ fieldname: "account", label: "Account", fieldtype: "MultiSelectList", options: "Account", get_data: () => [] },
+		{ fieldname: "categorize_by", label: "Categorize By", fieldtype: "Select", options: "\nCategorize by Voucher\nCategorize by Voucher (Consolidated)\nCategorize by Account\nCategorize by Party", default: f.categorize_by },
+		{ fieldname: "include_default_book_entries", label: "Include Default FB Entries", fieldtype: "Check", default: f.include_default_book_entries },
+	],
+	formatter: null,
+};
+REPORTS.gl_account = { ...REPORTS.gl, fixture: "general_ledger_by_account.json" };
 
 async function main() {
 	const conf = REPORTS[which];

@@ -99,6 +99,12 @@ if (fs.existsSync(font_src)) {
 fs.writeFileSync(path.join(dist, "fonts.css"), fonts);
 
 // 6. Fixtures used by the harness.
-for (const f of ["trial_balance_fy2026.json", "accounts_receivable_frappe_total.json"]) {
+for (const f of [
+	"trial_balance_fy2026.json",
+	"accounts_receivable_frappe_total.json",
+	"accounts_receivable_group_by_party.json",
+	"general_ledger_consolidated.json",
+	"general_ledger_by_account.json",
+]) {
 	fs.copyFileSync(path.join(app, "report_view/tests/fixtures/normalize", f), path.join(dist, f));
 }

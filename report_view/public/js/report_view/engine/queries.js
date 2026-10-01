@@ -6,7 +6,7 @@
 // summarises the cells of a selected range that are already on screen.
 
 import { KIND, SORT_PREFIX } from "./schema.js";
-import { LEVELS } from "./tree_nodes.js";
+import { DEPTH, LEVELS } from "./tree_nodes.js";
 
 export const MAX_UNIQUE_VALUES = 5000;
 const ROW_PATH = "__ROW_PATH__";
@@ -57,10 +57,65 @@ async function close_filled_levels(view, post) {
 	}
 }
 
-/** Opens a grouped view down to post.depth. */
-export async function set_depth(view, post) {
-	await view.set_depth(post.depth);
-	if (post.shape === "levels") await close_filled_levels(view, post);
+/** __ROW_PATH__ of the body rows of a grouped view (without its grand total row). */
+async function body_paths(view) {
+	const cols = await view.to_columns({ start_row: 1, start_col: 0, end_col: 0 });
+	return cols[ROW_PATH] || [];
+}
+
+/**
+ * Opens the listed groups of a grouped view that is closed down to its first level. A level
+ * at a time, from the last row up, so that the row indices read for a level stay valid.
+ * @param {(path: Array) => boolean} is_open
+ */
+async function open_groups(view, post, is_open) {
+	for (let level = 1; level <= post.group_keys.length; level++) {
+		const paths = await body_paths(view);
+		const targets = [];
+		for (let i = paths.length - 1; i >= 0; i--) {
+			if (paths[i].length === level && is_open(paths[i])) targets.push(i + 1);
+		}
+		if (!targets.length) return;
+		await Promise.all(targets.map((row) => view.expand(row)));
+	}
+}
+
+/**
+ * Folds a grouped view as the view state says: down to post.depth, or the listed groups
+ * (group.expanded as paths; tree.expanded as the __rid of the open parents of a re-grouped
+ * tree, found through `level_rids`).
+ */
+export async function set_depth(view, post, level_rids = null) {
+	const tree_open = post.shape === "levels" && Array.isArray(post.tree?.expanded) && level_rids ? post.tree.expanded : null;
+	if (post.expanded) {
+		const open = new Set(post.expanded.map((path) => JSON.stringify(path)));
+		await view.set_depth(0);
+		await open_groups(view, post, (path) => open.has(JSON.stringify(path)));
+	} else if (tree_open) {
+		// A leaf that fills a missing level is no parent: it is never in the list, so it stays closed.
+		const open = new Set(tree_open.map(Number));
+		await view.set_depth(0);
+		await open_groups(view, post, (path) => open.has(level_rids.get(JSON.stringify(path))));
+	} else {
+		await view.set_depth(post.depth);
+		if (post.shape === "levels") await close_filled_levels(view, post);
+	}
+}
+
+/**
+ * Depth of every body row, in view order, and the row paths of a grouped view: what the grid
+ * needs to place the subtotal rows and to know which groups are open (engine/row_layout.js).
+ * @returns {Promise<{depths: Array<number>, paths: Array<Array>|null}>}
+ */
+export async function row_depths(view, post) {
+	if (post.row_offset) {
+		const paths = await body_paths(view);
+		return { depths: paths.map((path) => path.length), paths };
+	}
+	if (post.shape !== "tree") return { depths: null, paths: null };
+	const at = post.index[DEPTH];
+	const cols = await view.to_columns({ start_col: at, end_col: at + 1 });
+	return { depths: cols[DEPTH] || [], paths: null };
 }
 
 /** Opens or closes the group at a view row; returns nothing, the caller re-reads the rows. */

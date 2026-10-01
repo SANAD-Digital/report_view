@@ -5,6 +5,7 @@
 
 import { RID, KIND, SORT_PREFIX, perspective_type } from "./schema.js";
 import { DEPTH, HAS_CHILDREN, LEAVES, PATH, TOP, LEVELS, ANC_PREFIX, LEVEL_PREFIX, tree_index } from "./tree_nodes.js";
+import { edge_rows } from "./report_rows.js";
 
 // max -> high: Perspective's "max" returns null and "low" returns 0 when a null is present.
 export const AGGREGATES = {
@@ -111,6 +112,22 @@ export function to_filter(filters, columns) {
 	return { filter, notices };
 }
 
+/**
+ * Columns pinned at the start after the label column (columns.pinned.start): visible
+ * dimension or attribute columns only. A measure cannot be pinned: a pinned cell shows the
+ * report's own value of a row, and a group row has none for it.
+ */
+export function pinned_columns(visible, view_state) {
+	const wanted = view_state?.columns?.pinned?.start || [];
+	const by_key = new Map(visible.slice(1).map((c) => [c.key, c]));
+	const out = [];
+	for (const key of wanted) {
+		const column = by_key.get(key);
+		if (column && column.role !== "measure" && !out.includes(column)) out.push(column);
+	}
+	return out;
+}
+
 /** Depth to which the "as is" tree opens: rows down to this depth are shown. */
 export function tree_depth(view_state, normalized) {
 	return view_state?.tree?.depth ?? normalized.tree?.initial_depth ?? 2;
@@ -136,6 +153,20 @@ export function toggle_tree_node(view_state, normalized, rid) {
 	if (open.has(rid)) open.delete(rid);
 	else open.add(rid);
 	return [...open].filter((id) => info.get(id)?.has_children).sort((a, b) => a - b);
+}
+
+/**
+ * "Expand all" / "collapse all" (§11.1 #33) as a change of the view state: group.expanded of
+ * a grouped view, else the depth of the report tree (short in the URL, whatever its size).
+ * @returns {object|null} the keys of the view state to replace, null when nothing folds
+ */
+export function fold_all(view_state, normalized, open) {
+	const by_key = new Set(normalized.columns.map((c) => c.key));
+	if ((view_state?.group?.by || []).some((k) => by_key.has(k))) {
+		return { group: { ...view_state.group, expanded: open ? "all" : "none" } };
+	}
+	if (!normalized.tree?.enabled) return null;
+	return { tree: { depth: open ? tree_index(normalized).max_depth : 0, expanded: null } };
 }
 
 // Collapse of the "as is" tree, inside the engine: by depth while nothing was toggled, else
@@ -169,7 +200,11 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 	if (mode !== "grid") throw new Error(`report_view: view mode "${mode}" is not available yet`);
 	const state = view_state || {};
 	const by_key = new Map(normalized.columns.map((c) => [c.key, c]));
-	const visible = visible_columns(normalized, state);
+	const shown = visible_columns(normalized, state);
+	// The label column, the pinned columns, then the others: the data columns of the grid are
+	// neighbours in the view, so one window of the view is one window of the grid.
+	const pinned = pinned_columns(shown, state);
+	const visible = [...shown.slice(0, 1), ...pinned, ...shown.slice(1).filter((c) => !pinned.includes(c))];
 	const keys = visible.map((c) => c.key);
 	const group_keys = (state.group?.by || []).filter((k) => by_key.has(k));
 	const { filter: browser_filter, notices } = to_filter(state.filters, normalized.columns);
@@ -194,7 +229,8 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 		shape,
 		keys,
 		label_key: keys[0] ?? null,
-		data_keys: keys.slice(1),
+		pinned_keys: pinned.map((c) => c.key),
+		data_keys: keys.slice(1 + pinned.length),
 		technical: [],
 		row_offset: 0,
 		group_keys: [],
@@ -205,7 +241,10 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 		measures: totalled.map((c) => c.key),
 		currency_keys,
 		subtotals: state.group?.subtotals !== false,
+		expanded: null,
+		pinned_rows: { top: [], bottom: [] },
 		total: null,
+		expected_total: null,
 		fact_filter: shape === "tree" ? [] : browser_filter,
 		groups: null,
 		notices,
@@ -247,7 +286,19 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 		config.filter = browser_filter;
 		config.sort = user_sort.length ? [...user_sort, [RID, "asc"]] : [];
 		post.technical = [RID];
-		post.total = { source: "view", view: totals_view("facts", browser_filter) };
+		// What the server compares before an export is always the engine's own total (§8أ.6).
+		post.expected_total = totals_view("facts", browser_filter);
+		post.total = { source: "view", view: post.expected_total };
+		// The report's own summary rows stand for the whole report: with a browser filter
+		// they no longer describe what is shown, so they leave the screen (as in the export)
+		// and the grand total is the engine's. Without one, the report's reference row is the
+		// grand total shown (ADR-008).
+		const edges = edge_rows(normalized);
+		if (!browser_filter.length) {
+			post.pinned_rows = { top: edges.top, bottom: edges.bottom };
+			if (edges.reference !== null) post.total = { source: "row", rid: edges.reference };
+			if (edges.inner) notices.push({ code: "REPORT_ROWS_NOT_SHOWN", detail: edges.inner });
+		}
 	} else {
 		// Fact rows are the last level (their __rid), so groups open down to the report rows.
 		const levels = shape === "levels" ? tree_index(normalized).max_depth : 0;
@@ -269,6 +320,9 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 			config.aggregates[LEVELS] = "min";
 			post.technical.push(RID, LEVELS);
 			post.depth = Math.min(tree_depth(state, normalized), post.group_keys.length);
+			// The same fold as the "as is" tree: the open parents by __rid, once the user
+			// opened or closed one.
+			post.tree = { depth: tree_depth(state, normalized), expanded: state.tree?.expanded ?? null };
 		} else {
 			const dir = new Map((state.sort || []).map((s) => [s.key, s.dir === "desc" ? "desc" : "asc"]));
 			// Groups in the order of their key, then the user's sort; report order breaks ties.
@@ -277,7 +331,9 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 				...user_sort,
 				[RID, "asc"],
 			];
-			post.depth = state.group?.expanded === "none" ? 0 : post.group_keys.length;
+			const expanded = state.group?.expanded;
+			post.expanded = Array.isArray(expanded) ? expanded.filter(Array.isArray) : null;
+			post.depth = expanded === "none" || post.expanded ? 0 : post.group_keys.length;
 			post.groups = {
 				table: "facts",
 				config: { group_by: group_keys, columns: [KIND], aggregates: { [KIND]: "count" }, filter: browser_filter },

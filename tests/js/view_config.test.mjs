@@ -11,6 +11,8 @@ import {
 	to_view_config,
 	to_filter,
 	toggle_tree_node,
+	fold_all,
+	pinned_columns,
 	visible_columns,
 	AGGREGATES,
 } from "../../report_view/public/js/report_view/engine/view_config.js";
@@ -219,4 +221,88 @@ test("columns: order and hidden come from the view state; only the grid mode exi
 	assert.equal(config.columns.includes("credit"), false);
 	assert.equal(post.measures.includes("credit"), false);
 	assert.throws(() => to_view_config(s, report, "pivot"), /not available/);
+});
+
+test("pinned columns: after the label column, dimensions only, data columns stay neighbours", () => {
+	const report = load("accounts_receivable_frappe_total");
+	const pinned = { start: ["voucher_no", "invoiced", "posting_date", "nope", "party"], end: [] };
+	const st = state({ columns: { ...state().columns, pinned } });
+	// a measure, the label column itself and an unknown key are not pinned
+	assert.deepEqual(pinned_columns(visible_columns(report, st), st).map((c) => c.key), ["voucher_no", "party"]);
+	const { config, post } = to_view_config(st, report);
+	assert.equal(post.label_key, "posting_date");
+	assert.deepEqual(post.pinned_keys, ["voucher_no", "party"]);
+	assert.deepEqual(config.columns.slice(0, 3), ["posting_date", "voucher_no", "party"]);
+	assert.equal(post.data_keys.includes("party"), false);
+	// one window of the view is one window of the grid's data columns
+	post.data_keys.forEach((key, i) => assert.equal(post.index[key], 3 + i));
+	assert.deepEqual(to_view_config(state(), report).post.pinned_keys, []);
+});
+
+test("report summary rows: pinned and the reference total without a browser filter, gone with one", () => {
+	const report = load("general_ledger_consolidated");
+	const reference = report.report_totals.internal.at(-1).__rid;
+	const plain = to_view_config(state(), report).post;
+	assert.equal(plain.shape, "flat");
+	assert.deepEqual(plain.pinned_rows, { top: [0], bottom: [report.rows.at(-1).__rid] });
+	assert.deepEqual(plain.total, { source: "row", rid: reference });
+	// the engine's own total is what the export is compared with
+	assert.equal(plain.expected_total.table, "facts");
+	assert.deepEqual(plain.expected_total.config.filter, []);
+	assert.deepEqual(plain.notices, []);
+
+	// a sort changes nothing of what the rows stand for
+	const sorted = to_view_config(state({ sort: [{ key: "debit", dir: "desc" }] }), report).post;
+	assert.deepEqual(sorted.pinned_rows, plain.pinned_rows);
+	assert.deepEqual(sorted.total, plain.total);
+
+	const filter = [{ key: "debit", type: "range", min: 100, max: null }];
+	const narrowed = to_view_config(state({ filters: filter }), report).post;
+	assert.deepEqual(narrowed.pinned_rows, { top: [], bottom: [] });
+	assert.equal(narrowed.total.source, "view");
+	assert.equal(narrowed.total.view, narrowed.expected_total);
+	assert.deepEqual(narrowed.expected_total.config.filter, [["debit", ">=", 100]]);
+
+	// grouping reads the facts only: nothing pinned, the total is the view's row 0
+	const grouped = to_view_config(state({ group: { by: ["account"], subtotals: true, expanded: "all" } }), report).post;
+	assert.deepEqual(grouped.pinned_rows, { top: [], bottom: [] });
+	assert.deepEqual(grouped.total, { source: "row0" });
+
+	// the report's own subtotals between the facts are reported, not dropped in silence
+	const by_account = to_view_config(state(), load("general_ledger_by_account")).post;
+	assert.equal(by_account.notices.length, 1);
+	assert.equal(by_account.notices[0].code, "REPORT_ROWS_NOT_SHOWN");
+	assert.ok(by_account.notices[0].detail > 0);
+	assert.deepEqual(to_view_config(state({ filters: filter }), load("general_ledger_by_account")).post.notices, []);
+});
+
+test("fold in the view state: group.expanded as paths, subtotals, expand all / collapse all", () => {
+	const report = load("accounts_receivable_frappe_total");
+	const group = (expanded, subtotals = true) => state({ group: { by: ["party"], subtotals, expanded } });
+	const all = to_view_config(group("all"), report).post;
+	assert.equal(all.depth, 1);
+	assert.equal(all.expanded, null);
+	assert.equal(all.subtotals, true);
+	assert.equal(to_view_config(group("none"), report).post.depth, 0);
+	const some = to_view_config(group([["SND"], "bad", ["f"]], false), report).post;
+	assert.equal(some.depth, 0);
+	assert.deepEqual(some.expanded, [["SND"], ["f"]]);
+	assert.equal(some.subtotals, false);
+
+	assert.deepEqual(fold_all(group([["SND"]]), report, true), { group: { by: ["party"], subtotals: true, expanded: "all" } });
+	assert.deepEqual(fold_all(group("all"), report, false).group.expanded, "none");
+	// a flat view has nothing to fold
+	assert.equal(fold_all(state(), report, true), null);
+
+	const tree = load("trial_balance_fy2026");
+	assert.deepEqual(fold_all(state({ tree: { depth: null, expanded: [0, 1] } }), tree, true), { tree: { depth: 3, expanded: null } });
+	assert.deepEqual(fold_all(state(), tree, false), { tree: { depth: 0, expanded: null } });
+	assert.deepEqual(to_view_config(state({ ...fold_all(state(), tree, false) }), tree).config.filter, [["__depth", "<=", 0]]);
+	// the re-grouped tree folds by the same state as the tree "as is"
+	const levels = to_view_config(
+		state({ tree: { depth: null, expanded: [0, 1] }, filters: [{ key: "debit", type: "range", min: 1, max: null }] }),
+		tree
+	).post;
+	assert.equal(levels.shape, "levels");
+	assert.deepEqual(levels.tree.expanded, [0, 1]);
 });

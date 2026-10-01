@@ -446,3 +446,42 @@ msgstr "البيانات محدّثة · {0} صفاً من الخادم"
 
 msgid "No grouping"
 msgstr "بلا تجميع"
+
+msgid "Group subtotals"
+msgstr "مجاميع المجموعات"
+
+msgid "Expand all"
+msgstr "توسيع الكل"
+
+msgid "Collapse all"
+msgstr "طي الكل"
+
+msgid "Total {0}"
+msgstr "إجمالي {0}"
+
+msgid "Preparing the engine…"
+msgstr "جارٍ تجهيز المحرك…"
+
+msgid "Close"
+msgstr "إغلاق"
+
+msgid "The free-text search is not applied on screen."
+msgstr "البحث الحر غير مطبّق على الشاشة."
+
+msgid "The filter on {0} uses an operator that is not applied on screen."
+msgstr "الفلتر على «{0}» يستخدم عملية غير مطبّقة على الشاشة."
+
+msgid "The filter on {0} does not fit the type of the column and is not applied."
+msgstr "الفلتر على «{0}» لا يناسب نوع العمود، ولم يُطبَّق."
+
+msgid "The filter on {0} cannot combine empty cells with other values: empty cells are left out."
+msgstr "الفلتر على «{0}» لا يجمع الخلايا الفارغة مع قيم أخرى: استُبعدت الخلايا الفارغة."
+
+msgid "A filter refers to a column that is not in this report: {0}"
+msgstr "فلتر يشير إلى عمود غير موجود في هذا التقرير: {0}"
+
+msgid "The exported file applies these filters, so the export can be refused."
+msgstr "الملف المصدَّر يطبّق هذه الفلاتر، فقد يُرفض التصدير."
+
+msgid "{0} subtotal rows of the report itself (opening, total and closing of its own groups) are not shown here; the Excel file contains them."
+msgstr "{0} صفاً من مجاميع التقرير نفسه (افتتاحي وإجمالي وختامي مجموعاته) غير معروضة هنا؛ ملف Excel يحتويها."

@@ -4,7 +4,9 @@
 
 .rv [hidden]{display:none !important}
 
-.rv{border-radius:var(--r-lg)}
+/* Desk sets letter-spacing .02em on the body: with it the digits of a 13px number land on
+   uneven pixels ("886,31 6.00"). The design has none. */
+.rv{border-radius:var(--r-lg);letter-spacing:0}
 .rv-muted{color:var(--tx-4)}
 .rv-mixed{color:var(--tx-4);cursor:help}
 
@@ -61,6 +63,7 @@
 .rv .rv-group .multiselect-list .form-control{position:relative}
 .rv .rv-group .multiselect-list .status-text{top:0;bottom:0;left:10px;right:10px;display:flex;align-items:center;font-size:var(--fs-sm);color:var(--tx)}
 .rv .rv-group .multiselect-list .status-text .text-extra-muted{color:var(--tx-4)}
+.rv-toolbar .rv-gp-tools{flex:none}
 .rv-message{font-size:var(--fs-sm);color:var(--tx-2)}
 .rv-message:empty{display:none}
 
@@ -69,6 +72,13 @@
 .rv-gridwrap{flex:none;min-height:360px;contain:inline-size}
 .rv-grid{flex:1;min-height:0;position:relative}
 .rv-status{flex-wrap:wrap}
+
+/* ---------- notices of the view, above the grid ---------- */
+.rv-notice{display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--surface-2);color:var(--tx-2);font-size:var(--fs-xs);flex:none}
+.rv-notice.warn{background:var(--warn-soft);border-bottom-color:var(--warn-line);color:var(--warn)}
+.rv-notice svg{margin-top:2px}
+.rv-notice-bd{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rv-notice .rv-chip-x{color:inherit;flex:none}
 
 /* ---------- states (the overlay covers the whole grid frame) ---------- */
 .rv-gridwrap > .rv-stateov{inset:0;z-index:12}

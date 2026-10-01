@@ -13,9 +13,10 @@ import {
 	cancel_dispose,
 	dispose_engine,
 	debug_handles,
+	engine_ready,
 	ReportSession,
 } from "./engine/perspective_engine.js";
-import { toggle_tree_node, visible_columns } from "./engine/view_config.js";
+import { fold_all, toggle_tree_node, visible_columns } from "./engine/view_config.js";
 import { default_state, sanitize, reconcile } from "./state/view_state.js";
 import { decode_state, make_url_updater } from "./state/url.js";
 import { load_report_settings, ReportFilters, MissingFiltersError } from "./filters/report_filters.js";
@@ -26,6 +27,7 @@ import { StateOverlay } from "./components/states.js";
 import { Header } from "./components/header.js";
 import { Toolbar } from "./components/toolbar.js";
 import { StatusBar } from "./components/status_bar.js";
+import { NoticeBar, describe_notices } from "./components/notices.js";
 import { icons } from "./components/icons.js";
 
 const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
@@ -138,15 +140,21 @@ export class ReportViewPage {
 			on_export: () => this.export_xlsx(),
 		});
 		this.$(".rv-header-slot").replaceWith(this.header.el);
-		this.toolbar = new Toolbar({ parent: this.$(".rv-toolbar-slot") });
+		this.toolbar = new Toolbar({
+			parent: this.$(".rv-toolbar-slot"),
+			on_subtotals: (on) => this.set_subtotals(on),
+			on_fold_all: (open) => this.fold_all(open),
+		});
 		this.$(".rv-toolbar-slot").replaceWith(this.toolbar.el);
 		const wrap = this.$(".rv-gridwrap");
 		this.overlay = new StateOverlay(wrap);
+		this.notices = new NoticeBar({ parent: wrap, before: this.$(".rv-grid") });
 		this.grid = new GridView({
 			parent: this.$(".rv-grid"),
 			rtl: this.rtl,
 			on_tree_toggle: (rid) => this.toggle_tree(rid),
-			on_rows_changed: (counts) => this.update_status(counts),
+			on_fold_changed: (expanded) => this.save_fold(expanded),
+			on_column_resized: (key, width) => this.save_width(key, width),
 		});
 		this.status = new StatusBar({ parent: wrap });
 		this.$('[data-action="run"]').addEventListener("click", () => this.run());
@@ -291,6 +299,8 @@ export class ReportViewPage {
 		this.result = null;
 		this.render_token += 1;
 		this.grid.destroy();
+		this.notices.show(null);
+		this.toolbar.set_fold({ foldable: false, subtotals: false });
 		if (session) await session.close();
 	}
 
@@ -305,10 +315,15 @@ export class ReportViewPage {
 		this.session = session;
 	}
 
+	// The first run of a page loads the engine (worker and WASM): the loading state says so.
+	show_loading() {
+		this.overlay.loading(engine_ready() ? "" : __("Preparing the engine…"));
+	}
+
 	// Back on the page with the same report: its tables were deleted on leaving.
 	async reopen() {
 		const token = this.run_token;
-		this.overlay.loading();
+		this.show_loading();
 		try {
 			await this.open_session(token);
 			if (token === this.run_token) await this.render();
@@ -327,7 +342,7 @@ export class ReportViewPage {
 		await this.close_session();
 		this.page.set_title(__(name));
 		this.header.set_report({ name });
-		this.overlay.loading();
+		this.show_loading();
 		const route_options = frappe.route_options || {};
 		frappe.route_options = null;
 		try {
@@ -401,6 +416,8 @@ export class ReportViewPage {
 					const by = (this.group_control.get_value() || []).filter(Boolean);
 					if (JSON.stringify(by) === JSON.stringify(this.state.group.by)) return;
 					this.state.group.by = by;
+					// Paths of open groups belong to the grouping they were made in.
+					this.state.group.expanded = "all";
 					this.render();
 				},
 			},
@@ -450,7 +467,7 @@ export class ReportViewPage {
 		this.last_filters = values;
 		this.set_note("loading");
 		this.header.set_meta({ filters: values, running: true });
-		this.overlay.loading();
+		this.show_loading();
 		this.status.clear();
 		try {
 			const res = await api.run(this.report_name, values, this.filters.js_filters(), this.prepared_report_name);
@@ -578,6 +595,7 @@ export class ReportViewPage {
 		const session = this.session;
 		if (!report.rows.length) {
 			this.grid.destroy();
+			this.notices.show(null);
 			const notes = report.notices.filter((n) => n.code === "SERVER_MESSAGE").map((n) => n.detail);
 			this.overlay.show({
 				kind: "empty",
@@ -610,6 +628,9 @@ export class ReportViewPage {
 		this.result = { mode, currency: single_currency(opened.totals.currencies) };
 		this.header.set_meta({ filters: this.last_filters, currency: this.result.currency, run_at: this.run_at });
 		this.overlay.hide();
+		// What the view state asks for and the screen does not do is said, once, not dropped.
+		this.notices.show(describe_notices(opened.post.notices, report.columns));
+		this.toolbar.set_fold({ foldable: opened.post.shape !== "flat", subtotals: opened.post.subtotals });
 		await this.grid.show({
 			report,
 			opened,
@@ -623,7 +644,9 @@ export class ReportViewPage {
 		this.update_url(this.last_filters, this.state);
 	}
 
-	// Status bar (§8أ.5): rows of the view (without its total row) of the rows of its table.
+	// Status bar (§8أ.5). Rows are the facts of the report (the leaves of a tree), as in the
+	// badge of the grand total: those that pass the browser filters, of all of them. Groups
+	// and tree parents are counted apart; folding changes neither number.
 	update_status(counts) {
 		this.status.update({ row_count: counts.shown, fact_count: counts.total, group_count: counts.groups });
 	}
@@ -632,6 +655,36 @@ export class ReportViewPage {
 	toggle_tree(rid) {
 		if (!this.report?.tree) return;
 		this.state.tree.expanded = toggle_tree_node(this.state, this.report, rid);
+		this.render();
+	}
+
+	// A group of a grouped view was opened or closed in the view itself: the fold goes into
+	// the view state and the URL, nothing is rendered again.
+	save_fold(expanded) {
+		if (!this.state) return;
+		this.state.group.expanded = expanded;
+		this.update_url(this.last_filters, this.state);
+	}
+
+	// A column was resized in the grid (it already shows the new width).
+	save_width(key, width) {
+		if (!this.state) return;
+		this.state.columns.widths[key] = width;
+		this.update_url(this.last_filters, this.state);
+	}
+
+	set_subtotals(on) {
+		if (!this.state || this.state.group.subtotals === on) return;
+		this.state.group.subtotals = on;
+		this.render();
+	}
+
+	// "Expand all" / "collapse all" of the toolbar.
+	fold_all(open) {
+		if (!this.report || !this.state) return;
+		const change = fold_all(this.state, this.report, open);
+		if (!change) return;
+		Object.assign(this.state, change);
 		this.render();
 	}
 

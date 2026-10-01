@@ -1,10 +1,23 @@
-// View state v1 (docs/architecture.md §7.1), minimal subset used in phase 3:
-// mode, columns, sort, group, tree, ui.density. Unknown keys are dropped (not rejected) in the browser.
+// View state v1 (docs/architecture.md §7.1), the subset used so far: mode, columns (order,
+// hidden, widths, pinned), sort, filters, group (by, subtotals, expanded), tree (depth,
+// expanded), ui.density. Unknown keys are dropped (not rejected) in the browser.
 
 export const VERSION = 1;
 const MODES = ["grid", "pivot", "charts"];
 const LIMIT_GROUP = 50;
 const DENSITIES = ["comfortable", "compact"];
+const LIMIT_EXPANDED = 5000;
+export const MIN_COLUMN_WIDTH = 72;
+
+// A group path: the values of the group keys, top-down (strings, numbers, booleans or null).
+function is_path(path, depth) {
+	return (
+		Array.isArray(path) &&
+		path.length > 0 &&
+		path.length <= depth &&
+		path.every((v) => v === null || ["string", "boolean"].includes(typeof v) || Number.isFinite(v))
+	);
+}
 
 export function default_state(config = {}) {
 	return {
@@ -40,7 +53,7 @@ export function sanitize(state, config = {}) {
 	out.columns.hidden = str_list(cols.hidden);
 	if (cols.widths && typeof cols.widths === "object") {
 		for (const [k, w] of Object.entries(cols.widths)) {
-			if (Number.isFinite(w) && w > 0) out.columns.widths[k] = Math.round(w);
+			if (Number.isFinite(w) && w > 0) out.columns.widths[k] = Math.max(MIN_COLUMN_WIDTH, Math.round(w));
 		}
 	}
 	if (cols.pinned) {
@@ -56,12 +69,15 @@ export function sanitize(state, config = {}) {
 	const group = state.group || {};
 	out.group.by = str_list(group.by, LIMIT_GROUP);
 	if (typeof group.subtotals === "boolean") out.group.subtotals = group.subtotals;
-	if (group.expanded === "all" || group.expanded === "none" || Array.isArray(group.expanded)) {
-		out.group.expanded = group.expanded;
+	if (group.expanded === "all" || group.expanded === "none") out.group.expanded = group.expanded;
+	else if (Array.isArray(group.expanded)) {
+		out.group.expanded = group.expanded.filter((p) => is_path(p, LIMIT_GROUP)).slice(0, LIMIT_EXPANDED);
 	}
 	const tree = state.tree || {};
 	if (Number.isInteger(tree.depth) && tree.depth >= 0) out.tree.depth = tree.depth;
-	if (Array.isArray(tree.expanded)) out.tree.expanded = tree.expanded;
+	if (Array.isArray(tree.expanded)) {
+		out.tree.expanded = tree.expanded.filter((rid) => Number.isInteger(rid) && rid >= 0).slice(0, LIMIT_EXPANDED);
+	}
 	if (DENSITIES.includes(state.ui?.density)) out.ui.density = state.ui.density;
 	return out;
 }
@@ -72,6 +88,9 @@ export function reconcile(state, columns) {
 	const keep = (list) => list.filter((k) => keys.has(k));
 	state.columns.order = keep(state.columns.order);
 	state.columns.hidden = keep(state.columns.hidden);
+	state.columns.pinned.start = keep(state.columns.pinned.start);
+	state.columns.pinned.end = keep(state.columns.pinned.end);
+	state.columns.widths = Object.fromEntries(Object.entries(state.columns.widths).filter(([k]) => keys.has(k)));
 	state.sort = state.sort.filter((s) => keys.has(s.key));
 	state.group.by = keep(state.group.by);
 	return state;

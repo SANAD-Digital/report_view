@@ -133,10 +133,55 @@ export function make_formatter({ report_settings, columns }) {
 		return `<span class="rv-glabel">${text}</span>${count_html(row.__count)}`;
 	}
 
+	// Plain text of what a group row or a tree parent is called, for its subtotal row.
+	function group_text(row) {
+		const column = by_key.get(row.__group_key);
+		const value = row.__group_value;
+		if (value === null || value === undefined || value === "") return __("Not Set");
+		if (!column) return String(value);
+		return frappe.utils.html2text(String(frappe.format(value, df_of(column), FORMAT_OPTS, row))).trim();
+	}
+
+	function node_text(column, row, parts) {
+		const value = (parts?.name_key && row[parts.name_key]) || row[column.key];
+		if (value === null || value === undefined || value === "") return __("Not Set");
+		return String(Array.isArray(value) ? value.join(", ") : value);
+	}
+
+	/** Label of the subtotal row of a group (design #47): "Total <group>". */
+	function foot_label_html(text) {
+		return `<span class="rv-glabel">${esc(__("Total {0}", [text]))}</span>`;
+	}
+
+	/**
+	 * A cell of a summary row of the report (opening / closing / total). Its text is a
+	 * caption, never a document name: no link is built (the report quotes it for the same
+	 * reason, N3.2).
+	 */
+	function caption_html(column, row) {
+		if (column.role === "measure") return value_html(column, row);
+		const value = row[column.key];
+		if (value === null || value === undefined || value === "") return "";
+		if (column.link || Array.isArray(value)) return esc(Array.isArray(value) ? value.join(", ") : value);
+		return frappe.format(value, df_of(column), FORMAT_OPTS, row);
+	}
+
 	function count_html(n) {
 		if (n === null || n === undefined) return "";
 		return `<span class="rv-gcount">${esc(frappe.format(n, { fieldtype: "Int" }, { inline: true }))}</span>`;
 	}
 
-	return { value_html, label_html, node_label_html, group_label_html, count_html, sign_of, default_formatter };
+	return {
+		value_html,
+		label_html,
+		node_label_html,
+		group_label_html,
+		group_text,
+		node_text,
+		foot_label_html,
+		caption_html,
+		count_html,
+		sign_of,
+		default_formatter,
+	};
 }

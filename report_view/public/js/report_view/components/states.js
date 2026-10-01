@@ -63,7 +63,8 @@ export class StateOverlay {
 		this.el.hidden = false;
 	}
 
-	loading() {
-		this.show({ kind: "loading", icon: "…", title: __("Loading report…"), skeleton: true });
+	/** @param {string} [text] what is being waited for (the first load of the engine) */
+	loading(text = "") {
+		this.show({ kind: "loading", icon: "…", title: __("Loading report…"), text, skeleton: true });
 	}
 }

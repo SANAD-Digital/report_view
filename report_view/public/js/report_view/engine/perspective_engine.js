@@ -260,6 +260,11 @@ export function cancel_dispose() {
 	clearTimeout(idle_timer);
 }
 
+/** True once the worker and the WASM files are loaded (the first load takes a moment). */
+export function engine_ready() {
+	return live !== null;
+}
+
 /** Handles of the running engine that were not deleted (none when no engine is running). */
 export function debug_handles() {
 	return live ? live.handles.debug_handles() : [];
@@ -362,35 +367,44 @@ export class ReportSession {
 		const view = await this.handles.latest_view(this.slot, table, spec.config, post.shape);
 		if (!view) return null;
 		try {
-			if (post.depth !== null) await queries.set_depth(view, post);
+			if (post.depth !== null) await queries.set_depth(view, post, this.level_rids);
 			const facts = this.tables.facts;
-			const [body_rows, totals, fact_rows, groups] = await Promise.all([
+			const [body_rows, structure, totals, engine_totals, fact_rows, groups] = await Promise.all([
 				queries.body_rows(view, post),
+				queries.row_depths(view, post),
 				this._totals(view, post),
+				this._expected_totals(post),
 				post.fact_filter.length ? queries.count_rows(this.handles, facts, post.fact_filter) : this.sizes.facts,
 				this._groups(post),
 			]);
+			// What the server compares with its own engine before it builds a file (§8أ.6): the
+			// engine's total of the facts, also when the screen shows the report's reference row.
+			const compared = engine_totals || totals;
 			return {
 				spec,
 				post,
 				view,
 				body_rows,
+				depths: structure.depths,
+				paths: structure.paths,
 				totals,
-				// §8أ.5: rows of the view of the rows of its table. In a grouped view the group
-				// rows are not counted: the facts that pass the filters, of all the facts.
-				counts: {
-					shown: post.row_offset ? fact_rows : body_rows,
-					total: this.sizes[spec.table],
-					facts: fact_rows,
-					groups,
-				},
-				// §8أ.6: what the server compares with its own engine before it builds a file.
-				expected: { row_count: fact_rows, totals: numeric_totals(totals.values, totals.mixed) },
+				// Rows = the facts of the report (leaves of a tree), everywhere: the status bar
+				// and the badge of the grand total. "shown" are the facts that pass the browser
+				// filters; folding a group or a parent hides rows but filters nothing.
+				counts: { shown: fact_rows, total: this.sizes.facts, facts: fact_rows, groups },
+				expected: { row_count: fact_rows, totals: numeric_totals(compared.values, compared.mixed) },
 			};
 		} catch (e) {
 			if (this.handles.is_alive(view)) await this.handles.delete(view);
 			throw e;
 		}
+	}
+
+	async _expected_totals(post) {
+		if (!post.expected_total || post.total.view === post.expected_total) return null;
+		const target = post.expected_total;
+		const row = await queries.totals(this.handles, this.tables[target.table], target.config);
+		return this._engine_totals(post, row);
 	}
 
 	async _totals(view, post) {
@@ -409,10 +423,13 @@ export class ReportSession {
 		return queries.count_rows(this.handles, table, post.groups.filter);
 	}
 
-	/** Opens or closes a group of a grouped view; returns the new number of body rows. */
+	/**
+	 * Opens or closes a group of a grouped view.
+	 * @returns {Promise<{depths: number[], paths: Array[]}>} the rows of the view after it
+	 */
 	async toggle_group(opened, view_row, open) {
 		await queries.toggle_group(opened.view, opened.post, view_row, open);
-		return queries.body_rows(opened.view, opened.post);
+		return queries.row_depths(opened.view, opened.post);
 	}
 
 	async close_view(opened) {

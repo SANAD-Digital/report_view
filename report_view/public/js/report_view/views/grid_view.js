@@ -1,4 +1,4 @@
-// Grid view on <regular-table> (docs/architecture.md §11.1 #32, #35, #45-#52; §11.2).
+// Grid view on <regular-table> (docs/architecture.md §11.1 #32, #35, #39, #45-#52; §11.2).
 // Nothing is computed here. The virtual data model reads windows of the Perspective view
 // (view.to_columns); rows that are report rows are shown with the report's own values
 // (fetched by __rid, §9.3), rows Perspective computed (groups, grand total) with the
@@ -7,19 +7,38 @@
 // Shapes of the view (engine/view_config.js): "tree" = the report tree as it came (nodes
 // table, folded by an engine filter); "flat" = the facts; "group" / "levels" = a grouped
 // view of the facts, opened and closed with view.expand / view.collapse.
+//
+// Rows of the body (engine/row_layout.js): the rows of the view, a subtotal row after every
+// open group (the values of the group's own row), and spacer rows under the report rows that
+// are pinned below the headers. Pinned above and below, outside the scrolling body: the
+// report's own opening / closing rows and the grand total.
 
 import { apply_rtl } from "./rtl_adapter.js";
 import { perspective_type, RID, KIND } from "../engine/schema.js";
 import { DEPTH, HAS_CHILDREN, LEAVES, LEVELS } from "../engine/tree_nodes.js";
 import { CURRENCY_COUNT_PREFIX } from "../engine/view_config.js";
+import { build_layout, entry_at, expanded_from_paths } from "../engine/row_layout.js";
+import { MIN_COLUMN_WIDTH } from "../state/view_state.js";
 
 const ROW_PATH = "__ROW_PATH__";
 const CELL_CLASSES = ["num", "dr", "cr", "band-end", "zero", "neg"];
+const MAX_AUTO_WIDTH = 640;
+// Pinned columns next to the label need room: on a narrower grid only the label is pinned.
+const MIN_WIDTH_FOR_PINS = 600;
+// View rows this close are read in one window.
+const RUN_GAP = 8;
+// A column without a band: not the empty string, so that regular-table does not merge its
+// band cell with the one of the pinned columns.
+const NO_BAND = " ";
 const CHEVRON =
 	'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>';
 
 function esc(s) {
 	return frappe.utils.escape_html(String(s ?? ""));
+}
+
+function empty(v) {
+	return v === null || v === undefined || v === "";
 }
 
 function caret(open) {
@@ -50,25 +69,31 @@ export class GridView {
 	 * @param {HTMLElement} opts.parent
 	 * @param {boolean} opts.rtl
 	 * @param {(rid: number) => void} opts.on_tree_toggle a parent of the report tree was opened or closed
-	 * @param {(counts: object) => void} opts.on_rows_changed a group was opened or closed (rows on screen changed)
+	 * @param {(expanded: "all"|"none"|Array) => void} opts.on_fold_changed a group was opened or closed
+	 * @param {(key: string, width: number) => void} opts.on_column_resized a column got a new width
 	 */
-	constructor({ parent, rtl, on_tree_toggle, on_rows_changed }) {
+	constructor({ parent, rtl, on_tree_toggle, on_fold_changed, on_column_resized }) {
 		this.parent = parent;
 		this.rtl = rtl;
 		this.on_tree_toggle = on_tree_toggle || (() => {});
-		this.on_rows_changed = on_rows_changed || (() => {});
+		this.on_fold_changed = on_fold_changed || (() => {});
+		this.on_column_resized = on_column_resized || (() => {});
 		this.rt = null;
 		this.current = null;
 		this.model = null;
+		this.layout = null;
 		this.signature = null;
 		this.epoch = 0;
 		this.windows = [];
 		this.rendered = new WeakMap();
 		this.html_cache = new Map();
 		this.cache_owner = null;
+		this.refocus = null;
 		this.listener = (x0, y0, x1, y1) => this.read(x0, y0, x1, y1);
 		this.styler = () => this.style();
 		this.on_click = (e) => this.click(e);
+		this.on_press = (e) => this.press(e);
+		this.on_dblclick = (e) => this.dblclick(e);
 	}
 
 	// ------------------------------------------------------------ model
@@ -80,33 +105,34 @@ export class GridView {
 		const translate_label = report.__report_type === "Query Report";
 		const title = (c) => col_conf[c.fieldname]?.label || (translate_label ? __(c.label) : c.label);
 		const totalled = new Set(post.measures);
+		const widths = state.columns.widths;
 		const label = by_key.get(post.label_key);
 		// Label column: design width 320px, narrower on phones so numbers stay visible.
 		const label_width =
-			state.columns.widths[label.key] ||
-			Math.round(Math.min(320, Math.max(170, this.parent.clientWidth * 0.5)));
+			widths[label.key] || Math.round(Math.min(320, Math.max(170, this.parent.clientWidth * 0.5)));
 
-		const data = post.data_keys.map((key) => {
+		const describe = (key) => {
 			const column = by_key.get(key);
 			const conf = col_conf[column.fieldname] || {};
 			const numeric = column.role === "measure";
-			const band = conf.band && bands.get(conf.band) ? conf.band : null;
 			return {
 				column,
 				title: title(column),
 				numeric,
 				side: conf.side === "dr" || conf.side === "cr" ? conf.side : null,
-				band,
+				band: conf.band && bands.get(conf.band) ? conf.band : null,
 				band_end: false,
 				totalled: totalled.has(key),
 				currency_key: column.currency?.kind === "row" ? column.currency.key : null,
 				index: post.index[key],
-				width:
-					state.columns.widths[key] ||
-					conf.width ||
-					(numeric ? Math.max(column.width || 0, 138) : column.width || 140),
+				width: widths[key] || conf.width || (numeric ? Math.max(column.width || 0, 138) : column.width || 140),
 			};
-		});
+		};
+		// columns.pinned.start: row headers of regular-table next to the label column.
+		const roomy = this.parent.clientWidth >= MIN_WIDTH_FOR_PINS;
+		const pinned = roomy ? post.pinned_keys.map(describe) : [];
+		const data = (roomy ? post.data_keys : [...post.pinned_keys, ...post.data_keys]).map(describe);
+		for (const p of pinned) p.band = null;
 		data.forEach((d, i) => {
 			d.band_end = Boolean(d.band) && data[i + 1]?.band !== d.band;
 		});
@@ -114,14 +140,17 @@ export class GridView {
 		return {
 			shape: post.shape,
 			hierarchical: post.shape !== "flat",
+			subtotals: post.subtotals && post.shape !== "flat",
 			label,
 			label_title: title(label),
 			label_width,
 			// "number + name" label (register tree.number_key / tree.name_key) of the tree column.
 			parts: config.tree?.name_key && (config.tree.label_key || report.tree?.label_key) === label.key ? config.tree : null,
+			pinned,
+			heads: 1 + pinned.length,
 			data,
 			levels,
-			headers: data.map((d) => (levels === 2 ? [d.band ? bands.get(d.band).label : "", d.title] : [d.title])),
+			headers: data.map((d) => (levels === 2 ? [d.band ? bands.get(d.band).label : NO_BAND, d.title] : [d.title])),
 			by_key,
 		};
 	}
@@ -139,13 +168,12 @@ export class GridView {
 			return;
 		}
 		const model = this.build_model(report, state, config, opened.post);
-		const open = opened.post.tree?.expanded;
-		this.tree_open = Array.isArray(open) ? new Set(open.map(Number)) : null;
 		const density = state.ui?.density;
+		// What needs a new table: the columns and the density. Widths and rows do not.
 		const signature = JSON.stringify({
-			shape: model.shape,
-			label: [model.label.key, model.label_width],
-			cols: model.data.map((d) => [d.column.key, d.width, d.band]),
+			label: model.label.key,
+			pinned: model.pinned.map((d) => d.column.key),
+			cols: model.data.map((d) => [d.column.key, d.band]),
 			density,
 		});
 		if (this.cache_owner !== report || this.fmt !== fmt) {
@@ -156,68 +184,115 @@ export class GridView {
 		this.session = session;
 		this.model = model;
 		this.current = opened;
-		this.body_rows = opened.body_rows;
 		this.counts = { ...opened.counts };
+		this.set_layout(opened);
+		if (!this.rt || this.signature !== signature) this.mount(signature);
+		else this.apply_sizes();
+		this.render_pinned();
+		await this.rt.draw();
+		this.restore_focus();
+	}
+
+	// The rows of the body from the rows of the view (no calculation: placement only).
+	set_layout(opened) {
+		const depths = opened.depths || new Uint8Array(opened.body_rows);
+		this.layout = build_layout(depths, {
+			subtotals: this.model.subtotals,
+			top: opened.post.pinned_rows.top.length,
+		});
+		this.body_rows = this.layout.size;
 		this.epoch += 1;
 		this.windows = [];
-		if (!this.rt || this.signature !== signature) this.mount(signature);
-		this.render_total();
-		await this.rt.draw();
 	}
 
 	mount(signature) {
 		this.unmount();
 		this.signature = signature;
-		const m = this.model;
 		const host = document.createElement("div");
 		host.className = "rv-rt";
-		host.innerHTML = `<div class="rv-rt-scroll"><regular-table></regular-table><div class="rv-rt-edge pin-edge-s"></div></div><div class="rv-row total rv-rt-total"></div>`;
-		host.style.setProperty("--rv-label-w", `${m.label_width}px`);
+		host.innerHTML =
+			`<div class="rv-rt-scroll"><regular-table></regular-table><div class="rv-rt-top"></div><div class="rv-rt-edge pin-edge-s"></div></div>` +
+			`<div class="rv-rt-bottom"></div>`;
 		this.parent.replaceChildren(host);
 		this.host = host;
-		this.total_el = host.querySelector(".rv-rt-total");
+		this.top_el = host.querySelector(".rv-rt-top");
+		this.bottom_el = host.querySelector(".rv-rt-bottom");
 		const rt = host.querySelector("regular-table");
 		this.rt = rt;
-		// Body rows are --rh high plus their 1px line.
+		// Body rows are --rh high plus their 1px line; header rows have their own heights.
 		this.row_height = css_int(host, "--rh", 36) + 1;
+		this.header_height = (this.model.levels === 2 ? css_int(host, "--bh", 30) : 0) + css_int(host, "--hh", 34);
+		this.cell_padding = css_int(host, "--cp", 12);
+		this.top_el.style.top = `${this.header_height}px`;
+		// regular-table sizes its scroll range as if a header row were as high as a body row
+		// (panel = rows * h + levels * h; rows that fit = height / h - levels). The design's
+		// header rows are lower, which left an empty strip of up to 10px under the last row at
+		// the end of the scroll. Reporting the difference as a fraction of a row less makes
+		// both formulas exact for the real header height (the data listener answers with one
+		// row more than asked, so the bottom edge is always filled).
+		this.row_trim = Math.max(0, this.model.levels * this.row_height - this.header_height) / this.row_height;
 		rt.setDataListener(this.listener, { column_classes: true });
 		if (this.rtl) apply_rtl(rt);
-		// Column widths are ours (design widths or the view state), not auto-sized: an
-		// override per column, and the same width as the "measured" one so that the scroll
-		// range is right before a column was ever drawn.
-		const sizes = { 0: m.label_width };
-		m.data.forEach((d, i) => (sizes[i + 1] = d.width));
-		rt.restoreColumnSizes(sizes);
-		if (Array.isArray(rt._column_sizes?.indices)) {
-			for (const [key, width] of Object.entries(sizes)) rt._column_sizes.indices[key] = width;
-		}
+		this.apply_sizes();
 		this.remove_styler = rt.addStyleListener(this.styler);
 		rt.addEventListener("click", this.on_click);
+		rt.addEventListener("dblclick", this.on_dblclick);
+		// Capture: regular-table's own resize handler (it assumes LTR) must not see the press.
+		rt.addEventListener("pointerdown", this.on_press, true);
+		rt.addEventListener("mousedown", this.on_press, true);
 		this.resize_observer = new ResizeObserver(() => {
-			if (this.rt === rt && this.current) rt.draw();
+			if (this.rt !== rt || !this.current) return;
+			this.fit_top();
+			rt.draw();
 		});
 		this.resize_observer.observe(rt);
+	}
+
+	/**
+	 * Column widths are ours (design widths or the view state), not auto-sized: an override
+	 * per column. Row headers come first in regular-table's size keys.
+	 */
+	apply_sizes() {
+		const m = this.model;
+		const widths = [m.label_width, ...m.pinned.map((d) => d.width), ...m.data.map((d) => d.width)];
+		const sizes = {};
+		widths.forEach((w, i) => (sizes[i] = w));
+		this.rt.restoreColumnSizes(sizes);
+		const pin_width = widths.slice(0, m.heads).reduce((a, b) => a + b, 0);
+		this.host.style.setProperty("--rv-pin-w", `${pin_width}px`);
+		this.pinned_signature = null;
+	}
+
+	// The rows pinned under the headers span the table, not its vertical scrollbar.
+	fit_top() {
+		if (this.top_el && this.rt) this.top_el.style.width = `${this.rt.clientWidth}px`;
 	}
 
 	unmount() {
 		if (this.resize_observer) this.resize_observer.disconnect();
 		this.resize_observer = null;
+		if (this.stop_resize) this.stop_resize();
 		if (this.rt) {
 			this.rt.removeEventListener("click", this.on_click);
+			this.rt.removeEventListener("dblclick", this.on_dblclick);
+			this.rt.removeEventListener("pointerdown", this.on_press, true);
+			this.rt.removeEventListener("mousedown", this.on_press, true);
 			if (this.remove_styler) this.remove_styler();
 		}
 		this.remove_styler = null;
 		this.rt = null;
 		this.host = null;
-		this.total_el = null;
+		this.top_el = null;
+		this.bottom_el = null;
 		this.signature = null;
-		this.total_signature = null;
+		this.pinned_signature = null;
 	}
 
 	/** Detach from the engine view (the caller deletes it) and remove the table. */
 	destroy() {
 		this.current = null;
 		this.model = null;
+		this.layout = null;
 		this.windows = [];
 		this.unmount();
 		this.parent.replaceChildren();
@@ -229,95 +304,125 @@ export class GridView {
 		return { num_rows: 0, num_columns: 0, data: [], row_headers: [], column_headers: [] };
 	}
 
-	/** regular-table data listener: one window of the view. */
+	/**
+	 * What a window of the body needs from the view: the entry of every display row and the
+	 * runs of view rows to read (the group of a subtotal row may be far above its window).
+	 */
+	plan(layout, y0, rows) {
+		const entries = [];
+		const needed = new Set();
+		for (let i = 0; i < rows; i++) {
+			const entry = entry_at(layout, y0 + i);
+			entries.push(entry);
+			if (entry.row >= 0) needed.add(entry.row);
+		}
+		const runs = [];
+		const slot = new Map();
+		for (const row of [...needed].sort((a, b) => a - b)) {
+			const last = runs[runs.length - 1];
+			if (last && row - last[1] < RUN_GAP) last[1] = row + 1;
+			else runs.push([row, row + 1]);
+			slot.set(row, runs.length - 1);
+		}
+		return { y0, entries, runs, slot };
+	}
+
+	// One read of the view per run of rows, for a range of its columns.
+	read_runs(cur, plan, start_col, end_col) {
+		const off = cur.post.row_offset;
+		return Promise.all(
+			plan.runs.map(([a, b]) => cur.view.to_columns({ start_row: off + a, end_row: off + b, start_col, end_col }))
+		);
+	}
+
+	/** regular-table data listener: one window of the body. */
 	async read(x0, y0, x1, y1) {
 		const cur = this.current;
 		const m = this.model;
-		if (!cur || !m) return this.empty_response();
+		const layout = this.layout;
+		if (!cur || !m || !layout) return this.empty_response();
 		const base = {
-			num_rows: this.body_rows,
+			num_rows: layout.size ? layout.size - this.row_trim : 0,
 			num_columns: m.data.length,
 			row_height: this.row_height,
-			num_row_headers: 1,
+			num_row_headers: m.heads,
 			num_column_headers: m.levels,
 			merge_headers: "column",
 		};
-		const rows = Math.max(0, Math.min(y1, this.body_rows) - y0);
 		const end = Math.min(x1, m.data.length);
 		// The size request of regular-table (0, 0, 0, 0) needs the dimensions only.
-		if (end <= x0 && !rows) return { ...base, data: [], row_headers: [], column_headers: [] };
+		if (end <= x0 && y1 <= y0) return { ...base, data: [], row_headers: [], column_headers: [] };
+		const rows = Math.max(0, Math.min(y1 + 1, layout.size) - y0);
 
-		const off = cur.post.row_offset;
-		const key = `${this.epoch}:${y0}:${y0 + rows}`;
-		let cells = {};
+		let plan = null;
+		let values = null;
 		if (rows) {
-			const recs_ready = this.windows.find((w) => w.key === key) || this.read_records(cur, key, y0, rows);
+			const key = `${this.epoch}:${y0}:${y0 + rows}`;
+			const cached = this.windows.find((w) => w.key === key);
+			plan = cached ? cached.plan : this.plan(layout, y0, rows);
+			// Only the rows Perspective computed take their numbers from the view.
 			const first = m.data[x0]?.index;
-			const cells_ready =
-				end > x0
-					? cur.view.to_columns({
-							start_row: off + y0,
-							end_row: off + y0 + rows,
-							start_col: first,
-							end_col: first + (end - x0),
-					  })
-					: {};
-			const [win, values] = await Promise.all([recs_ready, cells_ready]);
+			const grouped = cur.post.row_offset === 1 && end > x0;
+			const [win, cells] = await Promise.all([
+				cached || this.read_records(cur, key, plan, layout),
+				grouped ? this.read_runs(cur, plan, first, first + (end - x0)) : null,
+			]);
 			// A scroll may read the next window before this one is drawn: keep the last few.
 			if (this.current === cur) this.windows = [win, ...this.windows.filter((w) => w.key !== key)].slice(0, 4);
-			cells = values;
+			values = cells;
 		}
 
 		const data = [];
 		const metadata = [];
 		for (let x = x0; x < end; x++) {
-			const values = cells[m.data[x].column.key] || [];
+			const name = m.data[x].column.key;
 			data.push(Array.from({ length: rows }, () => ""));
-			metadata.push(Array.from({ length: rows }, (_, i) => ({ v: values[i] ?? null })));
+			metadata.push(
+				Array.from({ length: rows }, (_, i) => {
+					const row = plan.entries[i].row;
+					if (!values || row < 0) return { v: null };
+					const run = plan.slot.get(row);
+					return { v: values[run][name]?.[row - plan.runs[run][0]] ?? null };
+				})
+			);
 		}
 		return {
 			...base,
 			data,
 			metadata,
-			row_headers: Array.from({ length: rows }, () => [""]),
+			row_headers: Array.from({ length: rows }, () => Array.from({ length: m.heads }, () => "")),
 			column_headers: m.headers.slice(x0, end),
 		};
 	}
 
-	/** What each row of a window is: a report row (by __rid) or a group Perspective computed. */
-	async read_records(cur, key, y0, rows) {
-		const { post, view } = cur;
-		const off = post.row_offset;
+	/** What each row of a window is: a report row (by __rid), a group Perspective computed, its subtotal. */
+	async read_records(cur, key, plan, layout) {
+		const { post } = cur;
 		const grouped = post.row_offset === 1;
 		// The technical columns, and the currency columns when they are visible ones: read as
-		// runs of neighbouring view columns. A grouped row is open when the next row is deeper,
-		// so one row more is read.
+		// runs of neighbouring view columns.
 		const wanted = [...new Set([...post.technical, ...(grouped ? post.currency_keys : [])])]
 			.map((name) => post.index[name])
 			.sort((a, b) => a - b);
-		const runs = [];
+		const col_runs = [];
 		for (const index of wanted) {
-			const last = runs[runs.length - 1];
+			const last = col_runs[col_runs.length - 1];
 			if (last && last[1] === index) last[1] = index + 1;
-			else runs.push([index, index + 1]);
+			else col_runs.push([index, index + 1]);
 		}
-		const parts = await Promise.all(
-			runs.map(([start_col, end_col]) =>
-				view.to_columns({ start_row: off + y0, end_row: off + y0 + rows + (grouped ? 1 : 0), start_col, end_col })
-			)
-		);
-		const cols = Object.assign({}, ...parts);
-		const win = { key, epoch: this.epoch, y0, rows, recs: new Map() };
+		const parts = await Promise.all(col_runs.map(([start, stop]) => this.read_runs(cur, plan, start, stop)));
+		const by_run = plan.runs.map((_, r) => Object.assign({}, ...parts.map((part) => part[r])));
 		const by_rid = this.session.rows_by_rid;
-		const { recs } = win;
-		for (let i = 0; i < rows; i++) {
+
+		const of_row = new Map();
+		for (const [row, run] of plan.slot) {
+			const cols = by_run[run];
+			const i = row - plan.runs[run][0];
+			const open = Boolean(layout.open[row]);
 			let rec;
 			if (!grouped) {
-				const row = by_rid.get(cols[RID][i]);
-				const depth = cols[DEPTH]?.[i] ?? 0;
 				const parent = Boolean(cols[HAS_CHILDREN]?.[i]);
-				rec = { type: "row", row, depth, parent, count: cols[LEAVES]?.[i] ?? null };
-				if (parent) rec.open = this.tree_open ? this.tree_open.has(cols[RID][i]) : depth < post.tree.depth;
+				rec = { type: "row", row: by_rid.get(cols[RID][i]), depth: cols[DEPTH]?.[i] ?? 0, parent, count: cols[LEAVES]?.[i] ?? null, open };
 			} else {
 				const path = cols[ROW_PATH][i];
 				const depth = path.length - 1;
@@ -328,7 +433,6 @@ export class GridView {
 					// A leaf of a shallower branch, standing in its own filled level (N9).
 					rec = { type: "row", row: by_rid.get(cols[RID][i]), depth, parent: false };
 				} else {
-					const next = cols[ROW_PATH][i + 1];
 					const currencies = {};
 					const mixed = {};
 					for (const ck of post.currency_keys) {
@@ -338,7 +442,7 @@ export class GridView {
 					rec = {
 						type: "group",
 						depth,
-						open: Boolean(next) && next.length > path.length,
+						open,
 						count: cols[KIND][i],
 						key: post.group_keys[depth],
 						value: path[depth],
@@ -349,50 +453,195 @@ export class GridView {
 				}
 			}
 			if (rec.type === "row" && !rec.row) continue;
-			recs.set(y0 + i, rec);
+			of_row.set(row, rec);
 		}
-		return win;
+
+		const recs = new Map();
+		plan.entries.forEach((entry, i) => {
+			if (entry.kind === "spacer") {
+				recs.set(plan.y0 + i, { type: "spacer" });
+				return;
+			}
+			const rec = of_row.get(entry.row);
+			if (!rec) return;
+			recs.set(plan.y0 + i, entry.kind === "foot" ? { type: "foot", of: rec, depth: rec.depth, view_row: entry.row } : { ...rec, view_row: entry.row });
+		});
+		return { key, epoch: this.epoch, y0: plan.y0, plan, recs };
 	}
 
 	// ------------------------------------------------------------ interaction
 
+	record_at(cell) {
+		const meta = cell && this.rt.getMeta(cell);
+		const win = meta && this.windows.find((w) => w.epoch === this.epoch && w.recs.has(meta.y));
+		return win ? { y: meta.y, rec: win.recs.get(meta.y) } : null;
+	}
+
+	// A caret is a <button>: Enter and Space arrive here as clicks.
 	click(event) {
 		const button = event.target.closest?.(".rv-caret");
 		if (!button || !this.rt?.contains(button)) return;
 		event.preventDefault();
-		const meta = this.rt.getMeta(button.closest("th"));
-		const win = meta && this.windows.find((w) => w.epoch === this.epoch && w.recs.has(meta.y));
-		const rec = win && win.recs.get(meta.y);
-		if (!rec || !this.current) return;
+		const at = this.record_at(button.closest("th"));
+		if (!at || !this.current) return;
+		const { rec } = at;
+		this.refocus = document.activeElement === button ? at.y : null;
+		// The report tree folds through the view state (an engine filter, or the open parents
+		// of the re-grouped tree); a user group through the view itself.
 		if (rec.type === "row") this.on_tree_toggle(rec.row.__rid);
-		else this.toggle_group(meta.y, !rec.open);
+		else if (rec.node) this.on_tree_toggle(rec.node.__rid);
+		else this.toggle_group(rec.view_row, !rec.open);
 	}
 
-	async toggle_group(y, open) {
+	async toggle_group(view_row, open) {
 		const cur = this.current;
-		let rows;
+		let structure;
 		try {
-			rows = await this.session.toggle_group(cur, cur.post.row_offset + y, open);
+			structure = await this.session.toggle_group(cur, cur.post.row_offset + view_row, open);
 		} catch (e) {
 			// The view was replaced and deleted while the group was being opened.
 			if (this.current !== cur) return;
 			throw e;
 		}
 		if (this.current !== cur) return;
-		this.body_rows = rows;
-		this.epoch += 1;
-		this.windows = [];
+		cur.depths = structure.depths;
+		cur.paths = structure.paths;
+		this.set_layout(cur);
 		await this.rt.draw();
-		this.on_rows_changed({ ...this.counts });
+		this.restore_focus();
+		this.on_fold_changed(expanded_from_paths(structure.paths, cur.post.leaf_depth));
+	}
+
+	// After a fold from the keyboard the focus goes back to the caret of the same row.
+	restore_focus() {
+		const y = this.refocus;
+		this.refocus = null;
+		if (y === null || y === undefined || !this.rt) return;
+		for (const th of this.rt.querySelectorAll("tbody tr > th:first-child")) {
+			if (this.rt.getMeta(th)?.y !== y) continue;
+			th.querySelector(".rv-caret")?.focus();
+			return;
+		}
+	}
+
+	// ------------------------------------------------------------ column widths (#39)
+
+	// The column a header cell stands for: {size_key, column description or null for the label}.
+	resize_target(th) {
+		const meta = th && this.rt.getMeta(th);
+		const m = this.model;
+		if (!meta || !m || meta.column_header_y !== m.levels - 1) return null;
+		if (meta.type === "corner") {
+			const j = meta.row_header_x || 0;
+			return { size_key: j, head: j, col: j ? m.pinned[j - 1] : null, key: j ? m.pinned[j - 1].column.key : m.label.key };
+		}
+		const col = m.data[meta.x];
+		return col ? { size_key: m.heads + meta.x, x: meta.x, col, key: col.column.key } : null;
+	}
+
+	width_of(target) {
+		return target.col ? target.col.width : this.model.label_width;
+	}
+
+	set_width(target, width) {
+		const w = Math.max(MIN_COLUMN_WIDTH, Math.round(width));
+		if (w === this.width_of(target)) return false;
+		if (target.col) target.col.width = w;
+		else this.model.label_width = w;
+		this.apply_sizes();
+		this.render_pinned();
+		this.rt.draw();
+		return true;
+	}
+
+	// Drag of our handle at the end edge of a header cell (the span regular-table puts there).
+	press(event) {
+		const handle = event.target.closest?.(".rt-column-resize");
+		if (!handle || !this.rt?.contains(handle)) return;
+		event.stopPropagation();
+		if (event.type !== "pointerdown" || event.button !== 0) return;
+		const target = this.resize_target(handle.closest("th"));
+		if (!target) return;
+		event.preventDefault();
+		const start = { x: event.clientX, width: this.width_of(target) };
+		const direction = this.rtl ? -1 : 1;
+		let changed = false;
+		const move = (e) => {
+			changed = this.set_width(target, start.width + direction * (e.clientX - start.x)) || changed;
+		};
+		const stop = () => {
+			window.removeEventListener("pointermove", move, true);
+			window.removeEventListener("pointerup", stop, true);
+			window.removeEventListener("pointercancel", stop, true);
+			this.host?.classList.remove("resizing");
+			this.stop_resize = null;
+			if (changed) this.on_column_resized(target.key, this.width_of(target));
+		};
+		this.stop_resize = stop;
+		this.host.classList.add("resizing");
+		window.addEventListener("pointermove", move, true);
+		window.addEventListener("pointerup", stop, true);
+		window.addEventListener("pointercancel", stop, true);
+	}
+
+	// Double click on the handle: the width of the content on screen.
+	dblclick(event) {
+		const handle = event.target.closest?.(".rt-column-resize");
+		if (!handle || !this.rt?.contains(handle)) return;
+		event.preventDefault();
+		const th = handle.closest("th");
+		const target = this.resize_target(th);
+		if (!target) return;
+		if (this.set_width(target, this.content_width(th, target))) {
+			this.on_column_resized(target.key, this.width_of(target));
+		}
+	}
+
+	// Widest content of a column among the cells on screen (header, body, pinned rows). The
+	// boxes are as wide as their column: the content itself is measured.
+	content_width(th, target) {
+		const rt = this.rt;
+		const pad = 2 * this.cell_padding + 2;
+		const range = document.createRange();
+		const natural = (el) => {
+			range.selectNodeContents(el);
+			return Math.ceil(range.getBoundingClientRect().width);
+		};
+		const table = rt.querySelector("table");
+		table.classList.add("rv-measure");
+		let width = natural(th.firstElementChild) + pad + 8;
+		const selector = target.head === undefined ? "tbody td" : "tbody th";
+		for (const cell of rt.querySelectorAll(selector)) {
+			const meta = rt.getMeta(cell);
+			const same = target.head === undefined ? meta?.x === target.x : (meta?.row_header_x || 0) === target.head;
+			const inner = same && cell.firstElementChild;
+			if (!inner) continue;
+			const indent = parseFloat(getComputedStyle(inner).paddingInlineStart) || 0;
+			width = Math.max(width, natural(inner) + indent + pad);
+		}
+		table.classList.remove("rv-measure");
+		for (const cell of this.host.querySelectorAll(`.rv-row [data-col="${CSS.escape(target.key)}"]`)) {
+			width = Math.max(width, natural(cell) + pad);
+		}
+		return Math.min(MAX_AUTO_WIDTH, width);
 	}
 
 	// ------------------------------------------------------------ rendering
+
+	foot_text(rec) {
+		const m = this.model;
+		if (rec.type === "row") return this.fmt.node_text(m.label, rec.row, m.parts);
+		if (rec.node) return this.fmt.node_text(m.label, rec.node, m.parts);
+		return this.fmt.group_text({ __group_key: rec.key, __group_value: group_value(m.by_key.get(rec.key), rec.value) });
+	}
 
 	label_html(rec) {
 		const m = this.model;
 		const fmt = this.fmt;
 		let inner;
-		if (rec.type === "group") {
+		if (rec.type === "foot") {
+			inner = `<span class="rv-caret-sp"></span>${fmt.foot_label_html(this.foot_text(rec.of))}`;
+		} else if (rec.type === "group") {
 			const label = rec.node
 				? fmt.node_label_html(m.label, rec.node, m.parts)
 				: fmt.group_label_html({
@@ -408,28 +657,56 @@ export class GridView {
 		return `<div class="rv-lc" style="--lv:${Number(rec.depth) || 0}">${inner}</div>`;
 	}
 
-	// {html, sign} of a body cell.
-	cell(rec, col, value) {
-		const fmt = this.fmt;
-		if (rec.type === "row") {
-			const key = `${rec.row.__rid}|${col.column.key}`;
-			let out = this.html_cache.get(key);
-			if (!out) {
-				out = { html: fmt.value_html(col.column, rec.row), sign: fmt.sign_of(col.column, rec.row) };
-				this.html_cache.set(key, out);
-			}
-			return out;
+	report_cell(col, row) {
+		const key = `${row.__rid}|${col.column.key}`;
+		let out = this.html_cache.get(key);
+		if (!out) {
+			out = { html: this.fmt.value_html(col.column, row), sign: this.fmt.sign_of(col.column, row) };
+			this.html_cache.set(key, out);
 		}
-		// A group row carries what Perspective aggregated; other columns stay empty.
+		return out;
+	}
+
+	// A group row carries what Perspective aggregated; other columns stay empty.
+	group_cell(rec, col, value) {
 		if (!col.totalled) return { html: "", sign: "" };
 		const k = col.column.key;
 		const row = { __kind: "group", ...rec.currencies, [k]: value, __mixed: { [k]: Boolean(rec.mixed[col.currency_key]) } };
-		return { html: fmt.value_html(col.column, row), sign: fmt.sign_of(col.column, row) };
+		return { html: this.fmt.value_html(col.column, row), sign: this.fmt.sign_of(col.column, row) };
+	}
+
+	// {html, sign} of a body cell.
+	cell(rec, col, value) {
+		const blank = { html: "", sign: "" };
+		if (rec.type === "spacer") return blank;
+		// With subtotal rows, the header of an open group keeps its title and count only: its
+		// numbers stand in its subtotal row (design #46, #47).
+		const moved = this.model.subtotals && rec.open;
+		if (rec.type === "row") return moved && rec.parent && col.numeric ? blank : this.report_cell(col, rec.row);
+		if (rec.type === "group") return moved ? blank : this.group_cell(rec, col, value);
+		const of = rec.of;
+		if (of.type === "group") return this.group_cell(of, col, value);
+		return col.numeric ? this.report_cell(col, of.row) : blank;
 	}
 
 	row_class(rec) {
+		if (rec.type === "spacer") return "rv-tr spacer";
+		if (rec.type === "foot") return "rv-tr foot";
 		if (rec.type === "group" || rec.parent) return `rv-tr group d${Math.min(Number(rec.depth) || 0, 2)}`;
 		return rec.row.__bold ? "rv-tr bold" : "rv-tr";
+	}
+
+	style_cell(cell, col, out) {
+		const flags = {
+			num: col.numeric,
+			dr: col.side === "dr",
+			cr: col.side === "cr",
+			"band-end": col.band_end,
+			zero: out.sign === "zero",
+			neg: out.sign === "neg",
+		};
+		for (const name of CELL_CLASSES) cell.classList.toggle(name, Boolean(flags[name]));
+		cell.innerHTML = `<div class="rv-cc">${out.html}</div>`;
 	}
 
 	/** regular-table style listener: classes and content of the cells on screen. */
@@ -442,9 +719,10 @@ export class GridView {
 			const meta = rt.getMeta(th);
 			if (!meta) continue;
 			const leaf = meta.column_header_y === m.levels - 1;
-			const col = leaf && meta.type === "column_header" ? m.data[meta.x] : null;
-			const corner = leaf && meta.type === "corner";
-			const text = corner ? m.label_title : String(meta.value ?? "");
+			const corner = meta.type === "corner";
+			const col = leaf && !corner ? m.data[meta.x] : null;
+			const head = leaf && corner ? meta.row_header_x || 0 : -1;
+			const text = head === 0 ? m.label_title : head > 0 ? m.pinned[head - 1]?.title || "" : String(meta.value ?? "").trim();
 			if (corner && th.firstElementChild && th.firstElementChild.textContent !== text) {
 				th.firstElementChild.textContent = text;
 			}
@@ -465,8 +743,8 @@ export class GridView {
 		if (win) {
 			for (let i = 0; i < trs.length; i++) {
 				const tr = trs[i];
-				const th = tr.firstElementChild;
-				const meta = th && rt.getMeta(th);
+				const lead = tr.firstElementChild;
+				const meta = lead && rt.getMeta(lead);
 				const rec = meta && meta.y === win.y0 + i ? win.recs.get(meta.y) : null;
 				if (!rec) {
 					// regular-table keeps a spare row below the last one at the end of the scroll.
@@ -475,61 +753,103 @@ export class GridView {
 				}
 				tr.className = this.row_class(rec);
 				const stamp = `${this.epoch}:${meta.y}`;
-				if (this.rendered.get(th) !== stamp || !th.firstElementChild) {
-					th.innerHTML = this.label_html(rec);
-					this.rendered.set(th, stamp);
-				}
-				for (let td = th.nextElementSibling; td; td = td.nextElementSibling) {
-					const cm = rt.getMeta(td);
-					const col = cm && m.data[cm.x];
-					if (!col) continue;
-					const cell_stamp = `${stamp}:${cm.x}`;
-					if (this.rendered.get(td) === cell_stamp && td.firstElementChild) continue;
-					const out = this.cell(rec, col, cm.user?.v);
-					const flags = {
-						num: col.numeric,
-						dr: col.side === "dr",
-						cr: col.side === "cr",
-						"band-end": col.band_end,
-						zero: out.sign === "zero",
-						neg: out.sign === "neg",
-					};
-					for (const name of CELL_CLASSES) td.classList.toggle(name, Boolean(flags[name]));
-					td.innerHTML = `<div class="rv-cc">${out.html}</div>`;
-					this.rendered.set(td, cell_stamp);
+				for (let cell = lead; cell; cell = cell.nextElementSibling) {
+					const cm = cell === lead ? meta : rt.getMeta(cell);
+					if (!cm) continue;
+					const head = cell.tagName === "TH" ? cm.row_header_x || 0 : -1;
+					const cell_stamp = `${stamp}:${head >= 0 ? `h${head}` : cm.x}`;
+					if (this.rendered.get(cell) === cell_stamp && cell.firstElementChild) continue;
+					if (head === 0) {
+						cell.innerHTML = rec.type === "spacer" ? "" : this.label_html(rec);
+					} else {
+						const col = head > 0 ? m.pinned[head - 1] : m.data[cm.x];
+						if (!col) continue;
+						this.style_cell(cell, col, this.cell(rec, col, cm.user?.v));
+					}
+					this.rendered.set(cell, cell_stamp);
 				}
 			}
 		}
-		this.render_total(shown);
+		this.render_pinned(shown);
 	}
 
-	/**
-	 * Pinned grand total, outside the scrolling area: the engine's total row (or the report's
-	 * reference row in the "as is" tree), aligned with the columns on screen.
-	 */
-	render_total(shown = null) {
-		const cur = this.current;
+	// ------------------------------------------------------------ pinned rows
+
+	// One pinned row: the label cell, the pinned columns, then the data columns on screen.
+	pinned_row_html(cls, label_html, cell_of, xs) {
 		const m = this.model;
-		if (!cur || !m || !this.total_el) return;
-		const xs = shown || this.total_shown || [];
-		const signature = `${this.epoch}:${xs.join(",")}`;
-		if (this.total_signature === signature) return;
-		this.total_signature = signature;
-		this.total_shown = xs;
-		const fmt = this.fmt;
-		const { values, currencies, mixed } = cur.totals;
-		const row = { __kind: "grand_total", ...currencies, ...values, __mixed: {} };
-		for (const d of m.data) row.__mixed[d.column.key] = Boolean(mixed[d.column.key]);
+		const cell = (d) => {
+			const out = cell_of(d);
+			const classes = ["rv-c", d.numeric && "num", d.side, d.band_end && "band-end", out.sign].filter(Boolean).join(" ");
+			return { classes, html: out.html };
+		};
+		const heads = m.pinned.map((d, i) => {
+			const c = cell(d);
+			const edge = i === m.pinned.length - 1 ? " pin-edge-s" : "";
+			return `<div class="${c.classes} pinned${edge}" data-col="${esc(d.column.key)}" style="width:${d.width}px">${c.html}</div>`;
+		});
 		const cells = xs.map((x) => {
 			const d = m.data[x];
 			if (!d) return "";
-			const sign = d.totalled ? fmt.sign_of(d.column, row) : "";
-			const classes = ["rv-c", d.numeric && "num", d.side, d.band_end && "band-end", sign].filter(Boolean).join(" ");
-			const html = d.totalled ? fmt.value_html(d.column, row) : "";
-			return `<div class="${classes}" style="width:${d.width}px">${html}</div>`;
+			const c = cell(d);
+			return `<div class="${c.classes}" data-col="${esc(d.column.key)}" style="width:${d.width}px">${c.html}</div>`;
 		});
-		this.total_el.innerHTML =
-			`<div class="rv-c pinned pin-edge-s rv-total-label" style="width:${m.label_width}px"><span class="rv-glabel">${esc(__("Grand Total"))}</span>${fmt.count_html(this.counts.facts)}</div>` +
-			cells.join("");
+		const edge = m.pinned.length ? "" : " pin-edge-s";
+		return (
+			`<div class="rv-row ${cls}"><div class="rv-c pinned${edge} rv-pin-label" data-col="${esc(m.label.key)}" style="width:${m.label_width}px">${label_html}</div>` +
+			`${heads.join("")}${cells.join("")}</div>`
+		);
+	}
+
+	// A summary row of the report, as the report returned it. Its caption is shown in the
+	// label column (which stays on screen) instead of the column the report wrote it in.
+	report_row_html(cls, row, xs) {
+		const m = this.model;
+		const fmt = this.fmt;
+		let caption = { key: m.label.key, html: fmt.caption_html(m.label, row) };
+		if (empty(row[m.label.key])) {
+			const from = [...m.pinned, ...m.data].find((d) => !d.numeric && typeof row[d.column.key] === "string" && row[d.column.key]);
+			if (from) caption = { key: from.column.key, html: fmt.caption_html(from.column, row) };
+		}
+		const cell_of = (d) =>
+			d.column.key === caption.key
+				? { html: "", sign: "" }
+				: { html: fmt.caption_html(d.column, row), sign: fmt.sign_of(d.column, row) };
+		return this.pinned_row_html(cls, `<span class="rv-glabel">${caption.html}</span>`, cell_of, xs);
+	}
+
+	/**
+	 * Rows outside the scrolling body, aligned with the columns on screen: the report's
+	 * opening rows under the headers; its closing rows and the grand total (the engine's
+	 * total row, or the report's reference row) below.
+	 */
+	render_pinned(shown = null) {
+		const cur = this.current;
+		const m = this.model;
+		if (!cur || !m || !this.bottom_el) return;
+		const xs = shown || this.pinned_shown || [];
+		const signature = `${this.epoch}:${xs.join(",")}`;
+		if (this.pinned_signature === signature) return;
+		this.pinned_signature = signature;
+		this.pinned_shown = xs;
+		const fmt = this.fmt;
+		const by_rid = this.session.rows_by_rid;
+		const rows_of = (rids) => rids.map((rid) => by_rid.get(rid)).filter(Boolean);
+
+		this.top_el.innerHTML = rows_of(cur.post.pinned_rows.top)
+			.map((row) => this.report_row_html("rv-rt-opening", row, xs))
+			.join("");
+		this.fit_top();
+
+		const { values, currencies, mixed } = cur.totals;
+		const total = { __kind: "grand_total", ...currencies, ...values, __mixed: {} };
+		for (const d of m.data) total.__mixed[d.column.key] = Boolean(mixed[d.column.key]);
+		const total_cell = (d) =>
+			d.totalled ? { html: fmt.value_html(d.column, total), sign: fmt.sign_of(d.column, total) } : { html: "", sign: "" };
+		const total_label = `<span class="rv-glabel">${esc(__("Grand Total"))}</span>${fmt.count_html(this.counts.facts)}`;
+		this.bottom_el.innerHTML =
+			rows_of(cur.post.pinned_rows.bottom)
+				.map((row) => this.report_row_html("foot rv-rt-closing", row, xs))
+				.join("") + this.pinned_row_html("total rv-rt-total", total_label, total_cell, xs);
 	}
 }

@@ -20,3 +20,7 @@
 ## العواقب
 - تعديل صياغة الموجز: «يُحال إلى Prepared Report» تصبح «رسالة واضحة بخيارات فعلية». مذكور في `docs/progress/phase-2.md`.
 - اختبار 50,000 صف يحتاج بيانات مولّدة (قرار معلّق من المرحلة 0).
+
+## تعديل (التحول إلى Perspective، 2026-10-01؛ ADR-012)
+- الحد الافتراضي 100,000 صف والسقف الصلب 200,000 (`Report View Global Settings.max_rows`)، من قياسات `docs/research/perspective-experiments.md` §3. يبقى مقيَّداً بـ `System Settings.max_report_rows` (100,000 على `acc.dev`)؛ رفعه فوق ذلك يحتاج تعديل إعداد النظام.
+- لا `worker_threshold`: المحرك في Web Worker دائماً.

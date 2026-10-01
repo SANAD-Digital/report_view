@@ -1,6 +1,6 @@
 # معمارية report_view
 
-- الإصدار: 1 (المرحلة 2)
+- الإصدار: 2 (المرحلة 2، معدَّل للتحول إلى Perspective في 2026-10-01؛ ADR-012)
 - التاريخ: 2026-09-30
 - الإصدارات المستهدفة: frappe 16.28.0، erpnext 16.29.0 (`docs/progress/phase-0.md`)
 - المراجع: `docs/brief.md`، `docs/research/*.md`، `docs/adr/*.md`، `reference/design/` (تصدير Claude Design؛ انظر §11.0)
@@ -65,11 +65,13 @@ apps/report_view/
         ├── fonts/NotoNaskhArabic-{Regular,Bold}.ttf   # ADR-004 (يحتاج موافقة)
         ├── css/
         │   ├── rv_tokens.css          # رموز التصميم فقط (من rv.css: .rv / .rv.compact / .rv.dark)
-        │   └── rv_components.css      # بقية rv.css + ربط Tabulator (.tabulator-*)
+        │   ├── rv_components.css      # بقية rv.css
+        │   ├── rv_page.css            # تخطيط الصفحة وعناصر Frappe
+        │   └── rv_table.css           # ربط rv.css بعناصر regular-table (th/td وأصناف نضبطها في addStyleListener)
         └── js/
-            ├── report_view.bundle.js          # يستورد كل ما تحت report_view/ + tabulator + arquero + CSS
+            ├── report_view.bundle.js          # يستورد كل ما تحت report_view/ + @finos/perspective (JS فقط) + regular-table + CSS
             ├── report_view_charts.bundle.js   # ECharts وعرض الرسوم؛ يُحمَّل عند فتح عرض الرسوم فقط
-            ├── report_view_worker.bundle.js   # Web Worker: arquero + engine/ (§8)
+            │                                  # ملفا WASM وملف الـ worker أصول ثابتة من node_modules (§8أ.1)، لا bundle
             ├── report_view_entry.bundle.js    # زر الدخول في query-report (< 3 KB، بلا مكتبات)
             └── report_view/
                 ├── index.js            # نقطة البداية: ReportViewPage
@@ -77,7 +79,7 @@ apps/report_view/
                 ├── api.js              # نداءات الخادم الموحّدة ومعالجة الأخطاء (§2.0)
                 ├── format.js           # غلاف frappe.format (§9)
                 ├── adapter/            # المحوّل: normalize.js، classify.js، columns.js، currency.js، tree.js
-                ├── engine/             # المحرك: engine.js، filter.js، group.js، pivot.js، totals.js، worker_client.js
+                ├── engine/             # perspective_engine.js (التحميل ودورة الحياة)، schema.js، view_config.js، tree_nodes.js، queries.js (قيم فريدة، نطاق، إجماليات)
                 ├── state/              # view_state.js، migrate.js، url.js
                 ├── filters/            # report_filters.js، facade.js (ADR-006)، period_picker.js
                 ├── views/              # grid_view.js، pivot_view.js، charts_view.js (عرض فقط، بلا حساب)
@@ -87,9 +89,10 @@ apps/report_view/
 ```
 
 قواعد الهيكل:
-- `adapter/` و `engine/` وحدات ES خالصة: لا `frappe` ولا DOM. التنسيق والترجمة يُمرَّران كوظائف. هذا يسمح بتشغيلها في Worker وفي `node --test`.
-- `views/` و `components/` لا تحسب شيئاً؛ تستهلك مخرجات المحرك فقط (قاعدة `frontend-dev`).
-- المكتبات عبر npm في `package.json`: `tabulator-tables@6`، `arquero@8`، `echarts@5`. `@playwright/test` تطوير فقط.
+- `adapter/` و `engine/view_config.js` و `engine/schema.js` و `engine/tree_nodes.js` وحدات ES خالصة: لا `frappe` ولا DOM ولا Perspective. تُختبر في `node --test`. `engine/perspective_engine.js` و `queries.js` وحدهما يلمسان Perspective، ويُختبران في المتصفح (Playwright) وفي node عبر `@finos/perspective` لـ node.
+- `views/` و `components/` لا تحسب شيئاً؛ تستهلك مخرجات `view` فقط (قاعدة `frontend-dev`).
+- المكتبات عبر npm في `package.json` بإصدار مثبّت بالضبط: `@finos/perspective@3.8.0`، `regular-table@0.9.1`، و `echarts@5`. `@playwright/test` تطوير فقط. ممنوع `perspective-viewer` وإضافاته (ADR-012).
+- لا منطق حساب خارج محرك Perspective في المتصفح: `views/` و `components/` تبني `view config` وتعرض ما يعيده `view`.
 
 ---
 
@@ -162,7 +165,7 @@ guard_report_quiet(report_name) -> Report | None
 |---|---|
 | الطريقة | GET |
 | الفحوص بالترتيب | (1) `guard_report`؛ (2) قراءة `Report View Global Settings` و `Report View Settings` لهذا التقرير بـ `frappe.get_doc` + `check_permission("read")` (القراءة مسموحة لكل مستخدمي Desk)؛ (3) حساب `perms` بـ `can_export` و `has_permission(..., "print", ignore_share_permissions=True)` دون رمي |
-| المخرجات | ```{"report": {"name", "report_type", "ref_doctype", "module", "is_standard", "prepared_report", "add_total_row", "reference_report"}, "script": <مخرج frappe.desk.query_report.get_script(report_name) كما هو: script, html_format, filters, custom_report_name, execution_time>, "perms": {"can_export": bool, "can_print": bool}, "settings": <الإعدادات الخادمية المدمجة §5.3>, "include_js": [bundle...] (من hook report_view_include_js), "limits": {"max_rows": int, "worker_threshold": int}, "defaults": {"saved_view": name \| null, "source": "user" \| "global" \| null}}``` — الافتراضي يُعاد فقط إن كان العرض مرئياً للمستخدم الآن (§6)، وإلا `null` |
+| المخرجات | ```{"report": {"name", "report_type", "ref_doctype", "module", "is_standard", "prepared_report", "add_total_row", "reference_report"}, "script": <مخرج frappe.desk.query_report.get_script(report_name) كما هو: script, html_format, filters, custom_report_name, execution_time>, "perms": {"can_export": bool, "can_print": bool}, "settings": <الإعدادات الخادمية المدمجة §5.3>, "include_js": [bundle...] (من hook report_view_include_js), "limits": {"max_rows": int}, "defaults": {"saved_view": name \| null, "source": "user" \| "global" \| null}}``` — الافتراضي يُعاد فقط إن كان العرض مرئياً للمستخدم الآن (§6)، وإلا `null` |
 | الأخطاء | كما `guard_report` |
 | ملاحظات | `perms` للعرض فقط (إخفاء الأزرار). الفحص الحقيقي يتكرر في `export_xlsx` و `export_pdf`. `script` يُنفَّذ في المتصفح بـ `frappe.dom.eval` كما في الأصل (`QJ:425-427`). |
 
@@ -295,7 +298,7 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 4. `__is_leaf = true` إذا كان الصف التالي بـ `indent <=` هذا الصف أو لا يوجد صف تالٍ. الفواصل والمجاميع الداخلية لا تدخل في حساب الأبناء.
 5. `initial_depth` من `report_settings.initial_depth` أو `register.tree.initial_depth` أو 2.
 6. **الحقائق في التقارير الشجرية = الأوراق فقط** (`docs/brief.md` المصطلحات)، لأن قيم الآباء في Trial Balance مجاميع أبنائها، وجمعها يضاعف الأرقام.
-7. **(المرحلة 3) الإجمالي الكلي في العرض الشجري = مجموع صفوف الجذر (`__parent = null`، `data`)**، لا مجموع الأوراق، ما دام لا فلتر عرض ولا تحديد. هذا ما يفعله Frappe نفسه في الشجرة (`Q:780`) و `calculate_total_row` في Trial Balance. السبب: مع `show_net_values` (افتراضي الواجهة) يصفّي التقرير الافتتاحي والختامي لكل حساب أب على حدة، فالعمودان الختاميان غير تجميعيين: مجموع صافي الأوراق 24,653,599 مقابل `'Total'` = مجموع الجذور 7,553,469 على `acc.dev`. مع فلتر عرض أو تحديد، الإجمالي = مجموع الأوراق المطابقة (قيم الآباء لا تُعاد حسابها). التجميع (`group.by`) يبني المجموعات من الأوراق، فالعمودان الختاميان فيه مجموع أرصدة صافية للأوراق ولا يقابلان صفاً في الأصل.
+7. **(مُستبدَل بـ N9 في §3.2أ منذ التحول إلى Perspective؛ النص التالي سجل للسبب)** **(المرحلة 3) الإجمالي الكلي في العرض الشجري = مجموع صفوف الجذر (`__parent = null`، `data`)**، لا مجموع الأوراق، ما دام لا فلتر عرض ولا تحديد. هذا ما يفعله Frappe نفسه في الشجرة (`Q:780`) و `calculate_total_row` في Trial Balance. السبب: مع `show_net_values` (افتراضي الواجهة) يصفّي التقرير الافتتاحي والختامي لكل حساب أب على حدة، فالعمودان الختاميان غير تجميعيين: مجموع صافي الأوراق 24,653,599 مقابل `'Total'` = مجموع الجذور 7,553,469 على `acc.dev`. مع فلتر عرض أو تحديد، الإجمالي = مجموع الأوراق المطابقة (قيم الآباء لا تُعاد حسابها). التجميع (`group.by`) يبني المجموعات من الأوراق، فالعمودان الختاميان فيه مجموع أرصدة صافية للأوراق ولا يقابلان صفاً في الأصل.
 
 **قيم N1 المحددة في المرحلة 3** (ليطابق المحوّلان بعضهما):
 - `width` عدد صحيح أو `null`؛ `options` الفارغة ⇒ `null`؛ `label` الغائب ⇒ `fieldname`؛ `original` = العمود بعد تحليل N1.1 (قاموس).
@@ -320,6 +323,31 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 **N6 — الإثراء.** بعد N1-N5: لكل قاعدة إثراء على عمود `link.static`، تُجمع القيم الفريدة من الحقائق، وتُطلب من `api.enrich` على دفعات 5,000، وتُضاف أعمدة جديدة `key = <source>__<field>` بدور `dimension` (أو حسب القاعدة). الإثراء لا يغيّر أي قيمة أصلية.
 
 **N7 — الـ formatter الأصلي.** لا يدخل في التطبيع إطلاقاً. يُستدعى في طبقة العرض فقط (§9.3).
+
+### 3.2أ تحميل Perspective (N8، بعد N1-N6)
+
+**المخطط (schema) صريح دائماً** (`engine/schema.js`)؛ لا يُترك Perspective يخمّن:
+
+| `fieldtype` في Frappe | نوع Perspective | تحويل القيمة قبل التحميل |
+|---|---|---|
+| `Currency`، `Float`، `Percent`، `Duration` | `float` | رقم منتهٍ، وإلا `null` |
+| `Int` | `float` | كذلك. لا `integer`: هو int32 في Perspective ويلتف بصمت (`perspective-experiments.md` §7.12) |
+| `Date` | `date` | نص `YYYY-MM-DD` صالح، وإلا `null`. قيمة تاريخ واحدة غير صالحة تُسقط الدفعة كلها، و `"05-01-2026"` يُقرأ بترتيب خاطئ |
+| `Datetime` | `datetime` | ISO صالح، وإلا `null` |
+| `Check` | `boolean` | |
+| كل ما عداها (`Link`، `Data`، `Select`، …) | `string` | `null` للفارغ؛ القوائم تُضم بفاصلة |
+
+- المحوّل يحوّل **كل** قيمة إلى نوعها أو `null` قبل التحميل، لأن Perspective يحوّل `""` و `"abc"` إلى 0 في `float` بصمت.
+- أسماء الأعمدة في الجدول = `Column.key`. الأسماء غير ASCII تعمل كأعمدة وفي `filter` و `sort` و `group_by` و `split_by` وكمراجع في التعابير؛ لكن أي **نص حرفي** غير ASCII داخل تعبير يفشل، فلا تُكتب قيم عربية داخل `expressions` (تُمرَّر عبر أعمدة مساعدة).
+- لكل عمود `string` يدخل في فرز أو تجميع يولّد المحوّل عمود مفتاح `__sort__<key>` (`float`) بترتيب `Intl.Collator(lang)`، لأن ترتيب Perspective بوحدات الترميز لا بقواعد اللغة.
+- أعمدة تقنية يضيفها المحوّل: `__rid` (`float`)، `__kind` (`string`)، وللشجرة ما في N9.
+- التحميل بصيغة أعمدة وعلى دفعات لا تزيد عن 50,000 صف (`table.update`).
+
+**N9 — الشجرة: جدولان.**
+1. **جدول العقد (`nodes`)**: كل صفوف التقرير من نوع `data` كما أعادها التقرير، آباءً وأوراقاً، بترتيبها، مع أعمدة: `__depth`، و `__anc_1 … __anc_n` (معرّف كل سلف)، و `__has_children`. يُستخدم في **العرض الشجري «كما هو»** بلا `group_by`: القيم هي قيم التقرير نفسها، فتطابق الأصل 100% للآباء وللإجمالي (`perspective-experiments.md` §6: 31 من 31). الطي والفتح بفلتر `not in` على أعمدة الأسلاف، والفرز داخل الإخوة بمفتاح مسار. الإجمالي = صف `internal_total` المرجعي من التقرير (ADR-008).
+2. **جدول الحقائق (`facts`)**: الأوراق فقط مع أعمدة المستويات `level_1 … level_n` من سلسلة الأب (والعقد الوسيطة الناقصة في شجرة غير منتظمة العمق تُملأ بقيمة الورقة نفسها حتى لا تظهر عقد `null`). يُستخدم في كل ما عدا ذلك: تجميع المستخدم، والتحليل، والفلترة، والرسوم. هنا يحسب Perspective المجاميع بنفسه.
+
+**لماذا جدولان:** ميزان المراجعة مع `show_net_values` يصفّي رصيد كل حساب أب على حدة، فالعمودان الختاميان غير جمعيين: مجموع الأوراق 24,653,599 والأصل 7,553,469. والتعابير في Perspective تُحسب قبل التجميع دائماً، فلا تعبير يصفّي بعد الجمع (`perspective-experiments.md` §6.3). الجدولان يطابقان الأصل في العرض الشجري دون أي حساب خارج المحرك. وفي العروض المجمَّعة مجموع الأوراق هو نفسه ما يعطيه التقرير الأصلي مع `show_group_accounts=0` (24,653,599)، فهو مرجع صحيح أيضاً. N4.7 يُستبدل بهذه القاعدة.
 
 ### 3.3 استنتاج الأبعاد والمقاييس
 
@@ -427,7 +455,7 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 
 ### 4.3 ما ينفّذه الخادم
 
-`runner.run` ← `normalize` ← `engine.apply(view_state)` (فلترة ← فرز ← تجميع/شجرة/تحليل ← إجماليات بقواعد ADR-008) ← `xlsx.build` أو `pdf.render`. التنسيق بـ `frappe.format_value` وإعدادات النظام، والعناوين بـ `_()`.
+`runner.run` ← `normalize` ← `engine.apply(view_state)` (فلترة ← فرز ← تجميع/شجرة/تحليل ← إجماليات بقواعد ADR-008) ← `xlsx.build` أو `pdf.render`. محرك بايثون في الخادم يطبّق **نفس `view config`** الذي يبنيه المتصفح من حالة العرض (§8أ.2)، بدلالات Perspective نفسها (ومنها: `null` يُتجاهل في `sum` و `avg`). `expected` في النموذج يُقرأ من `view` الحالي (`num_rows` وصف الإجمالي)، فيكشف `RVExportMismatch` أي اختلاف بين المحرّكين. التنسيق بـ `frappe.format_value` وإعدادات النظام، والعناوين بـ `_()`.
 
 **حدود محرك بايثون في المرحلة 3** (`core/engine.py`): وضع `grid` فقط (غيره ⇒ `RVInvalidViewState`). الجدول المسطح بلا فلتر ولا تحديد ولا فرز يُبقي صفوف التقرير الملخصة (`opening`/`internal_total`/`closing`) في أماكنها، ويستبدل صف المرجع (آخر `internal_total`) بصف الإجمالي الكلي. الشجرة لا تُفرز؛ الفلتر فيها يُبقي الأوراق المطابقة وأسلافها. التجميع بترتيب أول ظهور بعد الفرز. `expected.row_count` = عدد الحقائق بعد الفلاتر والتحديد. الأبعاد المشتقة `<k>__year` = `YYYY`، `__quarter` = `YYYY-Qn`، `__month` = `YYYY-MM`. `export_background_threshold` (المرحلة 6) غير مطبّق.
 
@@ -464,8 +492,8 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 |---|---|---|
 | `enabled_for` | Select: `All Reports` / `Enabled Reports Only` | `All Reports` |
 | `entry_button_scope` | Select: `All Reports` / `Enabled Reports Only` / `None` | `Enabled Reports Only` |
-| `max_rows` | Int | 50,000 (يُقيَّد بـ `System Settings.max_report_rows`) |
-| `worker_threshold` | Int | 10,000 |
+| `max_rows` | Int | 100,000 (يُقيَّد بـ `System Settings.max_report_rows` وبالسقف 200,000) |
+| `hard_max_rows` | Int، للقراءة فقط | 200,000 (السقف الصلب لـ `max_rows`) |
 | `export_background_threshold` | Int | 20,000 |
 | `default_pdf_generator` | Select: `wkhtmltopdf` / `chrome` | `wkhtmltopdf` |
 
@@ -645,15 +673,74 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 
 ## 8. الأداء
 
+الأرقام من `docs/research/perspective-experiments.md` §3 (Chromium، خادم بأربع أنوية تحت حمل).
+
 | البند | القرار |
 |---|---|
-| الحد الأقصى للصفوف | ADR-009: `min(max_rows, System Settings.max_report_rows)`، افتراضياً 50,000 |
-| الإحالة إلى Prepared Report | ADR-009: رسالة بخيارات فعلية؛ دعم كامل للتقارير المعدّة أصلاً |
-| التحميل الكسول | سكربت الصفحة (Page) صغير ⇒ `frappe.require("report_view.bundle.js")` عند أول فتح ⇒ `report_view_charts.bundle.js` عند أول فتح لعرض الرسوم ⇒ `include_js` من `get_meta`. الصفحات الأخرى تحمّل `report_view_entry.bundle.js` فقط |
-| Web Worker | فوق `worker_threshold` (10,000 حقيقة): الفلترة والتجميع والتحليل والإجماليات في `report_view_worker.bundle.js` (Arquero + `engine/`). الحقائق تُرسل مرة واحدة بعد التطبيع؛ الرسائل بعدها `{op, view_state}` وترجع صفوف عرض جاهزة. تحت الحد: نفس الكود في الخيط الرئيسي |
-| العرض | Tabulator `renderVertical: "virtual"`، `dataTree` للشجرة والتجميع (§11.2)، `bottomCalc` مخصص يعيد قيم المحرك فقط، لا `columnCalcs` حسابية من Tabulator |
-| التطبيع | خطي O(n)؛ يعمل في الخيط الرئيسي (يحتاج `frappe` للرسائل والترجمة عبر حقن) |
-| الأهداف | أول عرض 10,000 صف < 2 ث بعد وصول البيانات؛ إعادة تجميع 50,000 صف < 1 ث (`docs/brief.md`). تُقاس في المرحلة 4 و 7 ببيانات مولّدة |
+| الحد الأقصى للصفوف | `min(max_rows, System Settings.max_report_rows)`؛ الافتراضي 100,000 والسقف الصلب 200,000 (ADR-009). عند 100 ألف: أول عرض 468ms و `group_by` بمستويين 117ms و `split_by` 246ms. عند 500 ألف: أول عرض 3.6 ث، وذاكرة 450-544MB، وتحميل الدفعة الواحدة أسقط التبويب |
+| ما فوق الحد | رسالة بخيارات فعلية (ADR-009)؛ دعم كامل للتقارير المعدّة أصلاً |
+| التحميل الكسول | سكربت الصفحة (Page) صغير ⇒ `frappe.require("report_view.bundle.js")` عند أول فتح (JS المكتبتين نحو 20KB مضغوطاً) ⇒ جلب ملفي WASM (2.28MB و 0.22MB، غير قابلين للضغط، مخزَّنين سنة في الكاش) عند أول تشغيل ⇒ `report_view_charts.bundle.js` عند أول فتح لعرض الرسوم. الصفحات الأخرى تحمّل `report_view_entry.bundle.js` فقط |
+| أول تهيئة للمحرك | 0.3 ث على شبكة محلية، 2.7 ث على 10Mbit، 13 ث على 1.6Mbit (مرة واحدة). حالة التحميل تعرض «جارٍ تجهيز المحرك» مع أول فتح |
+| Web Worker | دائماً: Perspective يعمل في worker واحد للصفحة، ننشئه نحن من ملف ثابت لنملك مقبضه (§8أ.1) |
+| التحميل في الجدول | بصيغة أعمدة، على دفعات ≤ 50,000 صف (يخفض ذروة الذاكرة من 450MB إلى 137MB عند 500 ألف) |
+| العرض | `regular-table` افتراضي: لا يُرسم إلا النافذة الظاهرة، ويقرأها من `view.to_columns` |
+| التطبيع | خطي O(n) في الخيط الرئيسي |
+| الأهداف | كما في `docs/brief.md`. تُقاس من جديد في المرحلتين 4 و 7 ببيانات مولّدة وعلى جهاز مستخدم عادي |
+
+---
+
+## 8أ. محرك Perspective
+
+### 8أ.1 التحميل (`engine/perspective_engine.js`)
+الطريقة المثبتة بالتجربة (`perspective-experiments.md` §1.6):
+- `import perspective from "@finos/perspective"` و `import "regular-table"` داخل `report_view.bundle.js` (يُبنيان على es2017 بلا إعداد).
+- `perspective.init_server(fetch(BASE + "/wasm/perspective-server.wasm?v=" + VERSION))` و `perspective.init_client(fetch(BASE + "/wasm/perspective-js.wasm?v=" + VERSION))` مرة واحدة للصفحة.
+- `BASE = "/assets/report_view/node_modules/@finos/perspective/dist"` (مجلد `node_modules` للتطبيق يربطه `bench build` داخل الأصول). `VERSION` يساوي الإصدار المثبّت ويكسر الكاش عند الترقية؛ اختبار آلي يتأكد أنه يطابق `package.json`.
+- الـ worker: `new Worker(BASE + "/cdn/perspective-server.worker.js?v=" + VERSION, {type: "module"})` ثم `perspective.worker(Promise.resolve(worker))`.
+- لا تُستعمل النسخة inline (3.7MB، top-level await)، ولا استيراد `.wasm` عبر esbuild (لا loader في Frappe).
+- CSP: الخادم لا يرسل CSP اليوم. إن فُعّلت لاحقاً فالحد الأدنى `script-src 'self' 'wasm-unsafe-eval'`؛ ولا حاجة لـ `blob:` لأن الـ worker من ملف.
+
+### 8أ.2 عقد `view config`
+`engine/view_config.js` دالة خالصة واحدة: `to_view_config(view_state, normalized, mode) -> {table: "nodes" | "facts", config, post}`. اللوحات لا تبني `config` مباشرة؛ تعدّل حالة العرض فقط.
+
+| مفتاح `config` | مصدره في حالة العرض (§7.1) | ملاحظات |
+|---|---|---|
+| `group_by` | `group.by` (أبعاد المستخدم)، أو `level_1..n` في الشجرة المعاد تجميعها، أو `pivot.rows` | فارغ في الشجرة «كما هي» (جدول العقد) |
+| `split_by` | `pivot.cols` في وضع التحليل فقط | لا يعيد عمود إجمالي؛ `view` ثانٍ بلا `split_by` |
+| `columns` | `columns.order` ناقص `columns.hidden`، ثم الأعمدة التقنية المطلوبة للعرض (`__rid`، `__depth`، …) | الأعمدة التقنية لا تظهر |
+| `aggregates` | `values[].agg` أو `Column.agg` | مقابلة الأسماء: `sum`→`sum`، `avg`→`avg`، `count`→`count`، `count_distinct`→`distinct count`، `min`→`min`، `max`→`high`. **لا `max` ولا `low`**: يعيدان `null` و 0 عند وجود `null`. أعمدة الأبعاد في صفوف المجموعات: `unique` |
+| `filter` | `filters` و `quick_filters` والبحث | `text contains`→`contains` (غير حساس للحالة)، `equals`→`==`، `starts_with`→`begins with`، `set`→`in` / `not in`، `range`→شرطان `>=` و `<=` (لا `between`)، `date`→شرطان. لا `filter_op: "or"` (أعاد نتائج فارغة في التجربة)؛ «أو» داخل عمود واحد تُكتب `in` |
+| `sort` | `sort` | عمود نصي ⇒ عمود مفتاحه `__sort__<key>`؛ في الشجرة «كما هي» يُسبق بمفتاح المسار للحفاظ على الهرمية |
+| `expressions` | `register.derived_columns` المعرّفة بالقائمة المغلقة، والفلاتر السريعة | بلا نصوص حرفية غير ASCII؛ تُحسب قبل التجميع دائماً |
+
+`post` = ما لا يعبّر عنه `config` ويُطبَّق في نموذج البيانات بلا حساب: إدراج صفوف المجموع الفرعي، وإخفاء الأعمدة التقنية، وترتيب الأشرطة.
+
+ما لا تستطيع اللوحات تمريره: أسماء جداول، تعابير حرة من المستخدم، أو أعمدة غير موجودة في `normalized.columns` (تُحذف من الحالة بتنبيه، §7.3).
+
+### 8أ.3 دورة الحياة
+| الكائن | يُنشأ | يُحذف |
+|---|---|---|
+| worker + client | عند أول تشغيل تقرير في الصفحة (مرة واحدة) | `on_page_hide` إن لم يعد المستخدم خلال 60 ثانية، وعند `beforeunload`: `client.terminate()` ثم `worker.terminate()`. ذاكرة WASM المحجوزة لا تنكمش بغير ذلك |
+| `table` (`nodes` و `facts`) | بعد كل `api.run` ناجح وتطبيع | قبل تحميل نتيجة جديدة، وعند تبديل التقرير، وعند إنهاء المحرك. بعد حذف كل `view` عليه |
+| `view` الرئيسي | عند كل تغيير في `view config` | يُنشأ الجديد أولاً ثم يُبدَّل في نموذج البيانات ثم يُحذف القديم (لا وميض) |
+| `view` مؤقت (قيم فريدة، تفصيل، نطاق، رسم، عمود إجمالي التحليل) | عند الطلب | في `finally` فور القراءة، أو عند إغلاق النافذة أو الخروج من العرض |
+
+قواعد المدير (`EngineHandles`)، من مفاجآت التجربة §7:
+- كل `view` و `table` يُسجَّل عند الإنشاء؛ `delete()` يمر بالمدير حصراً ويجعل المقبض غير صالح. نداء على مقبض محذوف أو `delete()` مرتين **لا ينتهي أبداً** في Perspective، فالمدير يرمي خطأً فوراً بدل الانتظار.
+- `table.delete()` مع `view` مفتوح يُرفض ثم يموت المقبض ويبقى الجدول؛ لذلك المدير يحذف كل عروض الجدول أولاً دائماً.
+- نداءات متسابقة (تغيير إعداد أثناء بناء `view`) تُحل برقم جيل: النتيجة الأقدم تُحذف ولا تُعرض.
+- عدّاد تطويري `engine.debug_handles()` يعيد غير المحذوف؛ اختبار Playwright يشترط صفراً بعد 20 تبديلاً.
+
+### 8أ.4 القيم الفريدة لفلتر القيم
+`queries.unique_values(table, key, other_filters)`: `view` مؤقت `{group_by: [key], columns: [key], aggregates: {[key]: "count"}, filter: other_filters, sort: [[__sort__key, "asc"]]}` على الجدول، ثم `to_columns()` ثم `delete()`. `other_filters` = كل الفلاتر النشطة عدا فلتر العمود نفسه، فيعكس العدّاد بقية الفلاتر. فوق 5,000 قيمة فريدة تُعرض أول 5,000 مع بحث يعيد الاستعلام بـ `contains`.
+
+### 8أ.5 شريط الحالة والنطاق المحدد
+- عدد الصفوف المعروضة: `view.num_rows()` (ناقص صف الإجمالي في العرض المجمَّع)؛ الإجمالي الكلي: حجم الجدول.
+- النطاق: `view.to_columns({start_row, end_row, start_col, end_col})` لنافذة التحديد، ثم العدد والمجموع والمتوسط والأدنى والأعلى على الخلايا الرقمية. هذا تلخيص لقيم معروضة لا حساب تقرير، وهو الاستثناء الوحيد المسمّى من قاعدة «لا حساب خارج المحرك»، ومحصور في `queries.range_stats`.
+- القاعدة الموثّقة (المرحلة 5ج): صفوف المجموعات والمجاميع الفرعية داخل النطاق **لا تدخل** في المجموع إذا كان أي من أبنائها ظاهراً داخل النطاق (منع العدّ المزدوج)؛ المجموعة المطوية تدخل بقيمتها.
+
+### 8أ.6 نموذج التصدير من `view`
+`expected.row_count` = `view.num_rows()`، و `expected.totals` = صف الإجمالي من `view` (أو الصف المرجعي في الشجرة «كما هي»). النموذج يرسل حالة العرض لا `view config`؛ الخادم يترجمها بدالة بايثون توأم لـ `to_view_config` مختبرة على حالات مشتركة.
 
 ---
 
@@ -666,14 +753,14 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 
 ### 9.2 RTL
 - الاتجاه من `frappe.utils.is_rtl()`؛ الجذر `<div class="rv" dir="rtl|ltr">`.
-- Tabulator: `textDirection: "rtl"` حين يلزم؛ التثبيت `frozen` يحترم الاتجاه (`Tokens.dc.html` جدول الربط).
+- `regular-table` لا يدعم RTL من نفسه (`dir="rtl"` وحده يكسر التمرير الأفقي). يعمل بمحوّلين صغيرين في `views/rtl_adapter.js`: عكس إشارة `scrollLeft`، ونقل قيد `sticky` إلى اليمين داخل Shadow DOM (`perspective-experiments.md` §2.2). المحوّلان يعتمدان على تفاصيل داخلية في 0.9.1، فالإصدار مثبّت بالضبط ويُعاد اختبار RTL عند أي ترقية.
 - CSS بخصائص منطقية فقط (`inset-inline-*`، `padding-inline`، `border-inline-*`)، كما في `rv.css`.
 - الأرقام والتواريخ والرموز داخل `<bdi class="ltr">` مع `tabular-nums` و `white-space: nowrap`؛ الأرقام لاتينية كما في التصميم وإعدادات النظام.
 - PDF و Excel: `dir="rtl"` في القالب، و `ws.sheet_view.rightToLeft = True` (تجربة المرحلة 1).
 
 ### 9.3 التنسيق
 - الأرقام والتواريخ عبر `frappe.format(value, df, {inline: true}, row)`، حيث `df` هو `column.original` و `row` الصف الخام، فتعمل عملة الصف (`meta.js:319-320`) ولا يُقرأ `cur_frm` (`meta.js:297`). الدقة و `number_format` من إعدادات النظام.
-- الـ formatter الأصلي للتقرير (إن وُجد): `report.formatter(value, row, column, data, default_formatter)` حيث `default_formatter` = غلافنا لـ `frappe.format`. يُستدعى للصفوف الأصلية فقط (`data`، `internal_total`، `opening`، `closing`)، لا لصفوف المجموعات والمجاميع التي يبنيها المحرك (لا تملك شكل صف التقرير).
+- الـ formatter الأصلي للتقرير (إن وُجد): `report.formatter(value, row, column, data, default_formatter)` حيث `default_formatter` = غلافنا لـ `frappe.format`. يُستدعى في `addStyleListener` للصفوف الأصلية فقط (`data` في جدول العقد أو الحقائق بلا تجميع؛ الصف الأصلي يُجلب بـ `__rid`)، لا لصفوف المجموعات التي يحسبها Perspective (لا تملك شكل صف التقرير).
 - ناتج الـ formatter HTML يُحقن كما في الأصل (`cellmanager.js:857-892`). التصدير لا يستخدمه أبداً: القيم الخام + `frappe.format_value` في الخادم.
 - الألوان في JS: لا قيم ثابتة. الرسوم تقرأ `--c1..--c7` و `--dr`/`--cr` بـ `getComputedStyle` وتعيد القراءة عند تغيّر الثيم.
 
@@ -697,11 +784,11 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 ### 11.0 مصدر التصميم
 `reference/design/` غير موجود. `reference/design/README.md` يصف محتوى `reference/design/` بأنه «نموذج أولي من Claude Design»، وفيه `Main.dc.html`، `Mobile.dc.html`، `States.dc.html`، `Tokens.dc.html`، و `rv.css` («هذا الملف هو أساس التنفيذ»). الخريطة مبنية عليه. أي تصدير لاحق في `reference/design/` يُقارن بهذه الخريطة، والفروق تُسجَّل في تقرير المرحلة 5أ.
 
-الأرقام (#) هي أرقام حصر العناصر الـ 93 في النموذج. «Tabulator» = ما توفره المكتبة ونضبطه؛ «بناء» = نبنيه من الصفر؛ «Frappe» = عنصر Frappe موجود.
+الأرقام (#) هي أرقام حصر العناصر الـ 93 في النموذج. «regular-table» = ما توفره مكتبة العرض ونضبطه؛ «المحرك» = إعداد `view` في Perspective؛ «بناء» = نبنيه من الصفر؛ «Frappe» = عنصر Frappe موجود.
 
 ### 11.1 الجدول
 
-| # | العنصر في التصميم | الملف المنفّذ | Tabulator / بناء / Frappe | المرحلة |
+| # | العنصر في التصميم | الملف المنفّذ | regular-table / المحرك / بناء / Frappe | المرحلة |
 |---|---|---|---|---|
 | 1، 2 | الجذر `.rv` (ثيم، كثافة، RTL) والإطار | `components/shell.js` + `css/rv_tokens.css` | بناء | 3 (بسيط)، 5أ |
 | 3 | مسار التنقل | `components/header.js` | Frappe: `frappe.breadcrumbs` للصفحة | 5أ |
@@ -715,26 +802,26 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 | 25، 26 | شريط الأدوات ومبدّل العرض (جدول/Pivot/رسوم) | `components/toolbar.js` | بناء | 3 (جدول فقط)، 5ب، 5د |
 | 27، 28، 29 | البحث بالشرائح، الاقتراحات، القائمة المنسدلة (فلاتر سريعة وأبعاد تجميع) | `components/search.js` | بناء؛ الشرائح تكتب في `view_state.filters` | 5هـ |
 | 30، 31 | زر المفضلة وقائمة العروض (جاهزة ومحفوظة، حفظ) | `components/saved_views.js` ⇒ `api.views.*` | بناء؛ نضيف المشاركة (خاص/أدوار/عام) والافتراضي بعناصر التصميم نفسها، لأن النموذج بلا مشاركة | 5هـ |
-| 32 | إطار الجدول | `views/grid_view.js` | Tabulator | 3 |
-| 33 | لوحة مجموعات الصفوف (سحب، ترتيب، حذف، مجاميع فرعية، فتح/طي الكل) | `components/group_panel.js` | بناء (Tabulator بلا لوحة سحب)؛ السحب HTML5 من رؤوس Tabulator | 5أ |
-| 34 | لوحة أعمدة التحليل | `components/group_panel.js` | بناء | 5ب |
-| 35 | الرؤوس المجمّعة (أشرطة افتتاحي/حركة/ختامي) | `views/grid_view.js` | Tabulator: أعمدة متداخلة `columns: [{title, columns}]`؛ الأشرطة من `register.columns[*].band` أو من أعمدة الفترات | 3 (أساسي)، 5أ |
-| 36، 37 | الفرز لكل عمود ومؤشر الفلتر | `views/grid_view.js` | Tabulator يرسم الأيقونة؛ الفرز يمر بالمحرك (`headerSortClickElement` ⇒ `view_state.sort`)، مع `Intl.Collator` للعربية | 5أ |
-| 38 | قائمة العمود (تثبيت، ضبط العرض، تجميع، فلتر القيم، فرز، إخفاء، إعادة ضبط) | `components/column_menu.js` | Tabulator `headerMenu` بعناصر مخصصة بأصناف `.rv-pop/.rv-mi` | 5أ |
-| 39 | تغيير عرض العمود | `views/grid_view.js` | Tabulator `resizableColumns` (حد أدنى 72px) | 5أ |
-| 40 | سحب الرأس إلى مناطق التجميع/القيم/التحليل | `components/group_panel.js`، `side_panel.js` | بناء فوق Tabulator (`movableColumns` للترتيب فقط) | 5أ، 5ب |
-| 41، 42، 43 | الفلاتر العائمة: نص، مجموعة، نطاق أرقام | `views/grid_view.js` + `components/header_filters.js` | Tabulator `headerFilter` بعناصر مخصصة؛ الفلترة نفسها في المحرك (`headerFilterLiveFilter: false` ⇒ `view_state.filters`) | 5أ |
-| 44 | نافذة فلتر القيم (بحث، الكل، عدّاد، مسح) | `components/set_filter.js` | بناء | 5أ |
-| 45، 50 | صف البيانات وخلية الحساب (رقم + اسم، رابط) | `views/grid_view.js` + `format.js` | Tabulator `formatter` يستدعي §9.3 | 3 |
-| 46، 49 | صف رأس المجموعة، المسافة البادئة، زر الفتح، العدّاد؛ الشجرة | `views/grid_view.js` | Tabulator `dataTree` (`dataTreeChildField`، `dataTreeStartExpanded` بالعمق)؛ الصفوف والقيم من المحرك | 3 |
-| 47 | صف المجموع الفرعي للمجموعة | `views/grid_view.js` | صف ابن أخير يولّده المحرك (`__kind: "group_footer"`) | 5أ |
-| 48 | الإجمالي العام المثبّت أسفل الجدول | `views/grid_view.js` | Tabulator `bottomCalc` مخصص يعيد قيمة المحرك (لا حساب في Tabulator) | 3 |
-| 51 | تنسيقات الخلايا (مدين، دائن، سالب، صفر «—») | `format.js` + `css/rv_components.css` | بناء (أصناف `.dr/.cr/.neg/.zero`) فوق `frappe.format` | 5أ |
-| 52 | الأعمدة المثبّتة وظل الحافة | `views/grid_view.js` | Tabulator `frozen: true` + CSS الحافة | 5أ |
-| 53، 54 | أزرار خلية الإجراءات وقائمة إجراءات الصف | `components/row_actions.js` | عمود Tabulator بـ `formatter` أزرار؛ القائمة من `register.row_actions` + الإجراءات العامة (فتح المستند، فلترة بهذه القيمة، نسخ) | 5ج، 5د |
-| 55 | تحديد نطاق الخلايا | `views/grid_view.js` | Tabulator `selectableRange: true` | 5ج |
-| 56، 66 | إحصاءات التحديد وشريط الحالة | `components/status_bar.js` | بناء؛ الحساب في المحرك (`engine.range_stats`) | 5ج |
-| 57 | القائمة السياقية (نسخ، نسخ مع الرؤوس، تصدير المحدد، رسم من النطاق، فتح) | `components/context_menu.js` | Tabulator `rowContextMenu`/`cellContextMenu` بعناصر مخصصة؛ النسخ TSV خام | 5ج |
+| 32 | إطار الجدول | `views/grid_view.js` | regular-table: `<regular-table>` بنموذج بيانات افتراضي (`setDataListener`) يقرأ نوافذ من `view` | 3 |
+| 33 | لوحة مجموعات الصفوف (سحب، ترتيب، حذف، مجاميع فرعية، فتح/طي الكل) | `components/group_panel.js` | بناء (لوحة وسحب HTML5 من رؤوس الجدول)؛ الناتج `group_by` في `view config` | 5أ |
+| 34 | لوحة أعمدة التحليل | `components/group_panel.js` | بناء؛ الناتج `split_by` | 5ب |
+| 35 | الرؤوس المجمّعة (أشرطة افتتاحي/حركة/ختامي) | `views/grid_view.js` | regular-table: رؤوس متعددة المستويات (`column_headers`)؛ الأشرطة من `register.columns[*].band` أو من مسارات `split_by` | 3 (أساسي)، 5أ |
+| 36، 37 | الفرز لكل عمود ومؤشر الفلتر | `views/grid_view.js` | بناء (أيقونة ونقرة على الرأس)؛ المحرك: `sort` على عمود المفتاح `__sort__<key>` للنصوص | 5أ |
+| 38 | قائمة العمود (تثبيت، ضبط العرض، تجميع، فلتر القيم، فرز، إخفاء، إعادة ضبط) | `components/column_menu.js` | بناء (قائمة بأصناف `.rv-pop/.rv-mi`)؛ الناتج تعديل حالة العرض | 5أ |
+| 39 | تغيير عرض العمود | `views/grid_view.js` | بناء (مقبض سحب في الرأس، حد أدنى 72px؛ العرض في حالة العرض ويُطبَّق في `addStyleListener`) | 5أ |
+| 40 | سحب الرأس إلى مناطق التجميع/القيم/التحليل | `components/group_panel.js`، `side_panel.js` | بناء؛ الناتج `group_by` / `columns` / `split_by` | 5أ، 5ب |
+| 41، 42، 43 | الفلاتر العائمة: نص، مجموعة، نطاق أرقام | `views/grid_view.js` + `components/header_filters.js` | بناء: صف رأس إضافي خاص بنا فوق الجدول؛ المحرك: `filter` | 5أ |
+| 44 | نافذة فلتر القيم (بحث، الكل، عدّاد، مسح) | `components/set_filter.js` | بناء؛ القيم الفريدة والعدّ من `view` مؤقت في المحرك (§8أ.4) | 5أ |
+| 45، 50 | صف البيانات وخلية الحساب (رقم + اسم، رابط) | `views/grid_view.js` + `format.js` | regular-table: الخلايا تُنسَّق في `addStyleListener` عبر §9.3 | 3 |
+| 46، 49 | صف رأس المجموعة، المسافة البادئة، زر الفتح، العدّاد؛ الشجرة | `views/grid_view.js` | المحرك: `group_by` على أعمدة المستويات أو الأبعاد، و `expand`/`collapse`/`set_depth`؛ في الشجرة «كما هي» جدول العقد وفلتر الأسلاف (§3.2أ N9). regular-table: رؤوس الصفوف (`row_headers`) بعمود شجري واحد، والمسافة والسهم والعدّاد في `addStyleListener` | 3 |
+| 47 | صف المجموع الفرعي للمجموعة | `views/grid_view.js` | بناء: صف مولَّد في نموذج البيانات بعد آخر ابن، بقيم صف المجموعة نفسه من `view` (لا حساب) | 5أ |
+| 48 | الإجمالي العام المثبّت أسفل الجدول | `views/grid_view.js` | بناء: عنصر خاص خارج منطقة التمرير يقرأ صف الإجمالي من `view` (الصف 0 في العرض المجمَّع)، أو صف `internal_total` المرجعي في الشجرة «كما هي» | 3 |
+| 51 | تنسيقات الخلايا (مدين، دائن، سالب، صفر «—») | `format.js` + `css/rv_components.css` | بناء (أصناف `.dr/.cr/.neg/.zero` في `addStyleListener`) فوق `frappe.format` | 5أ |
+| 52 | الأعمدة المثبّتة وظل الحافة | `views/grid_view.js` | regular-table: رؤوس الصفوف مثبّتة في البداية (مع محوّل RTL)؛ عمود النهاية المثبّت غير مدعوم في المكتبة (§11.3) | 5أ |
+| 53، 54 | أزرار خلية الإجراءات وقائمة إجراءات الصف | `components/row_actions.js` | بناء: زر «…» يظهر عند المرور داخل خلية العمود المثبّت ويفتح قائمة الصف؛ القائمة من `register.row_actions` + الإجراءات العامة | 5ج، 5د |
+| 55 | تحديد نطاق الخلايا | `views/grid_view.js` | بناء: حالة التحديد بإحداثيات البيانات لا DOM، وتُرسم في `addStyleListener` | 5ج |
+| 56، 66 | إحصاءات التحديد وشريط الحالة | `components/status_bar.js` | بناء؛ الأرقام من المحرك (§8أ.5) | 5ج |
+| 57 | القائمة السياقية (نسخ، نسخ مع الرؤوس، تصدير المحدد، رسم من النطاق، فتح) | `components/context_menu.js` | بناء (قائمة سياقية خاصة)؛ النسخ TSV خام من `view.to_columns` لنافذة النطاق | 5ج |
 | 58 | هيكل التحميل الرمادي | `components/states.js` | بناء | 5هـ |
 | 59 | حالة «لا نتائج» مع شرائح الفلاتر وإجراءات | `components/states.js` | بناء | 5هـ |
 | 60 | حالة الخطأ (العنوان، الرسالة، الرمز، إعادة المحاولة، نسخ التفاصيل) | `components/states.js` | بناء؛ الرمز من `exc_type` (§2.0) | 3 (أساسي)، 5هـ |
@@ -743,8 +830,8 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 | 62 | لوحة الأعمدة (مفتاح Pivot، بحث، قائمة قابلة للسحب، أوسمة النوع) | `components/side_panel.js` | بناء | 5ب |
 | 63 | مناطق السحب في اللوحة (مجموعات، قيم مع دالة التجميع، أعمدة تحليل) | `components/side_panel.js` | بناء | 5ب |
 | 64، 65 | لوحة الفلاتر والفلاتر السريعة | `components/filter_panel.js` | بناء؛ الفلاتر السريعة من `register.quick_filters` | 5ب |
-| 67 | جدول التحليل | `views/pivot_view.js` | Tabulator `setColumns` + `replaceData` من `engine.pivot` (جدول الربط في `Tokens.dc.html`) | 5ب |
-| 68 | تفصيل خلية التحليل | `components/pivot_drill.js` | بناء؛ الصفوف من المحرك | 5ب |
+| 67 | جدول التحليل | `views/pivot_view.js` | المحرك: `split_by` + `group_by` + `aggregates`؛ regular-table يبني الرؤوس من مسارات الأعمدة؛ عمود الإجمالي من `view` ثانٍ بلا `split_by` | 5ب |
+| 68 | تفصيل خلية التحليل | `components/pivot_drill.js` | بناء؛ الصفوف من `view` مؤقت بفلتر مسار الصف والعمود | 5ب |
 | 69-73 | لوحة الرسوم (أعمدة حسب النوع الجذري، حلقة، أشرطة أفقية، حالة غير جاهز) | `views/charts_view.js` (bundle الرسوم) | ECharts بدل CSS/SVG في النموذج (الموجز يحدد ECharts)، بنفس الألوان من المتغيرات؛ الرسوم الافتراضية من `register` أو من أول بُعد ومقياس | 5د |
 | 74 | نافذة الرسم من النطاق | `components/chart_dialog.js` | Frappe `frappe.ui.Dialog` + ECharts | 5د |
 | 75 | درج كشف الحساب | `components/drill_drawer.js` | بناء؛ **البيانات من `api.run("General Ledger", …)`** عبر `drilldowns` وليس من قيود في المتصفح كما في النموذج (§11.3) | 5د |
@@ -757,14 +844,16 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 | 83 | معالجة RTL | كل الملفات | §9.2 | كل المراحل |
 | 84 | لوحة المفاتيح (Enter، Backspace، Escape، Shift+نقرة) | `components/*` | بناء؛ نضيف Ctrl+C و Ctrl+Shift+C فعلياً (في النموذج تلميح فقط) | 5أ، 5ج |
 | 85 | مبدّل حالات العرض التجريبي | — | خاص ببيئة التصميم؛ لا يُنفَّذ | — |
-| 86-91 | الجوال: شريط التطبيق، الملخص، البحث والفلاتر، مبدّل الأشرطة، قائمة الحسابات، الورقة السفلية | `components/mobile/*.js` | بناء؛ عند عرض ≤ 600px تتحول اللوحات إلى أوراق سفلية ويبقى Tabulator بتمرير أفقي وعمود مثبّت (المرحلة 5هـ) | 5ب، 5هـ |
+| 86-91 | الجوال: شريط التطبيق، الملخص، البحث والفلاتر، مبدّل الأشرطة، قائمة الحسابات، الورقة السفلية | `components/mobile/*.js` | بناء؛ عند عرض ≤ 600px تتحول اللوحات إلى أوراق سفلية ويبقى الجدول بتمرير أفقي وعمود مثبّت محدود العرض (المرحلة 5هـ) | 5ب، 5هـ |
 | 92 | لوحة الحالات | — | مرجع بصري لـ #58-60 | 5هـ |
-| 93 | لوحة الرموز وجدول ربط Tabulator | `css/rv_tokens.css` | 68 متغيراً: خط، أسطح، خطوط، نصوص، علامة، محاسبة، حالات، شبكة، رسوم، طبقة، ظلال، أنصاف أقطار، كثافة | 5أ |
+| 93 | لوحة الرموز | `css/rv_tokens.css` | 68 متغيراً: خط، أسطح، خطوط، نصوص، علامة، محاسبة، حالات، شبكة، رسوم، طبقة، ظلال، أنصاف أقطار، كثافة. جدول الربط مع Tabulator في `Tokens.dc.html` مُلغى (ADR-012؛ البديل `docs/research/prototype-mapping.md`) | 5أ |
 
-### 11.2 قرارات الربط مع Tabulator
-- **آلية واحدة للهرمية:** الشجرة الأصلية وتجميع المستخدم كلاهما `dataTree`؛ المحرك يبني العقد (رؤوس المجموعات بقيمها المجمّعة، الأبناء، صف المجموع الفرعي). لا نستخدم `groupBy` في Tabulator لأن حساباته لا تمر بالمحرك، فيختلف الإجمالي عن التصدير.
-- **لا `columnCalcs` حسابية:** `bottomCalc` دالة تعيد قيمة المحرك الجاهزة.
-- **الفلترة والفرز في المحرك:** أدوات Tabulator للواجهة فقط، والنتيجة `replaceData` من المحرك. هذا يجعل ما يُصدَّر هو ما يُرى.
+### 11.2 قرارات الربط مع regular-table و Perspective
+- **مصدر واحد للأرقام:** كل رقم على الشاشة يأتي من `view` (أو من صف التقرير الأصلي في جدول العقد). لا جمع ولا متوسط في كود العرض.
+- **الهرمية:** العرض الشجري «كما هو» من جدول العقد بفلتر الأسلاف؛ تجميع المستخدم والتحليل من جدول الحقائق بـ `group_by` و `split_by` (§3.2أ N9).
+- **النموذج الافتراضي:** `setDataListener(x0, y0, x1, y1)` يطلب `view.to_columns({start_row, end_row, start_col, end_col})` ويعيد `data`، `row_headers`، `column_headers`، `num_rows`، `num_columns`. لا يُحمَّل في DOM إلا النافذة الظاهرة.
+- **التنسيق:** `addStyleListener` يضبط الأصناف والمحتوى لكل `td`/`th` من `getMeta`؛ لا CSS من ثيمات Perspective.
+- **عمود شجري واحد** في رؤوس الصفوف، وحد أقصى لعرضه على الشاشات الضيقة (على 390px أخذ 331px من 370px في التجربة).
 
 ### 11.3 انحرافات مقصودة عن التصميم
 | العنصر | التصميم | التنفيذ | السبب |
@@ -777,6 +866,8 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 | شريط الخادم | فلتران ثابتان (الشركة، الفترة) | فلاتر سكربت التقرير كلها، ومكوّن الفترة عند وجود فلاتر التاريخ | عمومية المحرك لأي تقرير |
 | معاينة الطباعة | صفحات مولّدة في المتصفح | PDF من الخادم | ADR-001 (قابلية الإثبات، `print`) |
 | أزرار Excel/PNG للنطاق | تنبيه فقط | تنفيذ فعلي (Excel للنطاق عبر `scope: selection`؛ PNG من ECharts) | إكمال السلوك |
+| عمود الإجراءات المثبّت في النهاية | عمود ثالث مثبّت يسار الجدول بثلاثة أزرار | زر «…» يظهر عند المرور داخل العمود المثبّت في البداية، ويفتح قائمة الصف نفسها | `regular-table` لا يدعم تثبيت عمود في النهاية؛ البديل (عنصر مستقل و `view` ثانٍ) كلفته أعلى من فائدته (`perspective-experiments.md` §2.4). يُعاد النظر إن طلب صاحب المشروع |
+| ترتيب الأعمدة في RTL | sticky يمين/يسار | محوّل RTL خاص فوق `regular-table` | المكتبة لا تدعم RTL (§9.2) |
 
 ---
 
@@ -802,7 +893,7 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 0. (قرار لا سؤال) مهمة التصدير في الخلفية (المرحلة 6) تعيد `guard_report` و `guard_export` داخل المهمة بمستخدم الطلب، ولا تثق بفحص وقت الطلب.
 1. هل يُقبل شحن خط Noto Naskh Arabic داخل التطبيق (ADR-004)؟
 2. `frappe.format(..., {inline: true})` يُفترض أنه يتجاوز غلاف `text-align:right` في `_right` (`formatters.js:11-17`)؛ يُتحقق منه في المرحلة 3 قبل اعتماده.
-3. هل يبني نظام bundles في frappe 16 ملف Worker قابلاً للتحميل بـ `new Worker(frappe.assets.bundled_asset(...))` (IIFE)؟ يُتحقق في المرحلة 4؛ البديل تشغيل المحرك في الخيط الرئيسي مع تقطيع.
+3. (محسوم بالتجربة) الـ worker ملف ثابت من `node_modules` لا bundle (§8أ.1). يبقى: إثبات التحميل داخل صفحة Desk بمستخدم حقيقي، واختبار Firefox و Safari، وتحذير `Unknown browser detected` الذي يطبعه عميل Perspective في غير Chrome (استثناء موثّق من قاعدة «لا تحذيرات في console» إلى أن يُحل).
 4. (محسوم) Administrator وقواعد `has_permission`: الحقائق في §6؛ المرحلة 4 تضيف الاختبارات فقط.
 5. `frappe.set_route("query-report", name, {...})` بوسيط ثالث (`fs.js:329`) ومساره المقابل لصفحتنا — يُختبر في المتصفح بعد إصلاح خادم الويب.
 6. هل يُسجَّل Access Log للتصدير والطباعة من Report View كما تفعل الأصلية (`QJ:1552-1560`)؟ المقترح: نعم، بـ `frappe.get_doc({"doctype": "Access Log", ...}).insert()` بصلاحيات المستخدم في المرحلة 6.

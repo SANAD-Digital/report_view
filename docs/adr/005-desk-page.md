@@ -19,4 +19,4 @@
 
 ## العواقب
 - الرابط `/desk/report-view/Trial%20Balance?company=...`.
-- الصفحات الأخرى لا تحمّل Tabulator/Arquero/ECharts (شرط المرحلة 4).
+- الصفحات الأخرى لا تحمّل Perspective ولا ملفات WASM ولا `regular-table` ولا ECharts (شرط المرحلة 4).

@@ -3,7 +3,7 @@
 // Hierarchy (report tree and user grouping) is Tabulator dataTree; no groupBy and no
 // columnCalcs of Tabulator's own: bottomCalc returns the engine value.
 //
-// Design classes (reference/prototype/rv.css) are put on Tabulator's own elements, as in the
+// Design classes (reference/design/rv.css) are put on Tabulator's own elements, as in the
 // mapping table of Tokens.dc.html: .rv-row -> .tabulator-row (+ .group/.d0-2/.foot),
 // .rv-c -> .tabulator-cell (+ .num/.dr/.cr/.zero/.neg/.band-end), .rv-hg/.rv-band -> column
 // group and its title.

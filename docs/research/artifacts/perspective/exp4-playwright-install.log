@@ -1,0 +1,23 @@
+Playwright Host validation warning: 
+╔══════════════════════════════════════════════════════╗
+║ Host system is missing dependencies to run browsers. ║
+║ Please install them with the following command:      ║
+║                                                      ║
+║     sudo npx playwright install-deps                 ║
+║                                                      ║
+║ Alternatively, use apt:                              ║
+║     sudo apt-get install libxcursor1\                ║
+║         libgtk-3-0t64\                               ║
+║         libpangocairo-1.0-0\                         ║
+║         libcairo-gobject2\                           ║
+║         libgdk-pixbuf-2.0-0                          ║
+║                                                      ║
+║ <3 Playwright Team                                   ║
+╚══════════════════════════════════════════════════════╝
+    at validateDependenciesLinux (/home/snd/frappe-bench/apps/report_view/node_modules/playwright-core/lib/coreBundle.js:32259:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Registry._validateHostRequirements (/home/snd/frappe-bench/apps/report_view/node_modules/playwright-core/lib/coreBundle.js:33519:18)
+    at async Registry._validateHostRequirementsForExecutableIfNeeded (/home/snd/frappe-bench/apps/report_view/node_modules/playwright-core/lib/coreBundle.js:33641:11)
+    at async Registry.validateHostRequirementsForExecutablesIfNeeded (/home/snd/frappe-bench/apps/report_view/node_modules/playwright-core/lib/coreBundle.js:33630:11)
+    at async installBrowsers (/home/snd/frappe-bench/apps/report_view/node_modules/playwright-core/lib/coreBundle.js:70097:5)
+    at async _Command.<anonymous> (/home/snd/frappe-bench/apps/report_view/node_modules/playwright-core/lib/coreBundle.js:73670:7)

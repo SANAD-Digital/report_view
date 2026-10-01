@@ -15,7 +15,7 @@
    - `rv_noexport`: Accounts User مع إلغاء صلاحية Export على GL Entry و Account
    - `rv_none`: مستخدم بلا أي دور محاسبي
 6. ثبّت Playwright في مجلد التطبيق وتأكد أنه يفتح الموقع ويسجّل الدخول.
-7. تأكد أن `reference/prototype/` و `reference/design/` موجودان وغير فارغين.
+7. تأكد أن `reference/design/` و `reference/design/` موجودان وغير فارغين.
 
 ## شروط القبول
 - [ ] كل الإصدارات مسجّلة في التقرير

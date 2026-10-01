@@ -1,0 +1,305 @@
+{
+ "target": "run.html?exp=exp7b",
+ "base": "http://127.0.0.1:40705",
+ "browser": "chromium",
+ "result": {
+  "ok": true,
+  "exp": "exp7b",
+  "filter_op": {
+   "and (default)": {
+    "ids": [
+     1
+    ]
+   },
+   "filter_op:'and'": {
+    "ids": [
+     1
+    ]
+   },
+   "filter_op:'or' grp==B or currency==USD (expect 2,3)": {
+    "ids": [],
+    "config_echo": "or"
+   },
+   "filter_op:'or' amount>3 or amount<2 (expect 1,4)": {
+    "ids": [
+     1,
+     4
+    ],
+    "config_echo": "or"
+   },
+   "filter_op:'or' single term grp==B (expect 3)": {
+    "ids": [],
+    "config_echo": "or"
+   },
+   "or through 'in' on one column (expect 2,3,4)": {
+    "ids": [
+     3,
+     4
+    ]
+   },
+   "or through boolean expression (expect 2,3)": {
+    "ids": [
+     2,
+     3
+    ]
+   }
+  },
+  "expressions": {
+   "if (c, a, b)": [
+    5,
+    0,
+    null
+   ],
+   "c ? a : b": [
+    5,
+    0,
+    null
+   ],
+   "if (c) a; else b;": [
+    5,
+    0,
+    null
+   ],
+   "if (c) {a} else {b}": [
+    5,
+    0,
+    null
+   ],
+   "max(x, 0)": [
+    5,
+    0,
+    null
+   ],
+   "null arithmetic (amount + 1)": [
+    6,
+    -1,
+    null
+   ],
+   "is_null -> 0": [
+    5,
+    -2,
+    0
+   ],
+   "compare two string columns (Arabic values)": [
+    true,
+    false,
+    false
+   ],
+   "ASCII literal": [
+    false,
+    false,
+    true
+   ],
+   "Arabic literal": {
+    "ERROR": "Error: Abort(): Invalid string token: "
+   },
+   "Latin-1 literal 'é'": {
+    "ERROR": "Error: Abort(): Invalid string token: "
+   },
+   "escaped literal '\\u0646'": [
+    false,
+    false,
+    false
+   ],
+   "length of Arabic string (bytes or chars?)": [
+    6,
+    12,
+    4
+   ],
+   "concat Arabic column + ASCII": [
+    "نقد / نقد",
+    "مدينون / نقد",
+    "cash / x"
+   ],
+   "and / or keywords": [
+    true,
+    false,
+    false
+   ],
+   "integer division / rounding": [
+    2,
+    -1,
+    null
+   ]
+  },
+  "coercion": {
+   "float": {
+    "\"12.50\"": 12.5,
+    "\"\"": 0,
+    "\"abc\"": 0,
+    "null": null,
+    "\"1,234.5\"": 1,
+    "100000000000000000000": 100000000000000000000,
+    "\"١٢\"": 0
+   },
+   "integer": {
+    "2147483647": 2147483647,
+    "2147483648": -2147483648,
+    "3000000000": -1294967296,
+    "\"7\"": 7,
+    "2.9": 2,
+    "\"\"": null,
+    "-1": -1,
+    "null": null
+   },
+   "date": {
+    "\"2026-01-05\"": 1767571200000,
+    "\"2026-01-05 10:20:30\"": 1767571200000,
+    "\"05-01-2026\"": 1777593600000,
+    "\"\"": {
+     "ERROR": "Error: Abort(): Could not coerce to date"
+    },
+    "null": null,
+    "1767571200000": 1767571200000,
+    "\"2026-13-45\"": {
+     "ERROR": "Error: Abort(): Could not coerce to date"
+    }
+   },
+   "datetime": {
+    "\"2026-01-05 10:20:30\"": 1767608430000,
+    "\"2026-01-05 10:20:30.123456\"": 1767608430123,
+    "\"2026-01-05T10:20:30\"": 1767608430000,
+    "\"2026-01-05T10:20:30+03:00\"": 1767597630000,
+    "\"2026-01-05\"": 1767571200000,
+    "\"\"": {
+     "ERROR": "Error: Abort(): Could not coerce to time"
+    },
+    "null": null,
+    "1767608430000": 1767608430000
+   },
+   "string": {
+    "123": "123",
+    "1.5": "1.500000",
+    "true": "true",
+    "null": null,
+    "\"\"": "",
+    "\"نص عربي\"": "نص عربي"
+   },
+   "boolean": {
+    "0": false,
+    "1": true,
+    "\"true\"": true,
+    "\"false\"": false,
+    "\"Yes\"": {
+     "ERROR": "Error: Abort(): Expected bool, found 5"
+    },
+    "\"\"": {
+     "ERROR": "Error: Abort(): Expected bool, found 5"
+    },
+    "null": null,
+    "true": true
+   }
+  },
+  "bad_value_in_batch": {
+   "error": "Error: Abort(): Could not coerce to date",
+   "rows_loaded": 0
+  },
+  "tree": {
+   "default_order_equals_report": {
+    "equal": true,
+    "engine_first_6": [
+     "1000 - استخدام الاموال (الأصول) - SA",
+     "1100-1600 - أصول متداولة - SA",
+     "1100 - النقدية الحاضرة - SA",
+     "1110 - نقد - SA",
+     "نقد دولار - SA",
+     "1300 - الحسابات المدينة - SA"
+    ],
+    "report_first_6": [
+     "1000 - استخدام الاموال (الأصول) - SA",
+     "1100-1600 - أصول متداولة - SA",
+     "1100 - النقدية الحاضرة - SA",
+     "1110 - نقد - SA",
+     "نقد دولار - SA",
+     "1300 - الحسابات المدينة - SA"
+    ]
+   },
+   "sorted_by_min_rid_equals_report": {
+    "equal": true,
+    "engine": [
+     "1000 - استخدام الاموال (الأصول) - SA",
+     "1100-1600 - أصول متداولة - SA",
+     "1100 - النقدية الحاضرة - SA",
+     "1110 - نقد - SA",
+     "نقد دولار - SA",
+     "1300 - الحسابات المدينة - SA",
+     "1310 - مدينون - SA",
+     "1312 - مدينون-usd - SA"
+    ]
+   },
+   "ragged": {
+    "rows_before": 34,
+    "null_pass_through_nodes": 2,
+    "sample": [
+     [
+      "4000 - الإيرادات - SA",
+      "4100 - إيراد مباشر - SA",
+      null
+     ],
+     [
+      "4000 - الإيرادات - SA",
+      "4100 - إيراد مباشر - SA",
+      null,
+      "4110 - مبيعات - SA"
+     ],
+     [
+      "5000 - النفقات - SA",
+      "5200 - نفقات غير مباشرة - SA",
+      null
+     ],
+     [
+      "5000 - النفقات - SA",
+      "5200 - نفقات غير مباشرة - SA",
+      null,
+      "5201 - نفقات إدارية - SA"
+     ]
+    ]
+   }
+  },
+  "tree_leaf_in_levels": {
+   "depth": 4,
+   "rows": 37,
+   "null_rows": 5,
+   "order_equals_report": true,
+   "null_rows_are_always_last_child_of_a_leaf": true
+  },
+  "delete_order": {
+   "table_delete_with_open_view": {
+    "ERROR": "Error: Abort(): Cannot delete table with views"
+   },
+   "engine_alive_after": "yes (new table size 0)",
+   "view_usable_after": 0,
+   "view_delete_after": "resolved",
+   "table_delete_retry": {
+    "ERROR": "Error: TIMEOUT 4000ms: the call never settled"
+   },
+   "hosted_tables": [
+    "wQAYqbIMtbfUfhsMhrlPM"
+   ]
+  },
+  "delete_order_lazy": {
+   "lazy_delete": {
+    "ERROR": "Error: TIMEOUT 4000ms: the call never settled"
+   },
+   "tables_while_view_open": [],
+   "view_delete": "resolved",
+   "tables_after_view_delete": []
+  },
+  "double_delete": {
+   "first": "resolved",
+   "second_delete_same_view": {
+    "ERROR": "Error: TIMEOUT 4000ms: the call never settled"
+   },
+   "use_after_delete": {
+    "ERROR": "Error: TIMEOUT 4000ms: the call never settled"
+   },
+   "engine_alive": 0
+  }
+ },
+ "console": [
+  "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+  "pageerror: null pointer passed to rust",
+  "pageerror: null pointer passed to rust",
+  "pageerror: null pointer passed to rust"
+ ]
+}

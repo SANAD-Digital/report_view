@@ -1,0 +1,893 @@
+{
+ "target": "run.html?exp=exp6",
+ "base": "http://127.0.0.1:44079",
+ "browser": "chromium",
+ "result": {
+  "ok": true,
+  "exp": "exp6",
+  "validate_expressions": {
+   "expression_schema": {
+    "agg_fn_sum": "float",
+    "vector_sum": "float",
+    "nested_max_of_columns": "float"
+   },
+   "errors": {},
+   "expression_alias": {
+    "agg_fn_sum": "sum(\"d\") - sum(\"c\")",
+    "nested_max_of_columns": "max(\"d\" - \"c\", 0)",
+    "vector_sum": "var v[2] := {\"d\", \"c\"}; sum(v)"
+   }
+  },
+  "fy": {
+   "report_total_net1": {
+    "opening_debit": 0,
+    "opening_credit": 0,
+    "debit": 30303624,
+    "credit": 30303624,
+    "closing_debit": 7553469,
+    "closing_credit": 7553469
+   },
+   "report_total_net0": {
+    "opening_debit": 0,
+    "opening_credit": 0,
+    "debit": 30303624,
+    "credit": 30303624,
+    "closing_debit": 30303624,
+    "closing_credit": 30303624
+   },
+   "net1: A plain sum -> parents": {
+    "label": "group_by + sum",
+    "parents": 15,
+    "matched": 7,
+    "mismatches": [
+     {
+      "account": "1000 - استخدام الاموال (الأصول) - SA",
+      "diffs": {
+       "closing_debit": {
+        "report": 7501359,
+        "engine": 8386378
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 885019
+       }
+      }
+     },
+     {
+      "account": "1100-1600 - أصول متداولة - SA",
+      "diffs": {
+       "closing_debit": {
+        "report": 7501359,
+        "engine": 8386378
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 885019
+       }
+      }
+     },
+     {
+      "account": "2000 - (مصدر الأموال  (الخصوم - SA",
+      "diffs": {
+       "closing_debit": {
+        "report": 52110,
+        "engine": 11100000
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 11047890
+       }
+      }
+     },
+     {
+      "account": "2100-2400 - الخصوم المتداولة - SA",
+      "diffs": {
+       "closing_debit": {
+        "report": 52110,
+        "engine": 11100000
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 11047890
+       }
+      }
+     }
+    ],
+    "mismatch_count": 8
+   },
+   "net1: A plain sum -> Total": {
+    "label": "root row",
+    "parents": 1,
+    "matched": 0,
+    "mismatches": [
+     {
+      "diffs": {
+       "closing_debit": {
+        "report": 7553469,
+        "engine": 24653599
+       },
+       "closing_credit": {
+        "report": 7553469,
+        "engine": 24653599
+       }
+      }
+     }
+    ],
+    "mismatch_count": 1
+   },
+   "net1: engine root row": {
+    "opening_debit": 0,
+    "opening_credit": 0,
+    "debit": 30303624,
+    "credit": 30303624,
+    "closing_debit": 24653599,
+    "closing_credit": 24653599
+   },
+   "net1: D expression max(dr-cr,0) then sum -> net1 parents": {
+    "label": "pre-aggregation expression",
+    "parents": 15,
+    "matched": 7,
+    "mismatches": [
+     {
+      "account": "1000 - استخدام الاموال (الأصول) - SA",
+      "diffs": {
+       "closing_debit": {
+        "report": 7501359,
+        "engine": 8386378
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 885019
+       }
+      }
+     },
+     {
+      "account": "1100-1600 - أصول متداولة - SA",
+      "diffs": {
+       "closing_debit": {
+        "report": 7501359,
+        "engine": 8386378
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 885019
+       }
+      }
+     },
+     {
+      "account": "2000 - (مصدر الأموال  (الخصوم - SA",
+      "diffs": {
+       "closing_debit": {
+        "report": 52110,
+        "engine": 11100000
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 11047890
+       }
+      }
+     },
+     {
+      "account": "2100-2400 - الخصوم المتداولة - SA",
+      "diffs": {
+       "closing_debit": {
+        "report": 52110,
+        "engine": 11100000
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 11047890
+       }
+      }
+     }
+    ],
+    "mismatch_count": 8
+   },
+   "net1: C(i) engine net sum + sign split in display -> net1 parents": {
+    "label": "alternative i",
+    "parents": 15,
+    "matched": 15,
+    "mismatches": [],
+    "mismatch_count": 0
+   },
+   "net1: C(i) Total (sum of root rows)": {
+    "engine": {
+     "opening_debit": 0,
+     "opening_credit": 0,
+     "debit": 30303624,
+     "credit": 30303624,
+     "closing_debit": 7553469,
+     "closing_credit": 7553469
+    },
+    "report_net1": {
+     "opening_debit": 0,
+     "opening_credit": 0,
+     "debit": 30303624,
+     "credit": 30303624,
+     "closing_debit": 7553469,
+     "closing_credit": 7553469
+    },
+    "match": true
+   },
+   "net1: C(i) engine root row of net columns": {
+    "net_open": 0,
+    "debit": 30303624,
+    "credit": 30303624,
+    "net_close": 0
+   },
+   "net1: leaves split(net) == net1 leaves": true,
+   "net1: aggregate 'abs sum' of net == parent dr+cr": true,
+   "net1: iii second table -> net1 parents": {
+    "label": "alternative iii",
+    "parents": 15,
+    "matched": 15,
+    "mismatches": [],
+    "mismatch_count": 0
+   },
+   "net1: iii Total (engine, roots only)": {
+    "engine": {
+     "opening_debit": 0,
+     "opening_credit": 0,
+     "debit": 30303624,
+     "credit": 30303624,
+     "closing_debit": 7553469,
+     "closing_credit": 7553469
+    },
+    "match": true
+   },
+   "net0: A plain sum -> parents": {
+    "label": "group_by + sum",
+    "parents": 15,
+    "matched": 15,
+    "mismatches": [],
+    "mismatch_count": 0
+   },
+   "net0: A plain sum -> Total": {
+    "label": "root row",
+    "parents": 1,
+    "matched": 1,
+    "mismatches": [],
+    "mismatch_count": 0
+   },
+   "net0: engine root row": {
+    "opening_debit": 0,
+    "opening_credit": 0,
+    "debit": 30303624,
+    "credit": 30303624,
+    "closing_debit": 30303624,
+    "closing_credit": 30303624
+   },
+   "net0: D expression max(dr-cr,0) then sum -> net1 parents": {
+    "label": "pre-aggregation expression",
+    "parents": 15,
+    "matched": 7,
+    "mismatches": [
+     {
+      "account": "1000 - استخدام الاموال (الأصول) - SA",
+      "diffs": {
+       "closing_debit": {
+        "report": 7501359,
+        "engine": 8386378
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 885019
+       }
+      }
+     },
+     {
+      "account": "1100-1600 - أصول متداولة - SA",
+      "diffs": {
+       "closing_debit": {
+        "report": 7501359,
+        "engine": 8386378
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 885019
+       }
+      }
+     },
+     {
+      "account": "2000 - (مصدر الأموال  (الخصوم - SA",
+      "diffs": {
+       "closing_debit": {
+        "report": 52110,
+        "engine": 11100000
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 11047890
+       }
+      }
+     },
+     {
+      "account": "2100-2400 - الخصوم المتداولة - SA",
+      "diffs": {
+       "closing_debit": {
+        "report": 52110,
+        "engine": 11100000
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 11047890
+       }
+      }
+     }
+    ],
+    "mismatch_count": 8
+   },
+   "net0: C(i) engine net sum + sign split in display -> net1 parents": {
+    "label": "alternative i",
+    "parents": 15,
+    "matched": 15,
+    "mismatches": [],
+    "mismatch_count": 0
+   },
+   "net0: C(i) Total (sum of root rows)": {
+    "engine": {
+     "opening_debit": 0,
+     "opening_credit": 0,
+     "debit": 30303624,
+     "credit": 30303624,
+     "closing_debit": 7553469,
+     "closing_credit": 7553469
+    },
+    "report_net1": {
+     "opening_debit": 0,
+     "opening_credit": 0,
+     "debit": 30303624,
+     "credit": 30303624,
+     "closing_debit": 7553469,
+     "closing_credit": 7553469
+    },
+    "match": true
+   },
+   "net0: C(i) engine root row of net columns": {
+    "net_open": 0,
+    "debit": 30303624,
+    "credit": 30303624,
+    "net_close": 0
+   },
+   "net0: leaves split(net) == net1 leaves": true,
+   "net0: aggregate 'abs sum' of net == parent dr+cr": true,
+   "net0: iii second table -> net1 parents": {
+    "label": "alternative iii",
+    "parents": 15,
+    "matched": 15,
+    "mismatches": [],
+    "mismatch_count": 0
+   },
+   "net0: iii Total (engine, roots only)": {
+    "engine": {
+     "opening_debit": 0,
+     "opening_credit": 0,
+     "debit": 30303624,
+     "credit": 30303624,
+     "closing_debit": 7553469,
+     "closing_credit": 7553469
+    },
+    "match": true
+   },
+   "net1: ii rows as returned (parents + leaves), flat view": {
+    "rows": 31,
+    "matched": 31,
+    "order_preserved": true
+   },
+   "net1: ii collapse through filter 'not in' on ancestor columns": {
+    "filter": [
+     [
+      "anc_1",
+      "not in",
+      [
+       "1000 - استخدام الاموال (الأصول) - SA"
+      ]
+     ],
+     [
+      "anc_2",
+      "not in",
+      [
+       "2100-2400 - الخصوم المتداولة - SA"
+      ]
+     ]
+    ],
+    "engine_rows": 17,
+    "expected_rows": 17,
+    "ok": true
+   },
+   "net1: ii collapse through boolean expression": {
+    "expression": "if (\"anc_1\" == '1000 - استخدام الاموال (الأصول) - SA') false else true",
+    "error": "Error: Abort(): Invalid string token: 1000 - "
+   }
+  },
+  "mid": {
+   "report_total_net1": {
+    "opening_debit": 2459291,
+    "opening_credit": 2459291,
+    "debit": 16636858,
+    "credit": 16636858,
+    "closing_debit": 7553469,
+    "closing_credit": 7553469
+   },
+   "report_total_net0": {
+    "opening_debit": 13666766,
+    "opening_credit": 13666766,
+    "debit": 16636858,
+    "credit": 16636858,
+    "closing_debit": 30303624,
+    "closing_credit": 30303624
+   },
+   "net1: A plain sum -> parents": {
+    "label": "group_by + sum",
+    "parents": 15,
+    "matched": 7,
+    "mismatches": [
+     {
+      "account": "1000 - استخدام الاموال (الأصول) - SA",
+      "diffs": {
+       "opening_debit": {
+        "report": 2459291,
+        "engine": 2526028
+       },
+       "opening_credit": {
+        "report": 0,
+        "engine": 66737
+       },
+       "closing_debit": {
+        "report": 7501359,
+        "engine": 8386378
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 885019
+       }
+      }
+     },
+     {
+      "account": "1100-1600 - أصول متداولة - SA",
+      "diffs": {
+       "opening_debit": {
+        "report": 2459291,
+        "engine": 2526028
+       },
+       "opening_credit": {
+        "report": 0,
+        "engine": 66737
+       },
+       "closing_debit": {
+        "report": 7501359,
+        "engine": 8386378
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 885019
+       }
+      }
+     },
+     {
+      "account": "2000 - (مصدر الأموال  (الخصوم - SA",
+      "diffs": {
+       "opening_debit": {
+        "report": 0,
+        "engine": 11100000
+       },
+       "opening_credit": {
+        "report": 900,
+        "engine": 11100900
+       },
+       "closing_debit": {
+        "report": 52110,
+        "engine": 11100000
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 11047890
+       }
+      }
+     },
+     {
+      "account": "2100-2400 - الخصوم المتداولة - SA",
+      "diffs": {
+       "opening_debit": {
+        "report": 0,
+        "engine": 11100000
+       },
+       "opening_credit": {
+        "report": 900,
+        "engine": 11100900
+       },
+       "closing_debit": {
+        "report": 52110,
+        "engine": 11100000
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 11047890
+       }
+      }
+     }
+    ],
+    "mismatch_count": 8
+   },
+   "net1: A plain sum -> Total": {
+    "label": "root row",
+    "parents": 1,
+    "matched": 0,
+    "mismatches": [
+     {
+      "diffs": {
+       "opening_debit": {
+        "report": 2459291,
+        "engine": 13646079
+       },
+       "opening_credit": {
+        "report": 2459291,
+        "engine": 13646079
+       },
+       "closing_debit": {
+        "report": 7553469,
+        "engine": 24653599
+       },
+       "closing_credit": {
+        "report": 7553469,
+        "engine": 24653599
+       }
+      }
+     }
+    ],
+    "mismatch_count": 1
+   },
+   "net1: engine root row": {
+    "opening_debit": 13646079,
+    "opening_credit": 13646079,
+    "debit": 16636858,
+    "credit": 16636858,
+    "closing_debit": 24653599,
+    "closing_credit": 24653599
+   },
+   "net1: D expression max(dr-cr,0) then sum -> net1 parents": {
+    "label": "pre-aggregation expression",
+    "parents": 15,
+    "matched": 7,
+    "mismatches": [
+     {
+      "account": "1000 - استخدام الاموال (الأصول) - SA",
+      "diffs": {
+       "opening_debit": {
+        "report": 2459291,
+        "engine": 2526028
+       },
+       "opening_credit": {
+        "report": 0,
+        "engine": 66737
+       },
+       "closing_debit": {
+        "report": 7501359,
+        "engine": 8386378
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 885019
+       }
+      }
+     },
+     {
+      "account": "1100-1600 - أصول متداولة - SA",
+      "diffs": {
+       "opening_debit": {
+        "report": 2459291,
+        "engine": 2526028
+       },
+       "opening_credit": {
+        "report": 0,
+        "engine": 66737
+       },
+       "closing_debit": {
+        "report": 7501359,
+        "engine": 8386378
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 885019
+       }
+      }
+     },
+     {
+      "account": "2000 - (مصدر الأموال  (الخصوم - SA",
+      "diffs": {
+       "opening_debit": {
+        "report": 0,
+        "engine": 11100000
+       },
+       "opening_credit": {
+        "report": 900,
+        "engine": 11100900
+       },
+       "closing_debit": {
+        "report": 52110,
+        "engine": 11100000
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 11047890
+       }
+      }
+     },
+     {
+      "account": "2100-2400 - الخصوم المتداولة - SA",
+      "diffs": {
+       "opening_debit": {
+        "report": 0,
+        "engine": 11100000
+       },
+       "opening_credit": {
+        "report": 900,
+        "engine": 11100900
+       },
+       "closing_debit": {
+        "report": 52110,
+        "engine": 11100000
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 11047890
+       }
+      }
+     }
+    ],
+    "mismatch_count": 8
+   },
+   "net1: C(i) engine net sum + sign split in display -> net1 parents": {
+    "label": "alternative i",
+    "parents": 15,
+    "matched": 15,
+    "mismatches": [],
+    "mismatch_count": 0
+   },
+   "net1: C(i) Total (sum of root rows)": {
+    "engine": {
+     "opening_debit": 2459291,
+     "opening_credit": 2459291,
+     "debit": 16636858,
+     "credit": 16636858,
+     "closing_debit": 7553469,
+     "closing_credit": 7553469
+    },
+    "report_net1": {
+     "opening_debit": 2459291,
+     "opening_credit": 2459291,
+     "debit": 16636858,
+     "credit": 16636858,
+     "closing_debit": 7553469,
+     "closing_credit": 7553469
+    },
+    "match": true
+   },
+   "net1: C(i) engine root row of net columns": {
+    "net_open": 0,
+    "debit": 16636858,
+    "credit": 16636858,
+    "net_close": 0
+   },
+   "net1: leaves split(net) == net1 leaves": true,
+   "net1: aggregate 'abs sum' of net == parent dr+cr": true,
+   "net1: iii second table -> net1 parents": {
+    "label": "alternative iii",
+    "parents": 15,
+    "matched": 15,
+    "mismatches": [],
+    "mismatch_count": 0
+   },
+   "net1: iii Total (engine, roots only)": {
+    "engine": {
+     "opening_debit": 2459291,
+     "opening_credit": 2459291,
+     "debit": 16636858,
+     "credit": 16636858,
+     "closing_debit": 7553469,
+     "closing_credit": 7553469
+    },
+    "match": true
+   },
+   "net0: A plain sum -> parents": {
+    "label": "group_by + sum",
+    "parents": 15,
+    "matched": 15,
+    "mismatches": [],
+    "mismatch_count": 0
+   },
+   "net0: A plain sum -> Total": {
+    "label": "root row",
+    "parents": 1,
+    "matched": 1,
+    "mismatches": [],
+    "mismatch_count": 0
+   },
+   "net0: engine root row": {
+    "opening_debit": 13666766,
+    "opening_credit": 13666766,
+    "debit": 16636858,
+    "credit": 16636858,
+    "closing_debit": 30303624,
+    "closing_credit": 30303624
+   },
+   "net0: D expression max(dr-cr,0) then sum -> net1 parents": {
+    "label": "pre-aggregation expression",
+    "parents": 15,
+    "matched": 7,
+    "mismatches": [
+     {
+      "account": "1000 - استخدام الاموال (الأصول) - SA",
+      "diffs": {
+       "opening_debit": {
+        "report": 2459291,
+        "engine": 2526028
+       },
+       "opening_credit": {
+        "report": 0,
+        "engine": 66737
+       },
+       "closing_debit": {
+        "report": 7501359,
+        "engine": 8386378
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 885019
+       }
+      }
+     },
+     {
+      "account": "1100-1600 - أصول متداولة - SA",
+      "diffs": {
+       "opening_debit": {
+        "report": 2459291,
+        "engine": 2526028
+       },
+       "opening_credit": {
+        "report": 0,
+        "engine": 66737
+       },
+       "closing_debit": {
+        "report": 7501359,
+        "engine": 8386378
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 885019
+       }
+      }
+     },
+     {
+      "account": "2000 - (مصدر الأموال  (الخصوم - SA",
+      "diffs": {
+       "opening_debit": {
+        "report": 0,
+        "engine": 11100000
+       },
+       "opening_credit": {
+        "report": 900,
+        "engine": 11100900
+       },
+       "closing_debit": {
+        "report": 52110,
+        "engine": 11100000
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 11047890
+       }
+      }
+     },
+     {
+      "account": "2100-2400 - الخصوم المتداولة - SA",
+      "diffs": {
+       "opening_debit": {
+        "report": 0,
+        "engine": 11100000
+       },
+       "opening_credit": {
+        "report": 900,
+        "engine": 11100900
+       },
+       "closing_debit": {
+        "report": 52110,
+        "engine": 11100000
+       },
+       "closing_credit": {
+        "report": 0,
+        "engine": 11047890
+       }
+      }
+     }
+    ],
+    "mismatch_count": 8
+   },
+   "net0: C(i) engine net sum + sign split in display -> net1 parents": {
+    "label": "alternative i",
+    "parents": 15,
+    "matched": 15,
+    "mismatches": [],
+    "mismatch_count": 0
+   },
+   "net0: C(i) Total (sum of root rows)": {
+    "engine": {
+     "opening_debit": 2459291,
+     "opening_credit": 2459291,
+     "debit": 16636858,
+     "credit": 16636858,
+     "closing_debit": 7553469,
+     "closing_credit": 7553469
+    },
+    "report_net1": {
+     "opening_debit": 2459291,
+     "opening_credit": 2459291,
+     "debit": 16636858,
+     "credit": 16636858,
+     "closing_debit": 7553469,
+     "closing_credit": 7553469
+    },
+    "match": true
+   },
+   "net0: C(i) engine root row of net columns": {
+    "net_open": 0,
+    "debit": 16636858,
+    "credit": 16636858,
+    "net_close": 0
+   },
+   "net0: leaves split(net) == net1 leaves": true,
+   "net0: aggregate 'abs sum' of net == parent dr+cr": true,
+   "net0: iii second table -> net1 parents": {
+    "label": "alternative iii",
+    "parents": 15,
+    "matched": 15,
+    "mismatches": [],
+    "mismatch_count": 0
+   },
+   "net0: iii Total (engine, roots only)": {
+    "engine": {
+     "opening_debit": 2459291,
+     "opening_credit": 2459291,
+     "debit": 16636858,
+     "credit": 16636858,
+     "closing_debit": 7553469,
+     "closing_credit": 7553469
+    },
+    "match": true
+   },
+   "net1: ii rows as returned (parents + leaves), flat view": {
+    "rows": 31,
+    "matched": 31,
+    "order_preserved": true
+   },
+   "net1: ii collapse through filter 'not in' on ancestor columns": {
+    "filter": [
+     [
+      "anc_1",
+      "not in",
+      [
+       "1000 - استخدام الاموال (الأصول) - SA"
+      ]
+     ],
+     [
+      "anc_2",
+      "not in",
+      [
+       "2100-2400 - الخصوم المتداولة - SA"
+      ]
+     ]
+    ],
+    "engine_rows": 17,
+    "expected_rows": 17,
+    "ok": true
+   },
+   "net1: ii collapse through boolean expression": {
+    "expression": "if (\"anc_1\" == '1000 - استخدام الاموال (الأصول) - SA') false else true",
+    "error": "Error: Abort(): Invalid string token: 1000 - "
+   }
+  }
+ },
+ "console": [
+  "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+ ]
+}

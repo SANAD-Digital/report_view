@@ -1,7 +1,7 @@
 # مقابلة البروتوتايب مع Perspective
 
 - التاريخ: 2026-10-01
-- المصدر: `reference/prototype/Main.dc.html` (المنطق في `class Component`، الأسطر 1101-1836)، `Mobile.dc.html`، `States.dc.html`، `Tokens.dc.html`، `rv.css`.
+- المصدر: `reference/design/Main.dc.html` (المنطق في `class Component`، الأسطر 1101-1836)، `Mobile.dc.html`، `States.dc.html`، `Tokens.dc.html`، `rv.css`.
 - القاعدة: البروتوتايب مرجع **للمنطق والشكل** فقط. لا يُنقل منه أي كود عرض أو تجميع. الحساب كله في محرك Perspective، والعرض في `regular-table` وكود اللوحات الخاص بنا.
 
 ملاحظة عن البروتوتايب نفسه: هو لا يستخدم مكتبة جدول ولا مكتبة تجميع. جدوله عناصر `div` وحساباته دوال JS خاصة، وملف `rv.css` وجدول الربط في `Tokens.dc.html` كُتبا على افتراض تركيبه لاحقاً على Tabulator. ذلك الافتراض هو ما أُلغي.

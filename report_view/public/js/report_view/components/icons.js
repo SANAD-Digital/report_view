@@ -1,4 +1,4 @@
-// Inline icons of the design (reference/prototype/Main.dc.html). Stroke/fill use currentColor,
+// Inline icons of the design (reference/design/Main.dc.html). Stroke/fill use currentColor,
 // so their colour always comes from the CSS variables of the element that holds them.
 
 const svg = (size, body, attrs = 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"') =>

@@ -1,0 +1,1348 @@
+{
+ "target": "run.html?exp=exp7",
+ "base": "http://127.0.0.1:33259",
+ "browser": "chromium",
+ "result": {
+  "ok": true,
+  "exp": "exp7",
+  "engine_restarts": [
+   "#105 async () => { const t = await client.table({ a: \"integer\" }); const v = await t.view(); let err = null; try { "
+  ],
+  "schema_returned": {
+   "currency": "string",
+   "ts": "datetime",
+   "المستودع - الرئيسي": "string",
+   "posted": "date",
+   "flag": "boolean",
+   "grp": "string",
+   "اسم الحساب": "string",
+   "qty": "integer",
+   "amount": "float",
+   "id": "integer",
+   "sub": "string"
+  },
+  "columns_returned": [
+   "id",
+   "grp",
+   "sub",
+   "اسم الحساب",
+   "المستودع - الرئيسي",
+   "currency",
+   "amount",
+   "qty",
+   "posted",
+   "ts",
+   "flag"
+  ],
+  "size": 6,
+  "aggregates_numeric": {
+   "sum": {
+    "total": 12.299999999999999,
+    "by_group": {
+     "A": 15,
+     "B": -2.9,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "sum abs": {
+    "total": 18.3,
+    "by_group": {
+     "A": 15,
+     "B": 3.1,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "abs sum": {
+    "total": 12.299999999999999,
+    "by_group": {
+     "A": 15,
+     "B": 2.9,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "sum not null": {
+    "total": 12.299999999999999,
+    "by_group": {
+     "A": 15,
+     "B": -2.9,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "avg": {
+    "total": 2.46,
+    "by_group": {
+     "A": 7.5,
+     "B": -1.45,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "mean": {
+    "total": 2.46,
+    "by_group": {
+     "A": 7.5,
+     "B": -1.45,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "median": {
+    "total": 2.35,
+    "by_group": {
+     "A": 10.5,
+     "B": -1.45,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "q1": {
+    "total": 0.1,
+    "by_group": {
+     "A": 4.5,
+     "B": -3,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "q3": {
+    "total": 10.5,
+    "by_group": {
+     "A": null,
+     "B": 0.1,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "count": {
+    "total": 6,
+    "by_group": {
+     "A": 3,
+     "B": 2,
+     "null": 1
+    },
+    "type": "integer"
+   },
+   "distinct count": {
+    "total": 6,
+    "by_group": {
+     "A": 3,
+     "B": 2,
+     "null": 1
+    },
+    "type": "integer"
+   },
+   "unique": {
+    "total": null,
+    "by_group": {
+     "A": null,
+     "B": null,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "dominant": {
+    "total": -3,
+    "by_group": {
+     "A": 4.5,
+     "B": -3,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "min": {
+    "total": -3,
+    "by_group": {
+     "A": 4.5,
+     "B": -3,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "max": {
+    "total": null,
+    "by_group": {
+     "A": null,
+     "B": 0.1,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "low": {
+    "total": -3,
+    "by_group": {
+     "A": 0,
+     "B": -3,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "high": {
+    "total": 10.5,
+    "by_group": {
+     "A": 10.5,
+     "B": 0.1,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "first": {
+    "total": 10.5,
+    "by_group": {
+     "A": 10.5,
+     "B": -3,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "last": {
+    "total": 0.2,
+    "by_group": {
+     "A": 4.5,
+     "B": 0.1,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "first by index": {
+    "total": 10.5,
+    "by_group": {
+     "A": 10.5,
+     "B": -3,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "last by index": {
+    "total": 0.2,
+    "by_group": {
+     "A": 4.5,
+     "B": 0.1,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "last minus first": {
+    "total": -10.3,
+    "by_group": {
+     "A": -6,
+     "B": 3.1,
+     "null": 0
+    },
+    "type": "float"
+   },
+   "high minus low": {
+    "total": null,
+    "by_group": {
+     "A": null,
+     "B": 3.1,
+     "null": 0
+    },
+    "type": "float"
+   },
+   "any": {
+    "total": 10.5,
+    "by_group": {
+     "A": 10.5,
+     "B": -3,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "stddev": {
+    "total": 4.675296782023575,
+    "by_group": {
+     "A": 3,
+     "B": 1.55,
+     "null": null
+    },
+    "type": "float"
+   },
+   "var": {
+    "total": 21.8584,
+    "by_group": {
+     "A": 9,
+     "B": 2.4025000000000003,
+     "null": null
+    },
+    "type": "float"
+   },
+   "pct sum parent": {
+    "total": 100,
+    "by_group": {
+     "A": 121.95121951219514,
+     "B": -23.577235772357724,
+     "null": 1.6260162601626018
+    },
+    "type": "float"
+   },
+   "pct sum grand total": {
+    "total": 100,
+    "by_group": {
+     "A": 121.95121951219514,
+     "B": -23.577235772357724,
+     "null": 1.6260162601626018
+    },
+    "type": "float"
+   },
+   "join": {
+    "total": "-3, 0.1, 0.2, 4.5, 10.5, null",
+    "by_group": {
+     "A": "4.5, 10.5, null",
+     "B": "-3, 0.1",
+     "null": "0.2"
+    },
+    "type": "float"
+   },
+   "distinct leaf": {
+    "total": null,
+    "by_group": {
+     "A": null,
+     "B": null,
+     "null": 0.2
+    },
+    "type": "float"
+   },
+   "and": {
+    "total": false,
+    "by_group": {
+     "A": false,
+     "B": true,
+     "null": true
+    },
+    "type": "float"
+   },
+   "or": {
+    "total": 10.5,
+    "by_group": {
+     "A": 10.5,
+     "B": -3,
+     "null": 0.2
+    },
+    "type": "float"
+   }
+  },
+  "aggregates_string": {
+   "count": {
+    "total": 6,
+    "by_group": {
+     "A": 3,
+     "B": 2,
+     "null": 1
+    },
+    "type": "integer"
+   },
+   "distinct count": {
+    "total": 3,
+    "by_group": {
+     "A": 2,
+     "B": 1,
+     "null": 1
+    },
+    "type": "integer"
+   },
+   "unique": {
+    "total": null,
+    "by_group": {
+     "A": null,
+     "B": "YER",
+     "null": null
+    },
+    "type": "string"
+   },
+   "dominant": {
+    "total": "YER",
+    "by_group": {
+     "A": "YER",
+     "B": "YER",
+     "null": null
+    },
+    "type": "string"
+   },
+   "first": {
+    "total": "YER",
+    "by_group": {
+     "A": "YER",
+     "B": "YER",
+     "null": null
+    },
+    "type": "string"
+   },
+   "last": {
+    "total": null,
+    "by_group": {
+     "A": "USD",
+     "B": "YER",
+     "null": null
+    },
+    "type": "string"
+   },
+   "any": {
+    "total": "YER",
+    "by_group": {
+     "A": "YER",
+     "B": "YER",
+     "null": ""
+    },
+    "type": "string"
+   },
+   "join": {
+    "total": "USD, YER, null",
+    "by_group": {
+     "A": "USD, YER",
+     "B": "YER",
+     "null": "null"
+    },
+    "type": "string"
+   },
+   "distinct leaf": {
+    "total": "",
+    "by_group": {
+     "A": "",
+     "B": "YER",
+     "null": null
+    },
+    "type": "string"
+   },
+   "min": {
+    "total": "USD",
+    "by_group": {
+     "A": "USD",
+     "B": "YER",
+     "null": null
+    },
+    "type": "string"
+   },
+   "max": {
+    "total": null,
+    "by_group": {
+     "A": "YER",
+     "B": "YER",
+     "null": null
+    },
+    "type": "string"
+   },
+   "sum": {
+    "ERROR": "Error: Abort(): Unexpected coltype"
+   }
+  },
+  "aggregate_weighted_mean": [
+   0.012500000000000011,
+   10.5,
+   -1.2777777777777777,
+   0.20000000000000004
+  ],
+  "aggregate_default_when_omitted": {
+   "cfg": {},
+   "row0": {
+    "__ROW_PATH__": [],
+    "amount": 12.299999999999999,
+    "currency": 6,
+    "posted": 6,
+    "flag": 6
+   },
+   "schema": {
+    "posted": "integer",
+    "amount": "float",
+    "flag": "integer",
+    "currency": "integer"
+   }
+  },
+  "null_behaviour": {
+   "paths": [
+    [],
+    [
+     "A"
+    ],
+    [
+     "B"
+    ],
+    [
+     null
+    ]
+   ],
+   "amount_sum": [
+    12.299999999999999,
+    15,
+    -2.9,
+    0.2
+   ],
+   "qty_avg": [
+    3.6,
+    1.5,
+    4.5,
+    6
+   ],
+   "note": "group A has amount [10.5, null, 4.5]; qty [1, 2, null]"
+  },
+  "null_count_vs_rows": {
+   "__ROW_PATH__": [
+    [],
+    [
+     "A"
+    ],
+    [
+     "B"
+    ],
+    [
+     null
+    ]
+   ],
+   "amount": [
+    6,
+    3,
+    2,
+    1
+   ],
+   "id": [
+    6,
+    3,
+    2,
+    1
+   ]
+  },
+  "float_precision": {
+   "sum_0_1_plus_0_2": 0.30000000000000004
+  },
+  "unique_values": [
+   [
+    "نقد",
+    2
+   ],
+   [
+    "دائنون",
+    1
+   ],
+   [
+    "مبيعات",
+    1
+   ],
+   [
+    "مدينون",
+    1
+   ],
+   [
+    null,
+    1
+   ]
+  ],
+  "unique_values_with_other_filters": [
+   [
+    "USD",
+    1
+   ],
+   [
+    "YER",
+    2
+   ]
+  ],
+  "windows": {
+   "num_rows": 6,
+   "num_columns": 11,
+   "column_paths": [
+    "id",
+    "grp",
+    "sub",
+    "اسم الحساب",
+    "المستودع - الرئيسي",
+    "currency",
+    "amount",
+    "qty",
+    "posted",
+    "ts",
+    "flag"
+   ],
+   "column_paths_window": [
+    "grp",
+    "sub"
+   ],
+   "to_columns_rows_1_3_cols_0_2": {
+    "id": [
+     2,
+     3
+    ],
+    "grp": [
+     "A",
+     "A"
+    ]
+   },
+   "to_json_rows_4_6_cols_5_8": [
+    {
+     "currency": "YER",
+     "amount": 0.1,
+     "qty": 5
+    },
+    {
+     "currency": null,
+     "amount": 0.2,
+     "qty": 6
+    }
+   ],
+   "to_columns_with_index": {
+    "id": [
+     1,
+     2
+    ],
+    "__INDEX__": [
+     [
+      1
+     ],
+     [
+      2
+     ]
+    ]
+   },
+   "to_columns_with_id": {
+    "id": [
+     1,
+     2
+    ],
+    "__ID__": [
+     [
+      1
+     ],
+     [
+      2
+     ]
+    ]
+   },
+   "past_end": {
+    "id": []
+   },
+   "date_and_datetime_representation": {
+    "posted": [
+     1768435200000
+    ],
+    "ts": [
+     1768471200000
+    ]
+   },
+   "to_csv_first_2": "\"id\",\"grp\",\"sub\",\"اسم الحساب\"\n1,\"A\",\"x\",\"نقد\"\n2,\"A\",\"x\",\"نقد\"\n",
+   "dimensions": {
+    "num_table_rows": 6,
+    "num_table_columns": 11,
+    "num_view_rows": 6,
+    "num_view_columns": 11
+   },
+   "min_max_amount": [
+    -3,
+    10.5
+   ]
+  },
+  "windows_grouped": {
+   "num_rows": 9,
+   "rows_2_4_col_1": {
+    "__ROW_PATH__": [
+     [
+      "A",
+      "x"
+     ],
+     [
+      "A",
+      "y"
+     ]
+    ],
+    "qty": [
+     3,
+     0
+    ]
+   },
+   "leaves_only": [
+    [
+     "A",
+     "x"
+    ],
+    [
+     "A",
+     "y"
+    ],
+    [
+     "B",
+     "y"
+    ],
+    [
+     "B",
+     "z"
+    ],
+    [
+     null,
+     "z"
+    ]
+   ],
+   "to_json_row": {
+    "__ROW_PATH__": [
+     "A"
+    ],
+    "amount": 15,
+    "qty": 3
+   }
+  },
+  "expand_collapse": {
+   "initial": {
+    "num_rows": 9,
+    "paths": [
+     "(root)",
+     "A",
+     "A/x",
+     "A/y",
+     "B",
+     "B/y",
+     "B/z",
+     "(root)",
+     "/z"
+    ]
+   },
+   "set_depth_0": {
+    "num_rows": 4,
+    "paths": [
+     "(root)",
+     "A",
+     "B",
+     "(root)"
+    ]
+   },
+   "set_depth_1": {
+    "num_rows": 9,
+    "paths": [
+     "(root)",
+     "A",
+     "A/x",
+     "A/y",
+     "B",
+     "B/y",
+     "B/z",
+     "(root)",
+     "/z"
+    ]
+   },
+   "expand_row_1_returns": 0,
+   "after_expand_1": {
+    "num_rows": 9,
+    "paths": [
+     "(root)",
+     "A",
+     "A/x",
+     "A/y",
+     "B",
+     "B/y",
+     "B/z",
+     "(root)",
+     "/z"
+    ]
+   },
+   "collapse_row_1_returns": 2,
+   "after_collapse_1": {
+    "num_rows": 7,
+    "paths": [
+     "(root)",
+     "A",
+     "B",
+     "B/y",
+     "B/z",
+     "(root)",
+     "/z"
+    ]
+   },
+   "set_depth_2": {
+    "num_rows": 9
+   },
+   "collapse_root_returns": 8,
+   "after_collapse_root": {
+    "num_rows": 1,
+    "paths": [
+     "(root)"
+    ]
+   }
+  },
+  "group_by_depth_config": {
+   "num_rows": 4,
+   "paths": [
+    [],
+    [
+     "A"
+    ],
+    [
+     "B"
+    ],
+    [
+     null
+    ]
+   ]
+  },
+  "non_ascii": {
+   "group_by": {
+    "__ROW_PATH__": [
+     [],
+     [
+      "مخزن صنعاء - 1"
+     ],
+     [
+      "مخزن عدن - 2"
+     ],
+     [
+      null
+     ]
+    ],
+    "amount": [
+     12.299999999999999,
+     10.6,
+     1.5,
+     0.2
+    ]
+   },
+   "columns_select": [
+    {
+     "اسم الحساب": "نقد",
+     "المستودع - الرئيسي": "مخزن صنعاء - 1"
+    }
+   ],
+   "filter_eq": 2,
+   "filter_contains": 3,
+   "filter_in": 3,
+   "sort": [
+    "دائنون",
+    "مبيعات",
+    "مدينون",
+    "نقد",
+    "نقد",
+    null
+   ],
+   "split_by": [
+    "مخزن صنعاء - 1|amount",
+    "مخزن عدن - 2|amount",
+    "null|amount"
+   ],
+   "expression_column_ref": [
+    23,
+    23,
+    19,
+    19,
+    23,
+    null
+   ],
+   "expression_arabic_alias": {
+    "الصافي - محسوب": [
+     21,
+     null,
+     9,
+     -6,
+     0.2,
+     0.4
+    ]
+   },
+   "expression_arabic_string_literal": {
+    "ERROR": "Error: Abort(): Invalid string token: "
+   },
+   "expression_ascii_string_literal": [
+    true,
+    true,
+    false,
+    true,
+    true,
+    false
+   ],
+   "validate_expressions": {
+    "expression_schema": {
+     "d": "string",
+     "b": "string",
+     "c": "string"
+    },
+    "errors": {
+     "a": {
+      "error_message": "Invalid string token: ",
+      "line": 0,
+      "column": 19
+     }
+    },
+    "expression_alias": {
+     "c": "concat(\"اسم الحساب\", ' - ', \"currency\")",
+     "d": "upper(\"currency\")",
+     "a": "\"اسم الحساب\" == 'نقد'",
+     "b": "\"المستودع - الرئيسي\""
+    }
+   },
+   "expression_concat": [
+    "نقد - YER",
+    "نقد - YER",
+    "مدينون - USD",
+    "دائنون - YER",
+    null,
+    null
+   ],
+   "special_names": {
+    "split_paths_with_pipe_in_value": [
+     "x|y|q\"uote",
+     "z|q\"uote"
+    ],
+    "expr_double_quote_in_name": {
+     "ERROR": "Error: Abort(): Value Error - Input column \"q\" does not exist."
+    },
+    "expr_single_quote_in_name": [
+     3,
+     5
+    ],
+    "filter_on_pipe_name": 1
+   }
+  },
+  "expression_sum_is_per_row": [
+   11.5,
+   null,
+   null,
+   1,
+   5.1,
+   6.2
+  ],
+  "expression_functions": {
+   "expression_schema": {
+    "bucket_month": "date",
+    "max0": "float",
+    "round": "float",
+    "is_null": "boolean",
+    "year": "date",
+    "month_of_year": "string",
+    "pct": "float",
+    "abs": "float",
+    "to_string": "string",
+    "day_of_week": "string"
+   },
+   "errors": {
+    "contains": {
+     "error_message": "Undefined symbol: 'contains'",
+     "line": 0,
+     "column": 0
+    },
+    "coalesce_like": {
+     "error_message": "Invalid syntax 'else' possible missing operator or context",
+     "line": 0,
+     "column": 24
+    },
+    "if_else": {
+     "error_message": "Invalid syntax 'else' possible missing operator or context",
+     "line": 0,
+     "column": 25
+    }
+   },
+   "expression_alias": {
+    "abs": "abs(\"amount\")",
+    "pct": "percent_of(\"amount\", \"qty\")",
+    "round": "round(\"amount\")",
+    "day_of_week": "day_of_week(\"posted\")",
+    "year": "bucket(\"posted\", 'Y')",
+    "month_of_year": "month_of_year(\"posted\")",
+    "coalesce_like": "if (is_null(\"amount\")) 0 else \"amount\"",
+    "is_null": "is_null(\"amount\")",
+    "bucket_month": "bucket(\"posted\", 'M')",
+    "contains": "contains(\"currency\", 'YE')",
+    "to_string": "string(\"qty\")",
+    "if_else": "if (\"amount\" > 0) \"amount\" else 0",
+    "max0": "max(\"amount\", 0)"
+   }
+  },
+  "arabic_order": {
+   "engine_sort": [
+    "10 item",
+    "2 item",
+    "Apple",
+    "Zed",
+    "apple",
+    "ء",
+    "آدم",
+    "أحمد",
+    "ؤ",
+    "إبراهيم",
+    "ئ",
+    "ابتسام",
+    "اسامة",
+    "بكر",
+    "ة",
+    "تامر",
+    "ثامر",
+    "عبد الله",
+    "عبدالله",
+    "ـتطويل",
+    "لا",
+    "محمد",
+    "محمود",
+    "مُحمد",
+    "ه",
+    "هند",
+    "وليد",
+    "ى",
+    "ي",
+    "ياسر",
+    "١٠ بند",
+    "٢ بند",
+    "گچپژ"
+   ],
+   "engine_group_by_default_order": [
+    "10 item",
+    "2 item",
+    "Apple",
+    "Zed",
+    "apple",
+    "ء",
+    "آدم",
+    "أحمد",
+    "ؤ",
+    "إبراهيم",
+    "ئ",
+    "ابتسام",
+    "اسامة",
+    "بكر",
+    "ة",
+    "تامر",
+    "ثامر",
+    "عبد الله",
+    "عبدالله",
+    "ـتطويل",
+    "لا",
+    "محمد",
+    "محمود",
+    "مُحمد",
+    "ه",
+    "هند",
+    "وليد",
+    "ى",
+    "ي",
+    "ياسر",
+    "١٠ بند",
+    "٢ بند",
+    "گچپژ"
+   ],
+   "intl_collator_ar": [
+    "١٠ بند",
+    "10 item",
+    "٢ بند",
+    "2 item",
+    "ء",
+    "ؤ",
+    "ئ",
+    "آدم",
+    "ابتسام",
+    "إبراهيم",
+    "أحمد",
+    "اسامة",
+    "بكر",
+    "ة",
+    "تامر",
+    "ـتطويل",
+    "ثامر",
+    "عبد الله",
+    "عبدالله",
+    "گچپژ",
+    "لا",
+    "محمد",
+    "مُحمد",
+    "محمود",
+    "ه",
+    "هند",
+    "وليد",
+    "ى",
+    "ي",
+    "ياسر",
+    "apple",
+    "Apple",
+    "Zed"
+   ],
+   "code_unit_order": [
+    "10 item",
+    "2 item",
+    "Apple",
+    "Zed",
+    "apple",
+    "ء",
+    "آدم",
+    "أحمد",
+    "ؤ",
+    "إبراهيم",
+    "ئ",
+    "ابتسام",
+    "اسامة",
+    "بكر",
+    "ة",
+    "تامر",
+    "ثامر",
+    "عبد الله",
+    "عبدالله",
+    "ـتطويل",
+    "لا",
+    "محمد",
+    "محمود",
+    "مُحمد",
+    "ه",
+    "هند",
+    "وليد",
+    "ى",
+    "ي",
+    "ياسر",
+    "١٠ بند",
+    "٢ بند",
+    "گچپژ"
+   ],
+   "sort_equals_collator": false,
+   "sort_equals_code_unit": true,
+   "sort_equals_utf8_bytes": true,
+   "group_by_equals_sort": true,
+   "group_by_equals_insertion": false,
+   "first_difference_vs_collator": {
+    "index": 0,
+    "engine": "10 item",
+    "collator": "١٠ بند"
+   },
+   "sort_key_workaround": {
+    "flat_sorted_by_hidden_key_equals_collator": true,
+    "group_by_sorted_by_key_equals_collator": true
+   }
+  },
+  "filters": {
+   "in [A]": 3,
+   "not in [A] (null grp row?)": 3,
+   "contains 'عدن'": 2,
+   "begins with 'مخزن'": 5,
+   "ends with '1'": 3,
+   "== 'YER'": 4,
+   "!= 'YER' (null currency row?)": 2,
+   "range amount >= 0.1 and <= 5": 3,
+   "amount > 0 (null amount row?)": 4,
+   "amount < 100 (null amount row?)": 5,
+   "is null amount": 1,
+   "is not null amount": 5,
+   "date >= '2026-02-01' and <= '2026-06-30'": 3,
+   "date == '2026-03-10'": 1,
+   "date > '2026-06-30'": 1,
+   "datetime >= '2026-03-10 00:00:00'": 3,
+   "datetime < '2026-03-11'": 3,
+   "boolean == true": 3,
+   "filter_op or: grp==B or currency==USD": 0,
+   "between (operator exists?)": {
+    "ERROR": "Error: Abort(): Unknown filter operator string: `between`\n"
+   },
+   "case-insensitive contains 'yer'": 4,
+   "filter on grouped view keeps group totals consistent": {
+    "__ROW_PATH__": [
+     [],
+     [
+      "A"
+     ],
+     [
+      "B"
+     ]
+    ],
+    "amount": [
+     7.6,
+     10.5,
+     -2.9
+    ]
+   }
+  },
+  "split_by_total": {
+   "column_paths": [
+    "USD|amount",
+    "USD|qty",
+    "YER|amount",
+    "YER|qty",
+    "null|amount",
+    "null|qty"
+   ],
+   "has_total_column": false,
+   "data": {
+    "__ROW_PATH__": [
+     [],
+     [
+      "A"
+     ],
+     [
+      "B"
+     ],
+     [
+      null
+     ]
+    ],
+    "USD|amount": [
+     4.5,
+     4.5,
+     null,
+     null
+    ],
+    "USD|qty": [
+     0,
+     0,
+     null,
+     null
+    ],
+    "YER|amount": [
+     7.6,
+     10.5,
+     -2.9,
+     null
+    ],
+    "YER|qty": [
+     12,
+     3,
+     9,
+     null
+    ],
+    "null|amount": [
+     0.2,
+     null,
+     null,
+     0.2
+    ],
+    "null|qty": [
+     6,
+     null,
+     null,
+     6
+    ]
+   },
+   "num_columns": 6
+  },
+  "split_by_total_second_view": {
+   "__ROW_PATH__": [
+    [],
+    [
+     "A"
+    ],
+    [
+     "B"
+    ],
+    [
+     null
+    ]
+   ],
+   "amount": [
+    12.299999999999999,
+    15,
+    -2.9,
+    0.2
+   ],
+   "qty": [
+    18,
+    3,
+    9,
+    6
+   ]
+  },
+  "split_by_column_sort": [
+   "YER|amount",
+   "USD|amount",
+   "null|amount"
+  ],
+  "split_by_only_no_group": {
+   "paths": [
+    "USD|amount",
+    "YER|amount",
+    "null|amount"
+   ],
+   "rows": 6
+  },
+  "mixed_currency": {
+   "__ROW_PATH__": [
+    [],
+    [
+     "A"
+    ],
+    [
+     "B"
+    ],
+    [
+     null
+    ]
+   ],
+   "amount": [
+    12.299999999999999,
+    15,
+    -2.9,
+    0.2
+   ],
+   "currency": [
+    null,
+    null,
+    "YER",
+    null
+   ],
+   "cur_n": [
+    3,
+    2,
+    1,
+    1
+   ]
+  },
+  "update_replace": {
+   "before": [
+    12.299999999999999,
+    15,
+    -2.9,
+    0.2
+   ],
+   "after_partial_update_id_1": [
+    101.8,
+    104.5,
+    -2.9,
+    0.2
+   ],
+   "size_after_update": 6,
+   "after_insert_id_7": {
+    "size": 7,
+    "paths": [
+     [],
+     [
+      "A"
+     ],
+     [
+      "B"
+     ],
+     [
+      "C"
+     ],
+     [
+      null
+     ]
+    ]
+   },
+   "after_remove_7": 6,
+   "after_replace": {
+    "size": 2,
+    "view": {
+     "__ROW_PATH__": [
+      [],
+      [
+       "Z"
+      ]
+     ],
+     "amount": [
+      3,
+      3
+     ]
+    },
+    "view_still_alive": true
+   },
+   "on_update_calls": 4,
+   "restored_size": 6,
+   "after_clear": {
+    "size": 0,
+    "view_rows": 1
+   }
+  },
+  "replace_with_different_columns": {
+   "size_after_replace_with_unknown_column": 1
+  },
+  "delete_table_with_live_view": {
+   "ERROR": "Error: TIMEOUT 8s: the call never settled"
+  },
+  "schema_type_coercion": {
+   "ERROR": "Error: Abort(): Could not coerce to date"
+  },
+  "inferred_types_without_schema": {
+   "ERROR": "Error: Abort(): Could not coerce to date"
+  },
+  "hosted_tables_left": []
+ },
+ "console": [
+  "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+  "pageerror: null pointer passed to rust"
+ ]
+}

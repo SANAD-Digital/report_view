@@ -1,3 +1,2 @@
-ضع هنا قبل البدء:
-- `prototype/`: محتوى report-engine-prototype.zip بعد فك الضغط
-- `design/`: تصدير نموذج Claude Design (HTML/CSS وأي لقطات)
+`design/`: تصدير نموذج Claude Design (HTML/CSS وبيانات تجريبية). المرجع البصري والتفاعلي.
+كان اسم المجلد `prototype/` حتى 2026-10-01؛ تقارير التقدم الأقدم تذكره بالاسم القديم.

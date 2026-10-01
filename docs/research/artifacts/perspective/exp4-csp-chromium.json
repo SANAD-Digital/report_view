@@ -1,0 +1,274 @@
+[
+ {
+  "browser": "chromium",
+  "csp": "none",
+  "header": "",
+  "variant": {
+   "mode": "esm",
+   "worker": "blob"
+  },
+  "ok": true,
+  "error": null,
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "none",
+  "header": "",
+  "variant": {
+   "mode": "esm",
+   "worker": "url"
+  },
+  "ok": true,
+  "error": null,
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "none",
+  "header": "",
+  "variant": {
+   "mode": "inline",
+   "worker": "blob"
+  },
+  "ok": true,
+  "error": null,
+  "logs": [
+   "warning: Perspective wasn been initialized in inline mode",
+   "warning: Stage 0 wasm loading failed, skipping",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "script-src 'self'",
+  "header": "default-src 'self'; script-src 'self'",
+  "variant": {
+   "mode": "esm",
+   "worker": "blob"
+  },
+  "ok": false,
+  "error": "CompileError: WebAssembly.instantiate(): BufferSource argument is empty",
+  "logs": [
+   "error: Creating a worker from 'blob:http://127.0.0.1:37395/4e534afd-9296-4c11-8857-78c73e90a63b' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'worker-src' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+   "warning: Stage 0 wasm loading failed, skipping",
+   "warning: Stage 0 wasm loading failed, skipping"
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "script-src 'self'",
+  "header": "default-src 'self'; script-src 'self'",
+  "variant": {
+   "mode": "esm",
+   "worker": "url"
+  },
+  "ok": false,
+  "error": "CompileError: WebAssembly.instantiate(): BufferSource argument is empty",
+  "logs": [
+   "warning: Stage 0 wasm loading failed, skipping",
+   "warning: Stage 0 wasm loading failed, skipping"
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "script-src 'self'",
+  "header": "default-src 'self'; script-src 'self'",
+  "variant": {
+   "mode": "inline",
+   "worker": "blob"
+  },
+  "ok": false,
+  "error": "CompileError: WebAssembly.instantiate(): Compiling or instantiating WebAssembly module violates the following Content Security policy directive because 'unsafe-eval' is not an allowed source of script in the following Content Security Policy directive: \"script-src 'self'\".",
+  "logs": [
+   "warning: Perspective wasn been initialized in inline mode",
+   "warning: Stage 0 wasm loading failed, skipping",
+   "warning: Stage 0 wasm loading failed, skipping",
+   "error: Creating a worker from 'blob:http://127.0.0.1:37395/5baaea2d-a7d2-4a8a-a2b3-651cbe867ba0' violates the following Content Security Policy directive: \"script-src 'self'\". Note that 'worker-src' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "+wasm-unsafe-eval",
+  "header": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'",
+  "variant": {
+   "mode": "esm",
+   "worker": "blob"
+  },
+  "ok": false,
+  "error": "timeout (engine never became ready)",
+  "logs": [
+   "error: Creating a worker from 'blob:http://127.0.0.1:41041/def98ba3-49fa-4c9f-b954-b0bc05d240b2' violates the following Content Security Policy directive: \"script-src 'self' 'wasm-unsafe-eval'\". Note that 'worker-src' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "+wasm-unsafe-eval",
+  "header": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'",
+  "variant": {
+   "mode": "esm",
+   "worker": "url"
+  },
+  "ok": true,
+  "error": null,
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "+wasm-unsafe-eval",
+  "header": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'",
+  "variant": {
+   "mode": "inline",
+   "worker": "blob"
+  },
+  "ok": false,
+  "error": "timeout (engine never became ready)",
+  "logs": [
+   "warning: Perspective wasn been initialized in inline mode",
+   "error: Creating a worker from 'blob:http://127.0.0.1:41041/6378cc37-f0de-4aee-b362-72ccca13931b' violates the following Content Security Policy directive: \"script-src 'self' 'wasm-unsafe-eval'\". Note that 'worker-src' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked.",
+   "warning: Stage 0 wasm loading failed, skipping",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "+wasm-unsafe-eval +worker-src 'self'",
+  "header": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'",
+  "variant": {
+   "mode": "esm",
+   "worker": "blob"
+  },
+  "ok": false,
+  "error": "timeout (engine never became ready)",
+  "logs": [
+   "error: Creating a worker from 'blob:http://127.0.0.1:34689/159b06b8-fcb7-4773-840e-7815ff46a745' violates the following Content Security Policy directive: \"worker-src 'self'\". The action has been blocked.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "+wasm-unsafe-eval +worker-src 'self'",
+  "header": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'",
+  "variant": {
+   "mode": "esm",
+   "worker": "url"
+  },
+  "ok": true,
+  "error": null,
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "+wasm-unsafe-eval +worker-src 'self'",
+  "header": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'",
+  "variant": {
+   "mode": "inline",
+   "worker": "blob"
+  },
+  "ok": false,
+  "error": "timeout (engine never became ready)",
+  "logs": [
+   "warning: Perspective wasn been initialized in inline mode",
+   "error: Creating a worker from 'blob:http://127.0.0.1:34689/15f18ee5-50b5-47c1-a212-95648e3adcc5' violates the following Content Security Policy directive: \"worker-src 'self'\". The action has been blocked.",
+   "warning: Stage 0 wasm loading failed, skipping",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "+wasm-unsafe-eval +worker-src 'self' blob:",
+  "header": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:",
+  "variant": {
+   "mode": "esm",
+   "worker": "blob"
+  },
+  "ok": true,
+  "error": null,
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "+wasm-unsafe-eval +worker-src 'self' blob:",
+  "header": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:",
+  "variant": {
+   "mode": "esm",
+   "worker": "url"
+  },
+  "ok": true,
+  "error": null,
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "+wasm-unsafe-eval +worker-src 'self' blob:",
+  "header": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:",
+  "variant": {
+   "mode": "inline",
+   "worker": "blob"
+  },
+  "ok": true,
+  "error": null,
+  "logs": [
+   "warning: Perspective wasn been initialized in inline mode",
+   "warning: Stage 0 wasm loading failed, skipping",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "+unsafe-eval +worker-src 'self' blob:",
+  "header": "default-src 'self'; script-src 'self' 'unsafe-eval'; worker-src 'self' blob:",
+  "variant": {
+   "mode": "esm",
+   "worker": "blob"
+  },
+  "ok": true,
+  "error": null,
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "+unsafe-eval +worker-src 'self' blob:",
+  "header": "default-src 'self'; script-src 'self' 'unsafe-eval'; worker-src 'self' blob:",
+  "variant": {
+   "mode": "esm",
+   "worker": "url"
+  },
+  "ok": true,
+  "error": null,
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "browser": "chromium",
+  "csp": "+unsafe-eval +worker-src 'self' blob:",
+  "header": "default-src 'self'; script-src 'self' 'unsafe-eval'; worker-src 'self' blob:",
+  "variant": {
+   "mode": "inline",
+   "worker": "blob"
+  },
+  "ok": true,
+  "error": null,
+  "logs": [
+   "warning: Perspective wasn been initialized in inline mode",
+   "warning: Stage 0 wasm loading failed, skipping",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ }
+]

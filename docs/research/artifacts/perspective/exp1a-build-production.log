@@ -1,0 +1,24 @@
+
+
+yarn run v1.22.22
+$ node esbuild --production --apps report_view --run-build-command
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+File                                                        Size
+
+report_view/dist/js/
+├─ report_view.bundle.UGDEUDP5.js                           519.61 Kb
+└─ rv_perspective_probe.bundle.JKHW7K5D.js                  64.16 Kb
+
+report_view/dist/css/
+└─ report_view.bundle.P2A2I7EM.css                          85.94 Kb
+
+report_view/dist/css-rtl/
+└─ report_view.bundle.WQPP22ZY.css                          85.95 Kb
+
+ DONE  Total Build Time: 1.704s
+
+Done in 3.76s.
+Compiling translations for report_view
+MO file already up to date at /home/snd/frappe-bench/sites/assets/locale/ar/LC_MESSAGES/report_view.mo

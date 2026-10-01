@@ -1,0 +1,173 @@
+{
+ "target": "run.html?exp=exp3&n=200000&cycles=5",
+ "base": "http://127.0.0.1:38537",
+ "browser": "chromium",
+ "result": {
+  "ok": true,
+  "exp": "exp3",
+  "n": 200000,
+  "format": "columns",
+  "timings_ms": {
+   "table_load": 785.4,
+   "group_by_2_levels_view+to_columns_100": 324.9,
+   "group_by_3_levels_highcard_view+to_columns_100": 1623.5,
+   "split_by_12+group_by_view+to_columns_100": 594.8,
+   "flat_view+to_columns_100": 209.1,
+   "filter+sort_flat_view+to_columns_100": 79.3,
+   "filter+sort_grouped_view+to_columns_100": 92.8,
+   "unique_values_with_count_dim_d": 261.4,
+   "expression+group_by_view+to_columns_100": 409.5,
+   "window_50_rows_on_sorted_view": 0.5,
+   "view_delete": 4.6,
+   "first_display_table+grouped_view+regular_table_draw": 1024.5,
+   "table_delete": 0.7
+  },
+  "raw": {
+   "table_load": [
+    1076,
+    693.3,
+    785.4
+   ],
+   "group_by_2_levels_view+to_columns_100": [
+    683.5,
+    280.4,
+    324.9
+   ],
+   "group_by_3_levels_highcard_view+to_columns_100": [
+    1623.5,
+    1777.5,
+    1480.5
+   ],
+   "split_by_12+group_by_view+to_columns_100": [
+    747.7,
+    508.7,
+    594.8
+   ],
+   "flat_view+to_columns_100": [
+    209.1,
+    212.1,
+    194.4
+   ],
+   "filter+sort_flat_view+to_columns_100": [
+    93.3,
+    77.1,
+    79.3
+   ],
+   "filter+sort_grouped_view+to_columns_100": [
+    96.7,
+    92.8,
+    90
+   ],
+   "unique_values_with_count_dim_d": [
+    254.2,
+    286.3,
+    261.4
+   ],
+   "expression+group_by_view+to_columns_100": [
+    413.8,
+    409.5,
+    374.7
+   ],
+   "first_display_table+grouped_view+regular_table_draw": [
+    1347.5,
+    920.7,
+    1024.5
+   ]
+  },
+  "memory": [
+   {
+    "label": "before data",
+    "js_heap_used_mb": 11.7,
+    "js_heap_total_mb": 13.4,
+    "wasm_heap_size_mb": 16,
+    "wasm_used_size_mb": 0
+   },
+   {
+    "label": "data generated in JS (not yet in engine)",
+    "js_heap_used_mb": 30.2,
+    "js_heap_total_mb": 52.7,
+    "wasm_heap_size_mb": 16,
+    "wasm_used_size_mb": 0
+   },
+   {
+    "label": "table loaded",
+    "js_heap_used_mb": 30.2,
+    "js_heap_total_mb": 52.7,
+    "wasm_heap_size_mb": 180.9,
+    "wasm_used_size_mb": 32.3
+   },
+   {
+    "label": "table + one grouped view",
+    "js_heap_used_mb": 30.3,
+    "js_heap_total_mb": 32.2,
+    "wasm_heap_size_mb": 180.9,
+    "wasm_used_size_mb": 42.1
+   },
+   {
+    "label": "after table.delete()",
+    "js_heap_used_mb": 30.7,
+    "js_heap_total_mb": 32,
+    "wasm_heap_size_mb": 213.8,
+    "wasm_used_size_mb": 0.3
+   },
+   {
+    "label": "after cycle 1",
+    "js_heap_used_mb": 30.7,
+    "js_heap_total_mb": 32,
+    "wasm_heap_size_mb": 213.8,
+    "wasm_used_size_mb": 0.3
+   },
+   {
+    "label": "after cycle 5",
+    "js_heap_used_mb": 30.7,
+    "js_heap_total_mb": 32,
+    "wasm_heap_size_mb": 213.8,
+    "wasm_used_size_mb": 0.3
+   }
+  ],
+  "measureUserAgentSpecificMemory": "not available",
+  "generate_ms": 219.5,
+  "table_size": 200000,
+  "table_schema": {
+   "m3": "float",
+   "dim_b": "string",
+   "m4": "float",
+   "dim_c": "string",
+   "posted": "date",
+   "m1": "float",
+   "m2": "float",
+   "dim_a": "string",
+   "m6": "float",
+   "dim_d": "string",
+   "id": "integer",
+   "m5": "float"
+  },
+  "group_by_rows": 613,
+  "split_by_columns": 72,
+  "filtered_rows": 25192,
+  "unique_dim_d": 5000,
+  "first_display_cells": 174,
+  "cycles": [
+   {
+    "cycle": 1,
+    "label": "after cycle 1",
+    "js_heap_used_mb": 30.7,
+    "js_heap_total_mb": 32,
+    "wasm_heap_size_mb": 213.8,
+    "wasm_used_size_mb": 0.3
+   },
+   {
+    "cycle": 5,
+    "label": "after cycle 5",
+    "js_heap_used_mb": 30.7,
+    "js_heap_total_mb": 32,
+    "wasm_heap_size_mb": 213.8,
+    "wasm_used_size_mb": 0.3
+   }
+  ],
+  "tables_left": []
+ },
+ "console": [
+  "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+ ]
+}

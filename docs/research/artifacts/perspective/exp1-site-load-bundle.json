@@ -1,0 +1,95 @@
+{
+ "target": "load.html?mode=bundle&worker=url&bundle=/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+ "base": "https://acc.dev.sanad.digital",
+ "browser": "chromium",
+ "result": {
+  "ok": true,
+  "params": {
+   "mode": "bundle",
+   "worker": "url",
+   "bundle": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js"
+  },
+  "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+  "timings": {
+   "mode": "bundle",
+   "worker": "url",
+   "import_ms": 22.799999713897705,
+   "worker_ms": 153.7000002861023,
+   "engine_ready_ms": 176.5
+  },
+  "first_query_ms": 60.59999990463257,
+  "total_ms": 237.09999990463257,
+  "cols": {
+   "__ROW_PATH__": [
+    [],
+    [
+     "مدينون"
+    ],
+    [
+     "نقد"
+    ]
+   ],
+   "amount": [
+    18,
+    3,
+    15
+   ]
+  },
+  "system_info": {
+   "heap_size": 16777216,
+   "used_size": 126496,
+   "cpu_time": 46,
+   "cpu_time_epoch": 58,
+   "timestamp": 456,
+   "client_heap": 65139,
+   "client_used": 2411
+  },
+  "resources": [
+   {
+    "name": "/assets/report_view/experiments/lib/load_page.js",
+    "transfer": 1190,
+    "encoded": 890,
+    "decoded": 1755,
+    "duration": 11
+   },
+   {
+    "name": "/assets/report_view/experiments/lib/load.js",
+    "transfer": 1291,
+    "encoded": 991,
+    "decoded": 2428,
+    "duration": 2
+   },
+   {
+    "name": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+    "transfer": 23786,
+    "encoded": 23486,
+    "decoded": 95688,
+    "duration": 6
+   },
+   {
+    "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+    "transfer": 2278209,
+    "encoded": 2277909,
+    "decoded": 2277909,
+    "duration": 26
+   },
+   {
+    "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+    "transfer": 217346,
+    "encoded": 217046,
+    "decoded": 217046,
+    "duration": 23
+   },
+   {
+    "name": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+    "transfer": 2479,
+    "encoded": 2179,
+    "decoded": 5839,
+    "duration": -77
+   }
+  ]
+ },
+ "console": [
+  "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+ ]
+}

@@ -3,7 +3,7 @@
 - الإصدار: 1 (المرحلة 2)
 - التاريخ: 2026-09-30
 - الإصدارات المستهدفة: frappe 16.28.0، erpnext 16.29.0 (`docs/progress/phase-0.md`)
-- المراجع: `docs/brief.md`، `docs/research/*.md`، `docs/adr/*.md`، `reference/prototype/` (تصدير Claude Design؛ انظر §11.0)
+- المراجع: `docs/brief.md`، `docs/research/*.md`، `docs/adr/*.md`، `reference/design/` (تصدير Claude Design؛ انظر §11.0)
 
 الرموز المختصرة للإحالات: `Q` = `frappe/desk/query_report.py`، `QJ` = `frappe/public/js/frappe/views/reports/query_report.js`، `R` = `frappe/core/doctype/report/report.py`، `P` = `frappe/core/doctype/prepared_report/prepared_report.py`.
 
@@ -695,7 +695,7 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 ## 11. خريطة المكونات
 
 ### 11.0 مصدر التصميم
-`reference/design/` غير موجود. `reference/prototype/README.md` يصف محتوى `reference/prototype/` بأنه «نموذج أولي من Claude Design»، وفيه `Main.dc.html`، `Mobile.dc.html`، `States.dc.html`، `Tokens.dc.html`، و `rv.css` («هذا الملف هو أساس التنفيذ»). الخريطة مبنية عليه. أي تصدير لاحق في `reference/design/` يُقارن بهذه الخريطة، والفروق تُسجَّل في تقرير المرحلة 5أ.
+`reference/design/` غير موجود. `reference/design/README.md` يصف محتوى `reference/design/` بأنه «نموذج أولي من Claude Design»، وفيه `Main.dc.html`، `Mobile.dc.html`، `States.dc.html`، `Tokens.dc.html`، و `rv.css` («هذا الملف هو أساس التنفيذ»). الخريطة مبنية عليه. أي تصدير لاحق في `reference/design/` يُقارن بهذه الخريطة، والفروق تُسجَّل في تقرير المرحلة 5أ.
 
 الأرقام (#) هي أرقام حصر العناصر الـ 93 في النموذج. «Tabulator» = ما توفره المكتبة ونضبطه؛ «بناء» = نبنيه من الصفر؛ «Frappe» = عنصر Frappe موجود.
 

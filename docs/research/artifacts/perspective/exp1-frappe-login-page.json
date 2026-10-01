@@ -1,0 +1,112 @@
+[
+ {
+  "variant": {
+   "mode": "esm",
+   "worker": "blob"
+  },
+  "page": "/login",
+  "csp": null,
+  "x_content_type_options": "nosniff",
+  "result": {
+   "ok": true,
+   "timings": {
+    "mode": "esm",
+    "worker": "blob",
+    "import_ms": 21.800000190734863,
+    "worker_ms": 244.09999990463257,
+    "engine_ready_ms": 265.90000009536743
+   },
+   "has_frappe": true,
+   "has_chrome": false,
+   "boot_lang": "ar",
+   "dir": "rtl"
+  },
+  "logs": [
+   "log: Deprecated as of 10.6.0. initHighlighting() is deprecated.  Use highlightAll() instead.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "variant": {
+   "mode": "esm",
+   "worker": "url"
+  },
+  "page": "/login",
+  "csp": null,
+  "x_content_type_options": "nosniff",
+  "result": {
+   "ok": true,
+   "timings": {
+    "mode": "esm",
+    "worker": "url",
+    "import_ms": 8.699999809265137,
+    "worker_ms": 217,
+    "engine_ready_ms": 225.69999980926514
+   },
+   "has_frappe": true,
+   "has_chrome": false,
+   "boot_lang": "ar",
+   "dir": "rtl"
+  },
+  "logs": [
+   "log: Deprecated as of 10.6.0. initHighlighting() is deprecated.  Use highlightAll() instead.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "variant": {
+   "mode": "bundle",
+   "worker": "blob",
+   "bundle": "/assets/report_view/dist/js/rv_perspective_probe.bundle.VQ7DJRDW.js"
+  },
+  "page": "/login",
+  "csp": null,
+  "x_content_type_options": "nosniff",
+  "result": {
+   "ok": true,
+   "timings": {
+    "mode": "bundle",
+    "worker": "blob",
+    "import_ms": 19.90000009536743,
+    "worker_ms": 204.09999990463257,
+    "engine_ready_ms": 224
+   },
+   "has_frappe": true,
+   "has_chrome": false,
+   "boot_lang": "ar",
+   "dir": "rtl"
+  },
+  "logs": [
+   "log: Deprecated as of 10.6.0. initHighlighting() is deprecated.  Use highlightAll() instead.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "variant": {
+   "mode": "bundle",
+   "worker": "url",
+   "bundle": "/assets/report_view/dist/js/rv_perspective_probe.bundle.VQ7DJRDW.js"
+  },
+  "page": "/login",
+  "csp": null,
+  "x_content_type_options": "nosniff",
+  "result": {
+   "ok": true,
+   "timings": {
+    "mode": "bundle",
+    "worker": "url",
+    "import_ms": 21.299999713897705,
+    "worker_ms": 203.59999990463257,
+    "engine_ready_ms": 224.89999961853027
+   },
+   "has_frappe": true,
+   "has_chrome": false,
+   "boot_lang": "ar",
+   "dir": "rtl"
+  },
+  "logs": [
+   "log: Deprecated as of 10.6.0. initHighlighting() is deprecated.  Use highlightAll() instead.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ }
+]

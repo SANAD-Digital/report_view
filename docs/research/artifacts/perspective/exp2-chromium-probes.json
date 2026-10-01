@@ -1,0 +1,7263 @@
+[
+ {
+  "name": "ltr-en",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 1078,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 792,
+     "width": 287,
+     "text": "Total"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     7,
+     0,
+     17
+    ],
+    "first_body_row_label": "Total",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287
+     },
+     {
+      "t": "Debit",
+      "l": 288,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 398,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 508,
+      "w": 125
+     },
+     {
+      "t": "Credit",
+      "l": 634,
+      "w": 125
+     },
+     {
+      "t": "Debit",
+      "l": 759,
+      "w": 125
+     },
+     {
+      "t": "Credit",
+      "l": 884,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "Opening",
+      "l": 288,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "Period movement",
+      "l": 508,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "Closing",
+      "l": 759,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 1078,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 792,
+     "width": 287,
+     "text": "Total"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     8,
+     0,
+     15
+    ],
+    "first_body_row_label": "Total",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287
+     },
+     {
+      "t": "Debit",
+      "l": 288,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 398,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 508,
+      "w": 125
+     },
+     {
+      "t": "Credit",
+      "l": 634,
+      "w": 125
+     },
+     {
+      "t": "Debit",
+      "l": 759,
+      "w": 125
+     },
+     {
+      "t": "Credit",
+      "l": 884,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "Opening",
+      "l": 288,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "Period movement",
+      "l": 508,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "Closing",
+      "l": 759,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 1,
+    "last_column_visible": true
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 1078,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 792,
+     "width": 287,
+     "text": "Total"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     8,
+     0,
+     15
+    ],
+    "first_body_row_label": "Total",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287
+     },
+     {
+      "t": "Debit",
+      "l": 288,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 398,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 508,
+      "w": 125
+     },
+     {
+      "t": "Credit",
+      "l": 634,
+      "w": 125
+     },
+     {
+      "t": "Debit",
+      "l": 759,
+      "w": 125
+     },
+     {
+      "t": "Credit",
+      "l": 884,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "Opening",
+      "l": 288,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "Period movement",
+      "l": 508,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "Closing",
+      "l": 759,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 1,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 56,
+    "scrollLeft": 56,
+    "scrollTop": 570,
+    "scrollWidth": 1190,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 722,
+     "width": 357,
+     "text": "4100 - إيراد مباشر - SA"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     9,
+     19,
+     34
+    ],
+    "first_body_row_label": "4100 - إيراد مباشر - SA",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 357
+     },
+     {
+      "t": "Debit",
+      "l": 358,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 468,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 578,
+      "w": 125
+     },
+     {
+      "t": "Credit",
+      "l": 704,
+      "w": 125
+     },
+     {
+      "t": "Debit",
+      "l": 829,
+      "w": 125
+     },
+     {
+      "t": "Credit",
+      "l": 954,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "Opening",
+      "l": 358,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "Period movement",
+      "l": 578,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "Closing",
+      "l": 829,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 2,
+    "last_column_visible": true
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 112,
+    "scrollLeft": 112,
+    "scrollTop": 0,
+    "scrollWidth": 1190,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 722,
+     "width": 357,
+     "text": "Total"
+    },
+    "first_row_x": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     1,
+     6,
+     0,
+     15
+    ],
+    "first_body_row_label": "Total",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 357
+     },
+     {
+      "t": "Credit",
+      "l": 358,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 468,
+      "w": 125
+     },
+     {
+      "t": "Credit",
+      "l": 594,
+      "w": 125
+     },
+     {
+      "t": "Debit",
+      "l": 719,
+      "w": 125
+     },
+     {
+      "t": "Credit",
+      "l": 844,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "Opening",
+      "l": 358,
+      "w": 110,
+      "colspan": 1
+     },
+     {
+      "t": "Period movement",
+      "l": 468,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "Closing",
+      "l": 719,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "ltr-en-split",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 6451,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 792,
+     "width": 287,
+     "text": "Total"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "window": [
+     0,
+     19,
+     0,
+     17
+    ],
+    "first_body_row_label": "Total",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287
+     },
+     {
+      "t": "Debit",
+      "l": 288,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 398,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 508,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 618,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 728,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 838,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 948,
+      "w": 151
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 288,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": 948,
+      "w": 151,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 2972,
+    "scrollLeft": 2972,
+    "scrollTop": 0,
+    "scrollWidth": 7021,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 792,
+     "width": 287,
+     "text": "Total"
+    },
+    "first_row_x": [
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47
+    ],
+    "window": [
+     40,
+     51,
+     0,
+     14
+    ],
+    "first_body_row_label": "Total",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287
+     },
+     {
+      "t": "Debit",
+      "l": 288,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 398,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 508,
+      "w": 122
+     },
+     {
+      "t": "Credit",
+      "l": 630,
+      "w": 122
+     },
+     {
+      "t": "Debit",
+      "l": 752,
+      "w": 151
+     },
+     {
+      "t": "Credit",
+      "l": 903,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 1013,
+      "w": 116
+     },
+     {
+      "t": "Credit",
+      "l": 1129,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "4110 - مبيعات - SA",
+      "l": 288,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": 508,
+      "w": 730,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 3,
+    "last_column_visible": false
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 6839,
+    "scrollLeft": 6839,
+    "scrollTop": 0,
+    "scrollWidth": 7917,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 792,
+     "width": 287,
+     "text": "Total"
+    },
+    "first_row_x": [
+     89,
+     90,
+     91,
+     92,
+     93,
+     94,
+     95
+    ],
+    "window": [
+     89,
+     99,
+     0,
+     14
+    ],
+    "first_body_row_label": "Total",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287
+     },
+     {
+      "t": "Credit",
+      "l": 288,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 398,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 508,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 618,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 728,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 838,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 948,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "عملاء - SA",
+      "l": 288,
+      "w": 110,
+      "colspan": 1
+     },
+     {
+      "t": "نقد دولار - SA",
+      "l": 398,
+      "w": 660,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "200.00",
+    "scroll_passes": 3,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 3688,
+    "scrollLeft": 3688,
+    "scrollTop": 600,
+    "scrollWidth": 8454,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 722,
+     "width": 357,
+     "text": "(null)"
+    },
+    "first_row_x": [
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     52
+    ],
+    "window": [
+     46,
+     56,
+     20,
+     34
+    ],
+    "first_body_row_label": "(null)",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 357
+     },
+     {
+      "t": "Debit",
+      "l": 358,
+      "w": 125
+     },
+     {
+      "t": "Credit",
+      "l": 483,
+      "w": 118
+     },
+     {
+      "t": "Debit",
+      "l": 602,
+      "w": 170
+     },
+     {
+      "t": "Credit",
+      "l": 772,
+      "w": 170
+     },
+     {
+      "t": "Debit",
+      "l": 942,
+      "w": 151
+     },
+     {
+      "t": "Credit",
+      "l": 1092,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 1202,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": 358,
+      "w": 244,
+      "colspan": 2
+     },
+     {
+      "t": "5118 - المصروفات متضمنة في تقييم السعر - SA",
+      "l": 602,
+      "w": 710,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "",
+    "scroll_passes": 4,
+    "last_column_visible": false
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 400,
+    "scrollLeft": 400,
+    "scrollTop": 0,
+    "scrollWidth": 8645,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 722,
+     "width": 357,
+     "text": "Total"
+    },
+    "first_row_x": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "window": [
+     3,
+     14,
+     0,
+     14
+    ],
+    "first_body_row_label": "Total",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 357
+     },
+     {
+      "t": "Credit",
+      "l": 358,
+      "w": 151
+     },
+     {
+      "t": "Debit",
+      "l": 509,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 619,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 729,
+      "w": 151
+     },
+     {
+      "t": "Credit",
+      "l": 879,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 989,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 1099,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 358,
+      "w": 371,
+      "colspan": 3
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": 729,
+      "w": 481,
+      "colspan": 4
+     }
+    ],
+    "first_td_text": "208,725.00"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-native",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 1078,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     7,
+     0,
+     17
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 446,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 321,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 196,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 71,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 572,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 321,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 71,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 1078,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     8,
+     0,
+     15
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 446,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 321,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 196,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 71,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 572,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 321,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 71,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 1,
+    "last_column_visible": true
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 1078,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     8,
+     0,
+     15
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 446,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 321,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 196,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 71,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 572,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 321,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 71,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 1,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -56,
+    "scrollLeft": -56,
+    "scrollTop": 570,
+    "scrollWidth": 1190,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 778,
+     "right": -55,
+     "width": 357,
+     "text": "4100 - إيراد مباشر - SA"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     8,
+     19,
+     34
+    ],
+    "first_body_row_label": "4100 - إيراد مباشر - SA",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 778,
+      "w": 357
+     },
+     {
+      "t": "مدين",
+      "l": 668,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 558,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 432,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 307,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 182,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 57,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 778,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 558,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 307,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 57,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 2,
+    "last_column_visible": true
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -112,
+    "scrollLeft": -112,
+    "scrollTop": 0,
+    "scrollWidth": 1190,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 834,
+     "right": -111,
+     "width": 357,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     6,
+     0,
+     15
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 834,
+      "w": 357
+     },
+     {
+      "t": "مدين",
+      "l": 724,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 614,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 488,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 363,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 238,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 113,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 834,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 614,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 363,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 113,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-native-split",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 6451,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "window": [
+     0,
+     19,
+     0,
+     17
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 462,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 352,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 242,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 132,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -19,
+      "w": 151
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 132,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": -19,
+      "w": 151,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -2711,
+    "scrollLeft": -2711,
+    "scrollTop": 0,
+    "scrollWidth": 6501,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 3503,
+     "right": -2710,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "window": [
+     0,
+     10,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 3503,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 3393,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 3283,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 3173,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 3063,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 2953,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 2843,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 2692,
+      "w": 151
+     },
+     {
+      "t": "دائن",
+      "l": 2582,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 3503,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 2843,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": 2582,
+      "w": 261,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 2,
+    "last_column_visible": false
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -5422,
+    "scrollLeft": -5422,
+    "scrollTop": 0,
+    "scrollWidth": 6501,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 6214,
+     "right": -5421,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "window": [
+     0,
+     10,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 6214,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 6104,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 5994,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 5884,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 5774,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 5664,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 5554,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 5403,
+      "w": 151
+     },
+     {
+      "t": "دائن",
+      "l": 5293,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 6214,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 5554,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": 5293,
+      "w": 261,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 1,
+    "last_column_visible": false
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -2741,
+    "scrollLeft": -2741,
+    "scrollTop": 600,
+    "scrollWidth": 6561,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 3463,
+     "right": -2740,
+     "width": 357,
+     "text": "(null)"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "window": [
+     0,
+     10,
+     20,
+     34
+    ],
+    "first_body_row_label": "(null)",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 3463,
+      "w": 357
+     },
+     {
+      "t": "مدين",
+      "l": 3353,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 3243,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 3133,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 3023,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 2913,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 2803,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 2652,
+      "w": 151
+     },
+     {
+      "t": "دائن",
+      "l": 2542,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 3463,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 2803,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": 2542,
+      "w": 261,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "",
+    "scroll_passes": 2,
+    "last_column_visible": false
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -400,
+    "scrollLeft": -400,
+    "scrollTop": 0,
+    "scrollWidth": 6561,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1122,
+     "right": -399,
+     "width": 357,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "window": [
+     0,
+     9,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1122,
+      "w": 357
+     },
+     {
+      "t": "مدين",
+      "l": 1012,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 902,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 792,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 462,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 311,
+      "w": 151
+     },
+     {
+      "t": "دائن",
+      "l": 201,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1122,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 462,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": 201,
+      "w": 261,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-shim",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 1078,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     7,
+     0,
+     17
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 446,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 321,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 196,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 71,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 572,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 321,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 71,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 1078,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     8,
+     0,
+     15
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 446,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 321,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 196,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 71,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 572,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 321,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 71,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 1,
+    "last_column_visible": true
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 1078,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     8,
+     0,
+     15
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 446,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 321,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 196,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 71,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 572,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 321,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 71,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 1,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -56,
+    "scrollLeft": 56,
+    "scrollTop": 570,
+    "scrollWidth": 1190,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 778,
+     "right": -55,
+     "width": 357,
+     "text": "4100 - إيراد مباشر - SA"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     9,
+     19,
+     34
+    ],
+    "first_body_row_label": "4100 - إيراد مباشر - SA",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 778,
+      "w": 357
+     },
+     {
+      "t": "مدين",
+      "l": 668,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 558,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 432,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 307,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 182,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 57,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 778,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 558,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 307,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 57,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 2,
+    "last_column_visible": true
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -112,
+    "scrollLeft": 112,
+    "scrollTop": 0,
+    "scrollWidth": 1190,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 834,
+     "right": -111,
+     "width": 357,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     1,
+     6,
+     0,
+     15
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 834,
+      "w": 357
+     },
+     {
+      "t": "دائن",
+      "l": 705,
+      "w": 129
+     },
+     {
+      "t": "مدين",
+      "l": 579,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 454,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 329,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 204,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 834,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 705,
+      "w": 129,
+      "colspan": 1
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 454,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 204,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-shim-split",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 6451,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "window": [
+     0,
+     19,
+     0,
+     17
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 462,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 352,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 242,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 132,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -19,
+      "w": 151
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 132,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": -19,
+      "w": 151,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -2955,
+    "scrollLeft": 2955,
+    "scrollTop": 0,
+    "scrollWidth": 6989,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 3747,
+     "right": -2954,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47
+    ],
+    "window": [
+     40,
+     51,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 3747,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 3637,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 3527,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 3405,
+      "w": 122
+     },
+     {
+      "t": "دائن",
+      "l": 3283,
+      "w": 122
+     },
+     {
+      "t": "مدين",
+      "l": 3167,
+      "w": 116
+     },
+     {
+      "t": "دائن",
+      "l": 3057,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 2938,
+      "w": 118
+     },
+     {
+      "t": "دائن",
+      "l": 2828,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 3747,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "4110 - مبيعات - SA",
+      "l": 3527,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": 2828,
+      "w": 698,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 4,
+    "last_column_visible": false
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -6814,
+    "scrollLeft": 6814,
+    "scrollTop": 0,
+    "scrollWidth": 7893,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 7606,
+     "right": -6813,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     89,
+     90,
+     91,
+     92,
+     93,
+     94,
+     95
+    ],
+    "window": [
+     89,
+     99,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 7606,
+      "w": 287
+     },
+     {
+      "t": "دائن",
+      "l": 7487,
+      "w": 118
+     },
+     {
+      "t": "مدين",
+      "l": 7377,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 7267,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 7157,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 7047,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 6929,
+      "w": 118
+     },
+     {
+      "t": "دائن",
+      "l": 6819,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 7606,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "عملاء - SA",
+      "l": 7487,
+      "w": 118,
+      "colspan": 1
+     },
+     {
+      "t": "نقد دولار - SA",
+      "l": 6819,
+      "w": 668,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "200.00",
+    "scroll_passes": 3,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -3663,
+    "scrollLeft": 3663,
+    "scrollTop": 600,
+    "scrollWidth": 8405,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 4385,
+     "right": -3662,
+     "width": 357,
+     "text": "(null)"
+    },
+    "first_row_x": [
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     52
+    ],
+    "window": [
+     46,
+     56,
+     20,
+     34
+    ],
+    "first_body_row_label": "(null)",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 4385,
+      "w": 357
+     },
+     {
+      "t": "مدين",
+      "l": 4258,
+      "w": 126
+     },
+     {
+      "t": "دائن",
+      "l": 4141,
+      "w": 117
+     },
+     {
+      "t": "مدين",
+      "l": 3971,
+      "w": 170
+     },
+     {
+      "t": "دائن",
+      "l": 3801,
+      "w": 170
+     },
+     {
+      "t": "مدين",
+      "l": 3691,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 3581,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 3463,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 4385,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": 4141,
+      "w": 244,
+      "colspan": 2
+     },
+     {
+      "t": "5118 - المصروفات متضمنة في تقييم السعر - SA",
+      "l": 3463,
+      "w": 678,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "",
+    "scroll_passes": 3,
+    "last_column_visible": false
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -400,
+    "scrollLeft": 400,
+    "scrollTop": 0,
+    "scrollWidth": 8613,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1122,
+     "right": -399,
+     "width": 357,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "window": [
+     3,
+     14,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1122,
+      "w": 357
+     },
+     {
+      "t": "دائن",
+      "l": 1012,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 902,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 792,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 641,
+      "w": 151
+     },
+     {
+      "t": "دائن",
+      "l": 531,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 421,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 311,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 193,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1122,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 792,
+      "w": 330,
+      "colspan": 3
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": 193,
+      "w": 599,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "208,725.00"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-shim2",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 1078,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     7,
+     0,
+     17
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 446,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 321,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 196,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 71,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 572,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 321,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 71,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 1078,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     8,
+     0,
+     15
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 446,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 321,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 196,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 71,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 572,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 321,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 71,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 1,
+    "last_column_visible": true
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 1078,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     8,
+     0,
+     15
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 446,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 321,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 196,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 71,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 572,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 321,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 71,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 1,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -56,
+    "scrollLeft": 56,
+    "scrollTop": 570,
+    "scrollWidth": 1190,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 722,
+     "right": 1,
+     "width": 357,
+     "text": "4100 - إيراد مباشر - SA"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     0,
+     9,
+     19,
+     34
+    ],
+    "first_body_row_label": "4100 - إيراد مباشر - SA",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357
+     },
+     {
+      "t": "مدين",
+      "l": 612,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 502,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 376,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 251,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 126,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 1,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 502,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 251,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 1,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 2,
+    "last_column_visible": true
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -112,
+    "scrollLeft": 112,
+    "scrollTop": 0,
+    "scrollWidth": 1190,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 722,
+     "right": 1,
+     "width": 357,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "window": [
+     1,
+     6,
+     0,
+     15
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357
+     },
+     {
+      "t": "دائن",
+      "l": 593,
+      "w": 129
+     },
+     {
+      "t": "مدين",
+      "l": 467,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 342,
+      "w": 125
+     },
+     {
+      "t": "مدين",
+      "l": 217,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 92,
+      "w": 125
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "الرصيد الافتتاحي",
+      "l": 593,
+      "w": 129,
+      "colspan": 1
+     },
+     {
+      "t": "حركة الفترة",
+      "l": 342,
+      "w": 251,
+      "colspan": 2
+     },
+     {
+      "t": "الرصيد الختامي",
+      "l": 92,
+      "w": 251,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "—"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-shim2-split",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 6451,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "window": [
+     0,
+     19,
+     0,
+     17
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 462,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 352,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 242,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 132,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -19,
+      "w": 151
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 132,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": -19,
+      "w": 151,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -2955,
+    "scrollLeft": 2955,
+    "scrollTop": 0,
+    "scrollWidth": 6989,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47
+    ],
+    "window": [
+     40,
+     51,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 450,
+      "w": 122
+     },
+     {
+      "t": "دائن",
+      "l": 328,
+      "w": 122
+     },
+     {
+      "t": "مدين",
+      "l": 212,
+      "w": 116
+     },
+     {
+      "t": "دائن",
+      "l": 102,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -17,
+      "w": 118
+     },
+     {
+      "t": "دائن",
+      "l": -127,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "4110 - مبيعات - SA",
+      "l": 572,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": -127,
+      "w": 698,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 4,
+    "last_column_visible": false
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -6814,
+    "scrollLeft": 6814,
+    "scrollTop": 0,
+    "scrollWidth": 7893,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     89,
+     90,
+     91,
+     92,
+     93,
+     94,
+     95
+    ],
+    "window": [
+     89,
+     99,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "دائن",
+      "l": 673,
+      "w": 118
+     },
+     {
+      "t": "مدين",
+      "l": 563,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 453,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 343,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 233,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 115,
+      "w": 118
+     },
+     {
+      "t": "دائن",
+      "l": 5,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "عملاء - SA",
+      "l": 673,
+      "w": 118,
+      "colspan": 1
+     },
+     {
+      "t": "نقد دولار - SA",
+      "l": 5,
+      "w": 668,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "200.00",
+    "scroll_passes": 3,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -3663,
+    "scrollLeft": 3663,
+    "scrollTop": 600,
+    "scrollWidth": 8405,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 722,
+     "right": 1,
+     "width": 357,
+     "text": "(null)"
+    },
+    "first_row_x": [
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     52
+    ],
+    "window": [
+     46,
+     56,
+     20,
+     34
+    ],
+    "first_body_row_label": "(null)",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357
+     },
+     {
+      "t": "مدين",
+      "l": 595,
+      "w": 126
+     },
+     {
+      "t": "دائن",
+      "l": 478,
+      "w": 117
+     },
+     {
+      "t": "مدين",
+      "l": 308,
+      "w": 170
+     },
+     {
+      "t": "دائن",
+      "l": 138,
+      "w": 170
+     },
+     {
+      "t": "مدين",
+      "l": 28,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": -82,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -200,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": 478,
+      "w": 244,
+      "colspan": 2
+     },
+     {
+      "t": "5118 - المصروفات متضمنة في تقييم السعر - SA",
+      "l": -200,
+      "w": 678,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "",
+    "scroll_passes": 3,
+    "last_column_visible": false
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -400,
+    "scrollLeft": 400,
+    "scrollTop": 0,
+    "scrollWidth": 8613,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 722,
+     "right": 1,
+     "width": 357,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "window": [
+     3,
+     14,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357
+     },
+     {
+      "t": "دائن",
+      "l": 612,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 502,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 392,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 241,
+      "w": 151
+     },
+     {
+      "t": "دائن",
+      "l": 131,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 21,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": -89,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -207,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 392,
+      "w": 330,
+      "colspan": 3
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": -207,
+      "w": 599,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "208,725.00"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-shim2-split-path",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 6849,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 27,
+     "right": 1,
+     "width": 1052,
+     "text": ""
+    },
+    "first_row_x": [
+     0
+    ],
+    "window": [
+     0,
+     19,
+     0,
+     17
+    ],
+    "first_body_row_label": "",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 807,
+      "w": 272
+     },
+     {
+      "t": "",
+      "l": 547,
+      "w": 260
+     },
+     {
+      "t": "",
+      "l": 287,
+      "w": 260
+     },
+     {
+      "t": "",
+      "l": 27,
+      "w": 260
+     },
+     {
+      "t": "مدين",
+      "l": -102,
+      "w": 129
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 27,
+      "w": 1052,
+      "colspan": 4
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": -102,
+      "w": 129,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -3002,
+    "scrollLeft": 3002,
+    "scrollTop": 0,
+    "scrollWidth": 7083,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 27,
+     "right": 1,
+     "width": 1052,
+     "text": ""
+    },
+    "first_row_x": [
+     46,
+     47
+    ],
+    "window": [
+     46,
+     54,
+     0,
+     14
+    ],
+    "first_body_row_label": "",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 807,
+      "w": 272
+     },
+     {
+      "t": "",
+      "l": 547,
+      "w": 260
+     },
+     {
+      "t": "",
+      "l": 287,
+      "w": 260
+     },
+     {
+      "t": "",
+      "l": 27,
+      "w": 260
+     },
+     {
+      "t": "مدين",
+      "l": -217,
+      "w": 244
+     },
+     {
+      "t": "دائن",
+      "l": -327,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 27,
+      "w": 1052,
+      "colspan": 4
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": -327,
+      "w": 354,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "5,059,308.00",
+    "scroll_passes": 3,
+    "last_column_visible": false
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -6097,
+    "scrollLeft": 6097,
+    "scrollTop": 0,
+    "scrollWidth": 7175,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 27,
+     "right": 1,
+     "width": 1052,
+     "text": ""
+    },
+    "first_row_x": [
+     95
+    ],
+    "window": [
+     95,
+     102,
+     0,
+     14
+    ],
+    "first_body_row_label": "",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 807,
+      "w": 272
+     },
+     {
+      "t": "",
+      "l": 547,
+      "w": 260
+     },
+     {
+      "t": "",
+      "l": 287,
+      "w": 260
+     },
+     {
+      "t": "",
+      "l": 27,
+      "w": 260
+     },
+     {
+      "t": "دائن",
+      "l": -92,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 27,
+      "w": 1052,
+      "colspan": 4
+     },
+     {
+      "t": "نقد دولار - SA",
+      "l": -92,
+      "w": 118,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 2,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -3070,
+    "scrollLeft": 3070,
+    "scrollTop": 600,
+    "scrollWidth": 7218,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 807,
+     "right": 1,
+     "width": 272,
+     "text": "4000 - الإيرادات - SA"
+    },
+    "first_row_x": [
+     46
+    ],
+    "window": [
+     46,
+     53,
+     20,
+     34
+    ],
+    "first_body_row_label": "4000 - الإيرادات - SA",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 807,
+      "w": 272
+     },
+     {
+      "t": "",
+      "l": 547,
+      "w": 260
+     },
+     {
+      "t": "",
+      "l": 287,
+      "w": 260
+     },
+     {
+      "t": "",
+      "l": -16,
+      "w": 303
+     },
+     {
+      "t": "مدين",
+      "l": -260,
+      "w": 244
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": -16,
+      "w": 1095,
+      "colspan": 4
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": -260,
+      "w": 244,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "",
+    "scroll_passes": 2,
+    "last_column_visible": false
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -400,
+    "scrollLeft": 400,
+    "scrollTop": 0,
+    "scrollWidth": 7286,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": -16,
+     "right": 1,
+     "width": 1095,
+     "text": ""
+    },
+    "first_row_x": [
+     5
+    ],
+    "window": [
+     5,
+     6,
+     0,
+     14
+    ],
+    "first_body_row_label": "",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 807,
+      "w": 272
+     },
+     {
+      "t": "",
+      "l": 547,
+      "w": 260
+     },
+     {
+      "t": "",
+      "l": 287,
+      "w": 260
+     },
+     {
+      "t": "",
+      "l": -16,
+      "w": 303
+     },
+     {
+      "t": "دائن",
+      "l": -144,
+      "w": 127
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": -16,
+      "w": 1095,
+      "colspan": 4
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": -144,
+      "w": 127,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-shim2-split-pinend",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 6451,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "window": [
+     0,
+     19,
+     0,
+     17
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 462,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 352,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 242,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 132,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -19,
+      "w": 151
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 132,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": -19,
+      "w": 151,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -2955,
+    "scrollLeft": 2955,
+    "scrollTop": 0,
+    "scrollWidth": 6989,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47
+    ],
+    "window": [
+     40,
+     51,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 450,
+      "w": 122
+     },
+     {
+      "t": "دائن",
+      "l": 328,
+      "w": 122
+     },
+     {
+      "t": "مدين",
+      "l": 212,
+      "w": 116
+     },
+     {
+      "t": "دائن",
+      "l": 102,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -17,
+      "w": 118
+     },
+     {
+      "t": "دائن",
+      "l": -127,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "4110 - مبيعات - SA",
+      "l": 572,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": -127,
+      "w": 698,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 4,
+    "last_column_visible": false
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -6814,
+    "scrollLeft": 6814,
+    "scrollTop": 0,
+    "scrollWidth": 7893,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     89,
+     90,
+     91,
+     92,
+     93,
+     94,
+     95
+    ],
+    "window": [
+     89,
+     99,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "دائن",
+      "l": 673,
+      "w": 118
+     },
+     {
+      "t": "مدين",
+      "l": 563,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 453,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 343,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 233,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 115,
+      "w": 118
+     },
+     {
+      "t": "دائن",
+      "l": 5,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "عملاء - SA",
+      "l": 673,
+      "w": 118,
+      "colspan": 1
+     },
+     {
+      "t": "نقد دولار - SA",
+      "l": 5,
+      "w": 668,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "200.00",
+    "scroll_passes": 3,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -3663,
+    "scrollLeft": 3663,
+    "scrollTop": 600,
+    "scrollWidth": 8405,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 722,
+     "right": 1,
+     "width": 357,
+     "text": "(null)"
+    },
+    "first_row_x": [
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     52
+    ],
+    "window": [
+     46,
+     56,
+     20,
+     34
+    ],
+    "first_body_row_label": "(null)",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357
+     },
+     {
+      "t": "مدين",
+      "l": 595,
+      "w": 126
+     },
+     {
+      "t": "دائن",
+      "l": 478,
+      "w": 117
+     },
+     {
+      "t": "مدين",
+      "l": 308,
+      "w": 170
+     },
+     {
+      "t": "دائن",
+      "l": 138,
+      "w": 170
+     },
+     {
+      "t": "مدين",
+      "l": 28,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": -82,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -200,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": 478,
+      "w": 244,
+      "colspan": 2
+     },
+     {
+      "t": "5118 - المصروفات متضمنة في تقييم السعر - SA",
+      "l": -200,
+      "w": 678,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "",
+    "scroll_passes": 3,
+    "last_column_visible": false
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -400,
+    "scrollLeft": 400,
+    "scrollTop": 0,
+    "scrollWidth": 8613,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 722,
+     "right": 1,
+     "width": 357,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "window": [
+     3,
+     14,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357
+     },
+     {
+      "t": "دائن",
+      "l": 612,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 502,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 392,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 241,
+      "w": 151
+     },
+     {
+      "t": "دائن",
+      "l": 131,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 21,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": -89,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -207,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 392,
+      "w": 330,
+      "colspan": 3
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": -207,
+      "w": 599,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "208,725.00"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-shim2-split-dark",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 6451,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "window": [
+     0,
+     19,
+     0,
+     17
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 462,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 352,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 242,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 132,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -19,
+      "w": 151
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 132,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": -19,
+      "w": 151,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -2955,
+    "scrollLeft": 2955,
+    "scrollTop": 0,
+    "scrollWidth": 6989,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47
+    ],
+    "window": [
+     40,
+     51,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "مدين",
+      "l": 682,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 572,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 450,
+      "w": 122
+     },
+     {
+      "t": "دائن",
+      "l": 328,
+      "w": 122
+     },
+     {
+      "t": "مدين",
+      "l": 212,
+      "w": 116
+     },
+     {
+      "t": "دائن",
+      "l": 102,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -17,
+      "w": 118
+     },
+     {
+      "t": "دائن",
+      "l": -127,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "4110 - مبيعات - SA",
+      "l": 572,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": -127,
+      "w": 698,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 4,
+    "last_column_visible": false
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -6814,
+    "scrollLeft": 6814,
+    "scrollTop": 0,
+    "scrollWidth": 7893,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 792,
+     "right": 1,
+     "width": 287,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     89,
+     90,
+     91,
+     92,
+     93,
+     94,
+     95
+    ],
+    "window": [
+     89,
+     99,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287
+     },
+     {
+      "t": "دائن",
+      "l": 673,
+      "w": 118
+     },
+     {
+      "t": "مدين",
+      "l": 563,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 453,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 343,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 233,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 115,
+      "w": 118
+     },
+     {
+      "t": "دائن",
+      "l": 5,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 792,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "عملاء - SA",
+      "l": 673,
+      "w": 118,
+      "colspan": 1
+     },
+     {
+      "t": "نقد دولار - SA",
+      "l": 5,
+      "w": 668,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "200.00",
+    "scroll_passes": 3,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -3663,
+    "scrollLeft": 3663,
+    "scrollTop": 600,
+    "scrollWidth": 8405,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 722,
+     "right": 1,
+     "width": 357,
+     "text": "(null)"
+    },
+    "first_row_x": [
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     52
+    ],
+    "window": [
+     46,
+     56,
+     20,
+     34
+    ],
+    "first_body_row_label": "(null)",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357
+     },
+     {
+      "t": "مدين",
+      "l": 595,
+      "w": 126
+     },
+     {
+      "t": "دائن",
+      "l": 478,
+      "w": 117
+     },
+     {
+      "t": "مدين",
+      "l": 308,
+      "w": 170
+     },
+     {
+      "t": "دائن",
+      "l": 138,
+      "w": 170
+     },
+     {
+      "t": "مدين",
+      "l": 28,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": -82,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -200,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": 478,
+      "w": 244,
+      "colspan": 2
+     },
+     {
+      "t": "5118 - المصروفات متضمنة في تقييم السعر - SA",
+      "l": -200,
+      "w": 678,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "",
+    "scroll_passes": 3,
+    "last_column_visible": false
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": -400,
+    "scrollLeft": 400,
+    "scrollTop": 0,
+    "scrollWidth": 8613,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 722,
+     "right": 1,
+     "width": 357,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "window": [
+     3,
+     14,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357
+     },
+     {
+      "t": "دائن",
+      "l": 612,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 502,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 392,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 241,
+      "w": 151
+     },
+     {
+      "t": "دائن",
+      "l": 131,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 21,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": -89,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -207,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 722,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 392,
+      "w": 330,
+      "colspan": 3
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": -207,
+      "w": 599,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "208,725.00"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "ltr-en-split-pinend",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 6451,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 792,
+     "width": 287,
+     "text": "Total"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "window": [
+     0,
+     19,
+     0,
+     17
+    ],
+    "first_body_row_label": "Total",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287
+     },
+     {
+      "t": "Debit",
+      "l": 288,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 398,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 508,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 618,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 728,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 838,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 948,
+      "w": 151
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 288,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": 948,
+      "w": 151,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 2972,
+    "scrollLeft": 2972,
+    "scrollTop": 0,
+    "scrollWidth": 7021,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 792,
+     "width": 287,
+     "text": "Total"
+    },
+    "first_row_x": [
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47
+    ],
+    "window": [
+     40,
+     51,
+     0,
+     14
+    ],
+    "first_body_row_label": "Total",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287
+     },
+     {
+      "t": "Debit",
+      "l": 288,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 398,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 508,
+      "w": 122
+     },
+     {
+      "t": "Credit",
+      "l": 630,
+      "w": 122
+     },
+     {
+      "t": "Debit",
+      "l": 752,
+      "w": 151
+     },
+     {
+      "t": "Credit",
+      "l": 903,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 1013,
+      "w": 116
+     },
+     {
+      "t": "Credit",
+      "l": 1129,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "4110 - مبيعات - SA",
+      "l": 288,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": 508,
+      "w": 730,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 3,
+    "last_column_visible": false
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 6839,
+    "scrollLeft": 6839,
+    "scrollTop": 0,
+    "scrollWidth": 7917,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 792,
+     "width": 287,
+     "text": "Total"
+    },
+    "first_row_x": [
+     89,
+     90,
+     91,
+     92,
+     93,
+     94,
+     95
+    ],
+    "window": [
+     89,
+     99,
+     0,
+     14
+    ],
+    "first_body_row_label": "Total",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287
+     },
+     {
+      "t": "Credit",
+      "l": 288,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 398,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 508,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 618,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 728,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 838,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 948,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 287,
+      "colspan": 1
+     },
+     {
+      "t": "عملاء - SA",
+      "l": 288,
+      "w": 110,
+      "colspan": 1
+     },
+     {
+      "t": "نقد دولار - SA",
+      "l": 398,
+      "w": 660,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "200.00",
+    "scroll_passes": 3,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 3688,
+    "scrollLeft": 3688,
+    "scrollTop": 600,
+    "scrollWidth": 8454,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 722,
+     "width": 357,
+     "text": "(null)"
+    },
+    "first_row_x": [
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     52
+    ],
+    "window": [
+     46,
+     56,
+     20,
+     34
+    ],
+    "first_body_row_label": "(null)",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 357
+     },
+     {
+      "t": "Debit",
+      "l": 358,
+      "w": 125
+     },
+     {
+      "t": "Credit",
+      "l": 483,
+      "w": 118
+     },
+     {
+      "t": "Debit",
+      "l": 602,
+      "w": 170
+     },
+     {
+      "t": "Credit",
+      "l": 772,
+      "w": 170
+     },
+     {
+      "t": "Debit",
+      "l": 942,
+      "w": 151
+     },
+     {
+      "t": "Credit",
+      "l": 1092,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 1202,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": 358,
+      "w": 244,
+      "colspan": 2
+     },
+     {
+      "t": "5118 - المصروفات متضمنة في تقييم السعر - SA",
+      "l": 602,
+      "w": 710,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "",
+    "scroll_passes": 4,
+    "last_column_visible": false
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 400,
+    "scrollLeft": 400,
+    "scrollTop": 0,
+    "scrollWidth": 8645,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 1,
+     "right": 722,
+     "width": 357,
+     "text": "Total"
+    },
+    "first_row_x": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "window": [
+     3,
+     14,
+     0,
+     14
+    ],
+    "first_body_row_label": "Total",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 357
+     },
+     {
+      "t": "Credit",
+      "l": 358,
+      "w": 151
+     },
+     {
+      "t": "Debit",
+      "l": 509,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 619,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 729,
+      "w": 151
+     },
+     {
+      "t": "Credit",
+      "l": 879,
+      "w": 110
+     },
+     {
+      "t": "Debit",
+      "l": 989,
+      "w": 110
+     },
+     {
+      "t": "Credit",
+      "l": 1099,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 1,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 358,
+      "w": 371,
+      "colspan": 3
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": 729,
+      "w": 481,
+      "colspan": 4
+     }
+    ],
+    "first_td_text": "208,725.00"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-reverse-split",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 5302,
+    "scrollLeft": 5302,
+    "scrollTop": 0,
+    "scrollWidth": 6930,
+    "clientWidth": 1078,
+    "row_header": null,
+    "first_row_x": [
+     80,
+     81,
+     82,
+     83,
+     84,
+     85,
+     86,
+     87,
+     88,
+     89
+    ],
+    "window": [
+     80,
+     92,
+     0,
+     14
+    ],
+    "first_body_row_label": null,
+    "head_cells": [
+     {
+      "t": "دائن",
+      "l": 1,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 111,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 221,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 331,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 441,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 551,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 661,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 771,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 881,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 991,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "1312 - مدينون-usd - SA",
+      "l": 1,
+      "w": 440,
+      "colspan": 4
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": 441,
+      "w": 660,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "699,300.00"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 3305,
+    "scrollLeft": 3305,
+    "scrollTop": 0,
+    "scrollWidth": 7687,
+    "clientWidth": 1078,
+    "row_header": null,
+    "first_row_x": [
+     43,
+     44,
+     45,
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     52,
+     53
+    ],
+    "window": [
+     43,
+     56,
+     0,
+     14
+    ],
+    "first_body_row_label": null,
+    "head_cells": [
+     {
+      "t": "مدين",
+      "l": 1,
+      "w": 118
+     },
+     {
+      "t": "دائن",
+      "l": 119,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 229,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 339,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 449,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 559,
+      "w": 118
+     },
+     {
+      "t": "مدين",
+      "l": 678,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 803,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 913,
+      "w": 116
+     },
+     {
+      "t": "دائن",
+      "l": 1029,
+      "w": 129
+     },
+     {
+      "t": "مدين",
+      "l": 1158,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "5118 - المصروفات متضمنة في تقييم السعر - SA",
+      "l": 1,
+      "w": 558,
+      "colspan": 5
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": 559,
+      "w": 709,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "6,300.00",
+    "scroll_passes": 4,
+    "last_column_visible": false
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 7756,
+    "clientWidth": 1078,
+    "row_header": null,
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "window": [
+     0,
+     12,
+     0,
+     14
+    ],
+    "first_body_row_label": null,
+    "head_cells": [
+     {
+      "t": "دائن",
+      "l": 1,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 111,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 221,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 331,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 441,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 551,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 661,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 771,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 881,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 991,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 1101,
+      "w": 129
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "نقد دولار - SA",
+      "l": 1,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "عملاء - SA",
+      "l": 661,
+      "w": 569,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 2,
+    "last_column_visible": false
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 3339,
+    "scrollLeft": 3339,
+    "scrollTop": 600,
+    "scrollWidth": 7756,
+    "clientWidth": 1078,
+    "row_header": null,
+    "first_row_x": [
+     43,
+     44,
+     45,
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     52,
+     53
+    ],
+    "window": [
+     43,
+     56,
+     20,
+     34
+    ],
+    "first_body_row_label": null,
+    "head_cells": [
+     {
+      "t": "مدين",
+      "l": 1,
+      "w": 118
+     },
+     {
+      "t": "دائن",
+      "l": 119,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 229,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 339,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 449,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 559,
+      "w": 118
+     },
+     {
+      "t": "مدين",
+      "l": 678,
+      "w": 125
+     },
+     {
+      "t": "دائن",
+      "l": 803,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 913,
+      "w": 116
+     },
+     {
+      "t": "دائن",
+      "l": 1029,
+      "w": 129
+     },
+     {
+      "t": "مدين",
+      "l": 1158,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "5118 - المصروفات متضمنة في تقييم السعر - SA",
+      "l": 1,
+      "w": 558,
+      "colspan": 5
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": 559,
+      "w": 709,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "",
+    "scroll_passes": 1,
+    "last_column_visible": false
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 6877,
+    "scrollLeft": 6877,
+    "scrollTop": 0,
+    "scrollWidth": 8355,
+    "clientWidth": 1078,
+    "row_header": null,
+    "first_row_x": [
+     86,
+     87,
+     88,
+     89,
+     90,
+     91,
+     92,
+     93,
+     94,
+     95,
+     96
+    ],
+    "window": [
+     86,
+     97,
+     0,
+     14
+    ],
+    "first_body_row_label": null,
+    "head_cells": [
+     {
+      "t": "دائن",
+      "l": 1,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 111,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 221,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 331,
+      "w": 151
+     },
+     {
+      "t": "دائن",
+      "l": 482,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 592,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 702,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 812,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 922,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 1032,
+      "w": 110
+     },
+     {
+      "t": "الحساب",
+      "l": 1142,
+      "w": 296
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "1310 - مدينون - SA",
+      "l": 1,
+      "w": 481,
+      "colspan": 4
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 482,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "الحساب",
+      "l": 1142,
+      "w": 296,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "466,301.00"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-flip-split",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 6451,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 782,
+     "right": 1,
+     "width": 297,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ],
+    "window": [
+     0,
+     19,
+     0,
+     17
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 782,
+      "w": 297
+     },
+     {
+      "t": "مدين",
+      "l": 672,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 562,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 452,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 342,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 232,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 122,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -29,
+      "w": 151
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 782,
+      "w": 297,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 122,
+      "w": 660,
+      "colspan": 6
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": -29,
+      "w": 151,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 2956,
+    "scrollLeft": 2956,
+    "scrollTop": 0,
+    "scrollWidth": 6989,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 782,
+     "right": 1,
+     "width": 297,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47
+    ],
+    "window": [
+     40,
+     51,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 782,
+      "w": 297
+     },
+     {
+      "t": "مدين",
+      "l": 672,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 562,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 440,
+      "w": 122
+     },
+     {
+      "t": "دائن",
+      "l": 318,
+      "w": 122
+     },
+     {
+      "t": "مدين",
+      "l": 202,
+      "w": 116
+     },
+     {
+      "t": "دائن",
+      "l": 92,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -27,
+      "w": 118
+     },
+     {
+      "t": "دائن",
+      "l": -137,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 782,
+      "w": 297,
+      "colspan": 1
+     },
+     {
+      "t": "4110 - مبيعات - SA",
+      "l": 562,
+      "w": 220,
+      "colspan": 2
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": -137,
+      "w": 698,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 4,
+    "last_column_visible": false
+   },
+   "scroll_x_end": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 6925,
+    "scrollLeft": 6925,
+    "scrollTop": 0,
+    "scrollWidth": 8003,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 782,
+     "right": 1,
+     "width": 297,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     90,
+     91,
+     92,
+     93,
+     94,
+     95
+    ],
+    "window": [
+     90,
+     99,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 782,
+      "w": 297
+     },
+     {
+      "t": "مدين",
+      "l": 653,
+      "w": 129
+     },
+     {
+      "t": "دائن",
+      "l": 543,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 433,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 323,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 213,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 103,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 782,
+      "w": 297,
+      "colspan": 1
+     },
+     {
+      "t": "نقد دولار - SA",
+      "l": 103,
+      "w": 679,
+      "colspan": 6
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 4,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 3659,
+    "scrollLeft": 3659,
+    "scrollTop": 600,
+    "scrollWidth": 8396,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 712,
+     "right": 1,
+     "width": 367,
+     "text": "(null)"
+    },
+    "first_row_x": [
+     46,
+     47,
+     48,
+     49,
+     50,
+     51,
+     52
+    ],
+    "window": [
+     46,
+     56,
+     20,
+     34
+    ],
+    "first_body_row_label": "(null)",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 712,
+      "w": 367
+     },
+     {
+      "t": "مدين",
+      "l": 585,
+      "w": 126
+     },
+     {
+      "t": "دائن",
+      "l": 468,
+      "w": 117
+     },
+     {
+      "t": "مدين",
+      "l": 298,
+      "w": 170
+     },
+     {
+      "t": "دائن",
+      "l": 128,
+      "w": 170
+     },
+     {
+      "t": "مدين",
+      "l": 18,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": -92,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -210,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 712,
+      "w": 367,
+      "colspan": 1
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": 468,
+      "w": 244,
+      "colspan": 2
+     },
+     {
+      "t": "5118 - المصروفات متضمنة في تقييم السعر - SA",
+      "l": -210,
+      "w": 678,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "",
+    "scroll_passes": 3,
+    "last_column_visible": false
+   },
+   "wheel": {
+    "wrap_w": 1080,
+    "native_scrollLeft": 400,
+    "scrollLeft": 400,
+    "scrollTop": 0,
+    "scrollWidth": 8605,
+    "clientWidth": 1078,
+    "row_header": {
+     "left": 712,
+     "right": 1,
+     "width": 367,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "window": [
+     3,
+     14,
+     0,
+     14
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 712,
+      "w": 367
+     },
+     {
+      "t": "دائن",
+      "l": 602,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 492,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": 382,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 231,
+      "w": 151
+     },
+     {
+      "t": "دائن",
+      "l": 121,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": 11,
+      "w": 110
+     },
+     {
+      "t": "دائن",
+      "l": -99,
+      "w": 110
+     },
+     {
+      "t": "مدين",
+      "l": -217,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 712,
+      "w": 367,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": 382,
+      "w": 330,
+      "colspan": 3
+     },
+     {
+      "t": "1310 - مدينون - SA",
+      "l": -217,
+      "w": 599,
+      "colspan": 5
+     }
+    ],
+    "first_td_text": "208,725.00"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-shim2-split-390",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 370,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 6139,
+    "clientWidth": 368,
+    "row_header": {
+     "left": 38,
+     "right": 1,
+     "width": 331,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0
+    ],
+    "window": [
+     0,
+     8,
+     0,
+     22
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 38,
+      "w": 331
+     },
+     {
+      "t": "مدين",
+      "l": -91,
+      "w": 129
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 38,
+      "w": 331,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": -91,
+      "w": 129,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 370,
+    "native_scrollLeft": -3002,
+    "scrollLeft": 3002,
+    "scrollTop": 0,
+    "scrollWidth": 6373,
+    "clientWidth": 368,
+    "row_header": {
+     "left": 38,
+     "right": 1,
+     "width": 331,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     46,
+     47
+    ],
+    "window": [
+     46,
+     51,
+     0,
+     19
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 38,
+      "w": 331
+     },
+     {
+      "t": "مدين",
+      "l": -206,
+      "w": 244
+     },
+     {
+      "t": "دائن",
+      "l": -316,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 38,
+      "w": 331,
+      "colspan": 1
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": -316,
+      "w": 354,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "5,059,308.00",
+    "scroll_passes": 3,
+    "last_column_visible": false
+   },
+   "scroll_x_end": {
+    "wrap_w": 370,
+    "native_scrollLeft": -6086,
+    "scrollLeft": 6086,
+    "scrollTop": 0,
+    "scrollWidth": 6455,
+    "clientWidth": 368,
+    "row_header": {
+     "left": 38,
+     "right": 1,
+     "width": 331,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     95
+    ],
+    "window": [
+     95,
+     99,
+     0,
+     19
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 38,
+      "w": 331
+     },
+     {
+      "t": "دائن",
+      "l": -81,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 38,
+      "w": 331,
+      "colspan": 1
+     },
+     {
+      "t": "نقد دولار - SA",
+      "l": -81,
+      "w": 118,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 2,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 370,
+    "native_scrollLeft": -3056,
+    "scrollLeft": 3056,
+    "scrollTop": 460,
+    "scrollWidth": 6480,
+    "clientWidth": 368,
+    "row_header": {
+     "left": 12,
+     "right": 1,
+     "width": 357,
+     "text": "2110 - الدائنين - SA"
+    },
+    "first_row_x": [
+     46,
+     47
+    ],
+    "window": [
+     46,
+     51,
+     15,
+     34
+    ],
+    "first_body_row_label": "2110 - الدائنين - SA",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 12,
+      "w": 357
+     },
+     {
+      "t": "مدين",
+      "l": -232,
+      "w": 244
+     },
+     {
+      "t": "دائن",
+      "l": -342,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 12,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": -342,
+      "w": 354,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "",
+    "scroll_passes": 2,
+    "last_column_visible": false
+   },
+   "wheel": {
+    "wrap_w": 370,
+    "native_scrollLeft": -400,
+    "scrollLeft": 400,
+    "scrollTop": 0,
+    "scrollWidth": 6598,
+    "clientWidth": 368,
+    "row_header": {
+     "left": 12,
+     "right": 1,
+     "width": 357,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     4
+    ],
+    "window": [
+     4,
+     9,
+     0,
+     19
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 12,
+      "w": 357
+     },
+     {
+      "t": "مدين",
+      "l": -116,
+      "w": 127
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 12,
+      "w": 357,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": -116,
+      "w": 127,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "330,886.00"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "name": "rtl-flip-split-390",
+  "browser": "chromium",
+  "steps": {
+   "initial": {
+    "wrap_w": 370,
+    "native_scrollLeft": 0,
+    "scrollLeft": 0,
+    "scrollTop": 0,
+    "scrollWidth": 6139,
+    "clientWidth": 368,
+    "row_header": {
+     "left": 28,
+     "right": 1,
+     "width": 341,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     0
+    ],
+    "window": [
+     0,
+     8,
+     0,
+     22
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 28,
+      "w": 341
+     },
+     {
+      "t": "مدين",
+      "l": -101,
+      "w": 129
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 28,
+      "w": 341,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": -101,
+      "w": 129,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—"
+   },
+   "scroll_x_half": {
+    "wrap_w": 370,
+    "native_scrollLeft": 3003,
+    "scrollLeft": 3003,
+    "scrollTop": 0,
+    "scrollWidth": 6373,
+    "clientWidth": 368,
+    "row_header": {
+     "left": 28,
+     "right": 1,
+     "width": 341,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     46,
+     47
+    ],
+    "window": [
+     46,
+     51,
+     0,
+     19
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 28,
+      "w": 341
+     },
+     {
+      "t": "مدين",
+      "l": -216,
+      "w": 244
+     },
+     {
+      "t": "دائن",
+      "l": -326,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 28,
+      "w": 341,
+      "colspan": 1
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": -326,
+      "w": 354,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "5,059,308.00",
+    "scroll_passes": 3,
+    "last_column_visible": false
+   },
+   "scroll_x_end": {
+    "wrap_w": 370,
+    "native_scrollLeft": 6097,
+    "scrollLeft": 6097,
+    "scrollTop": 0,
+    "scrollWidth": 6465,
+    "clientWidth": 368,
+    "row_header": {
+     "left": 28,
+     "right": 1,
+     "width": 341,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     95
+    ],
+    "window": [
+     95,
+     99,
+     0,
+     19
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 28,
+      "w": 341
+     },
+     {
+      "t": "دائن",
+      "l": -90,
+      "w": 118
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 28,
+      "w": 341,
+      "colspan": 1
+     },
+     {
+      "t": "نقد دولار - SA",
+      "l": -90,
+      "w": 118,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "—",
+    "scroll_passes": 2,
+    "last_column_visible": true
+   },
+   "scroll_xy": {
+    "wrap_w": 370,
+    "native_scrollLeft": 3061,
+    "scrollLeft": 3061,
+    "scrollTop": 460,
+    "scrollWidth": 6490,
+    "clientWidth": 368,
+    "row_header": {
+     "left": 2,
+     "right": 1,
+     "width": 367,
+     "text": "2110 - الدائنين - SA"
+    },
+    "first_row_x": [
+     46,
+     47
+    ],
+    "window": [
+     46,
+     51,
+     15,
+     34
+    ],
+    "first_body_row_label": "2110 - الدائنين - SA",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 2,
+      "w": 367
+     },
+     {
+      "t": "مدين",
+      "l": -242,
+      "w": 244
+     },
+     {
+      "t": "دائن",
+      "l": -352,
+      "w": 110
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 2,
+      "w": 367,
+      "colspan": 1
+     },
+     {
+      "t": "5111 - تكلفة البضاعة المباعة - SA",
+      "l": -352,
+      "w": 354,
+      "colspan": 2
+     }
+    ],
+    "first_td_text": "",
+    "scroll_passes": 2,
+    "last_column_visible": false
+   },
+   "wheel": {
+    "wrap_w": 370,
+    "native_scrollLeft": 400,
+    "scrollLeft": 400,
+    "scrollTop": 0,
+    "scrollWidth": 6608,
+    "clientWidth": 368,
+    "row_header": {
+     "left": 2,
+     "right": 1,
+     "width": 367,
+     "text": "الإجمالي"
+    },
+    "first_row_x": [
+     4
+    ],
+    "window": [
+     4,
+     9,
+     0,
+     19
+    ],
+    "first_body_row_label": "الإجمالي",
+    "head_cells": [
+     {
+      "t": "",
+      "l": 2,
+      "w": 367
+     },
+     {
+      "t": "مدين",
+      "l": -126,
+      "w": 127
+     }
+    ],
+    "band_cells": [
+     {
+      "t": "",
+      "l": 2,
+      "w": 367,
+      "colspan": 1
+     },
+     {
+      "t": "1110 - نقد - SA",
+      "l": -126,
+      "w": 127,
+      "colspan": 1
+     }
+    ],
+    "first_td_text": "330,886.00"
+   }
+  },
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ }
+]

@@ -1,0 +1,218 @@
+{
+ "target": "run.html?exp=exp3&n=100000&format=columns",
+ "base": "http://127.0.0.1:39195",
+ "browser": "chromium",
+ "result": {
+  "ok": true,
+  "exp": "exp3",
+  "n": 100000,
+  "format": "columns",
+  "timings_ms": {
+   "table_load": 325.1,
+   "group_by_2_levels_view+to_columns_100": 116.7,
+   "group_by_3_levels_highcard_view+to_columns_100": 618.2,
+   "split_by_12+group_by_view+to_columns_100": 246,
+   "flat_view+to_columns_100": 78.7,
+   "filter+sort_flat_view+to_columns_100": 36.8,
+   "filter+sort_grouped_view+to_columns_100": 46.4,
+   "unique_values_with_count_dim_d": 150.6,
+   "expression+group_by_view+to_columns_100": 220,
+   "window_50_rows_on_sorted_view": 1.1,
+   "view_delete": 2.2,
+   "first_display_table+grouped_view+regular_table_draw": 467.6,
+   "table_delete": 0.3
+  },
+  "raw": {
+   "table_load": [
+    467.5,
+    325.1,
+    279.3
+   ],
+   "group_by_2_levels_view+to_columns_100": [
+    163,
+    116.7,
+    109.2
+   ],
+   "group_by_3_levels_highcard_view+to_columns_100": [
+    607,
+    696.8,
+    618.2
+   ],
+   "split_by_12+group_by_view+to_columns_100": [
+    254.6,
+    246,
+    227.2
+   ],
+   "flat_view+to_columns_100": [
+    116.2,
+    78.7,
+    77.5
+   ],
+   "filter+sort_flat_view+to_columns_100": [
+    40.4,
+    32.6,
+    36.8
+   ],
+   "filter+sort_grouped_view+to_columns_100": [
+    58.3,
+    45.2,
+    46.4
+   ],
+   "unique_values_with_count_dim_d": [
+    137.5,
+    221.7,
+    150.6
+   ],
+   "expression+group_by_view+to_columns_100": [
+    220,
+    220.2,
+    188.9
+   ],
+   "first_display_table+grouped_view+regular_table_draw": [
+    500,
+    467.6,
+    432
+   ]
+  },
+  "memory": [
+   {
+    "label": "before data",
+    "js_heap_used_mb": 11.7,
+    "js_heap_total_mb": 13.4,
+    "wasm_heap_size_mb": 16,
+    "wasm_used_size_mb": 0
+   },
+   {
+    "label": "data generated in JS (not yet in engine)",
+    "js_heap_used_mb": 21,
+    "js_heap_total_mb": 32.6,
+    "wasm_heap_size_mb": 16,
+    "wasm_used_size_mb": 0
+   },
+   {
+    "label": "table loaded",
+    "js_heap_used_mb": 21.1,
+    "js_heap_total_mb": 32.1,
+    "wasm_heap_size_mb": 91.1,
+    "wasm_used_size_mb": 16.4
+   },
+   {
+    "label": "table + one grouped view",
+    "js_heap_used_mb": 21.2,
+    "js_heap_total_mb": 32.3,
+    "wasm_heap_size_mb": 91.1,
+    "wasm_used_size_mb": 21.6
+   },
+   {
+    "label": "after table.delete()",
+    "js_heap_used_mb": 21.6,
+    "js_heap_total_mb": 32.8,
+    "wasm_heap_size_mb": 108.3,
+    "wasm_used_size_mb": 0.3
+   },
+   {
+    "label": "after cycle 1",
+    "js_heap_used_mb": 21.6,
+    "js_heap_total_mb": 23.1,
+    "wasm_heap_size_mb": 108.3,
+    "wasm_used_size_mb": 0.3
+   },
+   {
+    "label": "after cycle 5",
+    "js_heap_used_mb": 21.6,
+    "js_heap_total_mb": 22.3,
+    "wasm_heap_size_mb": 108.3,
+    "wasm_used_size_mb": 0.3
+   },
+   {
+    "label": "after cycle 10",
+    "js_heap_used_mb": 21.6,
+    "js_heap_total_mb": 22.3,
+    "wasm_heap_size_mb": 108.3,
+    "wasm_used_size_mb": 0.3
+   },
+   {
+    "label": "after cycle 15",
+    "js_heap_used_mb": 21.6,
+    "js_heap_total_mb": 22.3,
+    "wasm_heap_size_mb": 108.3,
+    "wasm_used_size_mb": 0.3
+   },
+   {
+    "label": "after cycle 20",
+    "js_heap_used_mb": 21.6,
+    "js_heap_total_mb": 22.3,
+    "wasm_heap_size_mb": 108.3,
+    "wasm_used_size_mb": 0.3
+   }
+  ],
+  "measureUserAgentSpecificMemory": "not available",
+  "generate_ms": 140.1,
+  "table_size": 100000,
+  "table_schema": {
+   "m3": "float",
+   "dim_b": "string",
+   "m4": "float",
+   "dim_c": "string",
+   "posted": "date",
+   "m1": "float",
+   "m2": "float",
+   "dim_a": "string",
+   "m6": "float",
+   "dim_d": "string",
+   "id": "integer",
+   "m5": "float"
+  },
+  "group_by_rows": 613,
+  "split_by_columns": 72,
+  "filtered_rows": 12497,
+  "unique_dim_d": 5000,
+  "first_display_cells": 174,
+  "cycles": [
+   {
+    "cycle": 1,
+    "label": "after cycle 1",
+    "js_heap_used_mb": 21.6,
+    "js_heap_total_mb": 23.1,
+    "wasm_heap_size_mb": 108.3,
+    "wasm_used_size_mb": 0.3
+   },
+   {
+    "cycle": 5,
+    "label": "after cycle 5",
+    "js_heap_used_mb": 21.6,
+    "js_heap_total_mb": 22.3,
+    "wasm_heap_size_mb": 108.3,
+    "wasm_used_size_mb": 0.3
+   },
+   {
+    "cycle": 10,
+    "label": "after cycle 10",
+    "js_heap_used_mb": 21.6,
+    "js_heap_total_mb": 22.3,
+    "wasm_heap_size_mb": 108.3,
+    "wasm_used_size_mb": 0.3
+   },
+   {
+    "cycle": 15,
+    "label": "after cycle 15",
+    "js_heap_used_mb": 21.6,
+    "js_heap_total_mb": 22.3,
+    "wasm_heap_size_mb": 108.3,
+    "wasm_used_size_mb": 0.3
+   },
+   {
+    "cycle": 20,
+    "label": "after cycle 20",
+    "js_heap_used_mb": 21.6,
+    "js_heap_total_mb": 22.3,
+    "wasm_heap_size_mb": 108.3,
+    "wasm_used_size_mb": 0.3
+   }
+  ],
+  "tables_left": []
+ },
+ "console": [
+  "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+ ]
+}

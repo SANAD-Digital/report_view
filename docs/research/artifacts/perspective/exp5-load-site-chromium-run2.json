@@ -1,0 +1,2182 @@
+[
+ {
+  "variant": {
+   "mode": "esm",
+   "worker": "blob"
+  },
+  "browser": "chromium",
+  "version": "153.0.8010.12",
+  "base": "https://acc.dev.sanad.digital",
+  "runs": [
+   {
+    "label": "cold",
+    "wall_ms": 383,
+    "ok": true,
+    "timings": {
+     "mode": "esm",
+     "worker": "blob",
+     "import_ms": 14,
+     "worker_ms": 147.2000002861023,
+     "engine_ready_ms": 161.2000002861023
+    },
+    "first_query_ms": 65.7999997138977,
+    "total_ms": 227,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 48,
+     "cpu_time_epoch": 63,
+     "timestamp": 304,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 1190,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 9
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 1291,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 3
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.js",
+      "transfer": 9898,
+      "encoded": 9598,
+      "decoded": 32590,
+      "duration": 4
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 2278209,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 30
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 217346,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 16
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=esm&worker=blob",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "blob:/3ea97f49-32d8-486a-94f6-c792e7db9b72",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "",
+      "length": "6033",
+      "from_cache": ""
+     }
+    ]
+   },
+   {
+    "label": "warm",
+    "wall_ms": 327,
+    "ok": true,
+    "timings": {
+     "mode": "esm",
+     "worker": "blob",
+     "import_ms": 2.5999999046325684,
+     "worker_ms": 141.90000009536743,
+     "engine_ready_ms": 144.5
+    },
+    "first_query_ms": 57.30000019073486,
+    "total_ms": 201.80000019073486,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 48,
+     "cpu_time_epoch": 56,
+     "timestamp": 280,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 0,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 0,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.js",
+      "transfer": 0,
+      "encoded": 9598,
+      "decoded": 32590,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 0,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 9
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 0,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 4
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=esm&worker=blob",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "blob:/5c39fec4-6598-403e-baaf-f2d8c1b4bb37",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "",
+      "length": "6033",
+      "from_cache": ""
+     }
+    ]
+   },
+   {
+    "label": "warm2",
+    "wall_ms": 267,
+    "ok": true,
+    "timings": {
+     "mode": "esm",
+     "worker": "blob",
+     "import_ms": 1.299999713897705,
+     "worker_ms": 134,
+     "engine_ready_ms": 135.2999997138977
+    },
+    "first_query_ms": 72.89999961853027,
+    "total_ms": 208.19999933242798,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 53,
+     "cpu_time_epoch": 72,
+     "timestamp": 221,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 0,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 0,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.js",
+      "transfer": 0,
+      "encoded": 9598,
+      "decoded": 32590,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 0,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 11
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 0,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 5
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=esm&worker=blob",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "blob:/cd588cba-9dba-4631-a583-358e6538351f",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "",
+      "length": "6033",
+      "from_cache": ""
+     }
+    ]
+   }
+  ],
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "variant": {
+   "mode": "esm",
+   "worker": "url"
+  },
+  "browser": "chromium",
+  "version": "153.0.8010.12",
+  "base": "https://acc.dev.sanad.digital",
+  "runs": [
+   {
+    "label": "cold",
+    "wall_ms": 341,
+    "ok": true,
+    "timings": {
+     "mode": "esm",
+     "worker": "url",
+     "import_ms": 11.5,
+     "worker_ms": 180.19999980926514,
+     "engine_ready_ms": 191.69999980926514
+    },
+    "first_query_ms": 69.10000038146973,
+    "total_ms": 260.80000019073486,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 50,
+     "cpu_time_epoch": 66,
+     "timestamp": 315,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 1190,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 6
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 1291,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 8
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.js",
+      "transfer": 9898,
+      "encoded": 9598,
+      "decoded": 32590,
+      "duration": 3
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 2278209,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 35
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 217346,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 26
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+      "transfer": 2479,
+      "encoded": 2179,
+      "decoded": 5839,
+      "duration": -14
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=esm&worker=url",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     }
+    ]
+   },
+   {
+    "label": "warm",
+    "wall_ms": 269,
+    "ok": true,
+    "timings": {
+     "mode": "esm",
+     "worker": "url",
+     "import_ms": 1.5999999046325684,
+     "worker_ms": 144.7000002861023,
+     "engine_ready_ms": 146.30000019073486
+    },
+    "first_query_ms": 55.5,
+    "total_ms": 201.80000019073486,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 47,
+     "cpu_time_epoch": 54,
+     "timestamp": 234,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 0,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 0,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.js",
+      "transfer": 0,
+      "encoded": 9598,
+      "decoded": 32590,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 0,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 16
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 0,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 13
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+      "transfer": 0,
+      "encoded": 2179,
+      "decoded": 5839,
+      "duration": -35
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=esm&worker=url",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     }
+    ]
+   },
+   {
+    "label": "warm2",
+    "wall_ms": 207,
+    "ok": true,
+    "timings": {
+     "mode": "esm",
+     "worker": "url",
+     "import_ms": 1.700000286102295,
+     "worker_ms": 120.40000009536743,
+     "engine_ready_ms": 122.10000038146973
+    },
+    "first_query_ms": 54.299999713897705,
+    "total_ms": 176.40000009536743,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 44,
+     "cpu_time_epoch": 53,
+     "timestamp": 188,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 0,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 0,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.js",
+      "transfer": 0,
+      "encoded": 9598,
+      "decoded": 32590,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 0,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 12
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 0,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 7
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+      "transfer": 0,
+      "encoded": 2179,
+      "decoded": 5839,
+      "duration": -17
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=esm&worker=url",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     }
+    ]
+   }
+  ],
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "variant": {
+   "mode": "cdn",
+   "worker": "blob"
+  },
+  "browser": "chromium",
+  "version": "153.0.8010.12",
+  "base": "https://acc.dev.sanad.digital",
+  "runs": [
+   {
+    "label": "cold",
+    "wall_ms": 371,
+    "ok": true,
+    "timings": {
+     "mode": "cdn",
+     "worker": "blob",
+     "import_ms": 16.5,
+     "worker_ms": 154.40000009536743,
+     "engine_ready_ms": 170.90000009536743
+    },
+    "first_query_ms": 73.5,
+    "total_ms": 244.40000009536743,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 55,
+     "cpu_time_epoch": 72,
+     "timestamp": 349,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 1190,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 30
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 1291,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 3
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective.js",
+      "transfer": 9947,
+      "encoded": 9647,
+      "decoded": 32692,
+      "duration": 6
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 2278209,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 30
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 217346,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 15
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=cdn&worker=blob",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "blob:/4188fef2-f389-4fb9-a76a-f60ddfde1c14",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "",
+      "length": "6033",
+      "from_cache": ""
+     }
+    ]
+   },
+   {
+    "label": "warm",
+    "wall_ms": 274,
+    "ok": true,
+    "timings": {
+     "mode": "cdn",
+     "worker": "blob",
+     "import_ms": 7.099999904632568,
+     "worker_ms": 152.2000002861023,
+     "engine_ready_ms": 159.40000009536743
+    },
+    "first_query_ms": 64.7999997138977,
+    "total_ms": 224.19999980926514,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 51,
+     "cpu_time_epoch": 63,
+     "timestamp": 252,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 0,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 0,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective.js",
+      "transfer": 0,
+      "encoded": 9647,
+      "decoded": 32692,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 0,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 30
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 0,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 7
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=cdn&worker=blob",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "blob:/8deb7efc-2a25-4ad8-a7d2-db6662d996ca",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "",
+      "length": "6033",
+      "from_cache": ""
+     }
+    ]
+   },
+   {
+    "label": "warm2",
+    "wall_ms": 344,
+    "ok": true,
+    "timings": {
+     "mode": "cdn",
+     "worker": "blob",
+     "import_ms": 5.5,
+     "worker_ms": 173.7999997138977,
+     "engine_ready_ms": 179.2999997138977
+    },
+    "first_query_ms": 83,
+    "total_ms": 262.2999997138977,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 71,
+     "cpu_time_epoch": 82,
+     "timestamp": 321,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 0,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 0,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective.js",
+      "transfer": 0,
+      "encoded": 9647,
+      "decoded": 32692,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 0,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 37
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 0,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 11
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=cdn&worker=blob",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "blob:/c6959571-8781-40f0-8d83-2cb28c6c35fb",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "",
+      "length": "6033",
+      "from_cache": ""
+     }
+    ]
+   }
+  ],
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "variant": {
+   "mode": "inline",
+   "worker": "blob"
+  },
+  "browser": "chromium",
+  "version": "153.0.8010.12",
+  "base": "https://acc.dev.sanad.digital",
+  "runs": [
+   {
+    "label": "cold",
+    "wall_ms": 627,
+    "ok": true,
+    "timings": {
+     "mode": "inline",
+     "worker": "blob",
+     "import_ms": 256.59999990463257,
+     "worker_ms": 182.59999990463257,
+     "engine_ready_ms": 439.19999980926514
+    },
+    "first_query_ms": 97.40000009536743,
+    "total_ms": 536.5999999046326,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 50,
+     "cpu_time_epoch": 82,
+     "timestamp": 563,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 1190,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 6
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 1291,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 2
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.inline.js",
+      "transfer": 2562810,
+      "encoded": 2562510,
+      "decoded": 3741389,
+      "duration": 180
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=inline&worker=blob",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.inline.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "blob:/e523037a-07fc-4f46-9ae6-c2fc0f74d534",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "",
+      "length": "6033",
+      "from_cache": ""
+     }
+    ]
+   },
+   {
+    "label": "warm",
+    "wall_ms": 418,
+    "ok": true,
+    "timings": {
+     "mode": "inline",
+     "worker": "blob",
+     "import_ms": 24.699999809265137,
+     "worker_ms": 222,
+     "engine_ready_ms": 246.69999980926514
+    },
+    "first_query_ms": 56.200000286102295,
+    "total_ms": 302.90000009536743,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 46,
+     "cpu_time_epoch": 53,
+     "timestamp": 394,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 0,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 0,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.inline.js",
+      "transfer": 0,
+      "encoded": 2562510,
+      "decoded": 3741389,
+      "duration": 0
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=inline&worker=blob",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.inline.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "blob:/dac75aca-c4e4-4a4e-8f14-c18f524bfb8d",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "",
+      "length": "6033",
+      "from_cache": ""
+     }
+    ]
+   },
+   {
+    "label": "warm2",
+    "wall_ms": 299,
+    "ok": true,
+    "timings": {
+     "mode": "inline",
+     "worker": "blob",
+     "import_ms": 71.2000002861023,
+     "worker_ms": 117,
+     "engine_ready_ms": 188.2000002861023
+    },
+    "first_query_ms": 60.299999713897705,
+    "total_ms": 248.5,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 50,
+     "cpu_time_epoch": 58,
+     "timestamp": 276,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 0,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 0,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.inline.js",
+      "transfer": 0,
+      "encoded": 2562510,
+      "decoded": 3741389,
+      "duration": 22
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=inline&worker=blob",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/esm/perspective.inline.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "blob:/78e63501-82d9-40d4-af76-1dbec45d933a",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "",
+      "length": "6033",
+      "from_cache": ""
+     }
+    ]
+   }
+  ],
+  "logs": [
+   "warning: Perspective wasn been initialized in inline mode",
+   "warning: Stage 0 wasm loading failed, skipping",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+   "warning: Perspective wasn been initialized in inline mode",
+   "warning: Stage 0 wasm loading failed, skipping",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+   "warning: Perspective wasn been initialized in inline mode",
+   "warning: Stage 0 wasm loading failed, skipping",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "variant": {
+   "mode": "bundle",
+   "worker": "blob",
+   "bundle": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js"
+  },
+  "browser": "chromium",
+  "version": "153.0.8010.12",
+  "base": "https://acc.dev.sanad.digital",
+  "runs": [
+   {
+    "label": "cold",
+    "wall_ms": 409,
+    "ok": true,
+    "timings": {
+     "mode": "bundle",
+     "worker": "blob",
+     "import_ms": 34.799999713897705,
+     "worker_ms": 214.40000009536743,
+     "engine_ready_ms": 249.19999980926514
+    },
+    "first_query_ms": 74.2000002861023,
+    "total_ms": 323.40000009536743,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 55,
+     "cpu_time_epoch": 72,
+     "timestamp": 373,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 1190,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 10
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 1291,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 4
+     },
+     {
+      "name": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+      "transfer": 23786,
+      "encoded": 23486,
+      "decoded": 95688,
+      "duration": 7
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 2278209,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 33
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 217346,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 20
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=bundle&worker=blob&bundle=%2Fassets%2Freport_view%2Fdist%2Fjs%2Frv_perspective_probe.bundle.NCIYFKCE.js",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "blob:/aa9e860c-b054-46dc-b6c6-58c16b06a351",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "",
+      "length": "6033",
+      "from_cache": ""
+     }
+    ]
+   },
+   {
+    "label": "warm",
+    "wall_ms": 249,
+    "ok": true,
+    "timings": {
+     "mode": "bundle",
+     "worker": "blob",
+     "import_ms": 3.4000000953674316,
+     "worker_ms": 139.2999997138977,
+     "engine_ready_ms": 142.69999980926514
+    },
+    "first_query_ms": 67.59999990463257,
+    "total_ms": 210.2999997138977,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 51,
+     "cpu_time_epoch": 65,
+     "timestamp": 235,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 0,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 0,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+      "transfer": 0,
+      "encoded": 23486,
+      "decoded": 95688,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 0,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 11
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 0,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 4
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=bundle&worker=blob&bundle=%2Fassets%2Freport_view%2Fdist%2Fjs%2Frv_perspective_probe.bundle.NCIYFKCE.js",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "blob:/d5e27a3b-3f35-4c54-8179-6a2ae1c6da8a",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "",
+      "length": "6033",
+      "from_cache": ""
+     }
+    ]
+   },
+   {
+    "label": "warm2",
+    "wall_ms": 252,
+    "ok": true,
+    "timings": {
+     "mode": "bundle",
+     "worker": "blob",
+     "import_ms": 1.799999713897705,
+     "worker_ms": 148.10000038146973,
+     "engine_ready_ms": 149.90000009536743
+    },
+    "first_query_ms": 67.19999980926514,
+    "total_ms": 217.09999990463257,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 57,
+     "cpu_time_epoch": 66,
+     "timestamp": 232,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 0,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 0,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+      "transfer": 0,
+      "encoded": 23486,
+      "decoded": 95688,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 0,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 11
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 0,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 3
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=bundle&worker=blob&bundle=%2Fassets%2Freport_view%2Fdist%2Fjs%2Frv_perspective_probe.bundle.NCIYFKCE.js",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "blob:/2867a9e0-0f5b-4986-8f13-002846719b47",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "",
+      "length": "6033",
+      "from_cache": ""
+     }
+    ]
+   }
+  ],
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ },
+ {
+  "variant": {
+   "mode": "bundle",
+   "worker": "url",
+   "bundle": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js"
+  },
+  "browser": "chromium",
+  "version": "153.0.8010.12",
+  "base": "https://acc.dev.sanad.digital",
+  "runs": [
+   {
+    "label": "cold",
+    "wall_ms": 369,
+    "ok": true,
+    "timings": {
+     "mode": "bundle",
+     "worker": "url",
+     "import_ms": 17.90000009536743,
+     "worker_ms": 153.89999961853027,
+     "engine_ready_ms": 171.7999997138977
+    },
+    "first_query_ms": 94.30000019073486,
+    "total_ms": 266.09999990463257,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 68,
+     "cpu_time_epoch": 92,
+     "timestamp": 307,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 1190,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 8
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 1291,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 3
+     },
+     {
+      "name": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+      "transfer": 23786,
+      "encoded": 23486,
+      "decoded": 95688,
+      "duration": 10
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 2278209,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 32
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 217346,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 21
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+      "transfer": 2479,
+      "encoded": 2179,
+      "decoded": 5839,
+      "duration": -11
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=bundle&worker=url&bundle=%2Fassets%2Freport_view%2Fdist%2Fjs%2Frv_perspective_probe.bundle.NCIYFKCE.js",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     }
+    ]
+   },
+   {
+    "label": "warm",
+    "wall_ms": 281,
+    "ok": true,
+    "timings": {
+     "mode": "bundle",
+     "worker": "url",
+     "import_ms": 4.099999904632568,
+     "worker_ms": 141.60000038146973,
+     "engine_ready_ms": 145.7000002861023
+    },
+    "first_query_ms": 63.19999980926514,
+    "total_ms": 208.90000009536743,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 53,
+     "cpu_time_epoch": 62,
+     "timestamp": 252,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 0,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 0,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+      "transfer": 0,
+      "encoded": 23486,
+      "decoded": 95688,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 0,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 7
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 0,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 4
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+      "transfer": 0,
+      "encoded": 2179,
+      "decoded": 5839,
+      "duration": -28
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=bundle&worker=url&bundle=%2Fassets%2Freport_view%2Fdist%2Fjs%2Frv_perspective_probe.bundle.NCIYFKCE.js",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     }
+    ]
+   },
+   {
+    "label": "warm2",
+    "wall_ms": 225,
+    "ok": true,
+    "timings": {
+     "mode": "bundle",
+     "worker": "url",
+     "import_ms": 1.5,
+     "worker_ms": 130.2000002861023,
+     "engine_ready_ms": 131.7000002861023
+    },
+    "first_query_ms": 54.69999980926514,
+    "total_ms": 186.40000009536743,
+    "system_info": {
+     "heap_size": 16777216,
+     "used_size": 126496,
+     "cpu_time": 46,
+     "cpu_time_epoch": 54,
+     "timestamp": 202,
+     "client_heap": 65139,
+     "client_used": 2411
+    },
+    "resources": [
+     {
+      "name": "/assets/report_view/experiments/lib/load_page.js",
+      "transfer": 0,
+      "encoded": 890,
+      "decoded": 1755,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/experiments/lib/load.js",
+      "transfer": 0,
+      "encoded": 991,
+      "decoded": 2428,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+      "transfer": 0,
+      "encoded": 23486,
+      "decoded": 95688,
+      "duration": 0
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "transfer": 0,
+      "encoded": 2277909,
+      "decoded": 2277909,
+      "duration": 8
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "transfer": 0,
+      "encoded": 217046,
+      "decoded": 217046,
+      "duration": 5
+     },
+     {
+      "name": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+      "transfer": 0,
+      "encoded": 2179,
+      "decoded": 5839,
+      "duration": -17
+     }
+    ],
+    "responses": [
+     {
+      "url": "/assets/report_view/experiments/load.html?mode=bundle&worker=url&bundle=%2Fassets%2Freport_view%2Fdist%2Fjs%2Frv_perspective_probe.bundle.NCIYFKCE.js",
+      "status": 200,
+      "type": "text/html",
+      "encoding": "",
+      "length": "220",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load_page.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/experiments/lib/load.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/dist/js/rv_perspective_probe.bundle.NCIYFKCE.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "2277909",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "encoding": "",
+      "length": "217046",
+      "from_cache": ""
+     },
+     {
+      "url": "/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js",
+      "status": 200,
+      "type": "application/javascript",
+      "encoding": "gzip",
+      "length": "",
+      "from_cache": ""
+     }
+    ]
+   }
+  ],
+  "logs": [
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+   "warning: Unknown browser detected. Some features may not work, and performance may be degraded."
+  ]
+ }
+]

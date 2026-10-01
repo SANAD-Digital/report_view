@@ -1,0 +1,52 @@
+{
+ "target": "run.html?exp=exp7c",
+ "base": "http://127.0.0.1:39317",
+ "browser": "chromium",
+ "result": {
+  "ok": true,
+  "exp": "exp7c",
+  "failed_delete_then_recover": {
+   "delete_with_open_view": {
+    "ERROR": "Error: Abort(): Cannot delete table with views"
+   },
+   "same_handle_still_usable": {
+    "ERROR": "Error: TIMEOUT 3000ms: the call never settled"
+   },
+   "hosted_before_recovery": [
+    "rv_probe_a"
+   ],
+   "recover_with_open_table": "resolved",
+   "hosted_after_recovery": [],
+   "terminate": "called"
+  },
+  "lazy_delete": {
+   "lazy_delete_state_while_view_open": "pending",
+   "view_still_works": 0,
+   "lazy_delete_state_after_view_delete": "resolved",
+   "hosted_after": []
+  },
+  "correct_order_and_terminate": {
+   "correct_order": "resolved",
+   "hosted": [],
+   "system_info": {
+    "heap": 16777216,
+    "used": 40312
+   },
+   "call_after_terminate": {
+    "ERROR": "Error: TIMEOUT 3000ms: the call never settled"
+   }
+  },
+  "guard_wrapper": {
+   "first": "deleted",
+   "second": "skipped (already deleted)"
+  }
+ },
+ "console": [
+  "warning: Unknown browser detected. Some features may not work, and performance may be degraded.",
+  "pageerror: null pointer passed to rust",
+  "debug: Closing WebWorker",
+  "debug: Closing WebWorker",
+  "debug: Closing WebWorker",
+  "debug: Closing WebWorker"
+ ]
+}

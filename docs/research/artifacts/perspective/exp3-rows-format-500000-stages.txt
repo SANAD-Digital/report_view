@@ -1,0 +1,4 @@
+STAGE start | js_heap=15MB wasm_heap=16MB wasm_used=0MB
+STAGE rows generated | js_heap=177MB wasm_heap=16MB wasm_used=0MB
+PAGE CRASHED
+ERROR page.waitForFunction: Target crashed 

@@ -18,8 +18,10 @@
     "@playwright/test": "^1.63.0"
   },
   "dependencies": {
+    "@finos/perspective": "3.8.0",
     "arquero": "^8.0.3",
     "echarts": "^5.6.0",
+    "regular-table": "0.9.1",
     "tabulator-tables": "^6.6.0"
   }
 }

@@ -2,7 +2,7 @@
 
 ## التجهيز (مرة واحدة)
 1. انسخ محتويات هذا المجلد إلى جذر مستودع التطبيق (أو مجلد العمل داخل الـ bench).
-2. فك `report-engine-prototype.zip` داخل `reference/prototype/`.
+2. فك `report-engine-prototype.zip` داخل `reference/design/`.
 3. ضع تصدير Claude Design داخل `reference/design/`.
 4. راجع جدول «أهداف الجودة» في `docs/brief.md` وعدّل الأرقام إن لزم.
 

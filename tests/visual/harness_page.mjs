@@ -130,7 +130,7 @@ async function main() {
 	await wait_for(shown);
 	const group = params.get("group");
 	if (group) {
-		page.group_control.set_value(group.split(","));
+		page.controls.set_group(group.split(","));
 		await wait_for(() => page.result?.mode === "group" && shown());
 	}
 	await window.rv_settle();

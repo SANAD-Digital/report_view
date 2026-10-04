@@ -72,7 +72,8 @@ function parse_po(file) {
 				.join("");
 		const id = join(m[2]);
 		const str = join(m[3]);
-		if (id && str && !m[1]) out[id] = str;
+		// Frappe keys a translation with a context as "<msgid>:<msgctxt>" (gettext/translate.py).
+		if (id && str) out[m[1] ? `${id}:${unq(m[1])}` : id] = str;
 	}
 	return out;
 }

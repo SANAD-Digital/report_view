@@ -3,6 +3,7 @@
 //   /assets/report_view/node_modules/* -> node_modules/*   (Perspective WASM files and worker)
 //   /assets/report_view/dist/*         -> report_view/public/dist/*   (output of `bench build`)
 //   /assets/assets.json                -> sites/assets/assets.json    (manifest of `bench build`)
+//   /assets/frappe/*                   -> sites/assets/frappe/*       (fonts the desk CSS refers to)
 //   /*                                 -> tests/visual/*   (harness.html, dist/)
 // Usage: node tests/visual/serve.mjs [port]
 import http from "node:http";
@@ -16,6 +17,7 @@ const MAP = [
 	["/assets/report_view/node_modules/", path.join(root, "node_modules")],
 	["/assets/report_view/dist/", path.join(root, "report_view/public/dist")],
 	["/assets/assets.json", path.resolve(root, "../../sites/assets/assets.json")],
+	["/assets/frappe/", path.resolve(root, "../../sites/assets/frappe")],
 	["/", here],
 ];
 const MIME = {

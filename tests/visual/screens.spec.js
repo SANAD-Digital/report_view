@@ -85,7 +85,7 @@ const probe = (page) =>
 		const rt = document.querySelector("regular-table");
 		const box = rt.getBoundingClientRect();
 		const label = rt.querySelector("tbody th").getBoundingClientRect();
-		const heads = [...rt.querySelectorAll("thead tr:last-child th.rv-hd:not(.rt-group-corner)")];
+		const heads = [...rt.querySelectorAll("thead th.rv-hd:not(.rt-group-corner)")];
 		const total = [...document.querySelectorAll(".rv-rt-total .rv-c:not(.pinned)")];
 		return {
 			label_start: Math.round(document.documentElement.dir === "rtl" ? box.right - label.right : label.left - box.left),
@@ -295,6 +295,8 @@ test("server bar turns pending after a filter change and does not re-run", async
 	const problems = watch_console(page);
 	await open(page, "report=tb&lang=ar");
 	const runs = await page.evaluate(() => window.rv_page.run_token);
+	// the filters other than the company and the period stand behind "More options"
+	await page.locator(".rv-more").click();
 	await page.locator('.rv-filter[data-fieldname="show_zero_values"] input[type=checkbox]').check();
 	await expect(page.locator(".rv-server")).toHaveClass(/pending/);
 	await page.waitForTimeout(500);
@@ -371,7 +373,7 @@ async function drag_handle(page, th, dx) {
 
 test("subtotal rows: after every open group, the open header keeps title and count only; off by the checkbox", async ({ page }) => {
 	const problems = watch_console(page);
-	await open(page, "report=tb&lang=ar&group=account__root_type", { width: 1440, height: 1500 });
+	await open(page, "report=tb&lang=ar&group=account__root_type", { width: 1440, height: 1700 });
 	const on = await body(page);
 	const groups = on.filter((r) => r.cls.startsWith("group"));
 	const feet = on.filter((r) => r.cls === "foot");
@@ -410,7 +412,7 @@ test("subtotal rows: after every open group, the open header keeps title and cou
 
 test("subtotal rows of the report tree: the parent's own row of the report, shown again after its children", async ({ page }) => {
 	const problems = watch_console(page);
-	await open(page, "report=tb&lang=en", { width: 1440, height: 2600 });
+	await open(page, "report=tb&lang=en", { width: 1440, height: 2900 });
 	const on = await body(page);
 	const feet = on.filter((r) => r.cls === "foot");
 	const open_parents = on.filter((r) => r.open === "true");
@@ -423,7 +425,7 @@ test("subtotal rows of the report tree: the parent's own row of the report, show
 		return { debit: row.debit, credit: row.credit };
 	});
 	const text = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2 });
-	const root_foot = on.findLast((r) => r.cls === "foot" && r.label.includes(open_parents[0].label.replace(/^\S+\s*/, "").replace(/\s*\d+$/, "").trim()));
+	const root_foot = on.findLast((r) => r.cls === "foot" && r.label.includes(open_parents[0].label.replace(/^\S+\s*(-\s*)?/, "").replace(/\s*\d+$/, "").trim()));
 	expect(root_foot.nums).toContain(text(root.debit));
 	expect(root_foot.nums).toContain(text(root.credit));
 	// status bar and the badge of the grand total count the same thing: the leaf rows
@@ -990,5 +992,380 @@ test("lifecycle: no handle is left after 20 changes of fold, subtotals, widths a
 	}
 	await page.evaluate(() => window.rv_page.hide());
 	await page.waitForFunction(() => window.rv_page.debug_handles().length === 0);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+// ---------------------------------------------------------------------------------------
+// Design parity, wave 1 (docs/progress/phase-5a2-wave1.md): every item of the main screen
+// next to its reference capture in reference/design/screens/, light and dark, RTL and LTR,
+// at the design's 1440x1100. Saved to docs/progress/screens/phase-5a2/.
+const OUT2 = path.resolve(__dirname, "../../docs/progress/screens/phase-5a2");
+fs.mkdirSync(OUT2, { recursive: true });
+const shot2 = (page, name, full = false) => page.screenshot({ path: path.join(OUT2, `${name}.png`), fullPage: full });
+const VARIANTS = [
+	{ id: "light-rtl", query: "lang=ar" },
+	{ id: "dark-rtl", query: "lang=ar&desk=dark" },
+	{ id: "light-ltr", query: "lang=en" },
+	{ id: "dark-ltr", query: "lang=en&desk=dark" },
+];
+const DESIGN = { width: 1440, height: 1100 };
+const handles_of = (page) => page.evaluate(() => window.rv_page.debug_handles().map((h) => h.kind).sort().join(","));
+// Trial balance "as is": the nodes and the facts tables, and the main view.
+const TB_HANDLES = "table,table,view";
+
+// What each shot opens on the page (reference capture in brackets).
+const STATES = {
+	main: null, // [main.png]
+	date: async (page) => page.locator(".rv-datefield").click(), // [date.png]
+	search: async (page) => page.locator(".rv-search input").click(), // [search.png]
+	colmenu: async (page) => {
+		const th = page.locator("regular-table thead th.rv-hd", { has: page.locator('.rv-hcell[data-col="opening_debit"]') });
+		await th.hover();
+		await th.locator(".rv-hmenu").click();
+	}, // [colmenu.png]
+	setfilter: async (page) => page.locator('.rv-fcell-in[data-col="account__account_type"] .rv-ff-set').click(), // [setfilter.png]
+	sidecols: async (page) => page.locator('[data-side="columns"]').click(), // [sidecols.png]
+	sidefilters: async (page) => page.locator('[data-side="filters"]').click(), // [sidefilters.png]
+	more: async (page) => page.locator(".rv-more").click(), // (no reference: More options)
+};
+
+for (const v of VARIANTS) {
+	for (const [state, act] of Object.entries(STATES)) {
+		test(`wave 1 ${state} ${v.id}`, async ({ page }) => {
+			const problems = watch_console(page);
+			await open(page, `report=tb&${v.query}`, DESIGN);
+			if (act) {
+				await act(page);
+				await page.waitForTimeout(400);
+			}
+			await shot2(page, `tb-${state}-${v.id}`);
+			expect(problems, "console errors/warnings").toEqual([]);
+		});
+	}
+}
+
+for (const [name, query, w, h, act] of [
+	["tb-main-390-rtl", "report=tb&lang=ar", 390, 844, null],
+	["tb-main-390-dark-ltr", "report=tb&lang=en&desk=dark", 390, 844, null],
+	["tb-date-390-rtl", "report=tb&lang=ar", 390, 844, (p) => p.locator(".rv-datefield").click()],
+	["tb-search-390-rtl", "report=tb&lang=ar", 390, 844, (p) => p.locator(".rv-search input").click()],
+	["tb-sidecols-390-rtl", "report=tb&lang=ar", 390, 844, async (p) => {
+		await p.locator('[data-side="columns"]').scrollIntoViewIfNeeded();
+		await p.locator('[data-side="columns"]').click();
+	}],
+	["tb-main-compact-rtl", "report=tb&lang=ar&density=compact", 1440, 1100, null],
+	["tb-main-compact-dark-ltr", "report=tb&lang=en&density=compact&desk=dark", 1440, 1100, null],
+	["ar-main-light-rtl", "report=ar&lang=ar", 1440, 1100, null],
+	["gl-main-light-ltr", "report=gl&lang=en", 1440, 1100, null],
+]) {
+	test(`wave 1 ${name}`, async ({ page }) => {
+		const problems = watch_console(page);
+		await open(page, query, { width: w, height: h });
+		if (act) {
+			await act(page);
+			await page.waitForTimeout(400);
+		}
+		await shot2(page, name, w < 600 && !act);
+		expect(problems, "console errors/warnings").toEqual([]);
+	});
+}
+
+test("wave 1 period picker: presets, typed dates and the fiscal mode write the report's own filters", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=tb&lang=ar", DESIGN);
+	const runs = await page.evaluate(() => window.rv_page.run_token);
+	const values = () => page.evaluate(() => window.rv_page.filters.get_values());
+	await page.locator(".rv-datefield").click();
+	await expect(page.locator(".rv-pop.dp")).toBeVisible();
+	// two months, Sunday first (the system's first day of the week), the range painted
+	await expect(page.locator(".dp-cal")).toHaveCount(2);
+	await expect(page.locator(".dp-days")).toHaveText("365 يوماً");
+	// a preset, then Apply: the filters change and the bar turns pending (no run)
+	await page.locator(".dp-pre", { hasText: "الربع الماضي" }).click();
+	await page.locator('.dp-ft [data-action="apply"]').click();
+	await expect(page.locator(".rv-pop.dp")).toHaveCount(0);
+	let v = await values();
+	expect([v.from_date, v.to_date, v.fiscal_year]).toEqual(["2026-07-01", "2026-09-30", "2026"]);
+	await expect(page.locator(".rv-server")).toHaveClass(/pending/);
+	await expect(page.locator(".rv-date-tag")).toHaveText("الربع الماضي");
+	// typed dates and a picked end day
+	await page.locator(".rv-datefield").click();
+	await page.locator('[data-input="from"]').fill("15-08-2026");
+	await page.locator('[data-input="from"]').press("Enter");
+	// the typed date re-draws the calendars on August
+	await expect(page.locator(".dp-cal-hd b").first()).toContainText("أغسطس");
+	await page.locator('.dp-d[data-day="2026-08-15"]').click();
+	await expect(page.locator(".dp-hint")).toBeVisible();
+	await page.locator('.dp-d[data-day="2026-09-10"]').click();
+	await expect(page.locator(".dp-days")).toHaveText("27 يوماً");
+	await shot2(page, "tb-date-picked-light-rtl");
+	await page.locator('.dp-ft [data-action="apply"]').click();
+	v = await values();
+	expect([v.from_date, v.to_date]).toEqual(["2026-08-15", "2026-09-10"]);
+	await expect(page.locator(".rv-date-tag")).toHaveText("فترة مخصصة");
+	// fiscal mode: the second quarter of the fiscal year 2025
+	await page.locator(".rv-datefield").click();
+	await page.locator('[data-mode="fiscal"]').click();
+	await page.locator('[data-fy="-1"]').click();
+	await page.locator('[data-part="q2"]').click();
+	await shot2(page, "tb-date-fiscal-light-rtl");
+	await page.locator('.dp-ft [data-action="apply"]').click();
+	v = await values();
+	expect([v.from_date, v.to_date, v.fiscal_year]).toEqual(["2025-04-01", "2025-06-30", "2025"]);
+	await expect(page.locator(".rv-date-tag")).toHaveText("الربع الثاني 2025");
+	// Cancel and Escape change nothing
+	await page.locator(".rv-datefield").click();
+	await page.locator('.dp-pre[data-from="2026-10-01"][data-to="2026-10-01"]').click();
+	await page.keyboard.press("Escape");
+	await expect(page.locator(".rv-pop.dp")).toHaveCount(0);
+	expect((await values()).from_date).toBe("2025-04-01");
+	expect(await page.evaluate(() => window.rv_page.run_token)).toBe(runs);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("wave 1 period picker in LTR: arrows and alignment mirrored, same filters", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=tb&lang=en&desk=dark", DESIGN);
+	await page.locator(".rv-datefield").click();
+	await page.locator('[data-mode="fiscal"]').click();
+	await shot2(page, "tb-date-fiscal-dark-ltr");
+	await page.locator('[data-month="2"]').click();
+	await page.locator('[data-month="4"]').click();
+	await page.locator('.dp-ft [data-action="apply"]').click();
+	const v = await page.evaluate(() => window.rv_page.filters.get_values());
+	expect([v.from_date, v.to_date]).toEqual(["2026-03-01", "2026-05-31"]);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("wave 1 floating filters: contains, range and set write the view state, the URL and the engine filter", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=tb&lang=ar", DESIGN);
+	const input = page.locator('.rv-fcell-in[data-col="account"] input');
+	await input.click();
+	await input.pressSequentially("13", { delay: 30 });
+	await page.waitForFunction(() => window.rv_page.state.filters.length === 1 && window.rv_page.opened?.post.shape === "levels");
+	await settle(page);
+	// the input keeps the focus while the grid shows the result
+	expect(await page.evaluate(() => document.activeElement?.closest(".rv-fcell-in")?.dataset.col)).toBe("account");
+	expect(await page.evaluate(() => window.rv_page.state.filters)).toEqual([{ key: "account", type: "text", op: "contains", value: "13" }]);
+	expect(await page.evaluate(() => window.rv_page.opened.spec.config.filter)).toContainEqual(["account", "contains", "13"]);
+	await expect(page.locator(".rv-status")).toContainText("2 من 16");
+	await expect(page.locator(".rv-status-flag")).toBeVisible();
+	await expect(page.locator(".rv-facet")).toHaveCount(1);
+	// the summary says the difference comes from the filter, not from the entries
+	await expect(page.locator(".rv-sum").nth(2)).toContainText("فرق بسبب الفلترة");
+	// a numeric range on the closing debit
+	const lo = page.locator('.rv-fcell-in[data-col="closing_debit"] input[data-edge="min"]');
+	await lo.fill("1,000");
+	await lo.press("Enter");
+	await page.waitForFunction(() => window.rv_page.state.filters.length === 2);
+	await settle(page);
+	expect(await page.evaluate(() => window.rv_page.opened.spec.config.filter)).toContainEqual(["closing_debit", ">=", 1000]);
+	await page.waitForTimeout(400);
+	expect(await page.evaluate(() => new URLSearchParams(location.search).get("rv"))).toBeTruthy();
+	await shot2(page, "tb-floating-filters-light-rtl");
+	// a facet's × removes its filter, the input follows
+	await page.locator(".rv-facet-x").first().click();
+	await page.waitForFunction(() => window.rv_page.state.filters.length === 1);
+	await expect(input).toHaveValue("");
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("wave 1 set filter: values and counts from a temporary view, deleted; unticking a value filters the facts", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=tb&lang=en&rv=${rv({ columns: { hidden: [] } })}`, DESIGN);
+	expect(await handles_of(page)).toBe(TB_HANDLES);
+	await page.locator('.rv-fcell-in[data-col="account__root_type"] .rv-ff-set').click();
+	// four root types and the accounts without one ("Not Set")
+	await expect(page.locator(".rv-set-pop .rv-setitem:not(.all)")).toHaveCount(5);
+	await expect(page.locator(".rv-set-pop .rv-setitem.all .cnt")).toHaveText("5 / 5");
+	const counts = await page.locator(".rv-set-pop .rv-setitem:not(.all) .cnt").allTextContents();
+	expect(counts.map(Number).reduce((a, b) => a + b, 0)).toBe(16);
+	// the temporary view of the values is gone
+	expect(await handles_of(page)).toBe(TB_HANDLES);
+	await shot2(page, "tb-setfilter-values-light-ltr");
+	// "Not Set" off: the four root types remain, an "in" filter of the engine
+	await page.locator(".rv-set-pop .rv-setitem:not(.all)", { hasText: "Not Set" }).locator("input").uncheck();
+	await page.waitForFunction(() => window.rv_page.state.filters[0]?.type === "set");
+	await settle(page);
+	const f = await page.evaluate(() => window.rv_page.state.filters[0]);
+	expect(f.values.length).toBe(4);
+	expect(await page.evaluate(() => window.rv_page.opened.spec.config.filter)).toContainEqual(["account__root_type", "in", f.values]);
+	await expect(page.locator('.rv-fcell-in[data-col="account__root_type"] .rv-ff-set')).toHaveClass(/on/);
+	// search asks the engine again; Clear removes the filter
+	await page.locator(".rv-set-search").fill("Exp");
+	await expect(page.locator(".rv-set-pop .rv-setitem:not(.all)")).toHaveCount(1);
+	await page.locator('.rv-set-pop [data-action="clear"]').click();
+	await page.waitForFunction(() => window.rv_page.state.filters.length === 0);
+	await page.keyboard.press("Escape");
+	await expect(page.locator(".rv-set-pop")).toHaveCount(0);
+	await settle(page);
+	expect(await handles_of(page)).toBe(TB_HANDLES);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("wave 1 column menu: sort, hide, group by, reset; keyboard and Escape", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=ar&lang=ar&rv=${AR_AMOUNTS}`, DESIGN);
+	const menu = async (key) => {
+		const th = page.locator("regular-table thead th.rv-hd", { has: page.locator(`.rv-hcell[data-col="${key}"]`) });
+		await th.hover();
+		await th.locator(".rv-hmenu").click();
+		await expect(page.locator(".rv-pop[role=menu]")).toBeVisible();
+	};
+	await menu("outstanding");
+	// a measure cannot be pinned (said in the item's title); pinning at the end is not offered by the grid
+	await expect(page.locator(".rv-pop .rv-mi").nth(0)).toBeDisabled();
+	await expect(page.locator(".rv-pop .rv-mi").nth(1)).toBeDisabled();
+	await page.locator(".rv-pop .rv-mi", { hasText: "ترتيب تنازلي" }).click();
+	await page.waitForFunction(() => window.rv_page.state.sort[0]?.dir === "desc");
+	await settle(page);
+	expect(await page.evaluate(() => window.rv_page.opened.spec.config.sort[0])).toEqual(["outstanding", "desc"]);
+	await expect(page.locator('.rv-hcell[data-col="outstanding"] [data-sort]')).toBeVisible();
+	// keyboard: arrows move, Enter applies, Escape closes
+	await menu("party");
+	await page.keyboard.press("ArrowDown");
+	await page.keyboard.press("Escape");
+	await expect(page.locator(".rv-pop[role=menu]")).toHaveCount(0);
+	await menu("party");
+	await page.locator(".rv-pop .rv-mi", { hasText: "تجميع حسب" }).click();
+	await page.waitForFunction(() => window.rv_page.result?.mode === "group");
+	await settle(page);
+	await expect(page.locator(".rv-gchip")).toHaveCount(1);
+	await menu("voucher_type");
+	await page.locator(".rv-pop .rv-mi", { hasText: "إخفاء العمود" }).click();
+	await page.waitForFunction(() => window.rv_page.state.columns.hidden.includes("voucher_type"));
+	await menu("voucher_no");
+	await page.locator(".rv-pop .rv-mi", { hasText: "تثبيت يمين" }).click();
+	await page.waitForFunction(() => window.rv_page.state.columns.pinned.start.includes("voucher_no"));
+	await settle(page);
+	await shot2(page, "ar-colmenu-applied-light-rtl");
+	await menu("voucher_no");
+	await page.locator(".rv-pop .rv-mi", { hasText: "إعادة ضبط الأعمدة" }).click();
+	await page.waitForFunction(() => !window.rv_page.state.columns.hidden.length && !window.rv_page.state.sort.length);
+	// a click on a title sorts: ascending, descending, none
+	const title = page.locator('.rv-hcell[data-col="party"] .rv-hlabel');
+	await title.click();
+	await page.waitForFunction(() => window.rv_page.state.sort[0]?.dir === "asc");
+	await title.click();
+	await page.waitForFunction(() => window.rv_page.state.sort[0]?.dir === "desc");
+	await title.click();
+	await page.waitForFunction(() => !window.rv_page.state.sort.length);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("wave 1 group panel: a header dropped groups, chips reorder by drag and leave by ×", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=ar&lang=en&rv=${AR_AMOUNTS}`, DESIGN);
+	const panel = page.locator(".rv-gp");
+	await page.locator('.rv-hcell[data-col="party"]').dragTo(panel);
+	await page.waitForFunction(() => window.rv_page.state.group.by.join() === "party");
+	await page.locator('.rv-hcell[data-col="voucher_type"]').dragTo(panel);
+	await page.waitForFunction(() => window.rv_page.state.group.by.join() === "party,voucher_type");
+	await settle(page);
+	await expect(page.locator(".rv-gsep")).toHaveCount(1);
+	await shot2(page, "ar-group-panel-light-ltr");
+	// the second chip dropped on the first: it becomes the first level
+	await page.locator(".rv-gchip").nth(1).dragTo(page.locator(".rv-gchip").nth(0));
+	await page.waitForFunction(() => window.rv_page.state.group.by.join() === "voucher_type,party");
+	await settle(page);
+	expect(await page.evaluate(() => window.rv_page.opened.spec.config.group_by.slice(0, 2))).toEqual(["voucher_type", "party"]);
+	// a measure is no group level
+	await page.locator('.rv-hcell[data-col="outstanding"]').dragTo(panel);
+	expect(await page.evaluate(() => window.rv_page.state.group.by.length)).toBe(2);
+	await page.locator(".rv-gchip .rv-chip-x").first().click();
+	await page.waitForFunction(() => window.rv_page.state.group.by.join() === "party");
+	await settle(page);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("wave 1 search: Enter is a contains filter on the label column, suggestions search other columns, Backspace removes", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=tb&lang=ar", DESIGN);
+	const input = page.locator(".rv-search input");
+	await input.click();
+	// quick filters, root types and group-by in the dropdown
+	await expect(page.locator(".rv-sdrop-col")).toHaveCount(2);
+	await page.locator(".rv-sdrop .rv-mi", { hasText: "حسابات عليها حركة" }).click();
+	await page.waitForFunction(() => window.rv_page.state.quick_filters.join() === "moving");
+	await settle(page);
+	expect(await page.evaluate(() => Object.keys(window.rv_page.opened.spec.config.expressions))).toContain("__qf__moving");
+	await expect(page.locator(".rv-sum").first()).toContainText("متوازن ضمن");
+	await page.locator(".rv-sdrop .rv-mi", { hasText: "نوع الجذر" }).click();
+	await page.waitForFunction(() => window.rv_page.state.group.by.join() === "account__root_type");
+	await shot2(page, "tb-search-active-light-rtl");
+	await input.fill("نقد");
+	await expect(page.locator(".rv-sugg")).toHaveCount(3);
+	await input.press("Enter");
+	await page.waitForFunction(() => window.rv_page.state.filters.some((f) => f.key === "account" && f.value === "نقد"));
+	await expect(page.locator(".rv-facet")).toHaveCount(2);
+	// the facets: the column filters, then the quick filters; Backspace removes the last one
+	await input.press("Backspace");
+	await page.waitForFunction(() => !window.rv_page.state.quick_filters.length);
+	await input.press("Backspace");
+	await page.waitForFunction(() => !window.rv_page.state.filters.length);
+	await input.press("Escape");
+	await expect(page.locator(".rv-search-pop")).toHaveCount(0);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("wave 1 side panels: columns show and hide, aggregates, the filter sections and their counts", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=ar&lang=ar", DESIGN);
+	await page.locator('[data-side="columns"]').click();
+	await expect(page.locator(".rv-panel .rv-colitem").first()).toBeVisible();
+	await page.locator('.rv-panel [data-col="party_type"]').uncheck();
+	await page.waitForFunction(() => window.rv_page.state.columns.hidden.includes("party_type"));
+	await page.locator('.rv-panel [data-agg="outstanding"]').selectOption("avg");
+	await page.waitForFunction(() => window.rv_page.state.values.some((v) => v.key === "outstanding" && v.agg === "avg"));
+	await settle(page);
+	expect(await page.evaluate(() => window.rv_page.opened.spec.config.aggregates?.outstanding ?? null)).toBeNull();
+	await page.locator('.rv-panel [data-action="col-search"]').fill("Due");
+	await expect(page.locator(".rv-panel .rv-colitem")).toHaveCount(1);
+	// a column dragged to the row-group zone groups the rows
+	await page.locator('.rv-panel [data-action="col-search"]').fill("");
+	await page.locator('.rv-panel .rv-colitem[data-key="party"]').dragTo(page.locator('.rv-panel [data-zone="groups"]'));
+	await page.waitForFunction(() => window.rv_page.state.group.by.join() === "party");
+	await settle(page);
+	expect(await page.evaluate(() => window.rv_page.opened.spec.config.aggregates.outstanding)).toBe("avg");
+	await shot2(page, "ar-sidecols-applied-light-rtl");
+	await page.locator('[data-side="filters"]').click();
+	await expect(page.locator(".rv-panel .rv-fsec").first()).toBeVisible();
+	const sec = page.locator(".rv-panel .rv-fsec", { hasText: "Voucher Type" });
+	await sec.locator(".rv-fsec-hd").click();
+	await expect(sec.locator(".rv-setitem:not(.all)").first()).toBeVisible();
+	await sec.locator(".rv-setitem:not(.all) input").first().uncheck();
+	await page.waitForFunction(() => window.rv_page.state.filters.some((f) => f.key === "voucher_type"));
+	await expect(page.locator(".rv-tabcount")).toHaveText("1");
+	await page.locator('.rv-panel .rv-link').click();
+	await page.waitForFunction(() => !window.rv_page.state.filters.length);
+	await page.locator('.rv-panel [data-action="close"]').click();
+	await expect(page.locator(".rv-panel")).toBeHidden();
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("wave 1 lifecycle: no handle left after 20 filter, sort, group and quick-filter changes and the value lists", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=tb&lang=ar", DESIGN);
+	for (let i = 0; i < 20; i++) {
+		await page.evaluate(async (i) => {
+			const c = window.rv_page.controls;
+			const steps = [
+				() => c.set_filter("account", i % 2 ? { key: "account", type: "text", op: "contains", value: "1" } : null),
+				() => c.toggle_quick("moving"),
+				() => c.set_group(i % 2 ? ["account__root_type"] : []),
+				() => c.set_sort("debit", i % 2 ? "desc" : null),
+			];
+			steps[i % 4]();
+			await c.load_values("account__root_type");
+		}, i);
+		await page.waitForTimeout(60);
+	}
+	await page.evaluate(() => window.rv_page.controls.clear_filters());
+	await page.evaluate(() => window.rv_page.controls.set_group([]));
+	await page.evaluate(() => window.rv_page.controls.set_sort("debit", null));
+	await page.waitForFunction(() => window.rv_page.opened?.post.shape === "tree");
+	await settle(page);
+	expect(await handles_of(page)).toBe(TB_HANDLES);
 	expect(problems, "console errors/warnings").toEqual([]);
 });

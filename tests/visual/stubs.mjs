@@ -11,8 +11,9 @@ const params = new URLSearchParams(window.location.search);
 export const LANG = params.get("lang") || "ar";
 const MESSAGES = LANG === "ar" ? window.RV_MESSAGES || {} : {};
 
-window.__ = function (text, replace) {
-	let out = MESSAGES[text] ?? String(text ?? "");
+// Same lookup as frappe._: "<text>:<context>" first, then the text alone.
+window.__ = function (text, replace, context = null) {
+	let out = (context && MESSAGES[`${text}:${context}`]) || MESSAGES[text] || String(text ?? "");
 	if (replace) out = out.replace(/\{(\d+)\}/g, (m, i) => (replace[i] !== undefined ? replace[i] : m));
 	return out;
 };
@@ -159,7 +160,26 @@ window.frappe = {
 			.join(" "),
 	ui: { form: { make_control: (opts) => new Control(opts) } },
 	dom: { eval() {}, remove_script_and_style: (s) => s },
-	datetime: { now_datetime: () => "2026-10-01 10:42:00" },
+	datetime: {
+		now_datetime: () => "2026-10-01 10:42:00",
+		get_today: () => "2026-10-01",
+		get_user_date_fmt: () => "dd-mm-yyyy",
+		get_first_day_of_the_week_index: () => 0,
+		str_to_user: (v) => (v ? date(v) : ""),
+		user_to_str: (v) => {
+			const m = /^\s*(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})\s*$/.exec(String(v || ""));
+			return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : "Invalid date";
+		},
+	},
+	// Fiscal years a user may read (frappe.client.get_list on the site).
+	db: {
+		get_list: (doctype) =>
+			Promise.resolve(
+				doctype === "Fiscal Year"
+					? ["2024", "2025", "2026", "2027"].map((y) => ({ name: y, year_start_date: `${y}-01-01`, year_end_date: `${y}-12-31` }))
+					: []
+			),
+	},
 	after_ajax: (fn) => fn(),
 	query_reports: {},
 	route_options: null,

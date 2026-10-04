@@ -506,3 +506,533 @@ msgstr "تعذّر التصدير: الفلتر على «{0}» يجمع الخل
 
 msgid "Go to Advanced View"
 msgstr "الانتقال إلى العرض المتقدم"
+
+msgid "(Select all)"
+msgstr "(تحديد الكل)"
+
+msgid ", "
+msgstr "، "
+
+msgid "A numeric column cannot be pinned: a group row has no value of its own for it"
+msgstr "لا يُثبَّت عمود رقمي: صف المجموعة لا يملك قيمة خاصة به فيه"
+
+msgid "Accounts with movement"
+msgstr "حسابات عليها حركة"
+
+msgid "Active filter"
+msgstr "فلتر نشط"
+
+msgid "Add a filter…"
+msgstr "أضف فلتراً…"
+
+msgid "Aggregate function"
+msgstr "دالة التجميع"
+
+msgid "Jan"
+msgstr "ينا"
+
+msgid "Feb"
+msgstr "فبر"
+
+msgid "Mar"
+msgstr "مار"
+
+msgid "Apr"
+msgstr "أبر"
+
+msgid "Jun"
+msgstr "يون"
+
+msgid "Jul"
+msgstr "يول"
+
+msgid "Aug"
+msgstr "أغس"
+
+msgid "Sep"
+msgstr "سبت"
+
+msgid "Oct"
+msgstr "أكت"
+
+msgid "Nov"
+msgstr "نوف"
+
+msgid "Dec"
+msgstr "ديس"
+
+msgid "January"
+msgstr "يناير"
+
+msgid "February"
+msgstr "فبراير"
+
+msgid "March"
+msgstr "مارس"
+
+msgid "April"
+msgstr "أبريل"
+
+msgid "May"
+msgstr "مايو"
+
+msgid "June"
+msgstr "يونيو"
+
+msgid "July"
+msgstr "يوليو"
+
+msgid "August"
+msgstr "أغسطس"
+
+msgid "September"
+msgstr "سبتمبر"
+
+msgid "October"
+msgstr "أكتوبر"
+
+msgid "November"
+msgstr "نوفمبر"
+
+msgid "December"
+msgstr "ديسمبر"
+
+msgid "Su"
+msgstr "ح"
+
+msgid "Mo"
+msgstr "ن"
+
+msgid "Tu"
+msgstr "ث"
+
+msgid "We"
+msgstr "ر"
+
+msgid "Th"
+msgstr "خ"
+
+msgid "Fr"
+msgstr "ج"
+
+msgid "Sa"
+msgstr "س"
+
+msgid "Autosize all columns"
+msgstr "ضبط كل الأعمدة تلقائياً"
+
+msgid "Autosize this column"
+msgstr "ضبط العرض تلقائياً"
+
+msgid "Balance summary"
+msgstr "ملخص التوازن"
+
+msgid "Balanced"
+msgstr "متوازن"
+
+msgid "Balanced within {0} of {1}"
+msgstr "متوازن ضمن {0} من {1}"
+
+msgid "Calculating…"
+msgstr "جارٍ الحساب…"
+
+msgid "Choose the period"
+msgstr "اختيار الفترة"
+
+msgid "Clear all"
+msgstr "مسح الكل"
+
+msgid "Click a column title to sort · drag it to the group panel to group · ≡ for the column menu"
+msgstr "انقر على رأس العمود للترتيب · اسحبه إلى لوحة المجموعات للتجميع · ≡ لقائمة العمود"
+
+msgid "Click another month to pick a range of months, or Apply for one month"
+msgstr "انقر شهراً آخر لتحديد نطاق أشهر، أو «تطبيق» لشهر واحد"
+
+msgid "Close the panel"
+msgstr "إغلاق اللوحة"
+
+msgid "Column menu"
+msgstr "قائمة العمود"
+
+msgid "Contains…"
+msgstr "يحتوي…"
+
+msgid "Credit closing balances"
+msgstr "أرصدة ختامية دائنة"
+
+msgid "Current fiscal year"
+msgstr "السنة المالية الحالية"
+
+msgid "Custom period"
+msgstr "فترة مخصصة"
+
+msgid "Date range"
+msgstr "نطاق تواريخ"
+
+msgid "Debit closing balances"
+msgstr "أرصدة ختامية مدينة"
+
+msgid "Default view"
+msgstr "العرض الافتراضي"
+
+msgid "Difference from the filters"
+msgstr "فرق بسبب الفلترة"
+
+msgid "Difference {0} · all {1} ({2})"
+msgstr "الفرق {0} · جميع {1} ({2})"
+
+msgid "Difference {0} — check the entries that are not balanced"
+msgstr "الفرق {0} — راجع القيود غير المتوازنة"
+
+msgid "Difference {0} — from the rows the filters left out, not an error in the entries"
+msgstr "الفرق {0} — ناتج عن استبعاد صفوف بالفلاتر، وليس خطأ في القيود"
+
+msgid "Dim."
+msgstr "بُعد"
+
+msgid "Drag a column here to group by it"
+msgstr "اسحب عموداً هنا للتجميع"
+
+msgid "Drag a numeric column here"
+msgstr "اسحب عموداً رقمياً هنا"
+
+msgid "Drag columns here to group the rows"
+msgstr "اسحب أعمدة هنا لتجميع الصفوف"
+
+msgid "Export not available with quick filters"
+msgstr "التصدير غير متاح مع الفلاتر السريعة"
+
+msgid "Favorites"
+msgstr "المفضلة"
+
+msgid "Filter values…"
+msgstr "فلترة القيم…"
+
+msgid "Filtered ({0})"
+msgstr "مفلتر ({0})"
+
+msgid "First half"
+msgstr "النصف الأول"
+
+msgid "Second half"
+msgstr "النصف الثاني"
+
+msgid "First quarter"
+msgstr "الربع الأول"
+
+msgid "Second quarter"
+msgstr "الربع الثاني"
+
+msgid "Third quarter"
+msgstr "الربع الثالث"
+
+msgid "Fourth quarter"
+msgstr "الربع الرابع"
+
+msgid "Fiscal period"
+msgstr "فترة مالية"
+
+msgid "Fiscal year"
+msgstr "السنة المالية"
+
+msgid "From date"
+msgstr "من تاريخ"
+
+msgid "To date"
+msgstr "إلى تاريخ"
+
+msgid "From the fiscal year settings of the company"
+msgstr "من إعدادات السنة المالية للشركة"
+
+msgid "From {0} to {1}"
+msgstr "من {0} إلى {1}"
+
+msgid "Group by this column"
+msgstr "تجميع حسب هذا العمود"
+
+msgid "Group by «{0}»"
+msgstr "تجميع حسب «{0}»"
+
+msgid "Q1"
+msgstr "ر1"
+
+msgid "Q2"
+msgstr "ر2"
+
+msgid "Q3"
+msgstr "ر3"
+
+msgid "Q4"
+msgstr "ر4"
+
+msgid "H1"
+msgstr "ن1"
+
+msgid "H2"
+msgstr "ن2"
+
+msgid "Hide the column"
+msgstr "إخفاء العمود"
+
+msgid "Hide zero accounts"
+msgstr "إخفاء الحسابات الصفرية"
+
+msgid "Kind of period"
+msgstr "نوع الفترة"
+
+msgid "Last 30 days"
+msgstr "آخر 30 يوماً"
+
+msgid "Last 6 months"
+msgstr "آخر 6 أشهر"
+
+msgid "Last 7 days"
+msgstr "آخر 7 أيام"
+
+msgid "Last fiscal year"
+msgstr "السنة الماضية"
+
+msgid "Last month"
+msgstr "الشهر الماضي"
+
+msgid "Last quarter"
+msgstr "الربع الماضي"
+
+msgid "This quarter"
+msgstr "هذا الربع"
+
+msgid "This week"
+msgstr "هذا الأسبوع"
+
+msgid "Year to date"
+msgstr "من بداية السنة حتى اليوم"
+
+msgid "Loading…"
+msgstr "جارٍ التحميل…"
+
+msgid "Months {0}–{1} · {2}"
+msgstr "الأشهر {0}–{1} · {2}"
+
+msgid "More options"
+msgstr "خيارات أخرى"
+
+msgid "Next month"
+msgstr "الشهر التالي"
+
+msgid "Previous month"
+msgstr "الشهر السابق"
+
+msgid "Next year"
+msgstr "السنة التالية"
+
+msgid "Previous year"
+msgstr "السنة السابقة"
+
+msgid "No pin"
+msgstr "بدون تثبيت"
+
+msgid "No values match «{0}»"
+msgstr "لا توجد قيم تطابق «{0}»"
+
+msgid "Not available"
+msgstr "غير متاح"
+
+msgid "Not balanced"
+msgstr "غير متوازن"
+
+msgid "PDF and printing arrive with the server export (coming soon)"
+msgstr "الطباعة و PDF تأتي مع التصدير من الخادم (قريباً)"
+
+msgid "Pick the end date"
+msgstr "اختر تاريخ النهاية"
+
+msgid "Pin left"
+msgstr "تثبيت يسار"
+
+msgid "Pin right"
+msgstr "تثبيت يمين"
+
+msgid "Pivot analysis"
+msgstr "تحليل Pivot"
+
+msgid "Pivot columns"
+msgstr "أعمدة التحليل"
+
+msgid "Pivot mode"
+msgstr "وضع التحليل (Pivot)"
+
+msgid "Quick filters are applied on screen only for now. Remove them to export the file."
+msgstr "الفلاتر السريعة تُطبَّق على الشاشة فقط حالياً. أزلها لتصدير الملف."
+
+msgid "Quick options"
+msgstr "خيارات سريعة"
+
+msgid "Remove from the grouping"
+msgstr "إزالة من التجميع"
+
+msgid "Remove the filter"
+msgstr "إزالة الفلتر"
+
+msgid "Reset the columns"
+msgstr "إعادة ضبط الأعمدة"
+
+msgid "Row groups"
+msgstr "مجموعات الصفوف"
+
+msgid "Rows"
+msgstr "الصفوف"
+
+msgid "Saved views arrive with the saved-view settings (coming soon)"
+msgstr "العروض المحفوظة تأتي مع إعدادات العروض المحفوظة (قريباً)"
+
+msgid "Search and filter"
+msgstr "بحث وفلترة"
+
+msgid "Search in {0}"
+msgstr "بحث في {0}"
+
+msgid "Search options"
+msgstr "خيارات البحث"
+
+msgid "Search or filter: {0}…"
+msgstr "ابحث أو فلتر: {0}…"
+
+msgid "Search or filter…"
+msgstr "ابحث أو فلتر…"
+
+msgid "Search the columns"
+msgstr "بحث في الأعمدة"
+
+msgid "Search the columns…"
+msgstr "ابحث في الأعمدة…"
+
+msgid "Search the values"
+msgstr "بحث في القيم"
+
+msgid "Search the values…"
+msgstr "ابحث في القيم…"
+
+msgid "Search {0} for: «{1}»"
+msgstr "ابحث في {0} عن: «{1}»"
+
+msgid "Sort ascending"
+msgstr "ترتيب تصاعدي"
+
+msgid "Sort descending"
+msgstr "ترتيب تنازلي"
+
+msgid "Starts in"
+msgstr "تبدأ في"
+
+msgid "The current filters left out every row"
+msgstr "الفلاتر الحالية استبعدت كل الصفوف"
+
+msgid "The data could not be loaded"
+msgstr "تعذّر تحميل البيانات"
+
+msgid "The grid pins columns at the start only"
+msgstr "الجدول يثبّت الأعمدة في البداية فقط"
+
+msgid "The label column is always pinned"
+msgstr "عمود العنوان مثبّت دائماً"
+
+msgid "The totals are being read again"
+msgstr "يُعاد احتساب الإجماليات"
+
+msgid "The values could not be read"
+msgstr "تعذّرت قراءة القيم"
+
+msgid "Tool panels"
+msgstr "لوحات الأدوات"
+
+msgid "Turn the pivot mode on to use this zone (coming soon)"
+msgstr "فعّل وضع التحليل لاستخدام هذه المنطقة (قريباً)"
+
+msgid "Turns the values of a dimension into columns"
+msgstr "تحويل قيم بُعد إلى أعمدة ديناميكية"
+
+msgid "Type a text to search {0}, or a value of another column. Backspace removes the last facet."
+msgstr "اكتب نصاً للبحث في {0}، أو في قيم عمود آخر. Backspace يحذف آخر شريحة."
+
+msgid "Value filter · {0}"
+msgstr "فلتر القيم · {0}"
+
+msgid "Values"
+msgstr "القيم"
+
+msgid "contains «{0}»"
+msgstr "يحتوي «{0}»"
+
+msgid "{0} days"
+msgstr "{0} يوماً"
+
+msgid "{0} values"
+msgstr "{0} قيم محددة"
+
+msgid "{0} {1} of {2}"
+msgstr "{0} {1} من {2}"
+
+msgid "{0} · {1} months · click the months to pick a custom range"
+msgstr "{0} · {1} أشهر · انقر على الأشهر لاختيار نطاق مخصص"
+
+msgid "{0}: from"
+msgstr "{0}: من"
+
+msgid "{0}: to"
+msgstr "{0}: إلى"
+
+msgctxt "Report View"
+msgid "Apply"
+msgstr "تطبيق"
+
+msgctxt "Report View"
+msgid "Clear"
+msgstr "مسح"
+
+msgctxt "Report View"
+msgid "Full"
+msgstr "كاملة"
+
+msgctxt "Report View"
+msgid "Filter"
+msgstr "فلتر"
+
+msgctxt "Report View"
+msgid "Count"
+msgstr "عدد"
+
+msgctxt "Report View"
+msgid "Average"
+msgstr "متوسط"
+
+msgctxt "Report View"
+msgid "Maximum"
+msgstr "الأعلى"
+
+msgctxt "Report View"
+msgid "Minimum"
+msgstr "الأدنى"
+
+msgctxt "Report View"
+msgid "Filters"
+msgstr "الفلاتر"
+
+msgctxt "Report View"
+msgid "PDF"
+msgstr "PDF"
+
+msgctxt "Report View"
+msgid "Remove"
+msgstr "إزالة"
+
+msgctxt "Report View"
+msgid "Yesterday"
+msgstr "أمس"
+
+msgctxt "Report View"
+msgid "Months"
+msgstr "الأشهر"
+
+msgctxt "Report View"
+msgid "Account"
+msgstr "الحساب"

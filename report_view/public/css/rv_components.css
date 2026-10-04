@@ -244,7 +244,9 @@
 .rv-sidetab{writing-mode:vertical-rl;display:flex;align-items:center;gap:6px;padding:12px 0;width:100%;border:0;background:transparent;color:var(--tx-2);font-size:var(--fs-xs);font-weight:500;cursor:pointer;position:relative}
 .rv-sidetab:hover{color:var(--tx);background:var(--hover)}
 .rv-sidetab.on{color:var(--pri-tx);background:var(--surface)}
-.rv-sidetab.on::before{content:'';position:absolute;inset-inline-start:0;top:6px;bottom:6px;width:2px;background:var(--pri);border-radius:2px}
+.rv-sidetab.on::before{content:'';position:absolute;right:0;top:6px;bottom:6px;width:2px;background:var(--pri);border-radius:2px}
+/* the tab is in vertical writing mode, where logical insets turn: the marker faces the grid */
+.rv[dir=ltr] .rv-sidetab.on::before{right:auto;left:0}
 .rv-tabcount{writing-mode:horizontal-tb;min-width:16px;height:16px;border-radius:8px;background:var(--pri);color:var(--on-pri);font-size:10px;display:grid;place-items:center;font-style:normal;padding:0 4px;font-weight:600}
 .rv-panel{width:300px;flex:none;border-inline-start:1px solid var(--line-2);background:var(--surface);display:flex;flex-direction:column;min-height:0}
 .rv.compact .rv-panel{width:272px}

@@ -30,6 +30,21 @@
 /* ---------- header (.rv-head) ---------- */
 .rv regular-table thead th{position:relative;height:var(--hh);padding:0 var(--cp);background:var(--hdr);color:var(--tx);font-size:var(--fs-sm);font-weight:600;text-align:start;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none}
 .rv regular-table thead tr:last-child th{border-bottom:1px solid var(--line-2)}
+/* the title and filter cells are elements of components/header_cells.js inside the th (the
+   label and pinned columns: inside regular-table's own span) */
+.rv regular-table thead th.rv-hd > span,.rv regular-table thead th.rv-hf > span{display:block}
+.rv-hcell{display:flex;align-items:center;gap:4px;min-width:0;cursor:pointer}
+.rv-hcell.num .rv-hlabel{margin-inline-start:auto}
+.rv-hcell .rv-hmenu{margin-inline-start:auto}
+.rv-hcell.num .rv-hmenu{margin-inline-start:2px}
+.rv-hcell.dragging{opacity:.5}
+.rv regular-table thead th.rv-hd:hover .rv-hmenu,.rv-hmenu:focus-visible{opacity:1}
+/* floating filters (.rv-fcell) */
+.rv regular-table thead th.rv-hf{height:var(--fh);padding:0 calc(var(--cp) - 4px);border-top:1px solid var(--line);font-weight:400;background:var(--hdr)}
+.rv regular-table thead th.rv-hf.band-end{border-inline-end:1px solid var(--line)}
+.rv-fcell-in{display:flex;align-items:center;gap:4px;min-width:0}
+.rv-fcell-in .rv-ff-input{flex:1 1 0}
+.rv-ff-input.bad{border-color:var(--err)}
 .rv regular-table thead th.num{text-align:end}
 .rv regular-table thead th.rv-hd:hover{background:var(--hover)}
 /* short separator of .rv-h::after; full height at the end of a band */

@@ -79,10 +79,12 @@ export class GridView {
 	 * @param {(rid: number) => void} opts.on_tree_toggle a parent of the report tree was opened or closed
 	 * @param {(expanded: "all"|"none"|Array) => void} opts.on_fold_changed a group was opened or closed
 	 * @param {(key: string, width: number) => void} opts.on_column_resized a column got a new width
+	 * @param {import("../components/header_cells.js").HeaderCells} opts.cells title and filter cells of the headers
 	 */
-	constructor({ parent, rtl, on_tree_toggle, on_fold_changed, on_column_resized }) {
+	constructor({ parent, rtl, on_tree_toggle, on_fold_changed, on_column_resized, cells }) {
 		this.parent = parent;
 		this.rtl = rtl;
+		this.cells = cells;
 		this.on_tree_toggle = on_tree_toggle || (() => {});
 		this.on_fold_changed = on_fold_changed || (() => {});
 		this.on_column_resized = on_column_resized || (() => {});
@@ -146,6 +148,9 @@ export class GridView {
 			d.band_end = Boolean(d.band) && data[i + 1]?.band !== d.band;
 		});
 		const levels = data.some((d) => d.band) ? 2 : 1;
+		// Header rows: the bands (when any), the titles, then the floating filters. Title and
+		// filter cells are elements of components/header_cells.js, the same ones every draw.
+		const head = (d) => [this.cells.leaf(d.column.key, d.title, d.numeric), this.cells.filter(d.column.key, d.title)];
 		return {
 			shape: post.shape,
 			hierarchical: HIERARCHICAL.has(post.shape),
@@ -159,7 +164,8 @@ export class GridView {
 			heads: 1 + pinned.length,
 			data,
 			levels,
-			headers: data.map((d) => (levels === 2 ? [d.band ? bands.get(d.band).label : NO_BAND, d.title] : [d.title])),
+			header_rows: levels + 1,
+			headers: data.map((d) => (levels === 2 ? [d.band ? bands.get(d.band).label : NO_BAND, ...head(d)] : head(d))),
 			by_key,
 		};
 	}
@@ -232,7 +238,8 @@ export class GridView {
 		this.rt = rt;
 		// Body rows are --rh high plus their 1px line; header rows have their own heights.
 		this.row_height = css_int(host, "--rh", 36) + 1;
-		this.header_height = (this.model.levels === 2 ? css_int(host, "--bh", 30) : 0) + css_int(host, "--hh", 34);
+		this.header_height =
+			(this.model.levels === 2 ? css_int(host, "--bh", 30) : 0) + css_int(host, "--hh", 34) + css_int(host, "--fh", 38);
 		this.cell_padding = css_int(host, "--cp", 12);
 		this.top_el.style.top = `${this.header_height}px`;
 		// regular-table sizes its scroll range as if a header row were as high as a body row
@@ -241,7 +248,7 @@ export class GridView {
 		// the end of the scroll. Reporting the difference as a fraction of a row less makes
 		// both formulas exact for the real header height (the data listener answers with one
 		// row more than asked, so the bottom edge is always filled).
-		this.row_trim = Math.max(0, this.model.levels * this.row_height - this.header_height) / this.row_height;
+		this.row_trim = Math.max(0, this.model.header_rows * this.row_height - this.header_height) / this.row_height;
 		rt.setDataListener(this.listener, { column_classes: true });
 		if (this.rtl) apply_rtl(rt);
 		this.apply_sizes();
@@ -357,7 +364,9 @@ export class GridView {
 			num_columns: m.data.length,
 			row_height: this.row_height,
 			num_row_headers: m.heads,
-			num_column_headers: m.levels,
+			num_column_headers: m.header_rows,
+			// The bands merge across their columns; titles and filters are one cell per column.
+			column_header_merge_depth: m.levels - 1,
 			merge_headers: "column",
 		};
 		const end = Math.min(x1, m.data.length);
@@ -620,7 +629,10 @@ export class GridView {
 		};
 		const table = rt.querySelector("table");
 		table.classList.add("rv-measure");
-		let width = natural(th.firstElementChild) + pad + 8;
+		// The title cell (components/header_cells.js) is as wide as its column: its label is
+		// measured, plus the room of the column-menu button.
+		const title = th.querySelector(".rv-hlabel") || th.firstElementChild;
+		let width = natural(title) + pad + 8 + (th.querySelector(".rv-hmenu") ? 26 : 0);
 		const selector = target.head === undefined ? "tbody td" : "tbody th";
 		for (const cell of rt.querySelectorAll(selector)) {
 			const meta = rt.getMeta(cell);
@@ -654,7 +666,7 @@ export class GridView {
 			inner = `<span class="rv-caret-sp"></span>${fmt.foot_label_html(this.foot_text(rec.of))}`;
 		} else if (rec.type === "group") {
 			const label = rec.node
-				? fmt.node_label_html(m.label, rec.node, m.parts)
+				? fmt.group_title_html(m.label, rec.node, m.parts)
 				: fmt.group_label_html({
 						__group_key: rec.key,
 						__group_value: group_value(m.by_key.get(rec.key), rec.value),
@@ -664,7 +676,12 @@ export class GridView {
 			inner = `<span class="rv-glabel">${this.caption_of(rec.row).html}</span>`;
 		} else {
 			const lead = !m.hierarchical ? "" : rec.parent ? caret(rec.open) : '<span class="rv-caret-sp"></span>';
-			const label = m.parts ? fmt.label_html(m.label, rec.row, m.parts) : fmt.value_html(m.label, rec.row);
+			const label =
+				rec.parent && m.parts
+					? fmt.group_title_html(m.label, rec.row, m.parts)
+					: m.parts
+					? fmt.label_html(m.label, rec.row, m.parts)
+					: fmt.value_html(m.label, rec.row);
 			inner = `${lead}${label}${rec.parent ? fmt.count_html(rec.count) : ""}`;
 		}
 		return `<div class="rv-lc" style="--lv:${Number(rec.depth) || 0}">${inner}</div>`;
@@ -764,22 +781,29 @@ export class GridView {
 		for (const th of rt.querySelectorAll("thead th")) {
 			const meta = rt.getMeta(th);
 			if (!meta) continue;
-			const leaf = meta.column_header_y === m.levels - 1;
+			const y = meta.column_header_y;
+			const leaf = y === m.levels - 1;
+			const filter = y === m.levels;
 			const corner = meta.type === "corner";
-			const col = leaf && !corner ? m.data[meta.x] : null;
-			const head = leaf && corner ? meta.row_header_x || 0 : -1;
-			const text = head === 0 ? m.label_title : head > 0 ? m.pinned[head - 1]?.title || "" : String(meta.value ?? "").trim();
-			if (corner && th.firstElementChild && th.firstElementChild.textContent !== text) {
-				th.firstElementChild.textContent = text;
+			const col = (leaf || filter) && !corner ? m.data[meta.x] : null;
+			const head = (leaf || filter) && corner ? meta.row_header_x || 0 : -1;
+			// The label and pinned columns are row headers of regular-table: their header cells
+			// get the title and filter elements here (it leaves them in place afterwards).
+			if (head >= 0 && th.firstElementChild) {
+				const d = head === 0 ? { key: m.label.key, title: m.label_title, numeric: false } : m.pinned[head - 1] && { key: m.pinned[head - 1].column.key, title: m.pinned[head - 1].title, numeric: false };
+				const want = d && (leaf ? this.cells.leaf(d.key, d.title, d.numeric) : this.cells.filter(d.key, d.title));
+				if (want && th.firstElementChild.firstChild !== want) th.firstElementChild.replaceChildren(want);
 			}
+			const text = leaf ? (head === 0 ? m.label_title : head > 0 ? m.pinned[head - 1]?.title || "" : col?.title || "") : String(meta.value ?? "").trim();
 			th.classList.toggle("rv-hd", leaf);
-			th.classList.toggle("rv-hb", !leaf);
-			th.classList.toggle("empty", !leaf && !text);
+			th.classList.toggle("rv-hf", filter);
+			th.classList.toggle("rv-hb", !leaf && !filter);
+			th.classList.toggle("empty", !leaf && !filter && !text);
 			th.classList.toggle("num", Boolean(col?.numeric));
 			th.classList.toggle("band-end", Boolean(col?.band_end));
 			if (leaf) th.title = text;
 			else th.removeAttribute("title");
-			if (col) shown.push(meta.x);
+			if (col && leaf) shown.push(meta.x);
 		}
 
 		// The window that was drawn: the one that starts at the first row on screen.

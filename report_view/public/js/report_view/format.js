@@ -120,6 +120,17 @@ export function make_formatter({ report_settings, columns }) {
 		return `<span class="rv-glabel">${text}</span>`;
 	}
 
+	/**
+	 * Label of a parent of the report tree, shown as a group (design: "1000 - Assets", .rv-glabel
+	 * of a group row): the number and the name as one text, no link.
+	 */
+	function group_title_html(column, row, parts) {
+		const name = parts?.name_key ? row[parts.name_key] : null;
+		if (!name) return node_label_html(column, row, parts);
+		const number = parts.number_key ? row[parts.number_key] : null;
+		return `<span class="rv-glabel">${esc(number ? `${number} - ${name}` : name)}</span>`;
+	}
+
 	// Label of an engine group row: the group value formatted with its own column.
 	function group_label_html(row) {
 		const column = by_key.get(row.__group_key);
@@ -166,6 +177,13 @@ export function make_formatter({ report_settings, columns }) {
 		return frappe.format(value, df_of(column), FORMAT_OPTS, row);
 	}
 
+	/** A number at the precision of a column, as plain text, zero included ("0.00"). */
+	function number_text(column, value) {
+		const n = Number(value);
+		if (!Number.isFinite(n)) return "";
+		return frappe.utils.html2text(String(frappe.format(n, { fieldtype: "Float", precision: precision_of(df_of(column)) }, FORMAT_OPTS))).trim();
+	}
+
 	function count_html(n) {
 		if (n === null || n === undefined) return "";
 		return `<span class="rv-gcount">${esc(frappe.format(n, { fieldtype: "Int" }, { inline: true }))}</span>`;
@@ -175,11 +193,13 @@ export function make_formatter({ report_settings, columns }) {
 		value_html,
 		label_html,
 		node_label_html,
+		group_title_html,
 		group_label_html,
 		group_text,
 		node_text,
 		foot_label_html,
 		caption_html,
+		number_text,
 		count_html,
 		sign_of,
 		default_formatter,

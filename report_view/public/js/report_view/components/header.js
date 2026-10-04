@@ -1,6 +1,8 @@
-// Page header (docs/architecture.md §11.1 #3-#9): breadcrumbs, title with the report type
+// Page header (docs/architecture.md §11.1 #3-#11): breadcrumbs, title with the report type
 // tag, the info line (company, period, currency, last run) and the action bar (density,
-// theme, Excel). Display only: values come from the page.
+// theme, Excel, PDF, Print). Display only: values come from the page. PDF and Print are
+// shown to users who may print, disabled until the server side of phase 6 exists: they
+// open nothing (no preview is faked).
 
 import { icons } from "./icons.js";
 
@@ -17,6 +19,7 @@ export class Header {
 	 * @param {object} opts {parent, on_density(d), on_theme(), on_export()}
 	 */
 	constructor({ parent, on_density, on_theme, on_export }) {
+		const soon = esc(__("PDF and printing arrive with the server export (coming soon)"));
 		const el = document.createElement("header");
 		el.className = "rv-top";
 		el.innerHTML = `
@@ -36,6 +39,8 @@ export class Header {
 				<button type="button" class="rv-btn icon ghost" data-action="theme"></button>
 				<span class="rv-vsep" data-export-sep hidden></span>
 				<button type="button" class="rv-btn" data-action="export" hidden>${icons.sheet()}<span>${esc(__("Excel"))}</span></button>
+				<button type="button" class="rv-btn" data-action="pdf" aria-disabled="true" title="${soon}" hidden>${icons.pdf()}<span>${esc(__("PDF", null, "Report View"))}</span></button>
+				<button type="button" class="rv-btn" data-action="print" aria-disabled="true" title="${soon}" hidden>${icons.print()}<span>${esc(__("Print"))}</span></button>
 			</div>`;
 		parent.appendChild(el);
 		this.el = el;
@@ -51,8 +56,8 @@ export class Header {
 		return this.$('[data-action="export"]');
 	}
 
-	/** @param {object} r {name, module, report_type, can_export} */
-	set_report({ name, module, report_type, can_export }) {
+	/** @param {object} r {name, module, report_type, can_export, can_print} */
+	set_report({ name, module, report_type, can_export, can_print }) {
 		const title = __(name);
 		const parts = [module ? __(module) : null, __("Reports")].filter(Boolean);
 		this.$(".rv-crumbs").innerHTML =
@@ -62,7 +67,9 @@ export class Header {
 		tag.hidden = !report_type;
 		tag.textContent = report_type ? __(report_type) : "";
 		this.export_button.hidden = !can_export;
-		this.$("[data-export-sep]").hidden = !can_export;
+		this.$('[data-action="pdf"]').hidden = !can_print;
+		this.$('[data-action="print"]').hidden = !can_print;
+		this.$("[data-export-sep]").hidden = !can_export && !can_print;
 	}
 
 	/**

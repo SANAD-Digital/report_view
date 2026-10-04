@@ -1,5 +1,10 @@
-// Status bar under the grid (docs/architecture.md §11.1 #66): rows shown of the report's
-// rows and the number of groups. Counts come from the engine result.
+// Status bar under the grid (docs/architecture.md §11.1 #66; design: .rv-status in
+// reference/design/screens/main.png): "<rows> N of M · Groups K", the filtered flag, and the
+// hints of what the grid does. Counts come from the engine result. The design's hints name
+// range selection, the context menu and the account statement, which come in later waves:
+// the hints shown are those of what works now.
+
+import { icons } from "./icons.js";
 
 function esc(s) {
 	return frappe.utils.escape_html(String(s ?? ""));
@@ -13,7 +18,9 @@ export class StatusBar {
 	constructor({ parent }) {
 		const el = document.createElement("footer");
 		el.className = "rv-status";
-		el.innerHTML = `<div class="rv-status-grp"></div><div class="rv-status-grp"><span class="rv-status-hint"></span></div>`;
+		el.innerHTML = `<div class="rv-status-grp"></div><div class="rv-status-grp"><span class="rv-status-hint">${esc(
+			__("Click a column title to sort · drag it to the group panel to group · ≡ for the column menu")
+		)}</span></div>`;
 		parent.appendChild(el);
 		this.el = el;
 		this.clear();
@@ -24,11 +31,17 @@ export class StatusBar {
 		this.el.hidden = true;
 	}
 
-	/** @param {object} result engine.apply() output */
-	update(result) {
-		const items = [`<span class="rv-status-item">${__("Rows {0} of {1}", [num(result.row_count), num(result.fact_count)])}</span>`];
-		if (result.group_count) {
-			items.push(`<span class="rv-status-item">${__("Groups {0}", [num(result.group_count)])}</span>`);
+	/**
+	 * @param {object} r {row_count, fact_count, group_count, filters (active filters), noun}
+	 */
+	update(r) {
+		const noun = r.noun || __("Rows");
+		const items = [`<span class="rv-status-item">${__("{0} {1} of {2}", [esc(noun), num(r.row_count), num(r.fact_count)])}</span>`];
+		if (r.group_count) {
+			items.push(`<span class="rv-status-item">${__("Groups {0}", [num(r.group_count)])}</span>`);
+		}
+		if (r.filters) {
+			items.push(`<span class="rv-status-flag">${icons.funnel_solid(12)}${esc(__("Filtered ({0})", [r.filters]))}</span>`);
 		}
 		this.el.firstElementChild.innerHTML = items.join("");
 		this.el.hidden = false;

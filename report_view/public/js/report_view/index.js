@@ -19,7 +19,8 @@ import {
 import { fold_all, toggle_tree_node, visible_columns } from "./engine/view_config.js";
 import { default_state, sanitize, reconcile } from "./state/view_state.js";
 import { decode_state, make_url_updater } from "./state/url.js";
-import { load_report_settings, ReportFilters, MissingFiltersError } from "./filters/report_filters.js";
+import { load_report_settings, MissingFiltersError } from "./filters/report_filters.js";
+import { CriteriaBar } from "./filters/criteria.js";
 import { install_facade, make_facade } from "./filters/facade.js";
 import { make_formatter } from "./format.js";
 import { GridView } from "./views/grid_view.js";
@@ -27,6 +28,12 @@ import { StateOverlay } from "./components/states.js";
 import { Header } from "./components/header.js";
 import { Toolbar } from "./components/toolbar.js";
 import { StatusBar } from "./components/status_bar.js";
+import { Summary } from "./components/summary.js";
+import { GroupPanel } from "./components/group_panel.js";
+import { SidePanel } from "./components/side_panel.js";
+import { HeaderCells } from "./components/header_cells.js";
+import { close_popover } from "./components/popover.js";
+import { ViewControls } from "./view_controls.js";
 import { NoticeBar, describe_notices } from "./components/notices.js";
 import { icons } from "./components/icons.js";
 
@@ -97,6 +104,7 @@ export class ReportViewPage {
 		this.visible = false;
 		this.has_run = false;
 		this.density = read_pref(DENSITY_KEY) === "compact" ? "compact" : "comfortable";
+		this.controls = new ViewControls(this);
 		this.make_dom();
 		this.watch_theme();
 		this.fit_height = this.fit_height.bind(this);
@@ -127,8 +135,9 @@ export class ReportViewPage {
 					</div>
 				</section>
 				<div class="rv-message"></div>
+				<div class="rv-summary-slot"></div>
 				<div class="rv-toolbar-slot"></div>
-				<div class="rv-gridwrap"><div class="rv-grid"></div></div>
+				<div class="rv-gridwrap"><div class="rv-body"><div class="rv-grid"></div></div></div>
 			</div>`;
 		this.page.main.get(0).replaceChildren(root);
 		this.root = root;
@@ -140,26 +149,73 @@ export class ReportViewPage {
 			on_export: () => this.export_xlsx(),
 		});
 		this.$(".rv-header-slot").replaceWith(this.header.el);
-		this.toolbar = new Toolbar({
-			parent: this.$(".rv-toolbar-slot"),
+		this.summary = new Summary({ parent: this.$(".rv-summary-slot") });
+		this.$(".rv-summary-slot").replaceWith(this.summary.el);
+		this.toolbar = new Toolbar({ root, parent: this.$(".rv-toolbar-slot"), search: this.controls.search_host() });
+		this.$(".rv-toolbar-slot").replaceWith(this.toolbar.el);
+		const wrap = this.$(".rv-gridwrap");
+		const body = this.$(".rv-body");
+		this.group_panel = new GroupPanel({
+			parent: wrap,
+			on_change: (by) => this.controls.set_group(by),
+			groupable: (key) => this.controls.groupable(key),
 			on_subtotals: (on) => this.set_subtotals(on),
 			on_fold_all: (open) => this.fold_all(open),
 		});
-		this.$(".rv-toolbar-slot").replaceWith(this.toolbar.el);
-		const wrap = this.$(".rv-gridwrap");
+		wrap.prepend(this.group_panel.el);
 		this.overlay = new StateOverlay(wrap);
-		this.notices = new NoticeBar({ parent: wrap, before: this.$(".rv-grid") });
+		this.notices = new NoticeBar({ parent: wrap, before: body });
+		this.cells = new HeaderCells({
+			kind: (key) => this.controls.kind(key),
+			sort_of: (key) => this.controls.sort_of(key),
+			filter_of: (key) => this.controls.filter_of(key),
+			set_label: (key) => this.controls.set_label(key),
+			draggable: (key) => this.controls.groupable(key),
+			on_sort: (key) => this.controls.toggle_sort(key),
+			on_menu: (key, anchor) => this.controls.open_column_menu(key, anchor),
+			on_filter: (key, f) => this.controls.set_filter(key, f),
+			on_set: (key, anchor) => this.controls.open_set(key, anchor),
+		});
 		this.grid = new GridView({
 			parent: this.$(".rv-grid"),
 			rtl: this.rtl,
+			cells: this.cells,
 			on_tree_toggle: (rid) => this.toggle_tree(rid),
 			on_fold_changed: (expanded) => this.save_fold(expanded),
 			on_column_resized: (key, width) => this.save_width(key, width),
 		});
+		this.side = new SidePanel({ body, host: this.controls.side_host() });
 		this.status = new StatusBar({ parent: wrap });
 		this.$('[data-action="run"]').addEventListener("click", () => this.run());
 		this.apply_density();
 		this.set_note("idle");
+	}
+
+	/**
+	 * A change of the view state from a control of the page: the controls follow at once,
+	 * then the new view is opened (render) and the URL written.
+	 * @param {(state: object) => void} fn mutates this.state
+	 */
+	change(fn) {
+		if (!this.state) return;
+		fn(this.state);
+		this.refresh_controls();
+		this.render();
+	}
+
+	// Controls that show the view state: facets, header cells, group panel, side panel.
+	refresh_controls() {
+		if (!this.state) return;
+		this.toolbar.search.refresh();
+		this.cells.refresh();
+		this.side.refresh();
+		this.group_panel.set({
+			by: this.state.group.by,
+			labels: Object.fromEntries(this.state.group.by.map((k) => [k, this.controls.title(k)])),
+			foldable: Boolean(this.result && this.result.mode !== "flat"),
+			subtotals: this.state.group.subtotals !== false,
+			hierarchical: Boolean(this.result && this.result.mode !== "flat"),
+		});
 	}
 
 	// Theme: the Desk theme by default (data-theme is the resolved light/dark value, also in
@@ -285,6 +341,7 @@ export class ReportViewPage {
 	// Leaving the page: every view and table is deleted now; the worker is terminated if the
 	// user does not come back within a minute (docs/architecture.md §8أ.3).
 	hide() {
+		close_popover();
 		if (this.restore_facade) this.restore_facade();
 		this.restore_facade = null;
 		this.visible = false;
@@ -300,14 +357,16 @@ export class ReportViewPage {
 		this.render_token += 1;
 		this.grid.destroy();
 		this.notices.show(null);
-		this.toolbar.set_fold({ foldable: false, subtotals: false });
 		if (session) await session.close();
 	}
 
 	/** Loads the normalized report into Perspective tables (explicit schema, in batches). */
 	async open_session(token) {
 		const { handles } = await get_engine();
-		const session = await ReportSession.create(handles, this.report, { locale: frappe.boot.lang });
+		const session = await ReportSession.create(handles, this.report, {
+			locale: frappe.boot.lang,
+			quick_filters: this.config?.quick_filters || [],
+		});
 		if (token !== this.run_token || !this.visible || this.session) {
 			await session.close();
 			return;
@@ -318,6 +377,7 @@ export class ReportViewPage {
 	// The first run of a page loads the engine (worker and WASM): the loading state says so.
 	show_loading() {
 		this.overlay.loading(engine_ready() ? "" : __("Preparing the engine…"));
+		this.show_summary("loading");
 	}
 
 	// Back on the page with the same report: its tables were deleted on leaving.
@@ -368,6 +428,7 @@ export class ReportViewPage {
 			module: this.meta.report?.module,
 			report_type: this.meta.report?.report_type,
 			can_export: Boolean(this.meta.perms?.can_export),
+			can_print: Boolean(this.meta.perms?.can_print),
 		});
 		if (frappe.breadcrumbs && this.meta.report?.module) frappe.breadcrumbs.add(this.meta.report.module);
 
@@ -377,17 +438,22 @@ export class ReportViewPage {
 		this.state.ui.density = this.density;
 		this.prepared_report_name = route_options.prepared_report_name || null;
 
-		this.filters = new ReportFilters({
+		this.criteria = new CriteriaBar({
+			root: this.root,
 			parent: this.$(".rv-filters"),
 			host: this,
 			defs: this.report_settings.filters || [],
+			period: this.config.period,
 			on_change: () => this.on_filters_changed(),
 		});
+		this.filters = this.criteria.filters;
+		this.cells.clear();
 		const filter_options = Object.fromEntries(
 			Object.entries(route_options).filter(([k]) => !RESERVED_PARAMS.has(k))
 		);
 		await this.filters.set_route_values(filter_options);
-		this.make_group_control();
+		this.criteria.refresh();
+		this.refresh_controls();
 		this.fit_height();
 
 		if (typeof this.report_settings.onload === "function") {
@@ -399,40 +465,6 @@ export class ReportViewPage {
 			}
 		}
 		await this.run();
-	}
-
-	make_group_control() {
-		const parent = this.toolbar.group_parent;
-		parent.replaceChildren();
-		this.group_control = frappe.ui.form.make_control({
-			df: {
-				fieldtype: "MultiSelectList",
-				fieldname: "rv_group_by",
-				label: __("Group by"),
-				placeholder: esc(__("No grouping")),
-				input_class: "rv-input",
-				get_data: () => this.group_options(),
-				onchange: () => {
-					const by = (this.group_control.get_value() || []).filter(Boolean);
-					if (JSON.stringify(by) === JSON.stringify(this.state.group.by)) return;
-					this.state.group.by = by;
-					// Paths of open groups belong to the grouping they were made in.
-					this.state.group.expanded = "all";
-					this.render();
-				},
-			},
-			parent,
-			only_input: true,
-		});
-		this.group_control.refresh();
-		if (this.state.group.by.length) this.group_control.set_value(this.state.group.by);
-	}
-
-	group_options() {
-		if (!this.report) return [];
-		return this.report.columns
-			.filter((c) => c.role === "dimension")
-			.map((c) => ({ value: c.key, label: c.label, description: "" }));
 	}
 
 	schedule_run() {
@@ -604,6 +636,7 @@ export class ReportViewPage {
 				text: notes.length ? frappe.utils.html2text(notes.join("\n")) : __("Nothing matches these filters."),
 			});
 			this.status.clear();
+			this.show_summary("empty");
 			this.header.set_meta({ filters: this.last_filters, run_at: this.run_at });
 			return;
 		}
@@ -630,7 +663,7 @@ export class ReportViewPage {
 		this.overlay.hide();
 		// What the view state asks for and the screen does not do is said, once, not dropped.
 		this.notices.show(describe_notices(opened.post.notices, report.columns));
-		this.toolbar.set_fold({ foldable: mode !== "flat", subtotals: opened.post.subtotals });
+		this.refresh_controls();
 		await this.grid.show({
 			report,
 			opened,
@@ -640,15 +673,89 @@ export class ReportViewPage {
 			fmt: this.formatter,
 		});
 		if (previous) await session.close_view(previous);
-		if (this.opened === opened) this.update_status(opened.counts);
-		this.update_url(this.last_filters, this.state);
+		if (this.opened === opened) {
+			this.update_status(opened.counts);
+			await this.update_summary(opened, session);
+		}
+		this.update_url(this.last_filters, this.state, default_state(this.config));
 	}
 
 	// Status bar (§8أ.5). Rows are the facts of the report (the leaves of a tree), as in the
 	// badge of the grand total: those that pass the browser filters, of all of them. Groups
 	// and tree parents are counted apart; folding changes neither number.
 	update_status(counts) {
-		this.status.update({ row_count: counts.shown, fact_count: counts.total, group_count: counts.groups });
+		this.status.update({
+			row_count: counts.shown,
+			fact_count: counts.total,
+			group_count: counts.groups,
+			filters: this.controls.active_count(),
+			noun: this.config?.rows_label,
+		});
+	}
+
+	/** Summary cards in a state without numbers (loading, error, no rows). */
+	show_summary(status) {
+		const pairs = this.config?.summary?.kind === "balance_pairs" ? this.config.summary.pairs || [] : [];
+		if (!pairs.length) {
+			this.summary.hide();
+			return;
+		}
+		this.summary.show({ status, cards: pairs.map((p) => ({ label: p.label })) });
+	}
+
+	/**
+	 * Summary cards (register.summary, kind "balance_pairs"): the debit and credit totals of
+	 * the grand total shown, read from the engine's view (or the report's own reference row
+	 * when that is the grand total shown, ADR-008). The difference is the one subtraction of
+	 * the two totals read; "balanced" is that difference rounding to zero at the precision
+	 * of the column.
+	 */
+	async update_summary(opened, session) {
+		const pairs = this.config?.summary?.kind === "balance_pairs" ? this.config.summary.pairs || [] : [];
+		if (!pairs.length) {
+			this.summary.hide();
+			return;
+		}
+		const keys = pairs.flatMap((p) => [p.debit, p.credit]).filter((k) => this.controls.column(k));
+		let values;
+		try {
+			values = await session.summary_totals(opened, keys);
+		} catch (e) {
+			if (this.opened !== opened) return;
+			throw e;
+		}
+		if (this.opened !== opened) return;
+		const counts = opened.counts;
+		if (!counts.shown) {
+			this.show_summary("empty");
+			return;
+		}
+		const fmt = this.formatter;
+		const currencies = opened.totals.currencies || {};
+		const cards = pairs.map((p) => {
+			const dcol = this.controls.column(p.debit);
+			const ccol = this.controls.column(p.credit);
+			if (!dcol || !ccol) return { label: p.label, debit_html: "—", credit_html: "—", balanced: false, diff_text: "—" };
+			const d = values[p.debit];
+			const c = values[p.credit];
+			const diff = (d ?? 0) - (c ?? 0);
+			const row = (key, v) => ({ __kind: "grand_total", __mixed: {}, ...currencies, [key]: v });
+			return {
+				label: p.label,
+				debit_html: d === null || d === undefined ? "—" : fmt.value_html(dcol, row(p.debit, d)),
+				credit_html: c === null || c === undefined ? "—" : fmt.value_html(ccol, row(p.credit, c)),
+				balanced: fmt.sign_of(dcol, row(p.debit, diff)) === "zero",
+				diff_text: fmt.number_text(dcol, Math.abs(diff)),
+			};
+		});
+		this.summary.show({
+			status: "ready",
+			cards,
+			filtered: opened.post.fact_filter.length > 0,
+			shown: counts.shown,
+			total: counts.total,
+			noun: this.config.rows_label,
+		});
 	}
 
 	// A parent of the report tree was opened or closed: the fold is an engine filter.
@@ -663,14 +770,14 @@ export class ReportViewPage {
 	save_fold(expanded) {
 		if (!this.state) return;
 		this.state.group.expanded = expanded;
-		this.update_url(this.last_filters, this.state);
+		this.update_url(this.last_filters, this.state, default_state(this.config));
 	}
 
 	// A column was resized in the grid (it already shows the new width).
 	save_width(key, width) {
 		if (!this.state) return;
 		this.state.columns.widths[key] = width;
-		this.update_url(this.last_filters, this.state);
+		this.update_url(this.last_filters, this.state, default_state(this.config));
 	}
 
 	set_subtotals(on) {
@@ -694,6 +801,7 @@ export class ReportViewPage {
 		// What was on screen no longer stands for the criteria: its view and tables go.
 		this.close_session().catch(() => {});
 		this.status.clear();
+		this.show_summary("error");
 		this.overlay.show({
 			kind: "error",
 			icon: "!",
@@ -734,6 +842,16 @@ export class ReportViewPage {
 
 	async export_xlsx() {
 		if (!this.opened) return;
+		// Quick filters are engine expressions of the browser; the server export cannot apply
+		// them yet, so the file would not be the screen. Said instead of exporting another file.
+		if (this.state.quick_filters?.length) {
+			frappe.msgprint({
+				title: __("Export not available with quick filters"),
+				message: esc(__("Quick filters are applied on screen only for now. Remove them to export the file.")),
+				indicator: "orange",
+			});
+			return;
+		}
 		const btn = this.header.export_button;
 		btn.disabled = true;
 		try {

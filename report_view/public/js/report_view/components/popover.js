@@ -61,16 +61,19 @@ export function open_popover({ root, anchor, content, cls = "", width = null, al
 		if (e.target.closest?.(".awesomplete, .dropdown-menu, .datepicker")) return;
 		handle.close();
 	};
+	// On the document: content that re-renders may drop the focus to the body.
 	const on_key = (e) => {
 		if (e.key !== "Escape") return;
+		const active = document.activeElement;
+		const inside = el.contains(active) || !active || active === document.body;
+		if (!inside && !anchor?.contains(active)) return;
 		e.stopPropagation();
-		const inside = el.contains(document.activeElement);
 		handle.close();
 		if (inside) anchor?.focus?.();
 	};
 	const on_resize = () => handle.close();
 	document.addEventListener("pointerdown", on_press, true);
-	el.addEventListener("keydown", on_key);
+	document.addEventListener("keydown", on_key, true);
 	window.addEventListener("resize", on_resize);
 
 	const handle = {
@@ -82,6 +85,7 @@ export function open_popover({ root, anchor, content, cls = "", width = null, al
 			if (handle.closed) return;
 			handle.closed = true;
 			document.removeEventListener("pointerdown", on_press, true);
+			document.removeEventListener("keydown", on_key, true);
 			window.removeEventListener("resize", on_resize);
 			anchor?.setAttribute("aria-expanded", "false");
 			el.remove();

@@ -30,11 +30,15 @@ export async function load_report_settings(report_name, script) {
 
 export class ReportFilters {
 	/**
-	 * @param {object} opts {parent: HTMLElement, host, defs: Array, on_change: () => void}
+	 * @param {object} opts {parent: HTMLElement, host, defs: Array, on_change: () => void,
+	 *        place: (df) => HTMLElement}
 	 *        host is the page object; host.facade is passed to on_change like the original.
+	 *        place chooses the container of a filter (criteria bar, "more options", hidden
+	 *        behind the period field); every filter is a control and is sent to the report.
 	 */
-	constructor({ parent, host, defs, on_change }) {
+	constructor({ parent, host, defs, on_change, place = null }) {
 		this.parent = parent;
+		this.place = place;
 		this.host = host;
 		this.on_change = on_change;
 		this.controls = [];
@@ -44,6 +48,7 @@ export class ReportFilters {
 
 	build(defs) {
 		this.parent.innerHTML = "";
+		this.wraps = new Map();
 		this.controls = defs
 			.filter((d) => d && d.fieldtype !== "Break")
 			.map((def) => this.make(def));
@@ -71,7 +76,8 @@ export class ReportFilters {
 			control_parent.className = "rv-field-ctl";
 			wrap.append(lbl, control_parent);
 		}
-		this.parent.appendChild(wrap);
+		(this.place ? this.place(df) : this.parent).appendChild(wrap);
+		this.wraps.set(df.fieldname, wrap);
 		const f = frappe.ui.form.make_control({
 			df,
 			parent: control_parent,
@@ -162,7 +168,7 @@ export class ReportFilters {
 	}
 
 	toggle_filter_display(fieldname, flag) {
-		$(this.parent).find(`div[data-fieldname="${fieldname}"]`).toggleClass("hide-control", flag);
+		this.wraps.get(fieldname)?.classList.toggle("hide-control", Boolean(flag));
 	}
 
 	evaluate_depends_on(expression, label) {

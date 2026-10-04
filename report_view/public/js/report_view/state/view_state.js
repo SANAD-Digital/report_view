@@ -1,12 +1,15 @@
 // View state v1 (docs/architecture.md §7.1), the subset used so far: mode, columns (order,
-// hidden, widths, pinned), sort, filters, group (by, subtotals, expanded), tree (depth,
-// expanded), ui.density. Unknown keys are dropped (not rejected) in the browser.
+// hidden, widths, pinned), sort, filters, quick_filters, group (by, subtotals, expanded),
+// tree (depth, expanded), values, ui (density, side_panel). Unknown keys are dropped (not
+// rejected) in the browser.
 
 export const VERSION = 1;
 const MODES = ["grid", "pivot", "charts"];
 const LIMIT_GROUP = 50;
 const DENSITIES = ["comfortable", "compact"];
 const LIMIT_EXPANDED = 5000;
+const AGGS = ["sum", "avg", "count", "count_distinct", "min", "max"];
+const SIDE_PANELS = ["columns", "filters"];
 export const MIN_COLUMN_WIDTH = 72;
 
 // A group path: the values of the group keys, top-down (strings, numbers, booleans or null).
@@ -19,16 +22,20 @@ function is_path(path, depth) {
 	);
 }
 
+// The default view of a report: register.default_hidden hides columns the report shows
+// (a column that repeats the tree, an enrichment field of less interest).
 export function default_state(config = {}) {
 	return {
 		v: VERSION,
 		mode: MODES.includes(config.default_mode) ? config.default_mode : "grid",
 		report_filters: {},
-		columns: { order: [], hidden: [], widths: {}, pinned: { start: [], end: [] } },
+		columns: { order: [], hidden: str_list(config.default_hidden), widths: {}, pinned: { start: [], end: [] } },
 		sort: [],
 		filters: [],
+		quick_filters: [],
 		group: { by: [], subtotals: true, expanded: "all" },
 		tree: { depth: null, expanded: null },
+		values: [],
 		ui: { density: "comfortable", side_panel: null },
 	};
 }
@@ -50,7 +57,7 @@ export function sanitize(state, config = {}) {
 	}
 	const cols = state.columns || {};
 	out.columns.order = str_list(cols.order);
-	out.columns.hidden = str_list(cols.hidden);
+	if (Array.isArray(cols.hidden)) out.columns.hidden = str_list(cols.hidden);
 	if (cols.widths && typeof cols.widths === "object") {
 		for (const [k, w] of Object.entries(cols.widths)) {
 			if (Number.isFinite(w) && w > 0) out.columns.widths[k] = Math.max(MIN_COLUMN_WIDTH, Math.round(w));
@@ -65,7 +72,13 @@ export function sanitize(state, config = {}) {
 			.filter((s) => s && typeof s.key === "string")
 			.map((s) => ({ key: s.key, dir: s.dir === "desc" ? "desc" : "asc" }));
 	}
-	if (Array.isArray(state.filters)) out.filters = state.filters.slice(0, 200);
+	if (Array.isArray(state.filters)) out.filters = state.filters.filter((f) => f && typeof f.key === "string").slice(0, 200);
+	out.quick_filters = str_list(state.quick_filters, 50);
+	if (Array.isArray(state.values)) {
+		out.values = state.values
+			.filter((v) => v && typeof v.key === "string" && AGGS.includes(v.agg))
+			.map((v) => ({ key: v.key, agg: v.agg }));
+	}
 	const group = state.group || {};
 	out.group.by = str_list(group.by, LIMIT_GROUP);
 	if (typeof group.subtotals === "boolean") out.group.subtotals = group.subtotals;
@@ -79,6 +92,7 @@ export function sanitize(state, config = {}) {
 		out.tree.expanded = tree.expanded.filter((rid) => Number.isInteger(rid) && rid >= 0).slice(0, LIMIT_EXPANDED);
 	}
 	if (DENSITIES.includes(state.ui?.density)) out.ui.density = state.ui.density;
+	if (SIDE_PANELS.includes(state.ui?.side_panel)) out.ui.side_panel = state.ui.side_panel;
 	return out;
 }
 
@@ -93,5 +107,6 @@ export function reconcile(state, columns) {
 	state.columns.widths = Object.fromEntries(Object.entries(state.columns.widths).filter(([k]) => keys.has(k)));
 	state.sort = state.sort.filter((s) => keys.has(s.key));
 	state.group.by = keep(state.group.by);
+	state.values = (state.values || []).filter((v) => keys.has(v.key));
 	return state;
 }

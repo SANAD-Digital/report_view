@@ -26,9 +26,9 @@ export function totals(handles, table, config) {
 	return handles.with_view(table, config, read_total_row, "totals");
 }
 
-/** Number of rows of a table that pass a filter. */
-export function count_rows(handles, table, filter) {
-	return handles.with_view(table, { columns: [KIND], filter }, (view) => view.num_rows(), "count");
+/** Number of rows of a table that pass a filter (and the expressions it refers to). */
+export function count_rows(handles, table, filter, expressions = {}) {
+	return handles.with_view(table, { columns: [KIND], filter, expressions }, (view) => view.num_rows(), "count");
 }
 
 /** Number of group rows of a grouping (all levels, without the grand total row). */
@@ -127,6 +127,8 @@ export async function toggle_group(view, post, row, open) {
 
 /**
  * Unique values of a column with their row count, under the other active filters (§8أ.4).
+ * opts: {limit, string (false for a non-text column), search (contains), expressions (those
+ * the other filters refer to)}.
  * @returns {Promise<{values: Array<{value: any, count: number}>, truncated: boolean}>}
  */
 export function unique_values(handles, table, key, other_filters = [], opts = {}) {
@@ -139,6 +141,7 @@ export function unique_values(handles, table, key, other_filters = [], opts = {}
 		aggregates: { [key]: "count", ...(sort_key === key ? {} : { [sort_key]: "min" }) },
 		filter,
 		sort: sort_key === key ? [] : [[sort_key, "asc"]],
+		expressions: opts.expressions || {},
 	};
 	return handles.with_view(
 		table,

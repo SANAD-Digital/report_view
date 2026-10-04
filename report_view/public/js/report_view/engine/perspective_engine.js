@@ -7,7 +7,7 @@
 // we own its handle (terminate() is the only way to give WASM memory back).
 
 import perspective from "@finos/perspective";
-import { build_table_input, batches } from "./schema.js";
+import { build_table_input, batches, perspective_type, KIND } from "./schema.js";
 import { build_nodes, build_facts } from "./tree_nodes.js";
 import { build_report_rows } from "./report_rows.js";
 import { to_view_config, CURRENCY_COUNT_PREFIX } from "./view_config.js";
@@ -292,6 +292,7 @@ export class ReportSession {
 		this.handles = handles;
 		this.normalized = normalized;
 		this.locale = opts.locale;
+		this.quick_filters = opts.quick_filters || [];
 		this.tables = {};
 		this.sizes = {};
 		this.level_rids = new Map();
@@ -365,7 +366,7 @@ export class ReportSession {
 	 * @returns {Promise<object|null>} null when a newer open() superseded this one.
 	 */
 	async open(view_state, mode = "grid") {
-		const spec = to_view_config(view_state, this.normalized, mode);
+		const spec = to_view_config(view_state, this.normalized, mode, { quick_filters: this.quick_filters });
 		const { post } = spec;
 		const table = this.tables[spec.table];
 		const view = await this.handles.latest_view(this.slot, table, spec.config, post.shape);
@@ -377,7 +378,9 @@ export class ReportSession {
 				queries.body_rows(view, post),
 				queries.row_depths(view, post),
 				this._totals(view, post),
-				post.fact_filter.length ? queries.count_rows(this.handles, facts, post.fact_filter) : this.sizes.facts,
+				post.fact_filter.length
+					? queries.count_rows(this.handles, facts, post.fact_filter, post.filter_expressions)
+					: this.sizes.facts,
 				this._groups(post),
 			]);
 			return {
@@ -412,11 +415,57 @@ export class ReportSession {
 		return this._engine_totals(post, row);
 	}
 
+	/**
+	 * Totals of some measures for the summary cards, as the grand total shown has them: the
+	 * report's own reference row when it is the grand total (ADR-008), else the engine's
+	 * totals of the view; measures that are not columns of the view (hidden) are read from a
+	 * temporary totals view of the facts under the same filter, deleted in `finally`.
+	 * @returns {Promise<object>} {key: number|null}
+	 */
+	async summary_totals(opened, keys) {
+		const { post } = opened;
+		const num = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+		if (post.total.source === "row" || post.total.source === "frappe_total") {
+			const row =
+				post.total.source === "row" ? this.rows_by_rid.get(post.total.rid) : this.normalized.report_totals?.frappe_total;
+			return Object.fromEntries(keys.map((k) => [k, num(row?.[k])]));
+		}
+		const shown = opened.totals.values;
+		if (keys.every((k) => Object.hasOwn(shown, k))) return Object.fromEntries(keys.map((k) => [k, num(shown[k])]));
+		const config = {
+			group_by: [KIND],
+			columns: keys,
+			aggregates: Object.fromEntries(keys.map((k) => [k, "sum"])),
+			filter: post.fact_filter,
+			expressions: post.filter_expressions || {},
+		};
+		const row = await queries.totals(this.handles, this.tables.facts, config);
+		return Object.fromEntries(keys.map((k) => [k, num(row[k])]));
+	}
+
 	async _groups(post) {
 		if (!post.groups) return null;
 		const table = this.tables[post.groups.table];
 		if (post.groups.config) return queries.count_groups(this.handles, table, post.groups.config);
 		return queries.count_rows(this.handles, table, post.groups.filter);
+	}
+
+	/**
+	 * Unique values of a column of the facts with their count, under the browser filters of
+	 * the view state other than the column's own (set filter, filter panel). A temporary
+	 * view, deleted in `finally`.
+	 * @param {object} opts {search, limit}
+	 */
+	async unique_values(view_state, key, opts = {}) {
+		const others = { ...view_state, filters: (view_state.filters || []).filter((f) => f.key !== key) };
+		const spec = to_view_config(others, this.normalized, "grid", { quick_filters: this.quick_filters });
+		const column = this.normalized.columns.find((c) => c.key === key);
+		const string = column ? perspective_type(column.fieldtype) === "string" : true;
+		return queries.unique_values(this.handles, this.tables.facts, key, spec.post.fact_filter, {
+			...opts,
+			string,
+			expressions: spec.post.filter_expressions,
+		});
 	}
 
 	/**

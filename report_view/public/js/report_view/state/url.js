@@ -34,16 +34,22 @@ export function filters_to_params(filters) {
 	return params;
 }
 
-// Nothing of the view differs from the default one: the URL carries no `rv`.
-function is_default_view(state) {
+function same_list(a, b) {
+	return a.length === b.length && a.every((x) => b.includes(x));
+}
+
+// Nothing of the view differs from the default one of the report: the URL carries no `rv`.
+function is_default_view(state, base) {
 	return (
 		!state.sort.length &&
 		!state.filters.length &&
+		!(state.quick_filters || []).length &&
+		!(state.values || []).length &&
 		!state.group.by.length &&
 		state.group.subtotals !== false &&
 		state.group.expanded === "all" &&
 		!state.columns.order.length &&
-		!state.columns.hidden.length &&
+		same_list(state.columns.hidden, base?.columns?.hidden || []) &&
 		!Object.keys(state.columns.widths).length &&
 		!state.columns.pinned.start.length &&
 		state.tree.depth === null &&
@@ -52,12 +58,13 @@ function is_default_view(state) {
 }
 
 /**
+ * @param {object} [base] the default view state of the report (default_state(config))
  * @returns {{search: string, rv_dropped: boolean}}
  */
-export function build_search(filters, state, pathname) {
+export function build_search(filters, state, pathname, base = null) {
 	const params = filters_to_params(filters);
 	let rv_dropped = false;
-	if (!is_default_view(state)) {
+	if (!is_default_view(state, base)) {
 		params.set("rv", encode_state(state));
 		if ((pathname + "?" + params.toString()).length > MAX_URL) {
 			params.delete("rv");
@@ -71,11 +78,11 @@ export function build_search(filters, state, pathname) {
 // Debounced history.replaceState, as the original page does (300 ms).
 export function make_url_updater(win, delay = 300) {
 	let timer = null;
-	return (filters, state) => {
+	return (filters, state, base = null) => {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			const { pathname, hash } = win.location;
-			const { search } = build_search(filters, state, pathname);
+			const { search } = build_search(filters, state, pathname, base);
 			win.history.replaceState(win.history.state, "", pathname + search + hash);
 		}, delay);
 	};

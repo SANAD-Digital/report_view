@@ -17,6 +17,8 @@ export const AGGREGATES = {
 	max: "high",
 };
 export const CURRENCY_COUNT_PREFIX = "__curn__";
+// Boolean expression column of a quick filter (register.quick_filters).
+export const QUICK_PREFIX = "__qf__";
 
 const TEXT_OPS = { contains: "contains", equals: "==", starts_with: "begins with" };
 
@@ -24,16 +26,58 @@ function empty(v) {
 	return v === null || v === undefined || v === "";
 }
 
+/**
+ * Columns of the report in their default order: the report's own order, with the columns an
+ * enrichment added (they arrive last) placed right after the column they describe, so that
+ * "Account Type" stands next to "Account" as in the design.
+ */
+export function ordered_columns(normalized) {
+	const added = new Map();
+	const base = [];
+	for (const c of normalized.columns) {
+		const source = c.enriched?.source;
+		if (source && normalized.columns.some((o) => o.key === source && !o.enriched)) {
+			if (!added.has(source)) added.set(source, []);
+			added.get(source).push(c);
+		} else base.push(c);
+	}
+	return base.flatMap((c) => [c, ...(added.get(c.key) || [])]);
+}
+
 /** Visible columns in display order (view_state.columns). */
 export function visible_columns(normalized, view_state) {
 	const hidden = new Set(view_state?.columns?.hidden || []);
-	let cols = normalized.columns.filter((c) => !c.hidden && !hidden.has(c.key));
+	let cols = ordered_columns(normalized).filter((c) => !c.hidden && !hidden.has(c.key));
 	const order = view_state?.columns?.order || [];
 	if (order.length) {
 		const pos = new Map(order.map((k, i) => [k, i]));
 		cols = [...cols].sort((a, b) => (pos.get(a.key) ?? 1e6) - (pos.get(b.key) ?? 1e6));
 	}
 	return cols;
+}
+
+/**
+ * Active quick filters (view_state.quick_filters) as boolean expression columns of the engine
+ * and the filter terms on them. Definitions come from register.quick_filters:
+ * {id, label, expression} where expression is a Perspective expression on column keys.
+ * @returns {{filter: Array, expressions: object, notices: Array}}
+ */
+export function quick_filter_terms(view_state, definitions = []) {
+	const by_id = new Map((definitions || []).map((q) => [q.id, q]));
+	const filter = [];
+	const expressions = {};
+	const notices = [];
+	for (const id of view_state?.quick_filters || []) {
+		const def = by_id.get(id);
+		if (!def || typeof def.expression !== "string") {
+			notices.push({ code: "QUICK_FILTER_UNKNOWN", detail: id });
+			continue;
+		}
+		const name = QUICK_PREFIX + id;
+		expressions[name] = def.expression;
+		filter.push([name, "==", true]);
+	}
+	return { filter, expressions, notices };
 }
 
 function aggregate_of(column, view_state) {
@@ -194,9 +238,10 @@ function unique(list) {
  * @param {object} view_state §7.1
  * @param {object} normalized NormalizedReport
  * @param {"grid"|"pivot"|"charts"} [mode]
+ * @param {object} [opts] {quick_filters: register.quick_filters}
  * @returns {{table: "nodes"|"rows"|"facts", config: object, post: object}}
  */
-export function to_view_config(view_state, normalized, mode = "grid") {
+export function to_view_config(view_state, normalized, mode = "grid", opts = {}) {
 	if (mode !== "grid") throw new Error(`report_view: view mode "${mode}" is not available yet`);
 	const state = view_state || {};
 	const by_key = new Map(normalized.columns.map((c) => [c.key, c]));
@@ -207,7 +252,12 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 	const visible = [...shown.slice(0, 1), ...pinned, ...shown.slice(1).filter((c) => !pinned.includes(c))];
 	const keys = visible.map((c) => c.key);
 	const group_keys = (state.group?.by || []).filter((k) => by_key.has(k));
-	const { filter: browser_filter, notices } = to_filter(state.filters, normalized.columns);
+	const column_filter = to_filter(state.filters, normalized.columns);
+	const quick = quick_filter_terms(state, opts.quick_filters);
+	const browser_filter = [...column_filter.filter, ...quick.filter];
+	const notices = [...column_filter.notices, ...quick.notices];
+	// Expressions the filter refers to: every view that applies the filter carries them.
+	const filter_expressions = quick.expressions;
 	const is_tree = Boolean(normalized.tree?.enabled);
 	const user_sort = (state.sort || [])
 		.filter((s) => by_key.has(s.key) && !group_keys.includes(s.key))
@@ -252,6 +302,7 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 		pinned_rows: { top: [], bottom: [] },
 		total: null,
 		fact_filter: shape === "tree" ? [] : browser_filter,
+		filter_expressions: shape === "tree" ? {} : filter_expressions,
 		groups: null,
 		notices,
 	};
@@ -274,7 +325,7 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 				...Object.fromEntries(currency_counts.map((k) => [k, "distinct count"])),
 			},
 			filter,
-			expressions: currency_expressions,
+			expressions: { ...currency_expressions, ...(filter.length ? filter_expressions : {}) },
 		},
 	});
 
@@ -299,6 +350,7 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 			edges.reference !== null ? { source: "row", rid: edges.reference } : { source: "view", view: totals_view("facts", []) };
 	} else if (shape === "flat") {
 		config.filter = browser_filter;
+		config.expressions = { ...filter_expressions };
 		config.sort = user_sort.length ? [...user_sort, [RID, "asc"]] : [];
 		post.technical = [RID];
 		post.total = { source: "view", view: totals_view("facts", browser_filter) };
@@ -322,7 +374,7 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 		config.filter = browser_filter;
 		config.aggregates = grouped_aggregates();
 		config.aggregates[KIND] = "count";
-		config.expressions = currency_expressions;
+		config.expressions = { ...currency_expressions, ...filter_expressions };
 		post.technical = [KIND, ...currency_keys, ...currency_counts];
 		post.row_offset = 1;
 		post.leaf_depth = post.group_keys.length + 1;
@@ -350,7 +402,13 @@ export function to_view_config(view_state, normalized, mode = "grid") {
 			post.depth = expanded === "none" || post.expanded ? 0 : post.group_keys.length;
 			post.groups = {
 				table: "facts",
-				config: { group_by: group_keys, columns: [KIND], aggregates: { [KIND]: "count" }, filter: browser_filter },
+				config: {
+					group_by: group_keys,
+					columns: [KIND],
+					aggregates: { [KIND]: "count" },
+					filter: browser_filter,
+					expressions: filter_expressions,
+				},
 			};
 			if (edges.inner) notices.push({ code: "REPORT_ROWS_HIDDEN", detail: edges.inner });
 		}

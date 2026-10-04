@@ -50,3 +50,20 @@ class TestGetMeta(RVTestCase):
 	def test_denied_user(self):
 		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
 			api.get_meta("Trial Balance")
+
+
+class TestGetEntryState(RVTestCase):
+	def test_allowed_user_sees_button(self):
+		with self.as_user("accountant"):
+			state = api.get_entry_state("Trial Balance")
+		self.assertEqual(state, {"show": True, "route": ["report-view", "Trial Balance"]})
+
+	def test_denied_user_gets_no_button_and_no_messages(self):
+		with self.as_user("none"):
+			frappe.local.message_log = []
+			self.assertEqual(api.get_entry_state("Trial Balance"), {"show": False})
+			self.assertEqual(frappe.local.message_log, [])
+
+	def test_missing_report(self):
+		with self.as_user("accountant"):
+			self.assertEqual(api.get_entry_state("No Such Report RV"), {"show": False})

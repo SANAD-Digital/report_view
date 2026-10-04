@@ -194,7 +194,7 @@ guard_report_quiet(report_name) -> Report | None
 
 ### 2.6 `report_view.api.get_entry_state(report_name)`
 
-للزر في query-report (ADR-007). GET. الفحوص: `guard_report_quiet` (أي فشل ⇒ `{"show": false}` بلا رسائل في `_server_messages`). لا يكشف أكثر من الأصل: من يرى الزر فتح query-report للتقرير نفسه. المخرجات: `{"show": bool, "url": "/desk/report-view/<name>"}` حسب `Global Settings.entry_button_scope` و `Report View Settings.show_entry_button`.
+للزر في query-report (ADR-007). GET. الفحوص: `guard_report_quiet` (أي فشل ⇒ `{"show": false}` بلا رسائل في `_server_messages`). لا يكشف أكثر من الأصل: من يرى الزر فتح query-report للتقرير نفسه. المخرجات: `{"show": true, "route": ["report-view", <name>]}` أو `{"show": false}`. لاحقاً (المرحلة 4) يُقيَّد بـ `Global Settings.entry_button_scope` و `Report View Settings.show_entry_button`؛ إلى أن توجد هذه الإعدادات يظهر الزر لكل من يملك صلاحية التقرير.
 
 ### 2.7 العروض المحفوظة: `report_view.api.views.*`
 

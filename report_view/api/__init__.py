@@ -14,7 +14,13 @@ from report_view.core import engine, normalize, runner
 from report_view.core.errors import RVEnrichNotAllowed, RVInvalidInput, RVLimitExceeded
 from report_view.core.export import model as export_model_mod
 from report_view.core.export import xlsx
-from report_view.core.guard import can_export, can_print, guard_export, guard_report
+from report_view.core.guard import (
+	can_export,
+	can_print,
+	guard_export,
+	guard_report,
+	guard_report_quiet,
+)
 from report_view.core.inputs import parse_json_arg
 from report_view.core.settings import DEFAULT_WORKER_THRESHOLD, get_row_limit, load_settings
 
@@ -61,6 +67,19 @@ def get_meta(report_name: str) -> dict:
 		"limits": {"max_rows": get_row_limit(), "worker_threshold": DEFAULT_WORKER_THRESHOLD},
 		"defaults": {"saved_view": None, "source": None},
 	}
+
+
+@frappe.whitelist(methods=["GET"])
+def get_entry_state(report_name: str) -> dict:
+	"""Whether the query-report page shows the entry button to Report View (§2.6, ADR-007).
+
+	Reveals nothing beyond the original page: any failure is ``{"show": False}`` with
+	no rejection message left in ``_server_messages``.
+	"""
+	report = guard_report_quiet(report_name)
+	if not report:
+		return {"show": False}
+	return {"show": True, "route": ["report-view", report_name]}
 
 
 @frappe.whitelist(methods=["POST"])

@@ -503,3 +503,6 @@ msgstr "تعذّر التصدير: الفلتر على «{0}» لا يناسب �
 
 msgid "Cannot export: the filter on {0} combines empty cells with other values, which is not applied on screen."
 msgstr "تعذّر التصدير: الفلتر على «{0}» يجمع الخلايا الفارغة مع قيم أخرى، وهذا غير مطبّق على الشاشة."
+
+msgid "Go to Advanced View"
+msgstr "الانتقال إلى العرض المتقدم"

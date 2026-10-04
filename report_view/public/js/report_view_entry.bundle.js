@@ -7,11 +7,20 @@ const entry_states = {};
 const WAIT_STEP = 200;
 const WAIT_MAX = 50;
 
+// Plain fetch, not frappe.call: this optional button must never raise Frappe's error
+// dialogs on the user's report page. A failed request is not cached, so it is retried.
 function get_entry_state(report_name) {
 	if (!entry_states[report_name]) {
-		entry_states[report_name] = frappe
-			.xcall("report_view.api.get_entry_state", { report_name }, "GET")
-			.catch(() => ({ show: false }));
+		const url = `/api/method/report_view.api.get_entry_state?${new URLSearchParams({ report_name })}`;
+		entry_states[report_name] = fetch(url, {
+			headers: { Accept: "application/json", "X-Frappe-CSRF-Token": frappe.csrf_token },
+		})
+			.then((r) => (r.ok ? r.json() : Promise.reject()))
+			.then((r) => r.message || { show: false })
+			.catch(() => {
+				delete entry_states[report_name];
+				return { show: false };
+			});
 	}
 	return entry_states[report_name];
 }

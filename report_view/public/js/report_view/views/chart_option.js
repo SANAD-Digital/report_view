@@ -1,4 +1,4 @@
-// ECharts option of the Charts view (views/charts_view.js). Pure module: no frappe, no DOM, no
+// ECharts option of one card of the charts dashboard (views/charts_view.js). Pure module: no frappe, no DOM, no
 // ECharts; every value, label, colour and text arrives already read or formatted, so the
 // option only places them. Nothing is computed on the values here.
 //
@@ -12,10 +12,18 @@ const TURNED_MARGIN = 12;
 const LINE_ROOM = 18;
 // The last tick label of a horizontal value axis is centred on the edge of the plot.
 const EDGE_MARGIN = 28;
+// Opacity of the categories that are not the one a cross-filter picked.
+const DIMMED = 0.3;
+
+// Values as ECharts data items, the categories other than `selected` dimmed.
+function dim(values, selected) {
+	if (selected === null || selected === undefined) return values;
+	return values.map((value, i) => (i === selected ? value : { value, itemStyle: { opacity: DIMMED } }));
+}
 
 /**
  * @param {object} p
- * @param {"bar"|"stacked"|"hbar"|"line"|"donut"} p.type
+ * @param {"bar"|"stacked"|"hbar"|"hstacked"|"line"|"area"|"donut"} p.type
  * @param {boolean} p.rtl
  * @param {string[]} p.labels category texts
  * @param {Array<{key: string, name: string, color: string, values: Array<number|null>}>} p.series
@@ -26,6 +34,8 @@ const EDGE_MARGIN = 28;
  * @param {(s: string) => string} p.esc HTML escape (tooltips are HTML)
  * @param {number} [p.width] width of the plot in px (room of the category labels)
  * @param {boolean} [p.animate]
+ * @param {number} [p.label_width] room of a category label of horizontal bars in px
+ * @param {number|null} [p.selected] the category of the cross-filter (the others are dimmed)
  * @returns {object} ECharts option
  */
 export function chart_option(p) {
@@ -39,7 +49,7 @@ export function chart_option(p) {
 		tooltip: tooltip(p),
 	};
 	if (type === "donut") return { ...base, series: [donut_series(p)] };
-	if (type === "hbar") return { ...base, ...hbar(p) };
+	if (type === "hbar" || type === "hstacked") return { ...base, ...hbar(p) };
 
 	// Room of one category label: few labels that fit are shown whole (wrapped); otherwise
 	// they stand upright and are cut at a length, the tooltip keeps the whole text.
@@ -78,21 +88,23 @@ export function chart_option(p) {
 			axisLabel: { color: theme.text_3, fontSize: theme.font_size - 1, formatter: p.axis_text },
 		},
 		series: series.map((s) =>
-			type === "line"
+			type === "line" || type === "area"
 				? {
 						type: "line",
 						name: s.name,
-						data: s.values,
+						data: dim(s.values, p.selected),
 						symbol: "circle",
-						symbolSize: 6,
+						symbolSize: n > 40 ? 0 : 6,
+						showSymbol: n <= 40,
 						connectNulls: false,
 						itemStyle: { color: s.color },
 						lineStyle: { color: s.color, width: 2 },
+						areaStyle: type === "area" ? { color: s.color, opacity: 0.14 } : undefined,
 				  }
 				: {
 						type: "bar",
 						name: s.name,
-						data: s.values,
+						data: dim(s.values, p.selected),
 						stack: type === "stacked" ? "total" : undefined,
 						barMaxWidth: type === "stacked" ? 30 : 22,
 						barGap: "15%",
@@ -120,15 +132,20 @@ function hbar(p) {
 			position: rtl ? "right" : "left",
 			axisTick: { show: false },
 			axisLine: { lineStyle: { color: theme.line_3 } },
-			axisLabel: { color: theme.text, fontSize: theme.font_size, width: 180, overflow: "truncate" },
+			axisLabel: { color: theme.text, fontSize: theme.font_size, width: p.label_width || 180, overflow: "truncate" },
 		},
-		series: series.map((s) => ({
+		series: series.map((s, i) => ({
 			type: "bar",
 			name: s.name,
-			data: s.values,
+			data: dim(s.values, p.selected),
+			stack: p.type === "hstacked" ? "total" : undefined,
 			barMaxWidth: 16,
 			barGap: "20%",
-			itemStyle: { color: s.color, borderRadius: rtl ? [3, 0, 0, 3] : [0, 3, 3, 0] },
+			// Stacked: only the outer end of the last bar is rounded.
+			itemStyle: {
+				color: s.color,
+				borderRadius: p.type === "hstacked" && i < series.length - 1 ? 0 : rtl ? [3, 0, 0, 3] : [0, 3, 3, 0],
+			},
 		})),
 	};
 }
@@ -148,7 +165,7 @@ function donut_series(p) {
 		data: labels.map((name, i) => ({
 			name,
 			value: s.values[i],
-			itemStyle: { color: palette[i % palette.length] },
+			itemStyle: { color: palette[i % palette.length], opacity: p.selected === null || p.selected === undefined || p.selected === i ? 1 : DIMMED },
 		})),
 	};
 }
@@ -159,7 +176,7 @@ function tooltip(p) {
 	return {
 		trigger: item ? "item" : "axis",
 		confine: true,
-		axisPointer: p.type === "line" ? { type: "line", lineStyle: { color: theme.line_3 } } : { type: "shadow", shadowStyle: { color: theme.hover } },
+		axisPointer: p.type === "line" || p.type === "area" ? { type: "line", lineStyle: { color: theme.line_3 } } : { type: "shadow", shadowStyle: { color: theme.hover } },
 		backgroundColor: theme.surface,
 		borderColor: theme.line_2,
 		borderWidth: 1,

@@ -5,3 +5,4 @@
 import "regular-table";
 import "./report_view/index.js";
 import "./report_view/configs/trial_balance.js";
+import "./report_view/configs/charts.js";

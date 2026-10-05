@@ -1,7 +1,7 @@
-/* Charts view (views/charts_view.js; design: reference/design/screens/charts.png and the
-   chart-type panel of the integrated chart, Main.dc.html). The cards, legend, donut list and
-   chart-type buttons are the design's (rv_components.css); this file lays them out around
-   the ECharts plot. Logical properties only; colours from the tokens only. */
+/* Charts dashboard (views/charts_view.js; design: reference/design/screens/charts.png). The
+   cards, legend, donut list and chart-type buttons are the design's (rv_components.css); this
+   file lays out the slicers bar, the grid of cards, the card tools and the card editor around
+   the ECharts plots. Logical properties only; colours from the tokens only. */
 
 /* ---------- table or charts ---------- */
 .rv:not(.rv-mode-charts) .rv-chartsv{display:none}
@@ -11,27 +11,68 @@
 .rv.rv-mode-charts .rv-gridwrap:has(> .rv-stateov:not([hidden])){display:flex}
 .rv.rv-mode-charts:has(.rv-gridwrap > .rv-stateov:not([hidden])) .rv-chartsv{display:none}
 
-/* ---------- layout: the chart, its settings at the inline end ---------- */
-.rv-charts.rv-chartsv{flex:none;overflow:visible;grid-template-columns:minmax(0,1fr) 260px;align-items:start}
-/* Desk colours h3 with its own theme; the page may have its own (header button) */
-.rv-chartsv h3{color:var(--tx)}
-.rv-chart-titles{min-width:0}
-.rv-chart-card .rv-card-hd{flex-wrap:wrap}
-.rv-chart-card .rv-legend{justify-content:flex-end}
+/* ---------- dashboard: slicers, then the cards (two columns, one on narrow screens) ---------- */
+.rv-dash{display:flex;flex-direction:column;gap:var(--gap);min-width:0;flex:none}
+.rv-dash h3{color:var(--tx)}
+.rv-dash .rv-charts.rv-dash-grid{flex:none;overflow:visible;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+.rv-dash-empty{min-height:260px;align-items:center;justify-content:center}
+
+/* slicers bar (Power BI style): chips of the dashboard's own filters, then the actions */
+.rv-slicers{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-height:calc(var(--ctl) + 8px);padding:4px 8px;background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-lg)}
+.rv-slicers-lbl{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);font-weight:600;color:var(--tx-3);padding-inline:4px 2px;white-space:nowrap}
+.rv-slicer-list{display:contents}
+.rv-slicers-sp{flex:1}
+.rv-slicer{display:inline-flex;align-items:center;gap:2px;height:28px;padding-inline:2px 3px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface-2);font-size:var(--fs-xs);max-width:100%;min-width:0}
+.rv-slicer.on{background:var(--pri-soft);border-color:var(--pri-soft-2)}
+.rv-slicer.cross{background:var(--dr-soft);border-color:transparent}
+.rv-slicer-btn{display:inline-flex;align-items:center;gap:6px;height:100%;padding-inline:8px 4px;border:0;background:transparent;color:var(--tx);font:inherit;cursor:pointer;min-width:0;border-radius:999px}
+span.rv-slicer-btn{cursor:default}
+.rv-slicer-btn svg{flex:none;color:var(--tx-3)}
+.rv-slicer-btn .k{color:var(--tx-3);white-space:nowrap}
+.rv-slicer-btn .v{font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.rv-slicer.on .rv-slicer-btn .v{color:var(--pri-tx)}
+.rv-slicer.cross .rv-slicer-btn .v{color:var(--dr)}
+.rv-slicer-btn:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
+.rv-slicers .rv-btn svg{flex:none}
+
+/* ---------- one card ---------- */
+.rv-dcard{min-height:200px}
+.rv-dcard[data-type="kpi"]{min-height:0}
+.rv-dcard .rv-card-hd{flex-wrap:nowrap}
+.rv-chart-titles{min-width:0;flex:1}
+.rv-chart-titles h3{overflow-wrap:anywhere}
+.rv-dcard-tools{display:flex;align-items:flex-start;gap:8px;flex:none;max-width:60%}
+.rv-dcard .rv-legend{justify-content:flex-end;padding-top:3px;row-gap:4px}
+.rv-dcard-menu{margin-block:-4px;margin-inline-end:-8px;color:var(--tx-3)}
 .rv-chart-note{font-size:var(--fs-xs);color:var(--warn);background:var(--warn-soft);border:1px solid var(--warn-line);border-radius:var(--r-sm);padding:6px 10px}
 .rv-chart-body{display:flex;align-items:center;gap:22px;min-width:0}
 .rv-chart-plotwrap{position:relative;flex:1;min-width:0}
-.rv-chart-plot{width:100%;height:380px}
-.rv-chart-state{flex:1;display:grid;place-items:center;padding:24px}
+.rv-chart-plot{width:100%;height:280px}
+.rv-dcard.can-cross .rv-chart-plot{cursor:pointer}
+.rv-chart-state{flex:1;display:grid;place-items:center;padding:16px;min-height:200px}
+.rv-dcard[data-state="loading"] .rv-chart-state .rv-state{width:100%;max-width:none}
+.rv-dcard .rv-state .rv-dcard-skel{width:100%;height:200px;border-radius:var(--r)}
+.rv-dcard[aria-busy="true"][data-state="ready"] .rv-chart-plotwrap{opacity:.55;transition:opacity .15s}
 
-/* donut: the ring, its total in the middle, the categories as a list next to it */
-.rv-chartsv.is-donut .rv-chart-plotwrap{flex:0 1 320px}
-.rv-chartsv.is-donut .rv-chart-plot{height:300px}
+/* donut: the ring, its total in the middle, the categories with value and share next to it */
+.rv-dcard.is-donut .rv-chart-plotwrap{flex:0 0 220px}
+.rv-dcard.is-donut .rv-chart-plot{height:220px}
 .rv-chart-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;pointer-events:none}
-.rv-chart-center span{font-size:var(--fs-xs);color:var(--tx-3);max-width:120px;text-align:center}
+.rv-chart-center span{font-size:var(--fs-xs);color:var(--tx-3);max-width:110px;text-align:center}
 .rv-chart-center b{font-size:16px;font-weight:600;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;color:var(--tx)}
-.rv-chart-dlegend{flex:0 1 360px;max-height:300px;overflow:auto}
+.rv-chart-dlegend{flex:1 1 auto;max-height:240px;overflow:auto;gap:8px}
 .rv-chart-dlegend .v{white-space:nowrap}
+.rv-chart-dlegend .p{width:auto;min-width:44px;text-align:end;white-space:nowrap}
+.rv-chart-dlegend li.dim{opacity:.4}
+
+/* number card */
+.rv-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.rv-kpi{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2);min-width:0}
+.rv-kpi .k{display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--tx-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-kpi .v{font-size:20px;font-weight:600;color:var(--tx);direction:ltr;unicode-bidi:isolate;text-align:start;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv[dir=rtl] .rv-kpi .v{text-align:end}
+.rv-kpi .s{font-size:var(--fs-xs);color:var(--tx-4);direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+.rv[dir=rtl] .rv-kpi .s{text-align:end}
 
 /* colour swatches: one token per series / category (--c1..--c7) */
 .rv-sw{display:inline-block;width:10px;height:10px;border-radius:2px;flex:none;background:var(--surface-3)}
@@ -41,17 +82,30 @@
 .rv-sw-7{background:var(--c7)}
 .rv-sw.off{background:var(--surface-3);box-shadow:inset 0 0 0 1px var(--line-2)}
 
-/* settings panel */
-.rv-chart-side{gap:16px;background:var(--surface-2)}
-.rv-chart-sec{display:flex;flex-direction:column;gap:8px;min-width:0}
-.rv-chart-types .rv-ctype{text-align:center;line-height:1.35}
+/* ---------- card editor (popover) ---------- */
+.rv-ced{display:flex;flex-direction:column;max-height:min(640px,calc(100vh - 80px))}
+.rv-ced-body{display:flex;flex-direction:column;gap:12px;padding:4px 10px 10px;overflow:auto}
+.rv-ced-row{display:flex;flex-direction:column;gap:6px;min-width:0;margin:0}
+.rv-ced-row > span{font-size:var(--fs-xs);font-weight:600;color:var(--tx-2)}
+.rv-ced-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.rv-ced-title{width:100%}
+.rv-ced-types{grid-template-columns:repeat(4,minmax(0,1fr))}
+.rv-ced-types .rv-ctype{padding:7px 2px;gap:4px;text-align:center;line-height:1.3;font-size:11px}
+.rv-ced-types .rv-ctype svg{width:26px;height:19px}
 .rv-chart-types .rv-ctype:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
-.rv-chart-select{height:var(--ctl);width:100%;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:var(--tx);font-size:var(--fs-sm);padding:0 8px}
+.rv-chart-select{height:30px;width:100%;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:var(--tx);font-size:var(--fs-xs);padding:0 6px}
 .rv-chart-select:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
-.rv-chart-measures{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto}
+.rv-chart-measures{display:flex;flex-direction:column;gap:0;max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:var(--r);padding:2px}
+.rv-chart-measures .rv-setitem{min-height:26px;font-size:var(--fs-xs)}
 .rv-chart-measures .rv-check span{white-space:normal}
 .rv-chart-measures input:disabled{cursor:default}
-.rv-chart-foot{padding:0}
+.rv-ced-top{align-self:flex-start;flex-wrap:wrap}
+.rv-ced-top button{height:24px;padding:0 10px;font-size:var(--fs-xs)}
+
+/* date slicer */
+.rv-dslicer-fields{display:flex;flex-direction:column;gap:8px;padding:4px 10px 10px}
+.rv-dslicer-f{display:flex;flex-direction:column;gap:4px;margin:0;font-size:var(--fs-xs);color:var(--tx-2)}
+.rv-dslicer-f .form-control{height:30px;font-size:var(--fs-xs)}
 
 /* tooltip (ECharts places it inside the plot, so the tokens of .rv apply) */
 .rv-ctip-hd{font-weight:600;margin-bottom:4px;color:var(--tx)}
@@ -61,15 +115,19 @@
 .rv-ctip-row .v{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;font-weight:500;color:var(--tx)}
 .rv-ctip-p{color:var(--tx-3);font-variant-numeric:tabular-nums}
 
-/* ---------- narrow screens: settings below the chart, the donut list below the ring ---------- */
+/* ---------- narrow screens: one column, the donut list below the ring ---------- */
 @media (max-width: 900px){
-  .rv-charts.rv-chartsv{grid-template-columns:minmax(0,1fr)}
-  .rv-chart-types{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .rv-dash .rv-charts.rv-dash-grid{grid-template-columns:minmax(0,1fr)}
+  .rv-dash .rv-card.wide{grid-column:auto}
 }
 @media (max-width: 560px){
-  .rv-chart-types{grid-template-columns:repeat(3,minmax(0,1fr))}
   .rv-chart-body{flex-direction:column;align-items:stretch}
-  .rv-chartsv.is-donut .rv-chart-plotwrap,.rv-chart-dlegend{flex:none}
-  .rv-chart-card{padding:12px}
-  .rv-chart-plot{height:300px}
+  .rv-dcard.is-donut .rv-chart-plotwrap,.rv-chart-dlegend{flex:none}
+  .rv-dcard{padding:12px}
+  .rv-dcard .rv-card-hd{flex-wrap:wrap}
+  .rv-dcard-tools{max-width:none;width:100%;justify-content:space-between}
+  .rv-dcard .rv-legend{justify-content:flex-start}
+  .rv-chart-plot{height:240px}
+  .rv-slicers-sp{display:none}
+  .rv-slicer-btn .v{max-width:150px}
 }

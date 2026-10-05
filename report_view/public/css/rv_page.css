@@ -170,3 +170,28 @@
   .rv-panel{position:absolute;inset-block:0;inset-inline-end:34px;z-index:14;width:min(300px,calc(100% - 34px));box-shadow:var(--sh-pop)}
   .rv-status{height:auto;min-height:34px;padding-block:6px}
 }
+
+/* ---------- actions in Desk's page head (components/header.js) ---------- */
+.rv.rv-headbar{display:flex;align-items:center;background:transparent;margin-inline-end:8px}
+.rv.rv-headbar .rv-actions{flex-wrap:nowrap}
+
+/* ---------- one-line summary cards: the report keeps the screen ---------- */
+.rv-sum{flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px 14px;padding:8px 14px}
+.rv-sum-hd{flex:1 1 100%}
+.rv-sum-eq{align-items:baseline;gap:10px}
+.rv-sum-side{flex-direction:row;align-items:baseline;gap:6px}
+.rv-sum-side b{font-size:17px}
+.rv.compact .rv-sum-side b{font-size:15px}
+.rv-sum-op{font-size:15px;padding:0}
+.rv-sum-foot{margin-inline-start:auto}
+.rv-sum:has(.rv-pill.ok) .rv-sum-foot{display:none}
+
+/* ---------- Frappe MultiSelectList inside our fields: one frame, the menu within the field ---------- */
+.rv .rv-field .multiselect-list{position:relative}
+.rv .rv-field .multiselect-list > .form-control{display:flex;align-items:center;padding-inline-end:28px;cursor:pointer}
+.rv .rv-field .multiselect-list .status-text{position:static;flex:1;min-width:0;margin:0;padding:0;border:0;background:none;box-shadow:none;line-height:normal;color:var(--tx)}
+.rv .rv-field .multiselect-list .status-text .text-extra-muted{color:var(--tx-4)}
+.rv .rv-field .multiselect-list .dropdown-menu{inset-inline:0;width:100%;min-width:0;max-width:100%;padding:6px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);box-shadow:var(--sh-pop)}
+.rv .rv-field .multiselect-list .dropdown-menu .form-control{height:30px}
+.rv .rv-field .multiselect-list .dropdown-menu li.d-flex{flex-wrap:wrap;gap:6px;padding-top:6px}
+.rv .rv-field .multiselect-list .dropdown-menu .btn{margin:0 !important}

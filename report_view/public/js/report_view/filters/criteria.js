@@ -130,7 +130,11 @@ export class CriteriaBar {
 	 * report's own on_change of that filter may set the dates to the whole year (Trial
 	 * Balance does, after a request), so the dates are written once it settled.
 	 */
-	async apply_period({ from, to, fiscal_year }) {
+	apply_period(period) {
+		return this.host.hold_runs(() => this.write_period(period));
+	}
+
+	async write_period({ from, to, fiscal_year }) {
 		const k = this.plan.keys;
 		const f = this.filters;
 		const range = this.plan.range;

@@ -73,13 +73,6 @@ function esc(s) {
 	return frappe.utils.escape_html(String(s ?? ""));
 }
 
-// The one currency of the totals shown, or null (header info line).
-function single_currency(currencies) {
-	const values = Object.values(currencies || {});
-	if (!values.length || values.some((v) => !v)) return null;
-	return new Set(values).size === 1 ? values[0] : null;
-}
-
 function query_report_url(name, filters) {
 	const params = new URLSearchParams();
 	for (const [k, v] of Object.entries(filters || {})) {
@@ -102,7 +95,6 @@ export class ReportViewPage {
 		this.session = null;
 		this.opened = null;
 		this.visible = false;
-		this.has_run = false;
 		this.density = read_pref(DENSITY_KEY) === "compact" ? "compact" : "comfortable";
 		this.controls = new ViewControls(this);
 		this.make_dom();
@@ -112,7 +104,6 @@ export class ReportViewPage {
 		// The server bar grows or shrinks with its note and filters: keep the grid in the window.
 		this.resize_observer = new ResizeObserver(() => this.fit_height());
 		this.resize_observer.observe(this.$(".rv-server"));
-		this.resize_observer.observe(this.header.el);
 		$(wrapper).on("hide", () => this.hide());
 	}
 
@@ -122,17 +113,8 @@ export class ReportViewPage {
 		root.dir = this.rtl ? "rtl" : "ltr";
 		root.innerHTML = `
 			<div class="rv-shell">
-				<div class="rv-header-slot"></div>
 				<section class="rv-server" aria-label="${esc(__("Report criteria"))}">
-					<div class="rv-server-tag">
-						<div class="rv-server-ico">${icons.database()}</div>
-						<div><strong>${esc(__("Report criteria"))}</strong><span>${esc(__("Fetch the data again from the server"))}</span></div>
-					</div>
 					<div class="rv-filters"></div>
-					<div class="rv-server-side">
-						<div class="rv-server-note" aria-live="polite"></div>
-						<button type="button" class="rv-btn primary" data-action="run">${icons.play()}<span>${esc(__("Run report"))}</span></button>
-					</div>
 				</section>
 				<div class="rv-message"></div>
 				<div class="rv-summary-slot"></div>
@@ -143,12 +125,13 @@ export class ReportViewPage {
 		this.root = root;
 		this.$ = (sel) => root.querySelector(sel);
 		this.header = new Header({
-			parent: this.$(".rv-header-slot"),
+			parent: this.page.page_actions.get(0),
+			dir: root.dir,
+			on_refresh: () => this.run(),
 			on_density: (d) => this.set_density(d),
 			on_theme: () => this.toggle_theme(),
 			on_export: () => this.export_xlsx(),
 		});
-		this.$(".rv-header-slot").replaceWith(this.header.el);
 		this.summary = new Summary({ parent: this.$(".rv-summary-slot") });
 		this.$(".rv-summary-slot").replaceWith(this.summary.el);
 		this.toolbar = new Toolbar({ root, parent: this.$(".rv-toolbar-slot"), search: this.controls.search_host() });
@@ -186,9 +169,7 @@ export class ReportViewPage {
 		});
 		this.side = new SidePanel({ body, host: this.controls.side_host() });
 		this.status = new StatusBar({ parent: wrap });
-		this.$('[data-action="run"]').addEventListener("click", () => this.run());
 		this.apply_density();
-		this.set_note("idle");
 	}
 
 	/**
@@ -276,51 +257,13 @@ export class ReportViewPage {
 		wrap.style.height = `${h}px`;
 	}
 
-	/**
-	 * Server bar note (§11.1 #12, #16).
-	 * @param {"idle"|"loading"|"fresh"|"pending"|"missing"|"error"} kind
-	 */
-	set_note(kind, text = "") {
-		const bar = this.$(".rv-server");
-		const pending = kind === "pending" || kind === "missing";
-		bar.classList.toggle("pending", pending);
-		const messages = {
-			idle: __("Not run yet"),
-			loading: __("Fetching data from the server…"),
-			pending: __("Criteria changed: run the report to fetch the data again"),
-			missing: __("Please set filters"),
-			error: __("The last run failed"),
-		};
-		const msg = text || messages[kind] || "";
-		const icon = pending || kind === "error" ? icons.alert() : kind === "fresh" && msg ? icons.check() : "";
-		this.$(".rv-server-note").innerHTML = msg ? `${icon}<span>${esc(msg)}</span>` : "";
-	}
-
-	// Filters changed: before the first run the report runs by itself (like query-report);
-	// after it, the bar shows the pending state until the user runs the report.
+	// Filters changed: the report runs again by itself, as on query-report (debounced).
 	on_filters_changed() {
-		if (!this.has_run) {
-			this.schedule_run();
-			return;
-		}
-		this.update_pending();
+		this.schedule_run();
 	}
 
 	request_refresh() {
-		this.on_filters_changed();
-	}
-
-	update_pending() {
-		if (!this.filters || !this.has_run) return;
-		const same = JSON.stringify(this.filters.get_values()) === JSON.stringify(this.last_filters);
-		if (!same) this.set_note("pending");
-		else if (this.last_error) this.set_note("error");
-		else this.set_note("fresh", this.fresh_note());
-	}
-
-	fresh_note() {
-		if (!this.report) return "";
-		return __("Data is up to date · {0} rows from the server", [format_int(this.report.rows.length)]);
+		this.schedule_run();
 	}
 
 	show() {
@@ -401,12 +344,11 @@ export class ReportViewPage {
 		this.report_name = name;
 		this.report = null;
 		this.raw = null;
-		this.has_run = false;
 		this.run_token += 1;
 		warm_up();
 		await this.close_session();
 		this.page.set_title(__(name));
-		this.header.set_report({ name });
+		this.header.set_report({ can_export: false });
 		this.show_loading();
 		const route_options = frappe.route_options || {};
 		frappe.route_options = null;
@@ -428,13 +370,7 @@ export class ReportViewPage {
 			return;
 		}
 		this.config = get_config(name);
-		this.header.set_report({
-			name,
-			module: this.meta.report?.module,
-			report_type: this.meta.report?.report_type,
-			can_export: Boolean(this.meta.perms?.can_export),
-			can_print: Boolean(this.meta.perms?.can_print),
-		});
+		this.header.set_report({ can_export: Boolean(this.meta.perms?.can_export) });
 		if (frappe.breadcrumbs && this.meta.report?.module) frappe.breadcrumbs.add(this.meta.report.module);
 
 		const params = new URLSearchParams(window.location.search);
@@ -474,7 +410,24 @@ export class ReportViewPage {
 
 	schedule_run() {
 		clearTimeout(this._run_timer);
+		if (this._runs_held) {
+			this._run_wanted = true;
+			return;
+		}
 		this._run_timer = setTimeout(() => this.run(), 300);
+	}
+
+	// Several filters written as one change (the period: fiscal year, then the dates):
+	// no run in between, one run after if any of them asked for it.
+	async hold_runs(job) {
+		this._runs_held = true;
+		this._run_wanted = false;
+		try {
+			await job();
+		} finally {
+			this._runs_held = false;
+			if (this._run_wanted) this.schedule_run();
+		}
 	}
 
 	async run() {
@@ -486,7 +439,6 @@ export class ReportViewPage {
 			values = this.filters.get_values(true);
 		} catch (e) {
 			if (e instanceof MissingFiltersError) {
-				this.set_note("missing");
 				this.status.clear();
 				this.overlay.show({
 					kind: "missing_filters",
@@ -499,11 +451,7 @@ export class ReportViewPage {
 			}
 			throw e;
 		}
-		this.has_run = true;
-		this.last_error = false;
 		this.last_filters = values;
-		this.set_note("loading");
-		this.header.set_meta({ filters: values, running: true });
 		this.show_loading();
 		this.status.clear();
 		try {
@@ -511,13 +459,8 @@ export class ReportViewPage {
 			if (token !== this.run_token) return;
 			await this.handle_response(res.message, res.server_messages, values, token);
 		} catch (e) {
-			if (token === this.run_token) {
-				this.last_error = true;
-				this.show_error(e);
-				this.header.set_meta({ filters: values });
-			}
+			if (token === this.run_token) this.show_error(e);
 		} finally {
-			if (token === this.run_token) this.update_pending();
 			if (token === this.run_token && typeof this.report_settings.after_refresh === "function") {
 				this.report_settings.after_refresh(this.facade);
 			}
@@ -529,7 +472,6 @@ export class ReportViewPage {
 		if (status === "too_large" || status === "prepared_pending" || status === "prepared_missing") {
 			this.report = null;
 			await this.close_session();
-			this.header.set_meta({ filters: values });
 		}
 		if (status === "too_large") {
 			this.overlay.show({
@@ -588,7 +530,6 @@ export class ReportViewPage {
 		await this.open_session(token);
 		if (token !== this.run_token) return;
 		this.$(".rv-message").innerHTML = report.message ? frappe.dom.remove_script_and_style(String(report.message)) : "";
-		this.run_at = frappe.format(frappe.datetime.now_datetime(), { fieldtype: "Datetime" }, { inline: true });
 		await this.render();
 	}
 
@@ -642,7 +583,6 @@ export class ReportViewPage {
 			});
 			this.status.clear();
 			this.show_summary("empty");
-			this.header.set_meta({ filters: this.last_filters, run_at: this.run_at });
 			return;
 		}
 		if (!session) return;
@@ -663,8 +603,7 @@ export class ReportViewPage {
 		const previous = this.opened;
 		this.opened = opened;
 		const mode = { tree: "tree", levels: "tree", group: "group", flat: "flat", report: "flat" }[opened.post.shape];
-		this.result = { mode, currency: single_currency(opened.totals.currencies) };
-		this.header.set_meta({ filters: this.last_filters, currency: this.result.currency, run_at: this.run_at });
+		this.result = { mode };
 		this.overlay.hide();
 		// What the view state asks for and the screen does not do is said, once, not dropped.
 		this.notices.show(describe_notices(opened.post.notices, report.columns));

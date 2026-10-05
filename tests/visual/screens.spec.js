@@ -291,19 +291,17 @@ test("the bundle written by `bench build` runs the same page (WASM and worker fr
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
-test("server bar turns pending after a filter change and does not re-run", async ({ page }) => {
+test("a filter change runs the report again by itself, as query-report does; refresh re-runs", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, "report=tb&lang=ar");
 	const runs = await page.evaluate(() => window.rv_page.run_token);
 	// the filters other than the company and the period stand behind "More options"
 	await page.locator(".rv-more").click();
 	await page.locator('.rv-filter[data-fieldname="show_zero_values"] input[type=checkbox]').check();
-	await expect(page.locator(".rv-server")).toHaveClass(/pending/);
-	await page.waitForTimeout(500);
-	expect(await page.evaluate(() => window.rv_page.run_token)).toBe(runs);
-	await shot(page, "tb-pending-rtl");
-	await page.locator('[data-action="run"]').click();
-	await expect(page.locator(".rv-server")).not.toHaveClass(/pending/);
+	await expect.poll(() => page.evaluate(() => window.rv_page.run_token)).toBe(runs + 1);
+	await page.keyboard.press("Escape");
+	await page.locator('.rv-headbar [data-action="refresh"]').click();
+	await expect.poll(() => page.evaluate(() => window.rv_page.run_token)).toBe(runs + 2);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
@@ -1080,13 +1078,13 @@ test("wave 1 period picker: presets, typed dates and the fiscal mode write the r
 	// two months, Sunday first (the system's first day of the week), the range painted
 	await expect(page.locator(".dp-cal")).toHaveCount(2);
 	await expect(page.locator(".dp-days")).toHaveText("365 يوماً");
-	// a preset, then Apply: the filters change and the bar turns pending (no run)
+	// a preset, then Apply: the filters change and the report runs again
 	await page.locator(".dp-pre", { hasText: "الربع الماضي" }).click();
 	await page.locator('.dp-ft [data-action="apply"]').click();
 	await expect(page.locator(".rv-pop.dp")).toHaveCount(0);
 	let v = await values();
 	expect([v.from_date, v.to_date, v.fiscal_year]).toEqual(["2026-07-01", "2026-09-30", "2026"]);
-	await expect(page.locator(".rv-server")).toHaveClass(/pending/);
+	await expect.poll(() => page.evaluate(() => window.rv_page.run_token)).toBeGreaterThan(runs);
 	await expect(page.locator(".rv-date-tag")).toHaveText("الربع الماضي");
 	// typed dates and a picked end day
 	await page.locator(".rv-datefield").click();
@@ -1113,13 +1111,16 @@ test("wave 1 period picker: presets, typed dates and the fiscal mode write the r
 	v = await values();
 	expect([v.from_date, v.to_date, v.fiscal_year]).toEqual(["2025-04-01", "2025-06-30", "2025"]);
 	await expect(page.locator(".rv-date-tag")).toHaveText("الربع الثاني 2025");
-	// Cancel and Escape change nothing
+	// Cancel and Escape change nothing and run nothing
+	await page.waitForTimeout(500);
+	const before = await page.evaluate(() => window.rv_page.run_token);
 	await page.locator(".rv-datefield").click();
 	await page.locator('.dp-pre[data-from="2026-10-01"][data-to="2026-10-01"]').click();
 	await page.keyboard.press("Escape");
 	await expect(page.locator(".rv-pop.dp")).toHaveCount(0);
 	expect((await values()).from_date).toBe("2025-04-01");
-	expect(await page.evaluate(() => window.rv_page.run_token)).toBe(runs);
+	await page.waitForTimeout(500);
+	expect(await page.evaluate(() => window.rv_page.run_token)).toBe(before);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 

@@ -27,10 +27,15 @@
 <style>
 	/* Desk lays its page out in a flex body; the page fills the width there, as here. */
 	#page-report-view{flex:1 1 auto;min-width:0}
+	/* Desk's sticky page head: title on one side, page actions on the other. */
+	.page-head{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;height:56px;padding:0 24px;background:var(--bg-color,#fff);border-bottom:1px solid #e2e6e9}
+	.page-head .title-text{font-size:18px;font-weight:600}
+	.page-actions{display:flex;align-items:center;gap:8px}
 </style>
 </head>
 <body>
 	<div class="page-container" id="page-report-view" data-page-route="report-view">
+		<div class="page-head"><div class="title-text"></div><div class="page-actions"></div></div>
 		<div class="page-body">
 			<div class="layout-main">
 				<div class="layout-main-section-wrapper">

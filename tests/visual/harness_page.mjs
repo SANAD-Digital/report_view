@@ -122,7 +122,14 @@ async function main() {
 
 	const wrapper = document.getElementById("page-report-view");
 	const main_el = wrapper.querySelector(".layout-main-section");
-	wrapper.page = { main: $(main_el), set_title() {} };
+	const title_el = wrapper.querySelector(".page-head .title-text");
+	wrapper.page = {
+		main: $(main_el),
+		page_actions: $(wrapper.querySelector(".page-actions")),
+		set_title(t) {
+			title_el.textContent = t;
+		},
+	};
 	const page = new report_view.ReportViewPage(wrapper);
 	window.rv_page = page;
 	page.show();

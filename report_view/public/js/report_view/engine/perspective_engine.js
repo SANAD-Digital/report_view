@@ -14,10 +14,9 @@ import { to_view_config, CURRENCY_COUNT_PREFIX } from "./view_config.js";
 import { to_chart_config } from "./chart_config.js";
 import * as queries from "./queries.js";
 
-// Must equal the pinned version in package.json (tests/js/engine.test.mjs checks it): it
-// breaks the one-year cache of /assets on upgrade.
-export const VERSION = "3.8.0";
-export const BASE = "/assets/report_view/node_modules/@finos/perspective/dist";
+import { SERVER_WASM, CLIENT_WASM, WORKER_JS } from "./assets.js";
+
+export { VERSION } from "./assets.js";
 export const IDLE_MS = 60000;
 
 // ---------------------------------------------------------------- handles
@@ -182,8 +181,8 @@ let requests = 0;
 function start_wasm() {
 	if (wasm_started) return;
 	wasm_started = true;
-	perspective.init_server(fetch(`${BASE}/wasm/perspective-server.wasm?v=${VERSION}`));
-	perspective.init_client(fetch(`${BASE}/wasm/perspective-js.wasm?v=${VERSION}`));
+	perspective.init_server(fetch(SERVER_WASM));
+	perspective.init_client(fetch(CLIENT_WASM));
 }
 
 /** Starts the WASM download (once per page), in parallel with the first api.run. */
@@ -211,7 +210,7 @@ export function get_engine() {
 	requests += 1;
 	if (!engine) {
 		start_wasm();
-		const worker = new Worker(`${BASE}/cdn/perspective-server.worker.js?v=${VERSION}`, { type: "module" });
+		const worker = new Worker(WORKER_JS, { type: "module" });
 		const started = perspective.worker(Promise.resolve(worker)).then(
 			(client) => {
 				const out = { client, worker, handles: new EngineHandles(client) };

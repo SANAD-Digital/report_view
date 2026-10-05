@@ -1,7 +1,11 @@
 // Entry button from the standard query-report page to Report View (ADR-007).
-// Loaded on every Desk page (app_include_js), so it stays tiny and imports nothing.
+// Loaded on every Desk page (app_include_js), so it stays tiny: it imports only the engine's file list.
 // load_report() clears the inner toolbar, so the button is added once the page has
 // loaded the report doc of the current route; add_inner_button dedupes by label.
+// Where the button shows, the page's files and the engine (2.5 MB of WASM) are fetched
+// ahead, while the browser is idle: opening Report View then finds them in the cache.
+
+import { SERVER_WASM, CLIENT_WASM, WORKER_JS } from "./report_view/engine/assets.js";
 
 const entry_states = {};
 const WAIT_STEP = 200;
@@ -30,6 +34,32 @@ function loaded_report(report_name) {
 	return qr && qr.page && qr.report_name === report_name && qr.report_doc?.name ? qr : null;
 }
 
+let prefetched = false;
+
+function prefetch_page() {
+	if (prefetched) return;
+	prefetched = true;
+	const rtl = frappe.utils.is_rtl?.();
+	const files = [
+		frappe.assets.bundled_asset("report_view.bundle.js"),
+		frappe.assets.bundled_asset("report_view.bundle.css", rtl),
+		SERVER_WASM,
+		CLIENT_WASM,
+		WORKER_JS,
+	];
+	const go = () => {
+		for (const href of files) {
+			if (!href) continue;
+			const link = document.createElement("link");
+			link.rel = "prefetch";
+			link.href = href;
+			document.head.appendChild(link);
+		}
+	};
+	if (window.requestIdleCallback) window.requestIdleCallback(go, { timeout: 3000 });
+	else setTimeout(go, 1000);
+}
+
 let watcher = null;
 
 function stop_watching() {
@@ -50,6 +80,7 @@ function add_button(report_name, state, tries = 0) {
 			frappe.set_route(...state.route);
 		});
 	put();
+	prefetch_page();
 	// In Frappe 16 the inner toolbar is the custom-actions area, which refresh_report empties
 	// (page.js:165, query_report.js refresh_report): put the button back whenever it goes.
 	stop_watching();

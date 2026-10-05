@@ -117,10 +117,10 @@ export class ReportViewPage {
 			<div class="rv-shell">
 				<section class="rv-server" aria-label="${esc(__("Report criteria"))}">
 					<div class="rv-filters"></div>
+					<div class="rv-toolbar-slot"></div>
 				</section>
 				<div class="rv-message"></div>
 				<div class="rv-summary-slot"></div>
-				<div class="rv-toolbar-slot"></div>
 				<div class="rv-charts-slot"></div>
 				<div class="rv-gridwrap"><div class="rv-body"><div class="rv-grid"></div></div></div>
 			</div>`;
@@ -800,7 +800,6 @@ export class ReportViewPage {
 			filtered: opened.post.fact_filter.length > 0,
 			shown: counts.shown,
 			total: counts.total,
-			noun: this.config.rows_label,
 		});
 	}
 

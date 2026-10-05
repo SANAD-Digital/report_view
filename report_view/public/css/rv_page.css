@@ -80,7 +80,8 @@
 .rv[dir=ltr] .dp-in input{text-align:left}
 
 /* ---------- summary cards ---------- */
-.rv-sum-skel{width:150px;height:20px;margin-top:4px}
+/* the loading bar takes the line of the number it stands for: no jump when it arrives */
+.rv-sum-skel{display:inline-block;width:150px;height:18px;margin:0;align-self:center}
 .rv-sum-side b .rv-n{color:inherit}
 .rv-pill svg{flex:none}
 
@@ -178,13 +179,14 @@
 /* ---------- one-line summary cards: the report keeps the screen ---------- */
 .rv-sum{flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px 14px;padding:8px 14px}
 .rv-sum-hd{flex:1 1 100%}
-.rv-sum-eq{align-items:baseline;gap:10px}
+/* the numbers line has one height, loading or not: the cards never change size */
+.rv-sum-eq{align-items:baseline;gap:10px;height:22px}
+.rv.compact .rv-sum-eq{height:19px}
 .rv-sum-side{flex-direction:row;align-items:baseline;gap:6px}
 .rv-sum-side b{font-size:17px}
 .rv.compact .rv-sum-side b{font-size:15px}
 .rv-sum-op{font-size:15px;padding:0}
 .rv-sum-foot{margin-inline-start:auto}
-.rv-sum:has(.rv-pill.ok) .rv-sum-foot{display:none}
 
 /* ---------- Frappe MultiSelectList inside our fields: one frame, the menu within the field ---------- */
 .rv .rv-field .multiselect-list{position:relative}
@@ -208,3 +210,13 @@
 .rv-cg-col small{margin-inline-start:auto;color:var(--text-muted);white-space:nowrap}
 .rv-cg-col.taken span{color:var(--text-muted)}
 .rv-cg-add{align-self:flex-start}
+
+/* ---------- one command bar: the report's criteria, then search and the views ----------
+   Field titles show inside the empty field and as a tooltip (as on query-report); the
+   bar keeps one line on a desktop screen and wraps on narrow ones. */
+.rv-server{align-items:center;gap:8px 10px;padding:6px 8px}
+.rv-server .rv-filters{flex:0 1 auto;align-items:center}
+.rv-server .rv-criteria-main{align-items:center;gap:8px}
+.rv-server .rv-field-lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.rv-server .rv-toolbar{flex:1 1 360px;min-width:0}
+.rv-server .rv-search{flex:1 1 auto}

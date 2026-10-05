@@ -11,7 +11,7 @@ import { build_table_input, batches, perspective_type, KIND, RID } from "./schem
 import { build_nodes, build_facts } from "./tree_nodes.js";
 import { build_report_rows } from "./report_rows.js";
 import { to_view_config, CURRENCY_COUNT_PREFIX } from "./view_config.js";
-import { to_chart_config } from "./chart_config.js";
+import { to_card_config, dashboard_terms, level_of } from "./chart_config.js";
 import { to_pivot_config, drill_config } from "./pivot_config.js";
 import * as queries from "./queries.js";
 
@@ -299,7 +299,6 @@ export class ReportSession {
 		this.level_rids = new Map();
 		this.rows_by_rid = new Map(normalized.rows.map((r) => [r.__rid, r]));
 		this.slot = `main:${Math.random().toString(36).slice(2)}`;
-		this.chart_slot = `chart:${this.slot}`;
 		this.pivot_generation = 0;
 		this.closed = false;
 	}
@@ -481,32 +480,49 @@ export class ReportSession {
 	}
 
 	/**
-	 * Opens the dedicated view of a chart (engine/chart_config.js) and reads its data. The
-	 * view stays open while the chart is shown; close_chart() deletes it.
-	 * @param {{type, x, series}} chart a resolved chart
-	 * @returns {Promise<object|null>} {spec, view, data}; null when a newer chart superseded it
+	 * Reads the data of one card of the charts dashboard (engine/chart_config.js): how many
+	 * categories there are (a temporary view), then its own view, read once with to_columns()
+	 * and deleted in `finally`. Nothing stays open in the engine for a card.
+	 * @param {object} card a resolved card
+	 * @param {object} dashboard the resolved dashboard (slicers, cross-filter)
+	 * @returns {Promise<{spec: object, data: object}>}
 	 */
-	async open_chart(view_state, chart) {
-		const opts = { quick_filters: this.quick_filters };
-		const first = to_chart_config(view_state, this.normalized, chart, opts);
-		const counted = this.tables[first.count.table];
-		const categories = first.count.grouped
-			? await queries.count_groups(this.handles, counted, first.count.config)
-			: await queries.count_rows(this.handles, counted, first.count.config.filter);
-		const spec = to_chart_config(view_state, this.normalized, chart, { ...opts, categories });
-		const view = await this.handles.latest_view(this.chart_slot, this.tables[spec.table], spec.config, "chart");
-		if (!view) return null;
-		try {
-			const data = await queries.chart_columns(view, spec.post);
-			return { spec, view, data };
-		} catch (e) {
-			if (this.handles.is_alive(view)) await this.handles.delete(view);
-			throw e;
+	async read_card(view_state, card, dashboard) {
+		const opts = { quick_filters: this.quick_filters, dashboard };
+		const first = to_card_config(view_state, this.normalized, card, opts);
+		let spec = first;
+		if (first.count) {
+			const counted = this.tables[first.count.table];
+			const categories = first.count.grouped
+				? await queries.count_groups(this.handles, counted, first.count.config)
+				: await queries.count_rows(this.handles, counted, first.count.config.filter);
+			spec = to_card_config(view_state, this.normalized, card, { ...opts, categories });
 		}
+		const data = await this.handles.with_view(
+			this.tables[spec.table],
+			spec.config,
+			(view) => queries.card_columns(view, spec.post),
+			`card_${card.id}`
+		);
+		return { spec, data };
 	}
 
-	async close_chart(opened) {
-		if (opened && this.handles.is_alive(opened.view)) await this.handles.delete(opened.view);
+	/**
+	 * Values of a slicer with their count of facts, under the page's filters and the other
+	 * slicers of the dashboard. A temporary view, deleted in `finally`.
+	 * @param {object} opts {search, limit}
+	 */
+	async slicer_values(view_state, key, dashboard, opts = {}) {
+		const spec = to_view_config(view_state, this.normalized, "grid", { quick_filters: this.quick_filters });
+		const others = { slicers: (dashboard?.slicers || []).filter((s) => s.key !== key), cross: null };
+		const filter = [...spec.post.fact_filter, ...dashboard_terms(others, null, this.normalized)];
+		const column = this.normalized.columns.find((c) => c.key === key);
+		const string = level_of(key) === null && (column ? perspective_type(column.fieldtype) === "string" : false);
+		return queries.unique_values(this.handles, this.tables.facts, key, filter, {
+			...opts,
+			string,
+			expressions: spec.post.filter_expressions,
+		});
 	}
 
 	/**

@@ -1,25 +1,36 @@
-// Chart of the Charts view (docs/architecture.md §7.1 `chart`, §11.1 #69-73): which dimensions
-// and measures a report offers, the default chart of a report, and the Perspective view config
-// of a chart. Pure module: no frappe, no DOM, no Perspective.
+// Charts dashboard (docs/architecture.md §7.1 `charts`, §11.1 #69-73): which dimensions and
+// measures a report offers, the default cards of a report, the filters of the dashboard
+// (slicers, cross-filter) and the Perspective view config of one card. Pure module: no
+// frappe, no DOM, no Perspective.
 //
-// A chart reads one dedicated view: the measures aggregated by the dimension, under the same
-// browser filters as the grid. Its numbers are those of the grid for the same filters:
-// - a level of a report tree while the grid shows the tree "as is" (no browser filter): the
-//   tree rows of that depth with the report's own values (nodes table), as the grid shows them;
+// A card reads one dedicated view: its measures aggregated by its dimension, under the page's
+// browser filters plus the dashboard's own (slicers, the card's filter, the cross-filter of
+// another card), sorted and cut by the engine (sort + the rows read). Its numbers are those
+// of the grid for the same filters:
+// - a level of a report tree with no filter at all: the tree rows of that depth with the
+//   report's own values (nodes table), as the grid shows the tree "as is";
 // - anything else: the facts grouped by the dimension, as the grid's groups add them up.
 
-import { RID, KIND, perspective_type } from "./schema.js";
-import { DEPTH, PATH, LEVEL_PREFIX, tree_index } from "./tree_nodes.js";
-import { to_filter, quick_filter_terms, aggregate_of, ordered_columns, CURRENCY_COUNT_PREFIX } from "./view_config.js";
+import { RID, KIND, SORT_PREFIX, perspective_type } from "./schema.js";
+import { DEPTH, PATH, TOP, LEVEL_PREFIX, tree_index } from "./tree_nodes.js";
+import { to_filter, quick_filter_terms, aggregate_of, ordered_columns, AGGREGATES, CURRENCY_COUNT_PREFIX } from "./view_config.js";
+import { CARD_TYPES, sanitize_dashboard } from "../state/dashboard_state.js";
 
-export const CHART_TYPES = ["bar", "stacked", "hbar", "line", "donut"];
-// Categories one chart shows. Above it the chart shows the largest ones by its first measure.
-export const CHART_LIMITS = { bar: 40, stacked: 40, line: 60, hbar: 25, donut: 7 };
+export { CARD_TYPES };
+// Categories one card shows at most, whatever its Top N.
+export const CARD_LIMITS = { bar: 40, stacked: 40, line: 60, area: 60, hbar: 25, hstacked: 25, donut: 7, kpi: 0 };
 // One colour token per series (--c1..--c7).
 export const MAX_SERIES = 7;
-const DEFAULT_SERIES = 2;
+export const PCT_PREFIX = "__pct__";
+const SUM_SORT = "__sumsort__";
+const LABEL_SORT = "__lblsort__";
 const DIMENSION_TYPES = new Set(["string", "date", "datetime", "boolean"]);
 const LINK_TYPES = new Set(["Link", "Dynamic Link"]);
+const DATE_TYPES = new Set(["Date", "Datetime"]);
+const STACKED = new Set(["stacked", "hstacked"]);
+// Types whose categories are read largest first unless the user chose another order.
+const BY_VALUE = new Set(["hbar", "hstacked", "donut"]);
+const IN_TIME = new Set(["line", "area"]);
 
 /** Level number of a tree level key ("level_2" -> 2), else null. */
 export function level_of(key) {
@@ -28,7 +39,7 @@ export function level_of(key) {
 	return Number.isInteger(n) && n > 0 ? n : null;
 }
 
-/** Numeric columns a chart may show: measures the engine can aggregate (not the report's hidden ones). */
+/** Numeric columns a card may show: measures the engine can aggregate (not the report's hidden ones). */
 export function chart_measures(normalized, view_state) {
 	return ordered_columns(normalized)
 		.filter((c) => !c.hidden && c.role === "measure" && perspective_type(c.fieldtype) === "float")
@@ -37,7 +48,7 @@ export function chart_measures(normalized, view_state) {
 }
 
 /**
- * Dimensions a chart may group by: the levels of a report tree (top-level groups first), then
+ * Dimensions a card may group by: the levels of a report tree (top-level groups first), then
  * the report's text, date and check columns (not the report's hidden ones).
  * @returns {Array<{key: string, level: number|null, fieldtype: string|null}>}
  */
@@ -54,150 +65,329 @@ export function chart_dimensions(normalized) {
 	return out;
 }
 
-/**
- * Default chart of a report: register.chart when it fits the report, else the top-level groups
- * of a tree report (or its first linked dimension that is not the label column) and its first
- * measures, as grouped columns.
- * @param {object} [register] report_view.register config ({chart: {type, x, series}})
- * @param {string|null} [label_key] the grid's label column (not a grouping of its own)
- */
-export function default_chart(normalized, view_state, register = {}, label_key = null) {
-	const dims = chart_dimensions(normalized).map((d) => d.key);
-	const measures = chart_measures(normalized, view_state);
-	const own = register?.chart || {};
-	const type = CHART_TYPES.includes(own.type) ? own.type : "bar";
-	let x = dims.includes(own.x) ? own.x : null;
-	if (!x) {
-		const columns = chart_dimensions(normalized).filter((d) => d.level === null && d.key !== label_key);
-		const text = columns.filter((d) => !["Date", "Datetime"].includes(d.fieldtype));
-		x =
-			(normalized.tree?.enabled && dims.includes(LEVEL_PREFIX + 1) ? LEVEL_PREFIX + 1 : null) ??
-			text.find((d) => LINK_TYPES.has(d.fieldtype))?.key ??
-			text[0]?.key ??
-			columns[0]?.key ??
-			dims[0] ??
-			null;
-	}
-	const wanted = Array.isArray(own.series) ? own.series.filter((k) => measures.includes(k)) : [];
-	const series = (wanted.length ? wanted : measures.slice(0, DEFAULT_SERIES)).slice(0, MAX_SERIES);
-	return { type, x, series };
+/** Dimensions a slicer may filter: text and check columns (values), and dates (a range). */
+export function slicer_dimensions(normalized) {
+	return chart_dimensions(normalized).map((d) => ({ ...d, kind: DATE_TYPES.has(d.fieldtype) ? "date" : "set" }));
 }
 
-/** The chart of the view state made valid for this report (unknown keys fall back to the default). */
-export function resolve_chart(view_state, normalized, register = {}, label_key = null) {
-	const base = default_chart(normalized, view_state, register, label_key);
-	const chart = view_state?.chart;
-	if (!chart || typeof chart !== "object") return base;
-	const dims = chart_dimensions(normalized).map((d) => d.key);
+// ------------------------------------------------------------------ default dashboard
+
+/**
+ * Default cards of a report: register.charts.cards, else 2-3 cards from its first dimensions
+ * and measures (a tree: top-level groups, the next level as a donut, the top accounts; any
+ * other report: the first linked dimension, another text dimension as a donut, a date in time).
+ * @param {object} [register] report_view.register config ({charts: {cards: [...]}})
+ * @param {string|null} [label_key] the grid's label column
+ */
+export function default_cards(normalized, view_state, register = {}, label_key = null) {
+	const own = register?.charts?.cards;
+	if (Array.isArray(own) && own.length) {
+		const strict = resolve_cards(own, normalized, view_state, { strict: true });
+		if (strict.length) return strict;
+	}
+	const dims = chart_dimensions(normalized);
 	const measures = chart_measures(normalized, view_state);
-	const series = Array.isArray(chart.series) ? [...new Set(chart.series.filter((k) => measures.includes(k)))] : [];
-	return {
-		type: CHART_TYPES.includes(chart.type) ? chart.type : base.type,
-		x: dims.includes(chart.x) ? chart.x : base.x,
-		series: (series.length ? series : base.series).slice(0, MAX_SERIES),
-	};
+	if (!measures.length || !dims.length) return [];
+	const two = measures.slice(0, 2);
+	const cards = [];
+	const has = (key) => dims.some((d) => d.key === key);
+	if (normalized.tree?.enabled) {
+		cards.push({ type: "bar", x: LEVEL_PREFIX + 1, series: two });
+		if (has(LEVEL_PREFIX + 2)) cards.push({ type: "donut", x: LEVEL_PREFIX + 2, series: two.slice(0, 1) });
+		const label = normalized.tree.label_key;
+		if (label && has(label)) cards.push({ type: two.length > 1 ? "hstacked" : "hbar", x: label, series: two, top: 10, size: "full" });
+	} else {
+		const columns = dims.filter((d) => d.level === null && d.key !== label_key);
+		const text = columns.filter((d) => !DATE_TYPES.has(d.fieldtype) && d.fieldtype !== "Check");
+		const primary = text.find((d) => LINK_TYPES.has(d.fieldtype)) || text[0];
+		const secondary = text.find((d) => d !== primary && !LINK_TYPES.has(d.fieldtype)) || text.find((d) => d !== primary);
+		const date = dims.find((d) => DATE_TYPES.has(d.fieldtype));
+		if (primary) cards.push({ type: "hbar", x: primary.key, series: two, top: 10 });
+		if (secondary) cards.push({ type: "donut", x: secondary.key, series: two.slice(0, 1) });
+		if (date) cards.push({ type: "area", x: date.key, series: two, sort: "label", size: "full" });
+	}
+	if (!cards.length) cards.push({ type: "kpi", x: null, series: measures.slice(0, 4) });
+	return resolve_cards(cards, normalized, view_state);
 }
+
+function filterable(normalized) {
+	return new Map(chart_dimensions(normalized).map((d) => [d.key, d]));
+}
+
+/**
+ * Cards made valid for this report: a dimension it has (or none: the measures side by side),
+ * measures it has (else its first ones). strict: a card whose own filter names a column the
+ * report does not have is dropped (a default card must not show more than it says).
+ */
+export function resolve_cards(cards, normalized, view_state, { strict = false } = {}) {
+	const clean = sanitize_dashboard({ cards })?.cards || [];
+	const dims = filterable(normalized);
+	const measures = chart_measures(normalized, view_state);
+	const first = dims.keys().next().value ?? null;
+	const out = [];
+	for (const card of clean) {
+		if (strict && card.filter.some((f) => !dims.has(f.key))) continue;
+		let x = card.x !== null && dims.has(card.x) ? card.x : null;
+		// Lines need categories in order; a KPI has none.
+		if (card.type === "kpi") x = null;
+		else if (x === null && (IN_TIME.has(card.type) || (card.x !== null && !dims.has(card.x)))) x = first;
+		const series = card.series.filter((k) => measures.includes(k));
+		out.push({
+			...card,
+			x,
+			series: (series.length ? series : measures.slice(0, card.type === "donut" ? 1 : 2)).slice(0, MAX_SERIES),
+			filter: card.filter.filter((f) => dims.has(f.key)),
+		});
+	}
+	return out;
+}
+
+/**
+ * The dashboard of the view state made valid for this report (unknown keys are dropped).
+ * @returns {{cards: Array, slicers: Array, cross: object|null, own: boolean}} own: the user's
+ *   dashboard (else the report's default)
+ */
+export function resolve_dashboard(view_state, normalized, register = {}, label_key = null) {
+	const saved = sanitize_dashboard(view_state?.charts);
+	const dims = filterable(normalized);
+	if (!saved) return { cards: default_cards(normalized, view_state, register, label_key), slicers: [], cross: null, own: false };
+	const cards = resolve_cards(saved.cards, normalized, view_state);
+	const slicers = saved.slicers.filter((s) => {
+		const d = dims.get(s.key);
+		return d && (s.type === "date") === DATE_TYPES.has(d.fieldtype);
+	});
+	const cross = saved.cross && dims.has(saved.cross.key) && cards.some((c) => c.id === saved.cross.card) ? saved.cross : null;
+	return { cards, slicers, cross, own: true };
+}
+
+// ------------------------------------------------------------------ filters of the dashboard
+
+function column_type(key, by_key) {
+	if (level_of(key) !== null) return "string";
+	const c = by_key.get(key);
+	return c ? perspective_type(c.fieldtype) : null;
+}
+
+/** "YYYY-MM-DD" of a date value as the engine returns it (ms since the epoch, UTC). */
+export function date_text(value) {
+	if (typeof value === "string") return value.slice(0, 10);
+	if (!Number.isFinite(value)) return null;
+	return new Date(value).toISOString().slice(0, 10);
+}
+
+/** Filter terms of "the column is one of these values" (a set slicer, a card's filter). */
+function set_terms(key, values, by_key) {
+	const type = column_type(key, by_key);
+	if (!type || !Array.isArray(values)) return [];
+	const empty = (v) => v === null || v === undefined || v === "";
+	const with_null = values.some(empty);
+	const plain = values.filter((v) => !empty(v));
+	if (type === "string") {
+		if (with_null && !plain.length) return [[key, "is null", null]];
+		// "(empty) or values" needs an "or": the values only (the slicer's list says so).
+		return [[key, "in", plain.map(String)]];
+	}
+	// A date or check column: one value is "==", several cannot be said without an "or".
+	if (with_null && !plain.length) return [[key, "is null", null]];
+	if (!plain.length) return [[key, "in", []]];
+	return [value_term(key, plain[0], by_key)];
+}
+
+/** Filter term of one category value (the cross-filter). */
+export function value_term(key, value, by_key) {
+	if (value === null || value === undefined || value === "") return [key, "is null", null];
+	const type = column_type(key, by_key);
+	if (type === "date") return [key, "==", date_text(value)];
+	if (type === "string") return [key, "==", String(value)];
+	return [key, "==", value];
+}
+
+/**
+ * Filter terms the dashboard adds to one card: the slicers, the card's own filter, and the
+ * cross-filter of another card (the card that was clicked keeps all its categories).
+ * @returns {Array} Perspective filter terms
+ */
+export function dashboard_terms(dashboard, card, normalized) {
+	const by_key = new Map(normalized.columns.map((c) => [c.key, c]));
+	const out = [];
+	for (const s of dashboard?.slicers || []) {
+		if (s.type === "date") {
+			const type = column_type(s.key, by_key);
+			if (s.from) out.push([s.key, ">=", s.from]);
+			if (s.to) out.push([s.key, "<=", type === "datetime" ? `${s.to} 23:59:59.999` : s.to]);
+		} else if (Array.isArray(s.values)) {
+			out.push(...set_terms(s.key, s.values, by_key));
+		}
+	}
+	for (const f of card?.filter || []) out.push(...set_terms(f.key, f.values, by_key));
+	const cross = dashboard?.cross;
+	if (cross && card && cross.card !== card.id) out.push(value_term(cross.key, cross.value, by_key));
+	return out;
+}
+
+// ------------------------------------------------------------------ view config of a card
 
 function row_currency_key(column) {
 	return column?.currency?.kind === "row" ? column.currency.key : null;
 }
 
+/** The order of a card: the user's, else largest first for a Top N or a ranking type. */
+export function card_sort(card) {
+	if (card.sort) return card.sort;
+	if (card.top || BY_VALUE.has(card.type)) return "desc";
+	return "label";
+}
+
+/** Categories a card shows at most: its Top N, never more than its type draws. */
+export function card_limit(card) {
+	const max = CARD_LIMITS[card.type] ?? CARD_LIMITS.bar;
+	return card.top ? Math.min(card.top, max) : max;
+}
+
 /**
- * Perspective config of a chart. Called twice: first without `categories` (only `count` is
- * used: how many categories there are), then with that number, which decides the order.
+ * Perspective config of a card. Called twice: first without `categories` (only `count` is
+ * used: how many categories there are), then with that number.
  *
  * @param {object} view_state §7.1
  * @param {object} normalized NormalizedReport
- * @param {{type, x, series}} chart a resolved chart (resolve_chart)
- * @param {object} [opts] {quick_filters: register.quick_filters, categories: number}
- * @returns {{route: "nodes"|"facts", table: string, count: {table, config, grouped: boolean},
- *   config: object, post: object}}
+ * @param {object} card a resolved card (resolve_dashboard)
+ * @param {object} [opts] {quick_filters: register.quick_filters, dashboard, categories: number}
+ * @returns {{route: "nodes"|"facts"|"totals", table: string, count: object|null, config: object, post: object}}
  */
-export function to_chart_config(view_state, normalized, chart, opts = {}) {
+export function to_card_config(view_state, normalized, card, opts = {}) {
 	const by_key = new Map(normalized.columns.map((c) => [c.key, c]));
-	const series = (chart.series || []).filter((k) => by_key.has(k));
-	const level = level_of(chart.x);
+	const series = (card.series || []).filter((k) => by_key.has(k));
+	const level = level_of(card.x);
 	const column_filter = to_filter(view_state?.filters, normalized.columns);
 	const quick = quick_filter_terms(view_state, opts.quick_filters);
-	const filter = [...column_filter.filter, ...quick.filter];
+	const filter = [...column_filter.filter, ...quick.filter, ...dashboard_terms(opts.dashboard, card, normalized)];
 	const expressions = { ...quick.expressions };
 	const is_tree = Boolean(normalized.tree?.enabled);
-	// The grid shows the tree "as is" (the report's own values) only without a browser filter.
-	const route = is_tree && level !== null && !filter.length ? "nodes" : "facts";
-	const limit = CHART_LIMITS[chart.type] || CHART_LIMITS.bar;
-	const categories = Number.isFinite(opts.categories) ? opts.categories : null;
-	const top = categories !== null && categories > limit;
-	// Largest first: horizontal bars and donut always (as in the design); any type when there
-	// are more categories than it shows. Else the report's own order.
-	const by_value = series.length > 0 && (top || chart.type === "hbar" || chart.type === "donut");
-
+	const agg_of = (k) => (card.agg ? AGGREGATES[card.agg] : aggregate_of(by_key.get(k), view_state)) || "sum";
 	const currency_keys = [...new Set(series.map((k) => row_currency_key(by_key.get(k))).filter(Boolean))];
+	const counts = currency_keys.filter((k) => !k.includes('"'));
+	const sort = card_sort(card);
+	const limit = card_limit(card);
+	const categories = Number.isFinite(opts.categories) ? opts.categories : null;
 	const post = {
-		route,
-		x: chart.x,
+		route: "facts",
+		type: card.type,
+		x: card.x,
 		level,
 		series,
 		limit,
-		top,
+		sort,
+		top: categories !== null && categories > limit,
 		categories,
-		order: by_value ? "value" : "report",
-		row_offset: 0,
+		row_offset: 1,
 		label_key: null,
 		currency: Object.fromEntries(series.map((k) => [k, row_currency_key(by_key.get(k))]).filter(([, v]) => v)),
-		currency_counts: {},
-		has_total: false,
+		currency_counts: Object.fromEntries(counts.map((k) => [k, CURRENCY_COUNT_PREFIX + k])),
+		pct: {},
 		notices: [...column_filter.notices, ...quick.notices],
 	};
+	for (const k of counts) expressions[CURRENCY_COUNT_PREFIX + k] = `"${k}"`;
+	const aggregates = {};
+	for (const k of series) aggregates[k] = agg_of(k);
+	for (const k of currency_keys) aggregates[k] = "unique";
+	for (const k of counts) aggregates[CURRENCY_COUNT_PREFIX + k] = "distinct count";
+	const base_columns = [...series, ...currency_keys, ...counts.map((k) => CURRENCY_COUNT_PREFIX + k)];
 
-	if (route === "nodes") {
-		const label_key = normalized.tree?.label_key && by_key.has(normalized.tree.label_key) ? normalized.tree.label_key : null;
-		post.label_key = label_key;
-		const node_filter = [[DEPTH, "==", level - 1]];
-		const columns = [...new Set([...(label_key ? [label_key] : []), ...series, ...currency_keys, RID, PATH])];
+	// A KPI, or no dimension (the measures side by side): the totals of the view, one row.
+	if (card.type === "kpi" || card.x === null) {
+		const nodes = is_tree && !filter.length && !card.agg;
+		post.route = "totals";
+		post.limit = 0;
+		post.top = false;
+		post.categories = series.length;
 		return {
-			route,
-			table: "nodes",
-			count: { table: "nodes", config: { columns: [KIND], filter: node_filter }, grouped: false },
+			route: "totals",
+			table: nodes ? "nodes" : "facts",
+			count: null,
 			config: {
-				columns,
-				filter: node_filter,
-				sort: by_value ? [[series[0], "desc"], [PATH, "asc"]] : [[PATH, "asc"]],
+				group_by: [KIND],
+				columns: base_columns,
+				aggregates,
+				// The tree "as is": its top-level rows add up to the report.
+				filter: nodes ? [[TOP, "==", true]] : filter,
+				expressions: nodes ? Object.fromEntries(counts.map((k) => [CURRENCY_COUNT_PREFIX + k, `"${k}"`])) : expressions,
 			},
 			post,
 		};
 	}
 
-	const x = chart.x;
-	// A row currency per category: "unique" is the currency when all its rows share one; the
-	// distinct count tells a category that mixes currencies (no total, as in the grid).
-	const counts = currency_keys.filter((k) => !k.includes('"'));
-	post.currency_counts = Object.fromEntries(counts.map((k) => [k, CURRENCY_COUNT_PREFIX + k]));
-	for (const k of counts) expressions[CURRENCY_COUNT_PREFIX + k] = `"${k}"`;
-	const aggregates = {};
-	for (const k of series) aggregates[k] = aggregate_of(by_key.get(k), view_state) || "sum";
-	for (const k of currency_keys) aggregates[k] = "unique";
-	for (const k of counts) aggregates[CURRENCY_COUNT_PREFIX + k] = "distinct count";
+	// The share of every category in the whole (a donut's list), computed by the engine.
+	if (card.type === "donut" && series.length) {
+		const name = PCT_PREFIX + series[0];
+		if (!series[0].includes('"')) {
+			expressions[name] = `"${series[0]}"`;
+			aggregates[name] = "pct sum grand total";
+			post.pct[series[0]] = name;
+		}
+	}
+	const pct_columns = Object.values(post.pct);
+
+	// Order of the categories, by the engine: a value (the sum of the stacked measures when they
+	// all add up), or the category itself (text by the language's rules, dates in time, tree
+	// levels and check columns in report order).
+	const stacked_sum = STACKED.has(card.type) && series.length > 1 && series.every((k) => aggregates[k] === "sum") && !series.some((k) => k.includes('"'));
+	let value_key = series[0];
+	if (stacked_sum) {
+		value_key = SUM_SORT;
+		expressions[SUM_SORT] = series.map((k) => `"${k}"`).join(" + ");
+		aggregates[SUM_SORT] = "sum";
+	}
+	const route = is_tree && level !== null && !filter.length && !card.agg ? "nodes" : "facts";
+	post.route = route;
+
+	if (route === "nodes") {
+		// Rows of one depth of the tree, each its own group (__path), with the report's values.
+		const label_key = normalized.tree?.label_key && by_key.has(normalized.tree.label_key) ? normalized.tree.label_key : null;
+		post.label_key = label_key;
+		const node_filter = [[DEPTH, "==", level - 1]];
+		for (const k of series) aggregates[k] = "sum";
+		if (label_key) aggregates[label_key] = "unique";
+		aggregates[RID] = "min";
+		const order =
+			sort === "label" || !series.length
+				? [[RID, "asc"]]
+				: [[value_key, sort === "asc" ? "asc" : "desc"], [RID, "asc"]];
+		const columns = [...new Set([...base_columns, ...(label_key ? [label_key] : []), ...pct_columns, ...(stacked_sum ? [SUM_SORT] : []), RID])];
+		return {
+			route,
+			table: "nodes",
+			count: { table: "nodes", config: { columns: [KIND], filter: node_filter }, grouped: false },
+			config: { group_by: [PATH], columns, aggregates, filter: node_filter, expressions: { ...expressions }, sort: order },
+			post,
+		};
+	}
+
+	const x = card.x;
+	const x_type = column_type(x, by_key);
+	let label_order = [[RID, "asc"]];
+	if (sort === "label" && level === null) {
+		if (x_type === "string" && by_key.has(x)) {
+			aggregates[SORT_PREFIX + x] = "min";
+			label_order = [[SORT_PREFIX + x, "asc"], [RID, "asc"]];
+		} else if (x_type === "date" || x_type === "datetime") {
+			expressions[LABEL_SORT] = `"${x}"`;
+			aggregates[LABEL_SORT] = "min";
+			label_order = [[LABEL_SORT, "asc"], [RID, "asc"]];
+		}
+	}
 	aggregates[RID] = "min";
-	const columns = [...new Set([...series, ...currency_keys, ...counts.map((k) => CURRENCY_COUNT_PREFIX + k), RID])];
-	post.row_offset = 1;
-	post.has_total = true;
+	const order = sort === "label" || !series.length ? label_order : [[value_key, sort === "asc" ? "asc" : "desc"], [RID, "asc"]];
+	// Perspective mis-windows a grouped view whose sort column is hidden: every sort column is a view column.
+	const columns = [...new Set([...base_columns, ...pct_columns, ...order.map(([k]) => k), RID])];
 	return {
 		route,
 		table: "facts",
 		count: {
 			table: "facts",
-			config: { group_by: [x], columns: [KIND], aggregates: { [KIND]: "count" }, filter, expressions: quick.expressions },
+			config: { group_by: [x], columns: [KIND], aggregates: { [KIND]: "count" }, filter, expressions: { ...quick.expressions } },
 			grouped: true,
 		},
-		config: {
-			group_by: [x],
-			columns,
-			aggregates,
-			filter,
-			expressions,
-			// Report order = the first fact of each category; ties keep it too.
-			sort: by_value ? [[series[0], "desc"], [RID, "asc"]] : [[RID, "asc"]],
-		},
+		config: { group_by: [x], columns, aggregates, filter, expressions, sort: order },
 		post,
 	};
 }

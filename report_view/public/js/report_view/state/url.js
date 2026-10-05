@@ -42,7 +42,7 @@ function same_list(a, b) {
 function is_default_view(state, base) {
 	return (
 		state.mode === (base?.mode || "grid") &&
-		!state.chart &&
+		!state.charts &&
 		!state.pivot &&
 		!state.sort.length &&
 		!state.filters.length &&

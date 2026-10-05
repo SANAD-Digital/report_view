@@ -688,7 +688,15 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
   tree: { depth: int | null, expanded: [rid] | null },   // للتقارير الشجرية؛ القائمة = __rid الآباء المفتوحين
   values: [ { key, agg: "sum" | "avg" | "count" | "min" | "max" | "count_distinct" } ],
   pivot: { rows: [key], cols: [key], values: [ { key, agg } ], totals: { rows: bool, cols: bool } },
-  chart: { type: "bar" | "stacked" | "hbar" | "line" | "donut", x: key | null, series: [key] } | null,
+  charts: {                    // لوحة الرسوم؛ null = لوحة التقرير الافتراضية (register.charts أو من أبعاده)
+    cards: [ { id, type: "bar" | "stacked" | "hbar" | "hstacked" | "line" | "area" | "donut" | "kpi",
+               x: key | null,          // null = المقاييس متجاورة (أو بطاقة رقم)
+               series: [key], agg: "sum" | "avg" | "count" | "min" | "max" | null,
+               sort: "desc" | "asc" | "label" | null, top: 5 | 10 | 20 | 0 | null,
+               size: "half" | "full", title: string | null, filter: [ { key, values: [v] } ] } ],
+    slicers: [ { key, type: "set", values: [v] | null } | { key, type: "date", from, to } ],
+    cross: { card, key, value } | null   // الفئة التي نُقر عليها في بطاقة تفلتر البقية
+  } | null,
   ui: { density: "comfortable" | "compact", side_panel: "columns" | "filters" | null }
 }
 ```

@@ -1,9 +1,10 @@
 // View state v1 (docs/architecture.md §7.1), the subset used so far: mode, columns (order,
 // hidden, widths, pinned, groups), sort, filters, quick_filters, group (by, subtotals, expanded),
-// tree (depth, expanded), values, chart (type, x, series), pivot (rows, cols, values), ui (density, side_panel). Unknown
+// tree (depth, expanded), values, charts (cards, slicers, cross), pivot (rows, cols, values), ui (density, side_panel). Unknown
 // keys are dropped (not rejected) in the browser.
 
 import { sanitize_groups } from "./column_groups.js";
+import { sanitize_dashboard } from "./dashboard_state.js";
 
 export const VERSION = 1;
 const MODES = ["grid", "pivot", "charts"];
@@ -12,8 +13,6 @@ const DENSITIES = ["comfortable", "compact"];
 const LIMIT_EXPANDED = 5000;
 const AGGS = ["sum", "avg", "count", "count_distinct", "min", "max"];
 const SIDE_PANELS = ["columns", "filters"];
-const CHART_TYPES = ["bar", "stacked", "hbar", "line", "donut"];
-const LIMIT_SERIES = 7;
 export const MIN_COLUMN_WIDTH = 72;
 
 // A group path: the values of the group keys, top-down (strings, numbers, booleans or null).
@@ -41,8 +40,8 @@ export function default_state(config = {}) {
 		group: { by: [], subtotals: true, expanded: "all" },
 		tree: { depth: null, expanded: null },
 		values: [],
-		// null = the report's default chart (engine/chart_config.js default_chart)
-		chart: null,
+		// null = the report's default dashboard (engine/chart_config.js default_cards)
+		charts: null,
 		// null = the report's default pivot (engine/pivot_config.js default_pivot)
 		pivot: null,
 		ui: { density: "comfortable", side_panel: null },
@@ -101,14 +100,7 @@ export function sanitize(state, config = {}) {
 	if (Array.isArray(tree.expanded)) {
 		out.tree.expanded = tree.expanded.filter((rid) => Number.isInteger(rid) && rid >= 0).slice(0, LIMIT_EXPANDED);
 	}
-	const chart = state.chart;
-	if (chart && typeof chart === "object") {
-		out.chart = {
-			type: CHART_TYPES.includes(chart.type) ? chart.type : "bar",
-			x: typeof chart.x === "string" ? chart.x : null,
-			series: str_list(chart.series, LIMIT_SERIES),
-		};
-	}
+	out.charts = sanitize_dashboard(state.charts);
 	out.pivot = sanitize_pivot(state.pivot);
 	if (DENSITIES.includes(state.ui?.density)) out.ui.density = state.ui.density;
 	if (SIDE_PANELS.includes(state.ui?.side_panel)) out.ui.side_panel = state.ui.side_panel;

@@ -180,21 +180,25 @@ export async function range_stats(view, window) {
 }
 
 /**
- * Data of a chart view (engine/chart_config.js) as ECharts takes it: the categories and one
- * array per measure, read once from the view (§11.1 #69). Nothing is computed here: the
- * values are the view's, a category that mixes currencies keeps no value (as in the grid).
+ * Data of a card view (engine/chart_config.js to_card_config) as ECharts takes it: the
+ * categories and one array per measure, read once from the view (§11.1 #69), within the
+ * rows the card shows. Nothing is computed here: the values are the view's, a category that
+ * mixes currencies keeps no value (as in the grid). Row 0 of the grouped view is its total.
  * @returns {Promise<{categories: Array, rids: Array|null, series: object, currencies: object,
- *   mixed: object, total: object|null}>} currencies: {measure: [currency per category]}
+ *   mixed: object, pct: object, total: object}>} currencies: {measure: [currency per category]}
  */
-export async function chart_columns(view, post) {
+export async function card_columns(view, post) {
 	const cols = await view.to_columns({ start_row: 0, end_row: post.row_offset + post.limit });
 	const at = (values) => (values || []).slice(post.row_offset);
 	const paths = at(cols[ROW_PATH]);
-	const categories = post.route === "nodes" ? at(post.label_key ? cols[post.label_key] : cols[RID_COL]) : paths.map((p) => p[p.length - 1] ?? null);
+	let categories = [];
+	if (post.route === "nodes") categories = at(post.label_key ? cols[post.label_key] : cols[RID_COL]);
+	else if (post.route === "facts") categories = paths.map((p) => p[p.length - 1] ?? null);
 	const series = {};
 	const currencies = {};
 	const mixed = {};
-	const total = post.has_total ? {} : null;
+	const pct = {};
+	const total = {};
 	for (const key of post.series) {
 		const ck = post.currency[key] || null;
 		const count_col = ck ? post.currency_counts[ck] : null;
@@ -202,11 +206,10 @@ export async function chart_columns(view, post) {
 		mixed[key] = counts ? counts.map((n) => (n || 0) > 1) : categories.map(() => false);
 		series[key] = at(cols[key]).map((v, i) => (mixed[key][i] || typeof v !== "number" || !Number.isFinite(v) ? null : v));
 		currencies[key] = ck ? at(cols[ck]).map((c) => c || null) : categories.map(() => null);
-		if (total) {
-			const many = count_col ? (cols[count_col]?.[0] || 0) > 1 : false;
-			const v = cols[key]?.[0];
-			total[key] = { value: many || typeof v !== "number" ? null : v, currency: ck ? cols[ck]?.[0] || null : null };
-		}
+		if (post.pct[key]) pct[key] = at(cols[post.pct[key]]).map((v) => (typeof v === "number" && Number.isFinite(v) ? v : null));
+		const many = count_col ? (cols[count_col]?.[0] || 0) > 1 : false;
+		const v = cols[key]?.[0];
+		total[key] = { value: many || typeof v !== "number" || !Number.isFinite(v) ? null : v, currency: ck ? cols[ck]?.[0] || null : null, mixed: many };
 	}
-	return { categories, rids: cols[RID_COL] ? at(cols[RID_COL]) : null, series, currencies, mixed, total };
+	return { categories, rids: post.route === "totals" ? null : at(cols[RID_COL]), series, currencies, mixed, pct, total };
 }

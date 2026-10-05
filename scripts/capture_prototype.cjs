@@ -23,6 +23,22 @@ const STEPS = {
 	sidecols: async (p) => p.click("text=الأعمدة"),
 	sidefilters: async (p) => p.click("text=الفلاتر"),
 	pivot: async (p) => p.click("text=تحليل Pivot"),
+	pivot_dark: async (p) => {
+		await p.click('button[aria-label="تبديل الوضع الداكن"]');
+		await p.click("text=تحليل Pivot");
+	},
+	// Pivot cell drill-down: the rows behind a value, in a popover.
+	pivot_drill: async (p) => {
+		await p.click("text=تحليل Pivot");
+		await p.waitForTimeout(400);
+		await p.locator(".rv-c.pv.click").nth(1).click();
+	},
+	// Columns panel while in Pivot mode: the switch on, the pivot columns zone filled.
+	sidecols_pivot: async (p) => {
+		await p.click("text=تحليل Pivot");
+		await p.waitForTimeout(300);
+		await p.click("text=الأعمدة");
+	},
 	charts: async (p) => p.click("text=رسوم"),
 	charts_dark: async (p) => {
 		await p.click('button[aria-label="تبديل الوضع الداكن"]');

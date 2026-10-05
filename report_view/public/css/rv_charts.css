@@ -13,7 +13,8 @@
 
 /* ---------- layout: the chart, its settings at the inline end ---------- */
 .rv-charts.rv-chartsv{flex:none;overflow:visible;grid-template-columns:minmax(0,1fr) 260px;align-items:start}
-.rv-chart-card{min-height:440px}
+/* Desk colours h3 with its own theme; the page may have its own (header button) */
+.rv-chartsv h3{color:var(--tx)}
 .rv-chart-titles{min-width:0}
 .rv-chart-card .rv-card-hd{flex-wrap:wrap}
 .rv-chart-card .rv-legend{justify-content:flex-end}
@@ -29,7 +30,7 @@
 .rv-chart-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;pointer-events:none}
 .rv-chart-center span{font-size:var(--fs-xs);color:var(--tx-3);max-width:120px;text-align:center}
 .rv-chart-center b{font-size:16px;font-weight:600;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;color:var(--tx)}
-.rv-chart-dlegend{max-height:300px;overflow:auto}
+.rv-chart-dlegend{flex:0 1 360px;max-height:300px;overflow:auto}
 .rv-chart-dlegend .v{white-space:nowrap}
 
 /* colour swatches: one token per series / category (--c1..--c7) */
@@ -68,7 +69,7 @@
 @media (max-width: 560px){
   .rv-chart-types{grid-template-columns:repeat(3,minmax(0,1fr))}
   .rv-chart-body{flex-direction:column;align-items:stretch}
-  .rv-chartsv.is-donut .rv-chart-plotwrap{flex:none}
+  .rv-chartsv.is-donut .rv-chart-plotwrap,.rv-chart-dlegend{flex:none}
   .rv-chart-card{padding:12px}
   .rv-chart-plot{height:300px}
 }

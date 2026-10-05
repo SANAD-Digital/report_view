@@ -8,6 +8,10 @@
 
 const FEW_LABELS = 12;
 const MIN_LABEL_ROOM = 72;
+const TURNED_MARGIN = 12;
+const LINE_ROOM = 18;
+// The last tick label of a horizontal value axis is centred on the edge of the plot.
+const EDGE_MARGIN = 28;
 
 /**
  * @param {object} p
@@ -38,13 +42,16 @@ export function chart_option(p) {
 	if (type === "hbar") return { ...base, ...hbar(p) };
 
 	// Room of one category label: few labels that fit are shown whole (wrapped); otherwise
-	// they turn and are cut, the tooltip keeps the whole text.
+	// they stand upright and are cut at a length, the tooltip keeps the whole text.
 	const n = labels.length;
 	const room = Math.floor((p.width || 600) / Math.max(1, n)) - 8;
 	const few = n <= FEW_LABELS && room >= MIN_LABEL_ROOM;
+	// Turned upright, every label still has a line of its own while the room holds one.
+	const all = few || room >= LINE_ROOM;
 	return {
 		...base,
-		grid: { left: 8, right: 8, top: 16, bottom: 4, containLabel: true },
+		// Upright labels are centred on their category: a little room on both sides.
+		grid: { left: few ? 8 : TURNED_MARGIN, right: few ? 8 : TURNED_MARGIN, top: 16, bottom: 4, containLabel: true },
 		xAxis: {
 			type: "category",
 			data: labels,
@@ -54,9 +61,9 @@ export function chart_option(p) {
 			axisLabel: {
 				color: theme.text_2,
 				fontSize: theme.font_size,
-				interval: few ? 0 : "auto",
-				hideOverlap: !few,
-				rotate: few ? 0 : rtl ? -35 : 35,
+				interval: all ? 0 : "auto",
+				hideOverlap: !all,
+				rotate: few ? 0 : 90,
 				width: few ? room : 110,
 				overflow: few ? "break" : "truncate",
 				lineHeight: Math.round(theme.font_size * 1.4),
@@ -98,7 +105,7 @@ export function chart_option(p) {
 function hbar(p) {
 	const { rtl, labels, series, theme } = p;
 	return {
-		grid: { left: 8, right: 8, top: 8, bottom: 4, containLabel: true },
+		grid: { left: EDGE_MARGIN, right: EDGE_MARGIN, top: 8, bottom: 4, containLabel: true },
 		xAxis: {
 			type: "value",
 			inverse: rtl,

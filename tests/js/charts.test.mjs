@@ -244,7 +244,12 @@ test("chart option: few labels that fit are whole, many or narrow ones turn", ()
 	assert.equal(opt().xAxis.axisLabel.rotate, 0);
 	const narrow = opt({ width: 100 });
 	assert.equal(narrow.xAxis.axisLabel.overflow, "truncate");
-	assert.notEqual(narrow.xAxis.axisLabel.rotate, 0);
+	assert.equal(narrow.xAxis.axisLabel.rotate, 90);
+	assert.equal(narrow.xAxis.axisLabel.interval, 0);
+	// no room for a line per label: ECharts leaves out those that would overlap
+	const crowded = opt({ width: 20 });
+	assert.equal(crowded.xAxis.axisLabel.interval, "auto");
+	assert.equal(crowded.xAxis.axisLabel.hideOverlap, true);
 });
 
 // ------------------------------------------------------------------ engine

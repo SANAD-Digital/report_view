@@ -261,13 +261,18 @@ export class ReportViewPage {
 		this.render();
 	}
 
-	// The grid fills the window below the page header; on small screens it keeps a
-	// minimum height and the page scrolls.
+	// The grid is as tall as the window below Desk's sticky bars: the criteria and the
+	// summary scroll away above it, and the report then has the whole screen. On small
+	// screens it keeps a minimum height.
 	fit_height() {
 		const wrap = this.$(".rv-gridwrap");
 		if (!wrap || !wrap.isConnected) return;
-		const top = wrap.getBoundingClientRect().top + window.scrollY;
-		const h = Math.max(360, Math.round(window.innerHeight - top - 16));
+		let sticky = 0;
+		for (const el of document.querySelectorAll(".navbar, .page-head")) {
+			const pos = getComputedStyle(el).position;
+			if (pos === "sticky" || pos === "fixed") sticky = Math.max(sticky, el.getBoundingClientRect().bottom);
+		}
+		const h = Math.max(420, Math.round(window.innerHeight - Math.max(0, sticky) - 16));
 		wrap.style.height = `${h}px`;
 	}
 

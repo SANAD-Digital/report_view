@@ -30,6 +30,13 @@ function loaded_report(report_name) {
 	return qr && qr.page && qr.report_name === report_name && qr.report_doc?.name ? qr : null;
 }
 
+let watcher = null;
+
+function stop_watching() {
+	if (watcher) watcher.disconnect();
+	watcher = null;
+}
+
 function add_button(report_name, state, tries = 0) {
 	const qr = loaded_report(report_name);
 	if (!qr) {
@@ -37,10 +44,22 @@ function add_button(report_name, state, tries = 0) {
 		return;
 	}
 	if (current_route()[1] !== report_name) return;
-	qr.page.add_inner_button(__("Go to Advanced View"), () => {
-		frappe.route_options = qr.get_filter_values ? qr.get_filter_values() : {};
-		frappe.set_route(...state.route);
+	const put = () =>
+		qr.page.add_inner_button(__("Go to Advanced View"), () => {
+			frappe.route_options = qr.get_filter_values ? qr.get_filter_values() : {};
+			frappe.set_route(...state.route);
+		});
+	put();
+	// In Frappe 16 the inner toolbar is the custom-actions area, which refresh_report empties
+	// (page.js:165, query_report.js refresh_report): put the button back whenever it goes.
+	stop_watching();
+	const toolbar = qr.page.inner_toolbar?.get(0);
+	if (!toolbar) return;
+	watcher = new MutationObserver(() => {
+		if (current_route()[0] !== "query-report" || current_route()[1] !== report_name) return stop_watching();
+		if (!toolbar.querySelector(`button[data-label="${encodeURIComponent(__("Go to Advanced View"))}"]`)) put();
 	});
+	watcher.observe(toolbar, { childList: true });
 }
 
 // frappe.get_route() is null until the router has run (e.g. during app_ready).
@@ -50,7 +69,7 @@ function current_route() {
 
 function on_route_change() {
 	const route = current_route();
-	if (route[0] !== "query-report" || !route[1]) return;
+	if (route[0] !== "query-report" || !route[1]) return stop_watching();
 	const report_name = route[1];
 	get_entry_state(report_name).then((state) => {
 		if (state && state.show) add_button(report_name, state);

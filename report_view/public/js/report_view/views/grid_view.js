@@ -778,6 +778,9 @@ export class GridView {
 		const m = this.model;
 		if (!rt || !m) return;
 		const shown = [];
+		// Widths as drawn: a cell never gets narrower than its content (the from / to filter
+		// inputs), so the pinned rows below copy the header cells, not the nominal widths.
+		const drawn = { label: null, pinned: [], data: new Map() };
 		for (const th of rt.querySelectorAll("thead th")) {
 			const meta = rt.getMeta(th);
 			if (!meta) continue;
@@ -804,6 +807,12 @@ export class GridView {
 			if (leaf) th.title = text;
 			else th.removeAttribute("title");
 			if (col && leaf) shown.push(meta.x);
+			if (leaf) {
+				const w = th.getBoundingClientRect().width;
+				if (col) drawn.data.set(meta.x, w);
+				else if (head === 0) drawn.label = w;
+				else if (head > 0) drawn.pinned[head - 1] = w;
+			}
 		}
 
 		// The window that was drawn: the one that starts at the first row on screen.
@@ -840,7 +849,15 @@ export class GridView {
 				}
 			}
 		}
+		this.drawn = drawn;
 		this.render_pinned(shown);
+	}
+
+	// Width of a column in the pinned rows: as drawn in the header, else the nominal one.
+	drawn_width(kind, key, nominal) {
+		const d = this.drawn;
+		const w = !d ? null : kind === "label" ? d.label : kind === "pinned" ? d.pinned[key] : d.data.get(key);
+		return w ? `${w.toFixed(2)}px` : `${nominal}px`;
 	}
 
 	// ------------------------------------------------------------ pinned rows
@@ -856,17 +873,17 @@ export class GridView {
 		const heads = m.pinned.map((d, i) => {
 			const c = cell(d);
 			const edge = i === m.pinned.length - 1 ? " pin-edge-s" : "";
-			return `<div class="${c.classes} pinned${edge}" data-col="${esc(d.column.key)}" style="width:${d.width}px">${c.html}</div>`;
+			return `<div class="${c.classes} pinned${edge}" data-col="${esc(d.column.key)}" style="width:${this.drawn_width("pinned", i, d.width)}">${c.html}</div>`;
 		});
 		const cells = xs.map((x) => {
 			const d = m.data[x];
 			if (!d) return "";
 			const c = cell(d);
-			return `<div class="${c.classes}" data-col="${esc(d.column.key)}" style="width:${d.width}px">${c.html}</div>`;
+			return `<div class="${c.classes}" data-col="${esc(d.column.key)}" style="width:${this.drawn_width("data", x, d.width)}">${c.html}</div>`;
 		});
 		const edge = m.pinned.length ? "" : " pin-edge-s";
 		return (
-			`<div class="rv-row ${cls}"><div class="rv-c pinned${edge} rv-pin-label" data-col="${esc(m.label.key)}" style="width:${m.label_width}px">${label_html}</div>` +
+			`<div class="rv-row ${cls}"><div class="rv-c pinned${edge} rv-pin-label" data-col="${esc(m.label.key)}" style="width:${this.drawn_width("label", 0, m.label_width)}">${label_html}</div>` +
 			`${heads.join("")}${cells.join("")}</div>`
 		);
 	}
@@ -887,7 +904,9 @@ export class GridView {
 		const m = this.model;
 		if (!cur || !m || !this.bottom_el) return;
 		const xs = shown || this.pinned_shown || [];
-		const signature = `${this.epoch}:${xs.join(",")}`;
+		const drawn = this.drawn;
+		const widths = drawn ? [drawn.label, ...drawn.pinned, ...xs.map((x) => drawn.data.get(x))].map((w) => Math.round(w || 0)).join(",") : "";
+		const signature = `${this.epoch}:${xs.join(",")}:${widths}`;
 		if (this.pinned_signature === signature) return;
 		this.pinned_signature = signature;
 		this.pinned_shown = xs;

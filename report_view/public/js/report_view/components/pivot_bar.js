@@ -32,8 +32,9 @@ export class PivotBar {
 			<span class="rv-gp-lbl">${icons.pivot_cols()}<span>${esc(__("Pivot columns"))}</span></span>
 			<span class="rv-gp-chips"></span>
 			<div class="rv-gp-tools"><span class="rv-gp-lbl rv-pv-values"></span></div>`;
-		if (after) after.after(el);
-		else parent.appendChild(el);
+		// In the page only in pivot mode (show()).
+		this.parent = parent;
+		this.after = after || null;
 		this.el = el;
 		this.chips_el = el.querySelector(".rv-gp-chips");
 		this.values_el = el.querySelector(".rv-pv-values");
@@ -70,6 +71,17 @@ export class PivotBar {
 			cols.splice(end, 0, d.key);
 		}
 		if (JSON.stringify(cols) !== JSON.stringify(this.cols)) this.on_change(cols);
+	}
+
+	/** The bar is in the page in pivot mode only. */
+	show(on) {
+		if (!on) {
+			this.el.remove();
+			return;
+		}
+		if (this.el.isConnected) return;
+		if (this.after?.isConnected) this.after.after(this.el);
+		else this.parent.appendChild(this.el);
 	}
 
 	/**

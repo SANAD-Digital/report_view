@@ -7,11 +7,12 @@
 // we own its handle (terminate() is the only way to give WASM memory back).
 
 import perspective from "@finos/perspective";
-import { build_table_input, batches, perspective_type, KIND } from "./schema.js";
+import { build_table_input, batches, perspective_type, KIND, RID } from "./schema.js";
 import { build_nodes, build_facts } from "./tree_nodes.js";
 import { build_report_rows } from "./report_rows.js";
 import { to_view_config, CURRENCY_COUNT_PREFIX } from "./view_config.js";
 import { to_chart_config } from "./chart_config.js";
+import { to_pivot_config, drill_config } from "./pivot_config.js";
 import * as queries from "./queries.js";
 
 import { SERVER_WASM, CLIENT_WASM, WORKER_JS } from "./assets.js";
@@ -299,6 +300,7 @@ export class ReportSession {
 		this.rows_by_rid = new Map(normalized.rows.map((r) => [r.__rid, r]));
 		this.slot = `main:${Math.random().toString(36).slice(2)}`;
 		this.chart_slot = `chart:${this.slot}`;
+		this.pivot_generation = 0;
 		this.closed = false;
 	}
 
@@ -505,6 +507,95 @@ export class ReportSession {
 
 	async close_chart(opened) {
 		if (opened && this.handles.is_alive(opened.view)) await this.handles.delete(opened.view);
+	}
+
+	/**
+	 * Opens the two views of a pivot (engine/pivot_config.js): the pivot view (group_by +
+	 * split_by; none when there is no pivot column) and its totals view (the same rows, without
+	 * split_by). They stay open while the pivot is shown; close_pivot() deletes them. The number
+	 * of split columns is measured first (temporary views): above MAX_PIVOT_COLUMNS the pivot
+	 * is drawn without its split.
+	 * @param {{rows, cols, values, totals}} pivot a resolved pivot
+	 * @returns {Promise<object|null>} null when a newer pivot superseded this one
+	 */
+	async open_pivot(view_state, pivot) {
+		const generation = ++this.pivot_generation;
+		const opts = { quick_filters: this.quick_filters };
+		const facts = this.tables.facts;
+		let spec = to_pivot_config(view_state, this.normalized, pivot, opts);
+		if (spec.count) {
+			const [all, prefix] = await Promise.all([
+				queries.count_groups(this.handles, facts, spec.count[0]),
+				spec.count[1].group_by.length ? queries.count_groups(this.handles, facts, spec.count[1]) : 0,
+			]);
+			spec = to_pivot_config(view_state, this.normalized, pivot, { ...opts, split_columns: (all - prefix) * spec.post.values.length });
+		}
+		if (generation !== this.pivot_generation) return null;
+		const split = spec.post.cols.length > 0;
+		const made = await Promise.allSettled([
+			this.handles.view(facts, spec.totals, "pivot_totals"),
+			split ? this.handles.view(facts, spec.config, "pivot") : null,
+		]);
+		const [totals, view] = made.map((m) => (m.status === "fulfilled" ? m.value : null));
+		const drop = async () => {
+			for (const v of [view, totals]) if (v && this.handles.is_alive(v)) await this.handles.delete(v);
+		};
+		const failed = made.find((m) => m.status === "rejected");
+		if (failed || generation !== this.pivot_generation) {
+			await drop();
+			if (failed) throw failed.reason;
+			return null;
+		}
+		try {
+			const [paths, rows, total] = await Promise.all([
+				view ? view.column_paths() : [],
+				totals.num_rows(),
+				queries.read_total_row(totals),
+			]);
+			return { spec, post: spec.post, view, totals, column_paths: paths, body_rows: Math.max(0, rows - 1), total };
+		} catch (e) {
+			await drop();
+			throw e;
+		}
+	}
+
+	async close_pivot(opened) {
+		if (!opened) return;
+		for (const v of [opened.view, opened.totals]) if (v && this.handles.is_alive(v)) await this.handles.delete(v);
+	}
+
+	/**
+	 * Opens or closes a row of a pivot in both its views (the same row in each), or sets the
+	 * depth of both (fold all).
+	 * @returns {Promise<number>} the body rows after it
+	 */
+	async fold_pivot(opened, change) {
+		for (const v of [opened.totals, opened.view]) {
+			if (!v) continue;
+			if (change.depth !== undefined) await v.set_depth(change.depth);
+			else if (change.open) await v.expand(change.row);
+			else await v.collapse(change.row);
+		}
+		return Math.max(0, (await opened.totals.num_rows()) - 1);
+	}
+
+	/**
+	 * The facts behind one pivot cell (§11.1 #68): a temporary view filtered by the row path
+	 * and the column path, deleted in `finally`.
+	 * @returns {Promise<{count: number, rids: number[]}>} the number of facts and the first `limit`
+	 */
+	pivot_drill(opened, row_path, col_values, value, label_key, limit = 200) {
+		const config = drill_config(opened.post, row_path, col_values, value, label_key);
+		return this.handles.with_view(
+			this.tables.facts,
+			config,
+			async (view) => {
+				const count = await view.num_rows();
+				const cols = await view.to_columns({ start_row: 0, end_row: Math.min(count, limit) });
+				return { count, rids: cols[RID] || [] };
+			},
+			"drill"
+		);
 	}
 
 	async close_view(opened) {

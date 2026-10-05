@@ -1,6 +1,6 @@
 // View state v1 (docs/architecture.md §7.1), the subset used so far: mode, columns (order,
 // hidden, widths, pinned, groups), sort, filters, quick_filters, group (by, subtotals, expanded),
-// tree (depth, expanded), values, chart (type, x, series), ui (density, side_panel). Unknown
+// tree (depth, expanded), values, chart (type, x, series), pivot (rows, cols, values), ui (density, side_panel). Unknown
 // keys are dropped (not rejected) in the browser.
 
 import { sanitize_groups } from "./column_groups.js";
@@ -43,6 +43,8 @@ export function default_state(config = {}) {
 		values: [],
 		// null = the report's default chart (engine/chart_config.js default_chart)
 		chart: null,
+		// null = the report's default pivot (engine/pivot_config.js default_pivot)
+		pivot: null,
 		ui: { density: "comfortable", side_panel: null },
 	};
 }
@@ -107,9 +109,32 @@ export function sanitize(state, config = {}) {
 			series: str_list(chart.series, LIMIT_SERIES),
 		};
 	}
+	out.pivot = sanitize_pivot(state.pivot);
 	if (DENSITIES.includes(state.ui?.density)) out.ui.density = state.ui.density;
 	if (SIDE_PANELS.includes(state.ui?.side_panel)) out.ui.side_panel = state.ui.side_panel;
 	return out;
+}
+
+const PIVOT_AGGS = ["sum", "avg", "count", "min", "max"];
+const LIMIT_PIVOT = 20;
+
+// pivot: {rows: [key], cols: [key], values: [{key, agg}], totals: {rows, cols}} (§7.1), or
+// null for the report's default one. Keys are checked against the report later
+// (engine/pivot_config.js resolve_pivot): tree levels are not report columns.
+function sanitize_pivot(pivot) {
+	if (!pivot || typeof pivot !== "object") return null;
+	const values = Array.isArray(pivot.values)
+		? pivot.values
+				.filter((v) => v && typeof v.key === "string" && PIVOT_AGGS.includes(v.agg))
+				.map((v) => ({ key: v.key, agg: v.agg }))
+				.slice(0, LIMIT_PIVOT)
+		: [];
+	return {
+		rows: str_list(pivot.rows, LIMIT_PIVOT),
+		cols: str_list(pivot.cols, LIMIT_PIVOT),
+		values,
+		totals: { rows: pivot.totals?.rows !== false, cols: pivot.totals?.cols !== false },
+	};
 }
 
 // Drops references to columns that no longer exist in the report (§7.3, silent in phase 3).

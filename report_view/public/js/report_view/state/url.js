@@ -43,6 +43,7 @@ function is_default_view(state, base) {
 	return (
 		state.mode === (base?.mode || "grid") &&
 		!state.chart &&
+		!state.pivot &&
 		!state.sort.length &&
 		!state.filters.length &&
 		!(state.quick_filters || []).length &&

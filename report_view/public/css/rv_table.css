@@ -21,21 +21,33 @@
 .rv regular-table{overflow:auto;outline:0;background:var(--surface);scrollbar-width:thin;scrollbar-color:var(--line-3) transparent}
 .rv regular-table table{border-collapse:separate;border-spacing:0;table-layout:auto;color:var(--tx);font-size:var(--fs)}
 
-/* Row-wise scrolling moves by fractions of a row: the body is shifted by the fraction and
-   the part of its first row that would cover the header is clipped (variables written by
-   regular-table on its slotted table). */
-.rv regular-table tbody{transform:translate(0,var(--regular-table--transform-y,0px))}
-.rv regular-table tbody tr:first-child > *{clip-path:polygon(0 var(--regular-table--clip-y,0),0 100%,100% 100%,100% var(--regular-table--clip-y,0))}
+/* Sub-cell scrolling. regular-table writes four variables on its table at every scroll
+   step. Custom properties inherit: every cell of the table had its style computed again on
+   each step (about 20 ms a frame on a full screen). Registered as not inherited, they reach
+   only the elements that use them, by an explicit `inherit` along the way. */
+@property --regular-table--transform-x{syntax:"<length>";inherits:false;initial-value:0px}
+@property --regular-table--transform-y{syntax:"<length>";inherits:false;initial-value:0px}
+@property --regular-table--clip-x{syntax:"<length>";inherits:false;initial-value:0px}
+@property --regular-table--clip-y{syntax:"<length>";inherits:false;initial-value:0px}
+@property --rv-sx{syntax:"<length>";inherits:false;initial-value:0px}
 
-/* Column-wise scrolling moves by fractions of a column too (else the columns jump a whole
-   column at a time while scrolling sideways): body and header cells are shifted by the
-   fraction, the opposite way in RTL (rtl_adapter.js flips the scroll sign); the label and
-   pinned columns (row headers and corner cells) stay put above them. The rows pinned
+/* Row-wise: the body is shifted by the fraction of a row and the part of its first row that
+   would cover the header is clipped. */
+.rv regular-table tbody{transform:translate(0,var(--regular-table--transform-y));--regular-table--transform-y:inherit;--regular-table--clip-y:inherit}
+.rv regular-table tbody tr:first-child,.rv regular-table tbody tr:first-child > *{--regular-table--clip-y:inherit}
+.rv regular-table tbody tr:first-child > *{clip-path:polygon(0 var(--regular-table--clip-y),0 100%,100% 100%,100% var(--regular-table--clip-y))}
+
+/* Column-wise (else the columns jump a whole column at a time while scrolling sideways):
+   the whole table is shifted by the fraction, the opposite way in RTL (rtl_adapter.js
+   flips the scroll sign), and the label and pinned columns (row headers and corner cells)
+   are shifted back, so they stay put above the others. Only those cells and their rows
+   take the value: the data cells are not restyled on a sideways step. The rows pinned
    outside the table follow with --rv-sx-out (views/grid_view.js). */
-.rv regular-table table{--rv-sx:var(--regular-table--transform-x,0px)}
-.rv[dir=rtl] regular-table table{--rv-sx:calc(-1 * var(--regular-table--transform-x,0px))}
-.rv regular-table tbody td,.rv regular-table thead th:not(.rt-group-corner){transform:translate(var(--rv-sx),0)}
-.rv regular-table tbody th,.rv regular-table thead th.rt-group-corner{position:relative;z-index:2}
+.rv regular-table table{--rv-sx:var(--regular-table--transform-x);transform:translate(var(--rv-sx),0)}
+.rv[dir=rtl] regular-table table{--rv-sx:calc(-1 * var(--regular-table--transform-x))}
+.rv regular-table thead,.rv regular-table tbody,.rv regular-table tr,
+.rv regular-table tbody th,.rv regular-table thead th.rt-group-corner{--rv-sx:inherit}
+.rv regular-table tbody th,.rv regular-table thead th.rt-group-corner{position:relative;z-index:2;transform:translate(calc(-1 * var(--rv-sx)),0)}
 .rv-rt-top .rv-c:not(.pinned),.rv-rt-bottom .rv-c:not(.pinned){transform:translate(var(--rv-sx-out,0px),0)}
 
 /* ---------- header (.rv-head) ---------- */

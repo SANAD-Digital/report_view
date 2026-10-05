@@ -46,7 +46,9 @@ function row_to_dict(raw_row, columns) {
 		for (const c of columns) row[c.key] = c.source_index < raw_row.length ? raw_row[c.source_index] : null;
 		return row;
 	}
-	const row = { ...(raw_row || {}) };
+	// Object.assign, not a spread: the build turns a spread into a helper call per key,
+	// slow over tens of thousands of rows.
+	const row = Object.assign({}, raw_row);
 	for (const c of columns) {
 		if (!Object.hasOwn(row, c.key)) row[c.key] = row[c.fieldname] ?? null;
 	}

@@ -25,6 +25,9 @@ import { header_bands } from "../state/column_groups.js";
 
 const ROW_PATH = "__ROW_PATH__";
 const CELL_CLASSES = ["num", "dr", "cr", "band-end", "zero", "neg"];
+// Last content written in a cell's .rv-cc, and a number as format.js wraps it.
+const CELL_HTML = new WeakMap();
+const BARE_NUMBER = /^<bdi class="rv-n">([^<]*)<\/bdi>$/;
 const MAX_AUTO_WIDTH = 640;
 // Pinned columns next to the label need room: on a narrower grid only the label is pinned.
 const MIN_WIDTH_FOR_PINS = 600;
@@ -106,17 +109,28 @@ export class GridView {
 		this.on_click = (e) => this.click(e);
 		this.on_press = (e) => this.press(e);
 		this.on_dblclick = (e) => this.dblclick(e);
-		this.on_scrolled = () => this.sync_sub_x();
+		this.on_scrolled = () => this.scrolled();
 	}
 
 	// The rows pinned outside the table follow its sub-column shift (rv_table.css --rv-sx).
-	// A scroll inside one column redraws nothing, so this also runs after every scroll.
+	// The value is read from the rule regular-table writes it to (its `f` field in 0.9.1,
+	// pinned like rtl_adapter.js), not from computed style, which forced a style pass per
+	// frame. A scroll inside one column redraws nothing, so this also runs after a scroll.
 	sync_sub_x() {
-		const table = this.rt?.querySelector("table");
-		if (!table || !this.host) return;
-		const x = getComputedStyle(table).getPropertyValue("--rv-sx").trim() || "0px";
-		this.host.style.setProperty("--rv-sx-out", x);
-		this.host.classList.toggle("scrolled-x", Math.abs(this.rt.scrollLeft) > 0);
+		const rt = this.rt;
+		if (!rt || !this.host) return;
+		const raw = parseFloat(rt.f?.style?.getPropertyValue("--regular-table--transform-x")) || 0;
+		const x = this.rtl ? -raw : raw;
+		if (x !== this.sub_x) {
+			this.sub_x = x;
+			this.host.style.setProperty("--rv-sx-out", `${x}px`);
+		}
+	}
+
+	// After a scroll: layout is settled, reading the scroll position costs nothing more.
+	scrolled() {
+		this.sync_sub_x();
+		this.host?.classList.toggle("scrolled-x", Math.abs(this.rt?.scrollLeft || 0) > 0);
 	}
 
 	// ------------------------------------------------------------ model
@@ -275,8 +289,11 @@ export class GridView {
 		// Capture: regular-table's own resize handler (it assumes LTR) must not see the press.
 		rt.addEventListener("pointerdown", this.on_press, true);
 		rt.addEventListener("mousedown", this.on_press, true);
+		// The table's inner width, kept here: reading it while drawing forced a layout.
+		this.rt_width = rt.clientWidth;
 		this.resize_observer = new ResizeObserver(() => {
 			if (this.rt !== rt || !this.current) return;
+			this.rt_width = rt.clientWidth;
 			this.fit_top();
 			rt.draw();
 		});
@@ -316,6 +333,8 @@ export class GridView {
 	 * per column. Row headers come first in regular-table's size keys.
 	 */
 	apply_sizes() {
+		// Header widths are read again on the next draw (style()).
+		this.widths_version = (this.widths_version || 0) + 1;
 		const m = this.model;
 		const widths = [m.label_width, ...m.pinned.map((d) => d.width), ...m.data.map((d) => d.width)];
 		const sizes = {};
@@ -328,7 +347,7 @@ export class GridView {
 
 	// The rows pinned under the headers span the table, not its vertical scrollbar.
 	fit_top() {
-		if (this.top_el && this.rt) this.top_el.style.width = `${this.rt.clientWidth}px`;
+		if (this.top_el && this.rt && this.rt_width) this.top_el.style.width = `${this.rt_width}px`;
 	}
 
 	unmount() {
@@ -817,7 +836,22 @@ export class GridView {
 			neg: out.sign === "neg",
 		};
 		for (const name of CELL_CLASSES) cell.classList.toggle(name, Boolean(flags[name]));
-		cell.innerHTML = `<div class="rv-cc">${out.html}</div>`;
+		// The cell keeps its one .rv-cc element: a new element per cell and frame made the
+		// browser compute the style of every cell again on each scroll step.
+		let cc = cell.firstElementChild;
+		if (!cc || cell.childNodes.length !== 1 || !cc.classList.contains("rv-cc")) {
+			cc = document.createElement("div");
+			cc.className = "rv-cc";
+			cell.replaceChildren(cc);
+		}
+		if (CELL_HTML.get(cc) === out.html) return;
+		CELL_HTML.set(cc, out.html);
+		// A bare number (<bdi class="rv-n">…</bdi>) or plain text goes in as text: no element.
+		const number = BARE_NUMBER.exec(out.html);
+		const text = number ? number[1] : out.html;
+		cc.classList.toggle("rv-n", Boolean(number));
+		if (/[<&]/.test(text)) cc.innerHTML = text;
+		else cc.textContent = text;
 	}
 
 	/** regular-table style listener: classes and content of the cells on screen. */
@@ -829,7 +863,8 @@ export class GridView {
 		const shown = [];
 		// Widths as drawn: a cell never gets narrower than its content (the from / to filter
 		// inputs), so the pinned rows below copy the header cells, not the nominal widths.
-		const drawn = { label: null, pinned: [], data: new Map() };
+		let drawn = { label: null, pinned: [], data: new Map() };
+		const leaves = [];
 		for (const th of rt.querySelectorAll("thead th")) {
 			const meta = rt.getMeta(th);
 			if (!meta) continue;
@@ -853,16 +888,26 @@ export class GridView {
 			th.classList.toggle("empty", !leaf && !filter && !text);
 			th.classList.toggle("num", Boolean(col?.numeric));
 			th.classList.toggle("band-end", Boolean(col?.band_end));
-			// A tooltip only for a title cut by the column width.
-			if (leaf && th.scrollWidth > th.clientWidth) th.title = text;
-			else th.removeAttribute("title");
 			if (col && leaf) shown.push(meta.x);
-			if (leaf) {
+			if (leaf) leaves.push({ th, text, col, head, x: meta.x });
+		}
+		// Widths and cut titles are read from layout only when the columns on screen changed:
+		// a vertical scroll draws the same header, and reading layout after writing the cells
+		// forced a layout on every frame.
+		const header_key = `${this.epoch}:${this.widths_version || 0}:${shown.join(",")}:${this.rt_width}`;
+		if (header_key !== this.header_key || !this.drawn) {
+			this.header_key = header_key;
+			for (const { th, text, col, head, x } of leaves) {
 				const w = th.getBoundingClientRect().width;
-				if (col) drawn.data.set(meta.x, w);
+				if (col) drawn.data.set(x, w);
 				else if (head === 0) drawn.label = w;
 				else if (head > 0) drawn.pinned[head - 1] = w;
+				// A tooltip only for a title cut by the column width.
+				if (th.scrollWidth > th.clientWidth) th.title = text;
+				else th.removeAttribute("title");
 			}
+		} else {
+			drawn = this.drawn;
 		}
 
 		// The window that was drawn: the one that starts at the first row on screen.

@@ -3,7 +3,8 @@
 // fixture data and stubbed Frappe. The page code itself comes from harness.mjs (sources) or
 // from the bundle `bench build` produced (harness_built.mjs).
 // URL parameters: report=tb|ar|ar_party|ar_jq|gl|gl_account, lang=ar|en, desk=light|dark (Desk theme), density=compact,
-// pref=light|dark (the page's own theme button), group=<column key>[,<column key>].
+// pref=light|dark (the page's own theme button), group=<column key>[,<column key>],
+// rows=N (repeat the report's rows up to about N, for performance checks).
 
 const params = new URLSearchParams(window.location.search);
 const which = params.get("report") || "tb";
@@ -100,6 +101,24 @@ async function main() {
 	const fixture = await (await fetch(`dist/${conf.fixture}`)).json();
 	const input = fixture.input;
 	window.RV_REPORT = conf.name;
+	// rows=N (performance checks): the report's own rows repeated up to about N, its first
+	// (opening) and last two (total, closing) rows kept once with their amounts scaled.
+	const want = Number(params.get("rows")) || 0;
+	if (want && Array.isArray(input.raw.result) && input.raw.result.length > 3) {
+		const rows = input.raw.result;
+		const body = rows.slice(1, -2);
+		const k = Math.max(1, Math.ceil(want / body.length));
+		const scale = (r) => {
+			const out = { ...r };
+			for (const key of ["debit", "credit", "debit_in_account_currency", "credit_in_account_currency"]) {
+				if (typeof out[key] === "number") out[key] *= k;
+			}
+			return out;
+		};
+		const copies = [];
+		for (let i = 0; i < k; i++) for (const r of body) copies.push(i ? { ...r, voucher_no: `${r.voucher_no}-${i}` } : r);
+		input.raw.result = [rows[0], ...copies, scale(rows[rows.length - 2]), scale(rows[rows.length - 1])];
+	}
 
 	if (params.get("desk") === "dark") document.documentElement.setAttribute("data-theme", "dark");
 	else document.documentElement.setAttribute("data-theme", "light");

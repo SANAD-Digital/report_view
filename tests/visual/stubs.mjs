@@ -130,7 +130,8 @@ class Control {
 			this.$input = box.find("input");
 			this.$input.on("change", () => this.changed(this.$input.val()));
 		} else if (ft === "MultiSelectList") {
-			this.$list = $(`<div class="multiselect-list dropdown"><div class="form-control cursor-pointer input-xs ${this.df.input_class || ""}" tabindex="0"><div class="status-text ellipsis"></div></div></div>`).prependTo(this.input_area);
+			// As on the site (Frappe 16): input_class lands on the list's wrapper, not its box.
+			this.$list = $(`<div class="multiselect-list dropdown ${this.df.input_class || ""}"><div class="form-control cursor-pointer input-xs" tabindex="0"><div class="status-text ellipsis"></div></div></div>`).prependTo(this.input_area);
 			this.$input = $("<input>");
 			this.value = [];
 			this.update_status();

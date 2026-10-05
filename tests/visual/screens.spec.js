@@ -1421,3 +1421,16 @@ test("a report formatter that wraps default_formatter with $(out) gets HTML, as 
 	expect(await page.locator("regular-table tbody td.num [style*='bold']").count()).toBeGreaterThan(0);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
+
+test("a MultiSelectList filter has one frame (no design input frame on its wrapper)", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=tb&lang=en");
+	await page.locator(".rv-more").click();
+	const framed = await page.evaluate(() =>
+		[...document.querySelectorAll('.rv-more-filters .rv-field[data-fieldtype="MultiSelectList"] *')]
+			.filter((e) => parseFloat(getComputedStyle(e).borderTopWidth) > 0 && !e.closest(".dropdown-menu"))
+			.map((e) => e.className)
+	);
+	expect(framed).toEqual(["form-control cursor-pointer input-xs"]);
+	expect(problems, "console errors/warnings").toEqual([]);
+});

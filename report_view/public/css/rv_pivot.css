@@ -1,0 +1,40 @@
+/* Pivot (analysis) mode (reference/design/screens/pivot.png, pivot_drill.png,
+   sidecols_pivot.png; .rv-gp.pv, .rv-c.pv, .rv-row.group.pvleaf, .rv-pv-* of rv.css).
+   The pivot table is a second <regular-table> (views/pivot_view.js) with the classes of the
+   grid (rv_table.css); only what differs is here. Colours from the tokens only. */
+
+/* one table on screen: the grid or the pivot */
+.rv:not(.rv-mode-pivot) .rv-pivotgrid,
+.rv:not(.rv-mode-pivot) .rv-pivotbar{display:none}
+.rv.rv-mode-pivot .rv-body > .rv-grid:not(.rv-pivotgrid){display:none}
+
+/* pivot columns bar (.rv-gp.pv) */
+.rv-pivotbar .rv-gp-tools{min-width:0;flex:0 1 auto}
+.rv-pivotbar .rv-pv-values{overflow:hidden;text-overflow:ellipsis;display:block;max-width:420px}
+.rv-gchip.pv{background:var(--dr-soft);border-color:transparent}
+
+/* rows: the deepest level is a plain row (.pvleaf), the levels above it groups */
+.rv regular-table tbody tr.group.pvleaf > *{background:var(--surface);font-weight:400}
+.rv regular-table tbody tr.group.pvleaf:hover > *{background:var(--hover)}
+/* a value opens the rows behind it (.rv-c.pv.click) */
+.rv regular-table tbody td.pv,.rv-pivot .rv-rt-total .rv-c.pv{cursor:pointer}
+.rv regular-table tbody td.pv:hover .rv-cc,.rv-pivot .rv-rt-total .rv-c.pv:hover{text-decoration:underline;text-underline-offset:3px}
+.rv regular-table tbody td.neg .rv-cc.rv-n,.rv-pivot .rv-rt-total .rv-c.neg .rv-n{color:var(--cr)}
+/* header bands of the pivot columns: the value of the column path, a line at the end of a band */
+.rv-pivot regular-table thead th.rv-hb{border-inline-end:0}
+.rv-pivot regular-table thead th.rv-hb:not(.empty){border-inline-end:1px solid var(--line)}
+.rv-pivot regular-table thead th.rv-hd.num{text-align:end}
+
+/* columns panel: "+ Add" list under a zone of the pivot */
+.rv-zone-add{height:26px;width:100%;border:1px solid var(--line);border-radius:5px;background:var(--surface);font-size:var(--fs-xs);color:var(--tx-2);padding:0 4px}
+.rv-zone-add:focus-visible{outline:2px solid var(--pri);outline-offset:-1px}
+
+/* drill-down popover (.rv-pv-list): the rows of the report behind a value */
+.rv-pv-drill .rv-pop-hd > span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx-2)}
+.rv-pv-drill .rv-pop-hd .ltr{direction:ltr;unicode-bidi:isolate;color:var(--tx);white-space:nowrap}
+.rv-pv-drill .rv-pv-sub{padding:0 10px 6px}
+.rv-pv-drill .rv-pv-list{padding:0 4px 6px}
+.rv-pv-drill .rv-pv-item{cursor:default}
+.rv-pv-drill .rv-pv-item .nm{display:flex;align-items:center;gap:6px;min-width:0}
+.rv-pv-drill .rv-pv-item .v.zero{color:var(--tx-4)}
+.rv-pop:has(> .rv-pv-drill):focus{outline:0}

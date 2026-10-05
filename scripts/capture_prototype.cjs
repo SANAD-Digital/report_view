@@ -24,6 +24,26 @@ const STEPS = {
 	sidefilters: async (p) => p.click("text=الفلاتر"),
 	pivot: async (p) => p.click("text=تحليل Pivot"),
 	charts: async (p) => p.click("text=رسوم"),
+	charts_dark: async (p) => {
+		await p.click('button[aria-label="تبديل الوضع الداكن"]');
+		await p.click("text=رسوم");
+	},
+	charts_compact: async (p) => {
+		await p.click("text=مضغوط");
+		await p.click("text=رسوم");
+	},
+	// Integrated chart (range -> context menu): its side panel holds the chart-type controls.
+	chartrange: async (p) => {
+		const a = await p.locator(".rv-c.num").nth(4).boundingBox();
+		const b = await p.locator(".rv-c.num").nth(20).boundingBox();
+		await p.mouse.move(a.x + 5, a.y + 5);
+		await p.mouse.down();
+		await p.mouse.move(b.x + 5, b.y + 5, { steps: 5 });
+		await p.mouse.up();
+		await p.mouse.click(b.x + 5, b.y + 5, { button: "right" });
+		await p.waitForTimeout(300);
+		await p.click("text=إنشاء رسم من النطاق المحدد");
+	},
 	drawer: async (p) => p.locator(".rv-acc").nth(2).click(),
 	voucher: async (p) => {
 		await p.locator(".rv-acc").nth(2).click();

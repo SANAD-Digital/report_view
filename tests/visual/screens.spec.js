@@ -1434,3 +1434,209 @@ test("a MultiSelectList filter has one frame (no design input frame on its wrapp
 	expect(framed).toEqual(["form-control cursor-pointer input-xs"]);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
+
+// ---------------------------------------------------------------- Charts view (phase 5d task 1)
+// Screenshots in docs/progress/screens/phase-5a2/charts-*.png, compared with
+// reference/design/screens/charts.png. The page opens on the table, then the Charts tab.
+const CHARTS_OUT = path.resolve(__dirname, "../../docs/progress/screens/phase-5a2");
+const chart_rv = (chart) => rv({ chart });
+
+async function to_charts(page) {
+	await page.locator('.rv-views [data-mode="charts"]').click();
+	await page.waitForFunction(() => window.rv_page.charts?.debug_data()?.drawn && window.rv_page.charts.el.dataset.state === "ready");
+	// ECharts animates for 300ms: the screenshot shows the chart at rest.
+	await page.waitForTimeout(500);
+}
+
+async function to_grid(page) {
+	await page.locator('.rv-views [data-mode="grid"]').click();
+	await page.waitForFunction(() => window.rv_page.state.mode === "grid" && window.rv_page.grid.current === window.rv_page.opened);
+	await settle(page);
+}
+
+const CHART_SHOTS = [
+	{ name: "charts-tb-light-rtl", query: "report=tb&lang=ar" },
+	{ name: "charts-tb-dark-rtl", query: "report=tb&lang=ar&desk=dark" },
+	{ name: "charts-tb-light-ltr", query: "report=tb&lang=en" },
+	{ name: "charts-tb-dark-ltr", query: "report=tb&lang=en&desk=dark" },
+	{ name: "charts-tb-compact-rtl", query: "report=tb&lang=ar&density=compact" },
+	{ name: "charts-tb-donut-level2-rtl", query: `report=tb&lang=ar&rv=${chart_rv({ type: "donut", x: "level_2", series: ["closing_debit"] })}` },
+	{ name: "charts-tb-stacked-dark-ltr", query: `report=tb&lang=en&desk=dark&rv=${chart_rv({ type: "stacked", x: "level_1", series: ["debit", "credit"] })}` },
+	{ name: "charts-ar-light-rtl", query: "report=ar&lang=ar" },
+	{ name: "charts-ar-hbar-dark-ltr", query: `report=ar&lang=en&desk=dark&rv=${chart_rv({ type: "hbar", x: "party", series: ["invoiced", "paid", "outstanding"] })}` },
+	{ name: "charts-ar-line-dates-light-rtl", query: `report=ar&lang=ar&rv=${chart_rv({ type: "line", x: "posting_date", series: ["paid", "outstanding"] })}` },
+	{ name: "charts-gl-light-rtl", query: "report=gl&lang=ar" },
+	{ name: "charts-gl-dark-ltr", query: "report=gl&lang=en&desk=dark" },
+	{ name: "charts-gl-donut-light-ltr", query: `report=gl&lang=en&rv=${chart_rv({ type: "donut", x: "account", series: ["debit"] })}` },
+	{ name: "charts-tb-390-rtl", query: "report=tb&lang=ar", width: 390, height: 844, full: true },
+	{ name: "charts-gl-390-dark-ltr", query: "report=gl&lang=en&pref=dark", width: 390, height: 844, full: true },
+	{ name: "charts-ar-donut-390-rtl", query: `report=ar&lang=ar&rv=${chart_rv({ type: "donut", x: "party", series: ["paid"] })}`, width: 390, height: 844, full: true },
+];
+
+for (const s of CHART_SHOTS) {
+	test(s.name, async ({ page }) => {
+		const problems = watch_console(page);
+		await open(page, s.query, s);
+		await to_charts(page);
+		await page.screenshot({ path: path.join(CHARTS_OUT, `${s.name}.png`), fullPage: Boolean(s.full) });
+		// Labels are not cut by the plot: every text of the chart is inside it (a donut has
+		// its categories as a list next to it).
+		const labels = await page.evaluate(() => {
+			const plot = document.querySelector(".rv-chart-plot").getBoundingClientRect();
+			return [...document.querySelectorAll(".rv-chart-plot svg text")].map((t) => {
+				const r = t.getBoundingClientRect();
+				const inside = r.left >= plot.left - 1 && r.right <= plot.right + 1 && r.top >= plot.top - 1 && r.bottom <= plot.bottom + 1;
+				return inside ? "" : t.textContent;
+			});
+		});
+		const donut = await page.evaluate(() => window.rv_page.charts.debug_data().type === "donut");
+		if (donut) expect(await page.locator(".rv-chart-dlegend li").count()).toBeGreaterThan(0);
+		else expect(labels.length).toBeGreaterThan(0);
+		expect(labels.filter(Boolean), "labels outside the plot").toEqual([]);
+		expect(problems, "console errors/warnings").toEqual([]);
+	});
+}
+
+// What the grid shows by the chart's dimension: rows of depth 0 of the tree "as is", or the
+// first-level groups of a grouped (or re-grouped) view, read from the grid's own view.
+const grid_rows = (page, series, tree) =>
+	page.evaluate(
+		async ({ series, tree }) => {
+			const cols = await window.rv_page.opened.view.to_columns();
+			const out = [];
+			if (tree) {
+				cols.__rid.forEach((rid, i) => {
+					if (cols.__depth[i] === 0) out.push({ id: rid, values: series.map((k) => cols[k][i]) });
+				});
+			} else {
+				cols.__ROW_PATH__.forEach((p, i) => {
+					if (p.length === 1) out.push({ id: p[0], values: series.map((k) => cols[k][i]) });
+				});
+			}
+			return { rows: out, totals: window.rv_page.debug_totals().totals };
+		},
+		{ series, tree }
+	);
+
+const chart_rows = (page) =>
+	page.evaluate(() => {
+		const d = window.rv_page.charts.debug_data();
+		const ids = d.route === "nodes" ? d.rids : d.categories;
+		return { route: d.route, series: d.series, rows: ids.map((id, i) => ({ id, values: d.series.map((k) => d.values[k][i]) })) };
+	});
+
+function same_numbers(chart, grid, label) {
+	expect(chart.rows.length, `${label}: categories`).toBeGreaterThan(0);
+	const by_id = new Map(grid.rows.map((r) => [r.id, r.values]));
+	for (const row of chart.rows) {
+		const values = by_id.get(row.id);
+		expect(values, `${label}: ${row.id} in the grid`).toBeTruthy();
+		row.values.forEach((v, i) => expect(Math.abs(v - values[i]), `${label}: ${row.id} ${chart.series[i]}`).toBeLessThan(0.005));
+	}
+	// every category of the grid is drawn, and they add up to the grand total shown
+	expect(chart.rows.length).toBe(grid.rows.length);
+	chart.series.forEach((key, i) => {
+		const sum = chart.rows.reduce((a, r) => a + r.values[i], 0);
+		expect(Math.abs(sum - grid.totals[key]), `${label}: total ${key}`).toBeLessThan(0.005);
+	});
+}
+
+test("charts: the numbers of the chart are the grid's for the same filters (tb, ar, gl)", async ({ page }) => {
+	const problems = watch_console(page);
+	// trial balance, tree "as is": the top-level rows of the report
+	await open(page, "report=tb&lang=ar");
+	await to_charts(page);
+	let chart = await chart_rows(page);
+	expect(chart.route).toBe("nodes");
+	expect(chart.series).toEqual(["closing_debit", "closing_credit"]);
+	await to_grid(page);
+	same_numbers(chart, await grid_rows(page, chart.series, true), "tb");
+
+	// trial balance with a quick filter: the re-grouped grid's top level (engine sums)
+	await page.evaluate(() => window.rv_page.controls.toggle_quick("moving"));
+	await page.waitForFunction(() => window.rv_page.result?.mode === "tree" && window.rv_page.opened?.post.shape === "levels");
+	await to_charts(page);
+	chart = await chart_rows(page);
+	expect(chart.route).toBe("facts");
+	await to_grid(page);
+	same_numbers(chart, await grid_rows(page, chart.series, false), "tb filtered");
+
+	// receivables and general ledger: the grid grouped by the chart's dimension
+	for (const [report, x] of [["ar", "party"], ["gl", "account"]]) {
+		await open(page, `report=${report}&lang=en`);
+		await to_charts(page);
+		chart = await chart_rows(page);
+		expect(await page.evaluate(() => window.rv_page.charts.debug_data().x)).toBe(x);
+		await to_grid(page);
+		await page.evaluate((x) => window.rv_page.controls.set_group([x]), x);
+		await page.waitForFunction(() => window.rv_page.result?.mode === "group" && window.rv_page.grid.current === window.rv_page.opened);
+		same_numbers(chart, await grid_rows(page, chart.series, false), report);
+	}
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("charts: type, dimension and measures from the panel; filters and the theme redraw the chart", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=ar&lang=ar");
+	await to_charts(page);
+	const data = () => page.evaluate(() => window.rv_page.charts.debug_data());
+	await page.locator('.rv-ctype[data-type="hbar"]').click();
+	await page.waitForFunction(() => window.rv_page.charts.debug_data()?.type === "hbar");
+	expect(await page.evaluate(() => window.rv_page.state.chart.type)).toBe("hbar");
+	await page.selectOption(".rv-chart-select", "voucher_type");
+	await page.waitForFunction(() => window.rv_page.charts.debug_data()?.x === "voucher_type");
+	await page.locator('.rv-chart-measures input[data-key="outstanding"]').check();
+	await page.waitForFunction(() => window.rv_page.charts.debug_data()?.series.includes("outstanding"));
+	expect((await data()).series).toEqual(["invoiced", "paid", "outstanding"]);
+	// the chart is in the URL (rv), restored on opening
+	await page.waitForFunction(() => /[?&]rv=/.test(window.location.search));
+	// a filter of the page redraws the chart from a new view
+	const before = (await data()).categories.length;
+	await page.evaluate(() => window.rv_page.controls.set_filter("voucher_type", { key: "voucher_type", type: "set", values: ["Payment Entry"], exclude: false }));
+	await page.waitForFunction((n) => window.rv_page.charts.debug_data()?.categories.length === 1 && n > 1, before);
+	// theme: the colours of the series are re-read from the tokens (--c1..--c3 of the new theme)
+	const drawn_with_c1 = () =>
+		page.evaluate(() => {
+			const css = getComputedStyle(window.rv_page.root);
+			const tokens = [1, 2, 3].map((i) => css.getPropertyValue(`--c${i}`).trim().toLowerCase());
+			return [...document.querySelectorAll(".rv-chart-plot svg path")].some((p) => tokens.includes((p.getAttribute("fill") || "").toLowerCase()));
+		});
+	expect(await drawn_with_c1()).toBe(true);
+	await page.locator("[data-action='theme']").click();
+	await page.waitForFunction(() => window.rv_page.root.classList.contains("dark"));
+	await page.waitForFunction(() => {
+		const css = getComputedStyle(window.rv_page.root);
+		const tokens = [1, 2, 3].map((i) => css.getPropertyValue(`--c${i}`).trim().toLowerCase());
+		return [...document.querySelectorAll(".rv-chart-plot svg path")].some((p) => tokens.includes((p.getAttribute("fill") || "").toLowerCase()));
+	});
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("charts lifecycle: no handle left after 20 switches between table and charts, a re-run and leaving", async ({ page }) => {
+	const problems = watch_console(page);
+	const kinds = () => page.evaluate(() => window.rv_page.debug_handles().map((h) => h.kind).sort().join(","));
+	const names = () => page.evaluate(() => window.rv_page.debug_handles().map((h) => h.name));
+	await open(page, "report=tb&lang=ar");
+	const grid_handles = await kinds();
+	for (let i = 0; i < 20; i++) {
+		if (i % 2 === 0) {
+			await to_charts(page);
+			expect((await names()).filter((n) => /\/chart_/.test(n)).length, `switch ${i}`).toBe(1);
+		} else {
+			await to_grid(page);
+			expect(await kinds(), `switch ${i}`).toBe(grid_handles);
+			expect((await names()).filter((n) => /\/chart_/.test(n))).toEqual([]);
+			// the ECharts instance is gone with the view
+			expect(await page.evaluate(() => window.rv_page.charts.chart)).toBeNull();
+		}
+	}
+	// a re-run in the Charts view: the old chart view went with its tables
+	await to_charts(page);
+	await page.evaluate(() => window.rv_page.run());
+	await page.waitForFunction(() => window.rv_page.charts?.debug_data()?.drawn);
+	expect((await names()).filter((n) => /\/chart_/.test(n)).length).toBe(1);
+	await page.evaluate(() => window.rv_page.hide());
+	await page.waitForFunction(() => window.rv_page.debug_handles().length === 0);
+	expect(await page.evaluate(() => window.rv_page.charts.chart)).toBeNull();
+	expect(problems, "console errors/warnings").toEqual([]);
+});

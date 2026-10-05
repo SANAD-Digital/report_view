@@ -182,7 +182,22 @@ window.frappe = {
 		is_rtl: () => LANG === "ar",
 		escape_html: esc,
 		html2text: (s) => String(s ?? "").replace(/<[^>]*>/g, ""),
+		// frappe.utils.shorten_number with the default number system (axis ticks of charts).
+		shorten_number(number, country, min_length = 4, max_no_of_decimals = 2) {
+			if (!number || isNaN(number)) return "";
+			if ((String(number).match(/\d/g)?.length || 0) < min_length) return number.toString();
+			const x = Math.abs(Math.round(number));
+			if (x.toString().length < min_length) return x.toString();
+			for (const [divisor, symbol] of [[1e12, "T"], [1e9, "B"], [1e6, "M"], [1e3, "K"]]) {
+				if (x < divisor) continue;
+				const r = number / divisor;
+				const decimals = Math.floor(r) === r ? 0 : String(r).split(".")[1].length;
+				return `${decimals > max_no_of_decimals ? r.toFixed(max_no_of_decimals) : r} ${__(symbol, null, "Number system")}`;
+			}
+			return number.toFixed(max_no_of_decimals);
+		},
 	},
+	sys_defaults: { country: "Saudi Arabia" },
 	format,
 	unscrub: (t) =>
 		String(t || "")
@@ -229,7 +244,23 @@ window.frappe = {
 	query_reports: {},
 	route_options: null,
 	get_route: () => ["report-view", window.RV_REPORT],
-	require: () => Promise.resolve(),
+	// ?built=1: a bundle the page asks for is loaded from what `bench build` wrote; from the
+	// sources every bundle is already part of the harness.
+	require(name) {
+		if (!window.rv_built || typeof name !== "string") return Promise.resolve();
+		return fetch("/assets/assets.json")
+			.then((r) => r.json())
+			.then(
+				(assets) =>
+					new Promise((resolve, reject) => {
+						const el = document.createElement("script");
+						el.src = assets[name];
+						el.onload = resolve;
+						el.onerror = reject;
+						document.body.appendChild(el);
+					})
+			);
+	},
 	show_alert() {},
 	msgprint() {},
 	breadcrumbs: { add() {} },

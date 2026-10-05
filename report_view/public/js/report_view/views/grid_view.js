@@ -21,6 +21,7 @@ import { DEPTH, HAS_CHILDREN, LEAVES, LEVELS } from "../engine/tree_nodes.js";
 import { CURRENCY_COUNT_PREFIX } from "../engine/view_config.js";
 import { build_layout, entry_at, expanded_from_paths } from "../engine/row_layout.js";
 import { MIN_COLUMN_WIDTH } from "../state/view_state.js";
+import { header_bands } from "../state/column_groups.js";
 
 const ROW_PATH = "__ROW_PATH__";
 const CELL_CLASSES = ["num", "dr", "cr", "band-end", "zero", "neg"];
@@ -105,6 +106,17 @@ export class GridView {
 		this.on_click = (e) => this.click(e);
 		this.on_press = (e) => this.press(e);
 		this.on_dblclick = (e) => this.dblclick(e);
+		this.on_scrolled = () => this.sync_sub_x();
+	}
+
+	// The rows pinned outside the table follow its sub-column shift (rv_table.css --rv-sx).
+	// A scroll inside one column redraws nothing, so this also runs after every scroll.
+	sync_sub_x() {
+		const table = this.rt?.querySelector("table");
+		if (!table || !this.host) return;
+		const x = getComputedStyle(table).getPropertyValue("--rv-sx").trim() || "0px";
+		this.host.style.setProperty("--rv-sx-out", x);
+		this.host.classList.toggle("scrolled-x", Math.abs(this.rt.scrollLeft) > 0);
 	}
 
 	// ------------------------------------------------------------ model
@@ -112,9 +124,13 @@ export class GridView {
 	build_model(report, state, config, post) {
 		const by_key = new Map(report.columns.map((c) => [c.key, c]));
 		const col_conf = config.columns || {};
-		const bands = new Map((config.bands || []).map((b) => [b.id, b]));
+		const { bands, band_of } = header_bands(state, config);
 		const translate_label = report.__report_type === "Query Report";
-		const title = (c) => col_conf[c.fieldname]?.label || (translate_label ? __(c.label) : c.label);
+		const report_label = (c) => (translate_label ? __(c.label) : c.label);
+		// With the user's own groups, a column out of every group shows the report's label:
+		// the register's short title ("Debit") only reads under its group.
+		const own_groups = Array.isArray(state.columns.groups);
+		const title = (c) => (own_groups && !band_of(c) ? report_label(c) : col_conf[c.fieldname]?.label || report_label(c));
 		const totalled = new Set(post.measures);
 		const widths = state.columns.widths;
 		const label = by_key.get(post.label_key);
@@ -131,7 +147,7 @@ export class GridView {
 				title: title(column),
 				numeric,
 				side: conf.side === "dr" || conf.side === "cr" ? conf.side : null,
-				band: conf.band && bands.get(conf.band) ? conf.band : null,
+				band: band_of(column),
 				band_end: false,
 				totalled: totalled.has(key),
 				currency_key: column.currency?.kind === "row" ? column.currency.key : null,
@@ -255,6 +271,7 @@ export class GridView {
 		this.remove_styler = rt.addStyleListener(this.styler);
 		rt.addEventListener("click", this.on_click);
 		rt.addEventListener("dblclick", this.on_dblclick);
+		rt.addEventListener("regular-table-scroll", this.on_scrolled);
 		// Capture: regular-table's own resize handler (it assumes LTR) must not see the press.
 		rt.addEventListener("pointerdown", this.on_press, true);
 		rt.addEventListener("mousedown", this.on_press, true);
@@ -264,6 +281,34 @@ export class GridView {
 			rt.draw();
 		});
 		this.resize_observer.observe(rt);
+		this.fit_scroll_range();
+	}
+
+	/**
+	 * regular-table 0.9.1 ends its horizontal scroll on a column boundary: the range is
+	 * longer than the columns, and the end of the scroll left an empty strip after the last
+	 * column. With sub-column scrolling (rv_table.css --rv-sx) the range is exactly the
+	 * width of the columns: the library's virtual panel is set to it whenever the library
+	 * writes it (its shadow DOM, like rtl_adapter.js; the version is pinned).
+	 */
+	fit_scroll_range() {
+		const rt = this.rt;
+		const panel = rt.shadowRoot?.querySelector(".rt-virtual-panel");
+		if (!panel) return;
+		const fit = () => {
+			const m = this.model;
+			if (!m || this.rt !== rt) return;
+			const nominal = [m.label_width, ...m.pinned.map((d) => d.width), ...m.data.map((d) => d.width)];
+			// A column is never narrower than drawn (regular-table's measured widths).
+			const measured = rt.e?.indices || [];
+			const total = nominal.reduce((sum, w, i) => sum + Math.max(w, measured[i] || 0), 0);
+			if (total <= rt.clientWidth) return;
+			const want = `${Math.ceil(total)}px`;
+			if (panel.style.width !== want) panel.style.width = want;
+		};
+		this.panel_observer = new MutationObserver(fit);
+		this.panel_observer.observe(panel, { attributes: true, attributeFilter: ["style"] });
+		fit();
 	}
 
 	/**
@@ -287,12 +332,15 @@ export class GridView {
 	}
 
 	unmount() {
+		if (this.panel_observer) this.panel_observer.disconnect();
+		this.panel_observer = null;
 		if (this.resize_observer) this.resize_observer.disconnect();
 		this.resize_observer = null;
 		if (this.stop_resize) this.stop_resize();
 		if (this.rt) {
 			this.rt.removeEventListener("click", this.on_click);
 			this.rt.removeEventListener("dblclick", this.on_dblclick);
+			this.rt.removeEventListener("regular-table-scroll", this.on_scrolled);
 			this.rt.removeEventListener("pointerdown", this.on_press, true);
 			this.rt.removeEventListener("mousedown", this.on_press, true);
 			if (this.remove_styler) this.remove_styler();
@@ -777,6 +825,7 @@ export class GridView {
 		const rt = this.rt;
 		const m = this.model;
 		if (!rt || !m) return;
+		this.sync_sub_x();
 		const shown = [];
 		// Widths as drawn: a cell never gets narrower than its content (the from / to filter
 		// inputs), so the pinned rows below copy the header cells, not the nominal widths.
@@ -804,7 +853,8 @@ export class GridView {
 			th.classList.toggle("empty", !leaf && !filter && !text);
 			th.classList.toggle("num", Boolean(col?.numeric));
 			th.classList.toggle("band-end", Boolean(col?.band_end));
-			if (leaf) th.title = text;
+			// A tooltip only for a title cut by the column width.
+			if (leaf && th.scrollWidth > th.clientWidth) th.title = text;
 			else th.removeAttribute("title");
 			if (col && leaf) shown.push(meta.x);
 			if (leaf) {
@@ -850,6 +900,11 @@ export class GridView {
 			}
 		}
 		this.drawn = drawn;
+		// The edge line of the pinned columns follows them as drawn, not their nominal widths.
+		if (drawn.label) {
+			const pin_w = drawn.label + drawn.pinned.reduce((a, w) => a + (w || 0), 0);
+			this.host.style.setProperty("--rv-pin-w", `${pin_w.toFixed(2)}px`);
+		}
 		this.render_pinned(shown);
 	}
 

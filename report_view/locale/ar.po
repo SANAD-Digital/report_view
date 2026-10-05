@@ -1036,3 +1036,24 @@ msgstr "الأشهر"
 msgctxt "Report View"
 msgid "Account"
 msgstr "الحساب"
+
+msgid "Column groups"
+msgstr "مجموعات الأعمدة"
+
+msgid "Report default"
+msgstr "مجموعات التقرير الافتراضية"
+
+msgid "Give every group a name"
+msgstr "أعطِ كل مجموعة اسماً"
+
+msgid "Name a group and tick its columns. Columns in no group show as plain columns."
+msgstr "سمِّ المجموعة واختر أعمدتها. الأعمدة غير المختارة في أي مجموعة تظهر أعمدة عادية."
+
+msgid "Group name"
+msgstr "اسم المجموعة"
+
+msgid "another group"
+msgstr "مجموعة أخرى"
+
+msgid "Add group"
+msgstr "إضافة مجموعة"

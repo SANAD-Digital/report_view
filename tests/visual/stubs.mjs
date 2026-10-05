@@ -57,6 +57,35 @@ function format(value, df = {}, options = {}) {
 }
 
 // ---- controls (DOM of frappe/public/js/frappe/form/controls/*.js) ----
+// frappe.ui.Dialog: a plain modal with the HTML field, the title and the two actions.
+class Dialog {
+	constructor({ title, fields, primary_action_label, primary_action, secondary_action_label, secondary_action }) {
+		const el = document.createElement("div");
+		el.className = "rv-test-dialog";
+		el.style.cssText = "position:fixed;inset:40px 15%;z-index:100000;background:#fff;border:1px solid #ccc;border-radius:8px;padding:16px;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.2)";
+		el.innerHTML = `<div class="modal-title" style="font-weight:600;margin-bottom:12px">${title}</div><div class="modal-body"></div>
+			<div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+				<button type="button" class="btn btn-secondary btn-modal-secondary">${secondary_action_label || ""}</button>
+				<button type="button" class="btn btn-primary btn-modal-primary">${primary_action_label || ""}</button></div>`;
+		this.$wrapper = $(el);
+		this.fields_dict = {};
+		const body = el.querySelector(".modal-body");
+		for (const f of fields || []) {
+			const w = document.createElement("div");
+			body.appendChild(w);
+			this.fields_dict[f.fieldname] = { $wrapper: $(w) };
+		}
+		el.querySelector(".btn-modal-primary").addEventListener("click", () => primary_action());
+		el.querySelector(".btn-modal-secondary").addEventListener("click", () => secondary_action());
+	}
+	show() {
+		document.body.appendChild(this.$wrapper.get(0));
+	}
+	hide() {
+		this.$wrapper.get(0).remove();
+	}
+}
+
 class Control {
 	constructor({ df, parent, only_input }) {
 		this.df = df;
@@ -158,7 +187,20 @@ window.frappe = {
 			.split(" ")
 			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
 			.join(" "),
-	ui: { form: { make_control: (opts) => new Control(opts) } },
+	ui: { form: { make_control: (opts) => new Control(opts) }, Dialog },
+	// Frappe user settings kept in memory for the page's life.
+	model: {
+		user_settings: {
+			store: {},
+			get(doctype) {
+				return Promise.resolve(this.store[doctype] || {});
+			},
+			save(doctype, key, value) {
+				this.store[doctype] = { ...(this.store[doctype] || {}), [key]: value };
+				return Promise.resolve(this.store[doctype]);
+			},
+		},
+	},
 	dom: { eval() {}, remove_script_and_style: (s) => s },
 	datetime: {
 		now_datetime: () => "2026-10-01 10:42:00",

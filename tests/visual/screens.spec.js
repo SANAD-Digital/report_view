@@ -646,7 +646,7 @@ test("rows as reported: the opening, total and closing of every account stand be
 		top: [...document.querySelectorAll(".rv-rt-top .rv-row .rv-pin-label")].map((el) => el.textContent.trim()),
 		bottom: [...document.querySelectorAll(".rv-rt-bottom .rv-row .rv-pin-label")].map((el) => el.textContent.trim()),
 		total: [...document.querySelectorAll(".rv-rt-total .rv-c.num")].map((el) => el.textContent.trim()),
-		tools: Boolean(document.querySelector(".rv-gp-tools:not([hidden])")),
+		tools: Boolean(document.querySelector(".rv-gp-tools [data-action=\"expand-all\"]:not([hidden])")),
 	}));
 	expect(info.shape).toBe("report");
 	// the report's own opening (pinned), then 48 entries and the 24 rows of the 8 accounts
@@ -1081,6 +1081,8 @@ test("wave 1 period picker: presets, typed dates and the fiscal mode write the r
 	// a preset, then Apply: the filters change and the report runs again
 	await page.locator(".dp-pre", { hasText: "الربع الماضي" }).click();
 	await page.locator('.dp-ft [data-action="apply"]').click();
+	// the period is written as one change (fiscal year first, then the dates): wait for it
+	await page.waitForFunction(() => !window.rv_page._runs_held);
 	await expect(page.locator(".rv-pop.dp")).toHaveCount(0);
 	let v = await values();
 	expect([v.from_date, v.to_date, v.fiscal_year]).toEqual(["2026-07-01", "2026-09-30", "2026"]);
@@ -1098,6 +1100,8 @@ test("wave 1 period picker: presets, typed dates and the fiscal mode write the r
 	await expect(page.locator(".dp-days")).toHaveText("27 يوماً");
 	await shot2(page, "tb-date-picked-light-rtl");
 	await page.locator('.dp-ft [data-action="apply"]').click();
+	// the period is written as one change (fiscal year first, then the dates): wait for it
+	await page.waitForFunction(() => !window.rv_page._runs_held);
 	v = await values();
 	expect([v.from_date, v.to_date]).toEqual(["2026-08-15", "2026-09-10"]);
 	await expect(page.locator(".rv-date-tag")).toHaveText("فترة مخصصة");
@@ -1108,6 +1112,8 @@ test("wave 1 period picker: presets, typed dates and the fiscal mode write the r
 	await page.locator('[data-part="q2"]').click();
 	await shot2(page, "tb-date-fiscal-light-rtl");
 	await page.locator('.dp-ft [data-action="apply"]').click();
+	// the period is written as one change (fiscal year first, then the dates): wait for it
+	await page.waitForFunction(() => !window.rv_page._runs_held);
 	v = await values();
 	expect([v.from_date, v.to_date, v.fiscal_year]).toEqual(["2025-04-01", "2025-06-30", "2025"]);
 	await expect(page.locator(".rv-date-tag")).toHaveText("الربع الثاني 2025");
@@ -1368,5 +1374,38 @@ test("wave 1 lifecycle: no handle left after 20 filter, sort, group and quick-fi
 	await page.waitForFunction(() => window.rv_page.opened?.post.shape === "tree");
 	await settle(page);
 	expect(await handles_of(page)).toBe(TB_HANDLES);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("column groups: the user names a group of chosen columns; others stay plain; default comes back", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=tb&lang=ar");
+	await page.locator('[data-action="column-groups"]').click();
+	const dlg = page.locator(".rv-test-dialog");
+	await expect(dlg).toBeVisible();
+	// the report's own three groups are offered as the starting point
+	await expect(dlg.locator(".rv-cg-group")).toHaveCount(3);
+	await shot2(page, "tb-column-groups-dialog-rtl");
+	// remove all three, then one new group with the closing debit and credit
+	for (let i = 0; i < 3; i++) await dlg.locator("[data-remove]").first().click();
+	await dlg.locator('[data-name="0"]').fill("الأرصدة النهائية");
+	await dlg.locator('input[data-group="0"][data-key="closing_debit"]').check();
+	await dlg.locator('input[data-group="0"][data-key="closing_credit"]').check();
+	await dlg.locator(".btn-modal-primary").click();
+	await expect(dlg).toHaveCount(0);
+	const bands = page.locator("regular-table thead th.rv-hb:not(.empty)");
+	await expect(bands).toHaveCount(1);
+	await expect(bands.first()).toHaveText("الأرصدة النهائية");
+	const groups = await page.evaluate(() => window.rv_page.state.columns.groups);
+	expect(groups).toEqual([{ label: "الأرصدة النهائية", keys: ["closing_debit", "closing_credit"] }]);
+	// kept for the user: in Frappe user settings
+	const saved = await page.evaluate(() => frappe.model.user_settings.store["Report View:Trial Balance"].column_groups.groups);
+	expect(saved).toEqual(groups);
+	await shot2(page, "tb-column-groups-user-rtl");
+	// back to the report's groups
+	await page.locator('[data-action="column-groups"]').click();
+	await dlg.locator(".btn-modal-secondary").click();
+	await expect(page.locator("regular-table thead th.rv-hb:not(.empty)")).toHaveCount(3);
+	expect(await page.evaluate(() => window.rv_page.state.columns.groups)).toBeNull();
 	expect(problems, "console errors/warnings").toEqual([]);
 });

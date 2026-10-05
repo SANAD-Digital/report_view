@@ -246,3 +246,26 @@ test("engine: counts, unique values and summary totals under a quick filter; tem
 		await session.close();
 	}
 });
+
+test("column groups: sanitized, one group per column, members kept side by side, bands from the user's groups", async () => {
+	const { sanitize_groups, order_for_groups, header_bands } = await import("../../report_view/public/js/report_view/state/column_groups.js");
+	assert.equal(sanitize_groups(undefined), null);
+	assert.deepEqual(
+		sanitize_groups([
+			{ label: " Opening ", keys: ["od", "oc"] },
+			{ label: "Dup", keys: ["oc", "cd"] },
+			{ label: "", keys: ["x"] },
+			{ label: "Empty", keys: [] },
+		]),
+		[
+			{ label: "Opening", keys: ["od", "oc"] },
+			{ label: "Dup", keys: ["cd"] },
+		]
+	);
+	assert.deepEqual(order_for_groups(["a", "od", "b", "oc", "c"], [{ keys: ["od", "oc"] }]), ["a", "od", "oc", "b", "c"]);
+	const user = header_bands({ columns: { groups: [{ label: "G", keys: ["od"] }] } }, { bands: [{ id: "x", label: "X" }], columns: { oc: { band: "x" } } });
+	assert.equal(user.bands.get(user.band_of({ key: "od", fieldname: "od" })).label, "G");
+	assert.equal(user.band_of({ key: "oc", fieldname: "oc" }), null);
+	const report = header_bands({ columns: { groups: null } }, { bands: [{ id: "x", label: "X" }], columns: { oc: { band: "x" } } });
+	assert.equal(report.band_of({ key: "oc", fieldname: "oc" }), "x");
+});

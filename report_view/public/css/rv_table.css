@@ -27,6 +27,17 @@
 .rv regular-table tbody{transform:translate(0,var(--regular-table--transform-y,0px))}
 .rv regular-table tbody tr:first-child > *{clip-path:polygon(0 var(--regular-table--clip-y,0),0 100%,100% 100%,100% var(--regular-table--clip-y,0))}
 
+/* Column-wise scrolling moves by fractions of a column too (else the columns jump a whole
+   column at a time while scrolling sideways): body and header cells are shifted by the
+   fraction, the opposite way in RTL (rtl_adapter.js flips the scroll sign); the label and
+   pinned columns (row headers and corner cells) stay put above them. The rows pinned
+   outside the table follow with --rv-sx-out (views/grid_view.js). */
+.rv regular-table table{--rv-sx:var(--regular-table--transform-x,0px)}
+.rv[dir=rtl] regular-table table{--rv-sx:calc(-1 * var(--regular-table--transform-x,0px))}
+.rv regular-table tbody td,.rv regular-table thead th:not(.rt-group-corner){transform:translate(var(--rv-sx),0)}
+.rv regular-table tbody th,.rv regular-table thead th.rt-group-corner{position:relative;z-index:2}
+.rv-rt-top .rv-c:not(.pinned),.rv-rt-bottom .rv-c:not(.pinned){transform:translate(var(--rv-sx-out,0px),0)}
+
 /* ---------- header (.rv-head) ---------- */
 .rv regular-table thead th{position:relative;height:var(--hh);padding:0 var(--cp);background:var(--hdr);color:var(--tx);font-size:var(--fs-sm);font-weight:600;text-align:start;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none}
 .rv regular-table thead tr:last-child th{border-bottom:1px solid var(--line-2)}
@@ -114,7 +125,9 @@
 .rv regular-table table.rv-measure .rv-lc > *{flex:none;overflow:visible}
 
 /* ---------- pinned columns: edge shadow (.pin-edge-s) ---------- */
-.rv-rt-edge{position:absolute;top:0;bottom:0;inset-inline-start:0;width:var(--rv-pin-w,0);pointer-events:none;z-index:4}
+/* a hairline at rest; the soft shadow only while columns pass under the pinned ones
+   (.rv-rt.scrolled-x, set by the grid's style listener) */
+.rv-rt-edge{position:absolute;top:0;bottom:0;inset-inline-start:0;width:var(--rv-pin-w,0);pointer-events:none;z-index:4;transition:box-shadow .15s}
 
 /* ---------- rows pinned outside the scrolling body ---------- */
 /* the report's opening rows, under the headers (spacer rows keep their room in the body) */
@@ -123,7 +136,7 @@
 .rv-row.rv-rt-opening{background:var(--grp-0);border-bottom-color:var(--line-2)}
 .rv-rt-opening .rv-c{font-weight:500;color:var(--tx-2)}
 /* the report's closing rows, then the grand total (.rv-row.total) */
-.rv-rt-bottom{flex:none}
+.rv-rt-bottom{flex:none;overflow:hidden}
 .rv-rt-bottom .rv-row,.rv-rt-top .rv-row{overflow:hidden}
 .rv-rt-bottom .rv-c,.rv-rt-top .rv-c{cursor:default;user-select:text}
 .rv-row.rv-rt-closing{border-bottom:0;border-top:1px solid var(--line)}

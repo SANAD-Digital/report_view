@@ -1,7 +1,9 @@
 // View state v1 (docs/architecture.md §7.1), the subset used so far: mode, columns (order,
-// hidden, widths, pinned), sort, filters, quick_filters, group (by, subtotals, expanded),
+// hidden, widths, pinned, groups), sort, filters, quick_filters, group (by, subtotals, expanded),
 // tree (depth, expanded), values, ui (density, side_panel). Unknown keys are dropped (not
 // rejected) in the browser.
+
+import { sanitize_groups } from "./column_groups.js";
 
 export const VERSION = 1;
 const MODES = ["grid", "pivot", "charts"];
@@ -29,7 +31,8 @@ export function default_state(config = {}) {
 		v: VERSION,
 		mode: MODES.includes(config.default_mode) ? config.default_mode : "grid",
 		report_filters: {},
-		columns: { order: [], hidden: str_list(config.default_hidden), widths: {}, pinned: { start: [], end: [] } },
+		// groups: null = the report's own header groups (register bands)
+		columns: { order: [], hidden: str_list(config.default_hidden), widths: {}, pinned: { start: [], end: [] }, groups: null },
 		sort: [],
 		filters: [],
 		quick_filters: [],
@@ -67,6 +70,7 @@ export function sanitize(state, config = {}) {
 		out.columns.pinned.start = str_list(cols.pinned.start);
 		out.columns.pinned.end = str_list(cols.pinned.end);
 	}
+	out.columns.groups = sanitize_groups(cols.groups);
 	if (Array.isArray(state.sort)) {
 		out.sort = state.sort
 			.filter((s) => s && typeof s.key === "string")

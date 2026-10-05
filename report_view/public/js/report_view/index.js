@@ -19,6 +19,8 @@ import {
 import { fold_all, toggle_tree_node, visible_columns } from "./engine/view_config.js";
 import { default_state, sanitize, reconcile } from "./state/view_state.js";
 import { decode_state, make_url_updater } from "./state/url.js";
+import { sanitize_groups } from "./state/column_groups.js";
+import { open_column_groups } from "./components/column_groups_dialog.js";
 import { load_report_settings, MissingFiltersError } from "./filters/report_filters.js";
 import { CriteriaBar } from "./filters/criteria.js";
 import { install_facade, make_facade } from "./filters/facade.js";
@@ -144,6 +146,7 @@ export class ReportViewPage {
 			groupable: (key) => this.controls.groupable(key),
 			on_subtotals: (on) => this.set_subtotals(on),
 			on_fold_all: (open) => this.fold_all(open),
+			on_column_groups: () => open_column_groups(this.controls),
 		});
 		wrap.prepend(this.group_panel.el);
 		this.overlay = new StateOverlay(wrap);
@@ -182,6 +185,34 @@ export class ReportViewPage {
 		fn(this.state);
 		this.refresh_controls();
 		this.render();
+	}
+
+	// The user's column groups of this report, kept in Frappe's user settings (per user,
+	// per report) until saved views exist. A link with its own groups (rv) wins.
+	user_settings_key() {
+		return `Report View:${this.report_name}`;
+	}
+
+	async load_user_groups() {
+		if (!frappe.model?.user_settings?.get) return;
+		try {
+			const saved = (await frappe.model.user_settings.get(this.user_settings_key()))?.column_groups;
+			const groups = sanitize_groups(saved?.groups);
+			if (!groups) return;
+			this.state.columns.groups = groups;
+			if (Array.isArray(saved.order)) this.state.columns.order = saved.order.filter((k) => typeof k === "string");
+		} catch {
+			// no saved groups: the report's own
+		}
+	}
+
+	save_user_groups(groups) {
+		if (!frappe.model?.user_settings?.save) return;
+		frappe.model.user_settings.save(
+			this.user_settings_key(),
+			"column_groups",
+			groups ? { groups, order: this.state.columns.order } : null
+		);
 	}
 
 	// Controls that show the view state: facets, header cells, group panel, side panel.
@@ -376,6 +407,7 @@ export class ReportViewPage {
 		const params = new URLSearchParams(window.location.search);
 		const from_url = decode_state(params.get("rv"));
 		this.state = sanitize(from_url || default_state(this.config), this.config);
+		if (!from_url?.columns?.groups) await this.load_user_groups();
 		this.state.ui.density = this.density;
 		this.prepared_report_name = route_options.prepared_report_name || null;
 

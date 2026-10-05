@@ -8,6 +8,7 @@
 import { perspective_type } from "./engine/schema.js";
 import { visible_columns, ordered_columns } from "./engine/view_config.js";
 import { default_state } from "./state/view_state.js";
+import { header_bands, order_for_groups } from "./state/column_groups.js";
 import { icons } from "./components/icons.js";
 import { open_popover, close_popover, menu_content } from "./components/popover.js";
 import { open_set_filter } from "./components/set_filter.js";
@@ -52,11 +53,19 @@ export class ViewControls {
 		return this.report.__report_type === "Query Report" ? __(c.label) : c.label;
 	}
 
+	/** The report's own label of a column, without the register's shorter title. */
+	report_label(key) {
+		const c = this.column(key);
+		if (!c) return key;
+		return this.report.__report_type === "Query Report" ? __(c.label) : c.label;
+	}
+
 	/** Title with its band ("Opening Balance · Debit"), for menus and facets. */
 	full_title(key) {
 		const c = this.column(key);
-		const band_id = c && this.config.columns?.[c.fieldname]?.band;
-		const band = band_id && (this.config.bands || []).find((b) => b.id === band_id);
+		if (!c) return key;
+		const { bands, band_of } = header_bands(this.state, this.config);
+		const band = bands.get(band_of(c));
 		return band ? `${band.label} · ${this.title(key)}` : this.title(key);
 	}
 
@@ -335,6 +344,37 @@ export class ViewControls {
 			const start = s.columns.pinned.start.filter((k) => k !== key);
 			s.columns.pinned.start = side === "start" ? [...start, key] : start;
 		});
+	}
+
+	// ------------------------------------------------------------ column groups
+
+	/** The groups as the header shows them now: the user's, else the report's. */
+	column_groups() {
+		if (Array.isArray(this.state?.columns?.groups)) return this.state.columns.groups;
+		const { band_of } = header_bands({ columns: { groups: null } }, this.config);
+		const groups = new Map();
+		for (const c of visible_columns(this.report, this.state)) {
+			const id = band_of(c);
+			if (!id) continue;
+			if (!groups.has(id)) groups.set(id, { label: (this.config.bands || []).find((b) => b.id === id).label, keys: [] });
+			groups.get(id).keys.push(c.key);
+		}
+		return [...groups.values()];
+	}
+
+	/**
+	 * Apply the user's groups (null = the report's own) and keep them for this user and
+	 * report (Frappe user settings), so they come back on the next visit.
+	 */
+	set_column_groups(groups) {
+		// Every column, hidden ones too, so that showing one again keeps its place.
+		const all = { columns: { ...this.state.columns, hidden: [] } };
+		const keys = visible_columns(this.report, all).map((c) => c.key);
+		this.page.change((s) => {
+			s.columns.groups = groups;
+			if (groups) s.columns.order = order_for_groups(keys, groups);
+		});
+		this.page.save_user_groups(groups);
 	}
 
 	reset_columns() {

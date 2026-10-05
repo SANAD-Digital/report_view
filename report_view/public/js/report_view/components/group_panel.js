@@ -35,8 +35,9 @@ export class GroupPanel {
 	 * @param {(key: string) => boolean} o.groupable a column that may be a group level
 	 * @param {(on: boolean) => void} o.on_subtotals
 	 * @param {(open: boolean) => void} o.on_fold_all
+	 * @param {() => void} o.on_column_groups opens the column groups dialog
 	 */
-	constructor({ parent, on_change, groupable, on_subtotals, on_fold_all }) {
+	constructor({ parent, on_change, groupable, on_subtotals, on_fold_all, on_column_groups }) {
 		this.on_change = on_change;
 		this.groupable = groupable;
 		const expand = esc(__("Expand all"));
@@ -47,16 +48,19 @@ export class GroupPanel {
 			<span class="rv-gp-lbl">${icons.group()}<span>${esc(__("Row groups"))}</span></span>
 			<span class="rv-gp-chips"></span>
 			<div class="rv-gp-tools">
+				<button type="button" class="rv-btn sm" data-action="column-groups">${icons.columns()}<span>${esc(__("Column groups"))}</span></button>
+				<span class="rv-vsep" data-fold></span>
 				<label class="rv-check sm" data-subtotals><input type="checkbox" data-action="subtotals"><span>${esc(__("Group subtotals"))}</span></label>
 				<span class="rv-vsep" data-subtotals></span>
-				<button type="button" class="rv-btn icon sm ghost" data-action="expand-all" aria-label="${expand}" title="${expand}">${icons.expand_all()}</button>
-				<button type="button" class="rv-btn icon sm ghost" data-action="collapse-all" aria-label="${collapse}" title="${collapse}">${icons.collapse_all()}</button>
+				<button type="button" class="rv-btn icon sm ghost" data-fold data-action="expand-all" aria-label="${expand}" title="${expand}">${icons.expand_all()}</button>
+				<button type="button" class="rv-btn icon sm ghost" data-fold data-action="collapse-all" aria-label="${collapse}" title="${collapse}">${icons.collapse_all()}</button>
 			</div>`;
 		parent.appendChild(el);
 		this.el = el;
 		this.chips_el = el.querySelector(".rv-gp-chips");
 		this.subtotals = el.querySelector('[data-action="subtotals"]');
 		this.subtotals.addEventListener("change", () => on_subtotals(this.subtotals.checked));
+		el.querySelector('[data-action="column-groups"]').addEventListener("click", () => on_column_groups());
 		el.querySelector('[data-action="expand-all"]').addEventListener("click", () => on_fold_all(true));
 		el.querySelector('[data-action="collapse-all"]').addEventListener("click", () => on_fold_all(false));
 		this.by = [];
@@ -124,6 +128,7 @@ export class GroupPanel {
 		}
 		this.subtotals.checked = Boolean(subtotals);
 		for (const x of this.el.querySelectorAll("[data-subtotals]")) x.hidden = !hierarchical;
-		this.el.querySelector(".rv-gp-tools").hidden = !foldable;
+		// "Column groups" is always there; folding only where rows fold.
+		for (const x of this.el.querySelectorAll("[data-fold]")) x.hidden = !foldable;
 	}
 }

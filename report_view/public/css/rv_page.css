@@ -195,3 +195,16 @@
 .rv .rv-field .multiselect-list .dropdown-menu .form-control{height:30px}
 .rv .rv-field .multiselect-list .dropdown-menu li.d-flex{flex-wrap:wrap;gap:6px;padding-top:6px}
 .rv .rv-field .multiselect-list .dropdown-menu .btn{margin:0 !important}
+
+/* ---------- column groups dialog (a Frappe dialog: Desk's own variables) ---------- */
+.rv-cg{display:flex;flex-direction:column;gap:12px}
+.rv-cg-hint{margin:0;color:var(--text-muted);font-size:var(--text-sm)}
+.rv-cg-group{border:1px solid var(--border-color);border-radius:var(--border-radius-md);padding:12px}
+.rv-cg-head{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.rv-cg-name{flex:1}
+.rv-cg-cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 16px}
+.rv-cg-col{display:flex;align-items:center;gap:8px;margin:0;padding:4px 0;font-weight:400;cursor:pointer;min-width:0}
+.rv-cg-col span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-cg-col small{margin-inline-start:auto;color:var(--text-muted);white-space:nowrap}
+.rv-cg-col.taken span{color:var(--text-muted)}
+.rv-cg-add{align-self:flex-start}

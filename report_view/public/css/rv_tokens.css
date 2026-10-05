@@ -25,16 +25,17 @@
   --sh-2:0 2px 8px rgba(17,24,20,.06);
   --sh-pop:0 12px 32px rgba(17,24,20,.14),0 2px 6px rgba(17,24,20,.06);
   --sh-drawer:0 0 48px rgba(17,24,20,.18);
+  --pin-sh:-6px 0 8px -6px rgba(17,24,20,.16);
   --r-xs:3px; --r-sm:5px; --r:7px; --r-lg:10px; --r-xl:14px;
   /* density — comfortable */
   --rh:36px; --fs:13px; --fs-sm:12.5px; --fs-xs:11.5px; --cp:12px;
-  --bh:30px; --hh:34px; --fh:38px; --ctl:34px; --gap:14px; --pad:24px; --ind:18px;
+  --bh:30px; --hh:34px; --fh:38px; --ctl:34px; --gap:8px; --pad:12px; --ind:18px;
   font-family:var(--font); color:var(--tx); background:var(--bg); font-size:var(--fs); line-height:1.5;
   -webkit-font-smoothing:antialiased;
 }
 .rv.compact{
   --rh:28px; --fs:12.5px; --fs-sm:12px; --fs-xs:11px; --cp:8px;
-  --bh:26px; --hh:28px; --fh:32px; --ctl:30px; --gap:10px; --pad:16px; --ind:14px;
+  --bh:26px; --hh:28px; --fh:32px; --ctl:30px; --gap:6px; --pad:8px; --ind:14px;
 }
 .rv.dark{
   --bg:#0E1411; --surface:#141B17; --surface-2:#18201C; --surface-3:#1E2823; --hdr:#18201C;
@@ -51,5 +52,10 @@
   --sh-1:0 1px 2px rgba(0,0,0,.3); --sh-2:0 2px 8px rgba(0,0,0,.3);
   --sh-pop:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);
   --sh-drawer:0 0 48px rgba(0,0,0,.5);
+  --pin-sh:-6px 0 8px -6px rgba(0,0,0,.55);
   color-scheme:dark;
 }
+
+/* the pinned edge shadow falls toward the scrolling columns: the inline end */
+.rv[dir=ltr]{--pin-sh:6px 0 8px -6px rgba(17,24,20,.16)}
+.rv.dark[dir=ltr]{--pin-sh:6px 0 8px -6px rgba(0,0,0,.55)}

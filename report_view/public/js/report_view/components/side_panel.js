@@ -123,13 +123,9 @@ export class SidePanel {
 					<button type="button" class="rv-chip-x" data-hide="${esc(v.key)}" aria-label="${remove}" title="${remove}">${icons.close()}</button></div>`
 			)
 			.join("");
-		const soon = esc(__("Coming soon"));
+		// The pivot mode and its zone join this panel when they work (phase 5b).
 		this.panel.innerHTML = `${this.header(__("Columns"))}
 			<div class="rv-panel-bd">
-				<div class="rv-switch-row" title="${soon}">
-					<div>${esc(__("Pivot mode"))}<small>${esc(__("Turns the values of a dimension into columns"))}</small></div>
-					<button type="button" class="rv-switch" aria-pressed="false" aria-disabled="true" aria-label="${esc(__("Pivot mode"))}" title="${soon}"></button>
-				</div>
 				<input type="text" class="rv-input sm" data-action="col-search" aria-label="${esc(__("Search the columns"))}" placeholder="${esc(__("Search the columns…"))}" value="${esc(this.col_query)}">
 				<div class="rv-collist">${list}</div>
 				<div class="rv-zone" data-zone="groups">
@@ -139,10 +135,6 @@ export class SidePanel {
 				<div class="rv-zone" data-zone="values">
 					<div class="rv-zone-hd">${icons.sigma()}${esc(__("Values"))}</div>
 					${values ? `<div class="rv-zone-chips">${values}</div>` : `<div class="rv-zone-empty">${esc(__("Drag a numeric column here"))}</div>`}
-				</div>
-				<div class="rv-zone off" data-zone="pivot" title="${soon}">
-					<div class="rv-zone-hd">${icons.pivot_cols()}${esc(__("Pivot columns"))}</div>
-					<div class="rv-zone-empty">${esc(__("Turn the pivot mode on to use this zone (coming soon)"))}</div>
 				</div>
 			</div>`;
 		this.bind_close();

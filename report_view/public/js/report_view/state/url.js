@@ -52,6 +52,7 @@ function is_default_view(state, base) {
 		same_list(state.columns.hidden, base?.columns?.hidden || []) &&
 		!Object.keys(state.columns.widths).length &&
 		!state.columns.pinned.start.length &&
+		state.columns.groups === null &&
 		state.tree.depth === null &&
 		state.tree.expanded === null
 	);

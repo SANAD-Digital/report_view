@@ -36,15 +36,20 @@ function add_button(report_name, state, tries = 0) {
 		if (tries < WAIT_MAX) setTimeout(() => add_button(report_name, state, tries + 1), WAIT_STEP);
 		return;
 	}
-	if (frappe.get_route()[1] !== report_name) return;
+	if (current_route()[1] !== report_name) return;
 	qr.page.add_inner_button(__("Go to Advanced View"), () => {
 		frappe.route_options = qr.get_filter_values ? qr.get_filter_values() : {};
 		frappe.set_route(...state.route);
 	});
 }
 
+// frappe.get_route() is null until the router has run (e.g. during app_ready).
+function current_route() {
+	return frappe.get_route() || [];
+}
+
 function on_route_change() {
-	const route = frappe.get_route();
+	const route = current_route();
 	if (route[0] !== "query-report" || !route[1]) return;
 	const report_name = route[1];
 	get_entry_state(report_name).then((state) => {
@@ -52,7 +57,17 @@ function on_route_change() {
 	});
 }
 
+// Never throw inside Frappe's app_ready / router handlers: an exception there stops the
+// handlers registered after this one (sidebar, breadcrumbs, page show).
+function safe_route_change() {
+	try {
+		on_route_change();
+	} catch (e) {
+		console.error(e);
+	}
+}
+
 $(document).on("app_ready", () => {
-	frappe.router.on("change", on_route_change);
-	on_route_change();
+	frappe.router.on("change", safe_route_change);
+	setTimeout(safe_route_change);
 });

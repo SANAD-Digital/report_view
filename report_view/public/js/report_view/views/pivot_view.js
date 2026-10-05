@@ -140,6 +140,12 @@ export class PivotView {
 				cols.push({ name: value.name, source: "totals", value, col_values: [], parts, total: split, width: split ? TOTAL_WIDTH : VALUE_WIDTH });
 			}
 		}
+		// A value column is as wide as its title needs (up to 320px), not cut to the design's
+		// 156px: "Sum of Closing (Dr)" would read "Sum of Clos…".
+		for (const c of cols) {
+			const title = labels.get(c.parts[c.parts.length - 1]) || "";
+			c.width = Math.max(c.width, Math.min(320, Math.ceil(title.length * 7.4) + 40));
+		}
 		// The end of a band: a full-height line between the groups of the first pivot column.
 		cols.forEach((c, i) => {
 			const next = cols[i + 1];

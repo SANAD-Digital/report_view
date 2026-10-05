@@ -166,7 +166,9 @@ async function main() {
 	const page = new report_view.ReportViewPage(wrapper);
 	window.rv_page = page;
 	page.show();
-	const shown = () => page.opened && page.grid.current === page.opened && page.grid.rt;
+	// The table of the view state's mode: the grid, or the pivot (rv with mode "pivot").
+	const shown = () =>
+		page.opened && ((page.grid.current === page.opened && page.grid.rt) || (page.state.mode === "pivot" && page.pivot.current && page.pivot.rt));
 	await wait_for(shown);
 	const group = params.get("group");
 	if (group) {
@@ -179,7 +181,7 @@ async function main() {
 
 // Resolves when the table has drawn everything that is pending.
 window.rv_settle = async () => {
-	const rt = window.rv_page.grid.rt;
+	const rt = window.rv_page.grid.rt || window.rv_page.pivot.rt;
 	await rt.draw();
 	await rt.flush();
 	await new Promise((r) => setTimeout(r, 150));

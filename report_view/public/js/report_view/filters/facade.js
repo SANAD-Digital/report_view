@@ -3,25 +3,6 @@
 // working. The previous value is restored when the page is hidden. It does not inherit
 // from frappe.views.QueryReport and touches no prototype.
 
-const SUPPORTED = new Set([
-	"report_name",
-	"filters",
-	"page",
-	"get_filter",
-	"get_filter_value",
-	"get_filter_values",
-	"get_values",
-	"set_filter_value",
-	"toggle_filter_display",
-	"refresh",
-	"trigger_refresh",
-	"datatable",
-	"raw_data",
-	"report_settings",
-]);
-// Probes made by JS itself or jQuery; never treated as unsupported calls.
-const PASS_THROUGH = new Set(["then", "toJSON", "constructor", "nodeType", "jquery", "length"]);
-
 export class ReportViewQueryReportFacade {
 	constructor(host) {
 		this._host = host;
@@ -70,20 +51,12 @@ export class ReportViewQueryReportFacade {
 	}
 }
 
-// In developer mode, any member outside the declared interface throws a clear error.
+// Members outside the interface read as undefined, as on any object: report scripts probe
+// for optional methods (`typeof qr.get_snd_filter_values === "function"`), and the original
+// page answers the same way for methods it lacks. A real call to a missing method fails
+// with the usual TypeError naming it.
 export function make_facade(host) {
-	const facade = new ReportViewQueryReportFacade(host);
-	if (!frappe.boot?.developer_mode) return facade;
-	return new Proxy(facade, {
-		get(target, prop, receiver) {
-			if (typeof prop !== "string" || SUPPORTED.has(prop) || PASS_THROUGH.has(prop) || prop.startsWith("_")) {
-				return Reflect.get(target, prop, receiver);
-			}
-			throw new Error(
-				`report_view: frappe.query_report.${prop} is not supported on the Report View page (ADR-006)`
-			);
-		},
-	});
+	return new ReportViewQueryReportFacade(host);
 }
 
 export function install_facade(host) {

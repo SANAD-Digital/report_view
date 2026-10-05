@@ -175,6 +175,29 @@ test("criteria bar: company and period on the line, required filters never hidde
 	assert.deepEqual(Object.fromEntries(ar.place), { company: "main", report_date: "main", party_type: "main", range: "more" });
 });
 
+test("criteria bar: hidden filters stay hidden; a Timespan the dates depend on belongs to the period", () => {
+	// Shape of snd_accounting's party balance reports (Customer Trial Balance).
+	const snd = plan_criteria([
+		{ fieldname: "company", fieldtype: "Link", reqd: 1 },
+		{ fieldname: "timespan", fieldtype: "Select", reqd: 1, default: "Select Date Range" },
+		{ fieldname: "from_date", fieldtype: "Date", depends_on: "eval:doc.timespan == 'Select Date Range'" },
+		{ fieldname: "to_date", fieldtype: "Date", depends_on: "eval:doc.timespan == 'Select Date Range'" },
+		{ fieldname: "party_type", fieldtype: "Link", read_only: 1, hidden: 1 },
+		{ fieldname: "party_name", fieldtype: "Data", hidden: 1 },
+		{ fieldname: "party", fieldtype: "MultiSelectList" },
+	]);
+	assert.deepEqual(snd.range, { key: "timespan", value: "Select Date Range" });
+	assert.deepEqual(Object.fromEntries(snd.place), {
+		company: "main",
+		timespan: "period",
+		from_date: "period",
+		to_date: "period",
+		party_type: "hidden",
+		party_name: "hidden",
+		party: "more",
+	});
+});
+
 test("set filter selection: null is everything; unticking one keeps the others; all again is null", () => {
 	const all = ["A", "B", null];
 	const one_off = toggle_value(null, all, "B");

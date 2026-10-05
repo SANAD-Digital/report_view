@@ -16,7 +16,7 @@
 الخيار 2، بقيود:
 - الكائن من صنفنا `ReportViewQueryReportFacade`، لا يرث من `frappe.views.QueryReport` ولا يعدّل أي prototype.
 - يُعيَّن في `on_page_show` لصفحة `report-view` فقط، وتُحفظ القيمة السابقة وتُعاد في `on_page_hide`.
-- الواجهة المدعومة محصورة ومعلنة: `report_name`، `filters`، `page`، `get_filter`، `get_filter_value`، `get_filter_values`، `get_values`، `set_filter_value`، `toggle_filter_display`، `refresh`، `trigger_refresh`، `datatable` (= `null`)، `raw_data`، `report_settings`. أي استدعاء لغيرها يرمي خطأً واضحاً في وضع التطوير.
+- الواجهة المدعومة محصورة ومعلنة: `report_name`، `filters`، `page`، `get_filter`، `get_filter_value`، `get_filter_values`، `get_values`، `set_filter_value`، `toggle_filter_display`، `refresh`، `trigger_refresh`، `datatable` (= `null`)، `raw_data`، `report_settings`. قراءة عضو خارجها تعيد `undefined` كما في أي كائن (تعديل 2026-10-05: كان يرمي خطأً في وضع التطوير، فكسر تقارير تفحص وجود دالة اختيارية مثل `typeof qr.get_snd_filter_values === "function"` في `snd_accounting`؛ استدعاء دالة غير موجودة يفشل بـ TypeError المعتاد).
 
 ## العواقب
 - صفحة query-report الأصلية لا تتأثر لأنها تعيد تعيين المتغير في `load` الخاص بها (`query_report.js:21`)، ولأننا نعيد القيمة عند مغادرة صفحتنا.

@@ -15,22 +15,38 @@ function esc(s) {
 
 const DEFAULT_KEYS = { from_key: "from_date", to_key: "to_date", fiscal_year_key: "fiscal_year", company_key: "company" };
 
+// A Select filter the date filters depend on, e.g. snd_accounting's Timespan:
+// depends_on "eval:doc.timespan == 'Select Date Range'". The period field covers it: it is
+// set to that value before the dates are written, so the report reads the dates.
+function range_selector(defs, keys) {
+	const from = defs.find((d) => d?.fieldname === keys.from_key);
+	const m = /doc\.(\w+)\s*===?\s*["']([^"']+)["']/.exec(String(from?.depends_on || ""));
+	if (!m) return null;
+	const def = defs.find((d) => d?.fieldname === m[1]);
+	return def && def.fieldtype === "Select" ? { key: m[1], value: m[2] } : null;
+}
+
 /**
  * Which filter goes where.
  * @param {Array} defs filter definitions of the report script
  * @param {object} period register.period ({from_key, to_key, fiscal_year_key, company_key})
- * @returns {{keys: object, has_period: boolean, place: Map<string, "main"|"period"|"more">}}
+ * @returns {{keys: object, has_period: boolean, range: ?{key, value},
+ *            place: Map<string, "main"|"period"|"more"|"hidden">}}
  */
 export function plan_criteria(defs, period = {}) {
 	const keys = { ...DEFAULT_KEYS, ...(period || {}) };
-	const names = new Set(defs.map((d) => d.fieldname));
+	const names = new Set(defs.map((d) => d?.fieldname));
 	const has_period = names.has(keys.from_key) && names.has(keys.to_key);
+	const range = has_period ? range_selector(defs, keys) : null;
+	const covered = [keys.from_key, keys.to_key, keys.fiscal_year_key, range?.key];
 	const place = new Map();
 	for (const d of defs) {
 		if (!d || d.fieldtype === "Break") continue;
 		const name = d.fieldname;
 		let where = "more";
-		if (has_period && [keys.from_key, keys.to_key, keys.fiscal_year_key].includes(name)) where = "period";
+		if (has_period && covered.includes(name)) where = "period";
+		// Hidden in the report script: never shown, as on the original page.
+		else if (d.hidden === 1 || d.hidden === true) where = "hidden";
 		else if (name === keys.company_key) where = "main";
 		// Without a period field, the dates of the report stay on the bar ("as on" a date).
 		else if (!has_period && (d.fieldtype === "Date" || d.fieldtype === "DateRange")) where = "main";
@@ -38,7 +54,7 @@ export function plan_criteria(defs, period = {}) {
 		else if (d.reqd) where = "main";
 		place.set(name, where);
 	}
-	return { keys, has_period, place };
+	return { keys, has_period, range, place };
 }
 
 export class CriteriaBar {
@@ -64,7 +80,7 @@ export class CriteriaBar {
 		parent.append(this.main, this.hidden, this.more_home);
 
 		const company_slot = document.createElement("div");
-		const containers = { main: this.main, period: this.hidden, more: this.more };
+		const containers = { main: this.main, period: this.hidden, hidden: this.hidden, more: this.more };
 		this.filters = new ReportFilters({
 			parent: this.hidden,
 			host,
@@ -117,6 +133,11 @@ export class CriteriaBar {
 	async apply_period({ from, to, fiscal_year }) {
 		const k = this.plan.keys;
 		const f = this.filters;
+		const range = this.plan.range;
+		if (range && f.get_filter_value(range.key) !== range.value) {
+			await f.set_filter_value(range.key, range.value);
+			await new Promise((resolve) => frappe.after_ajax(() => setTimeout(resolve, 0)));
+		}
 		if (fiscal_year && f.get_filter(k.fiscal_year_key) && f.get_filter_value(k.fiscal_year_key) !== fiscal_year) {
 			await f.set_filter_value(k.fiscal_year_key, fiscal_year);
 			await new Promise((resolve) => frappe.after_ajax(() => setTimeout(resolve, 0)));

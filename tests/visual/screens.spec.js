@@ -1435,17 +1435,41 @@ test("a MultiSelectList filter has one frame (no design input frame on its wrapp
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
-// ---------------------------------------------------------------- Charts view (phase 5d task 1)
-// Screenshots in docs/progress/screens/phase-5a2/charts-*.png, compared with
+// ---------------------------------------------------------------- Charts dashboard (phase 5d)
+// Screenshots in docs/progress/screens/phase-5a2/dashboard-*.png, compared with
 // reference/design/screens/charts.png. The page opens on the table, then the Charts tab.
 const CHARTS_OUT = path.resolve(__dirname, "../../docs/progress/screens/phase-5a2");
-const chart_rv = (chart) => rv({ chart });
+const dash_rv = (charts) => rv({ charts });
+const cards = (page) => page.evaluate(() => window.rv_page.charts.debug_cards());
+
+// Every card on screen is read and drawn (cards below the fold wait until they show).
+async function cards_ready(page) {
+	await page.waitForFunction(() => {
+		const c = window.rv_page.charts?.debug_cards();
+		return c && c.length > 0 && c.some((x) => x.visible) && c.every((x) => !x.visible || (x.loaded && x.drawn) || x.state === "empty");
+	});
+	// ECharts animates for 300ms: the screenshot shows the charts at rest.
+	await page.waitForTimeout(450);
+}
 
 async function to_charts(page) {
 	await page.locator('.rv-views [data-mode="charts"]').click();
-	await page.waitForFunction(() => window.rv_page.charts?.debug_data()?.drawn && window.rv_page.charts.el.dataset.state === "ready");
-	// ECharts animates for 300ms: the screenshot shows the chart at rest.
-	await page.waitForTimeout(500);
+	await page.waitForFunction(() => window.rv_page.state.mode === "charts" && window.rv_page.charts?.debug_cards);
+	await cards_ready(page);
+}
+
+// Every card read: each one scrolled into view, then back to the top.
+async function load_all(page) {
+	const n = (await cards(page)).length;
+	for (let i = 0; i < n; i++) {
+		await page.evaluate((i) => document.querySelectorAll(".rv-dcard")[i].scrollIntoView({ block: "center" }), i);
+		await page.waitForFunction((i) => {
+			const c = window.rv_page.charts.debug_cards()[i];
+			return c.loaded && (c.drawn || c.state === "empty");
+		}, i);
+	}
+	await page.evaluate(() => window.scrollTo(0, 0));
+	await page.waitForTimeout(450);
 }
 
 async function to_grid(page) {
@@ -1454,189 +1478,700 @@ async function to_grid(page) {
 	await settle(page);
 }
 
-const CHART_SHOTS = [
-	{ name: "charts-tb-light-rtl", query: "report=tb&lang=ar" },
-	{ name: "charts-tb-dark-rtl", query: "report=tb&lang=ar&desk=dark" },
-	{ name: "charts-tb-light-ltr", query: "report=tb&lang=en" },
-	{ name: "charts-tb-dark-ltr", query: "report=tb&lang=en&desk=dark" },
-	{ name: "charts-tb-compact-rtl", query: "report=tb&lang=ar&density=compact" },
-	{ name: "charts-tb-donut-level2-rtl", query: `report=tb&lang=ar&rv=${chart_rv({ type: "donut", x: "level_2", series: ["closing_debit"] })}` },
-	{ name: "charts-tb-stacked-dark-ltr", query: `report=tb&lang=en&desk=dark&rv=${chart_rv({ type: "stacked", x: "level_1", series: ["debit", "credit"] })}` },
-	{ name: "charts-ar-light-rtl", query: "report=ar&lang=ar" },
-	{ name: "charts-ar-hbar-dark-ltr", query: `report=ar&lang=en&desk=dark&rv=${chart_rv({ type: "hbar", x: "party", series: ["invoiced", "paid", "outstanding"] })}` },
-	{ name: "charts-ar-line-dates-light-rtl", query: `report=ar&lang=ar&rv=${chart_rv({ type: "line", x: "posting_date", series: ["paid", "outstanding"] })}` },
-	{ name: "charts-gl-light-rtl", query: "report=gl&lang=ar" },
-	{ name: "charts-gl-dark-ltr", query: "report=gl&lang=en&desk=dark" },
-	{ name: "charts-gl-donut-light-ltr", query: `report=gl&lang=en&rv=${chart_rv({ type: "donut", x: "account", series: ["debit"] })}` },
-	{ name: "charts-tb-390-rtl", query: "report=tb&lang=ar", width: 390, height: 844, full: true },
-	{ name: "charts-gl-390-dark-ltr", query: "report=gl&lang=en&pref=dark", width: 390, height: 844, full: true },
-	{ name: "charts-ar-donut-390-rtl", query: `report=ar&lang=ar&rv=${chart_rv({ type: "donut", x: "party", series: ["paid"] })}`, width: 390, height: 844, full: true },
+// Texts of every plot are inside it (a cut label is a design failure).
+const labels_outside = (page) =>
+	page.evaluate(() => {
+		const out = [];
+		for (const plot of document.querySelectorAll(".rv-dcard .rv-chart-plot")) {
+			const box = plot.getBoundingClientRect();
+			for (const t of plot.querySelectorAll("svg text")) {
+				const r = t.getBoundingClientRect();
+				if (!(r.left >= box.left - 1 && r.right <= box.right + 1 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1)) out.push(t.textContent);
+			}
+		}
+		return out;
+	});
+
+const KPI_GL = dash_rv({
+	cards: [
+		{ id: "k", type: "kpi", series: ["debit", "credit"], size: "full" },
+		{ id: "s", type: "stacked", x: "voucher_type", series: ["debit", "credit"] },
+		{ id: "l", type: "line", x: "posting_date", series: ["debit"] },
+	],
+	slicers: [{ key: "voucher_type", type: "set", values: null }],
+});
+
+const DASH_SHOTS = [
+	{ name: "dashboard-tb-light-rtl", query: "report=tb&lang=ar", height: 1100 },
+	{ name: "dashboard-tb-dark-rtl", query: "report=tb&lang=ar&desk=dark", height: 1100 },
+	{ name: "dashboard-tb-light-ltr", query: "report=tb&lang=en", height: 1100 },
+	{ name: "dashboard-tb-dark-ltr", query: "report=tb&lang=en&desk=dark", height: 1100 },
+	{ name: "dashboard-tb-compact-rtl", query: "report=tb&lang=ar&density=compact", height: 1100 },
+	{ name: "dashboard-ar-light-rtl", query: "report=ar&lang=ar", height: 1100 },
+	{ name: "dashboard-ar-dark-ltr", query: "report=ar&lang=en&desk=dark", height: 1100 },
+	{ name: "dashboard-gl-light-rtl", query: "report=gl&lang=ar", height: 1100 },
+	{ name: "dashboard-gl-dark-ltr", query: "report=gl&lang=en&desk=dark", height: 1100 },
+	{ name: "dashboard-gl-kpi-light-ltr", query: `report=gl&lang=en&rv=${KPI_GL}`, height: 1100 },
+	{ name: "dashboard-tb-390-rtl", query: "report=tb&lang=ar", width: 390, height: 844, full: true },
+	{ name: "dashboard-ar-390-rtl", query: "report=ar&lang=ar", width: 390, height: 844, full: true },
+	{ name: "dashboard-gl-390-dark-ltr", query: "report=gl&lang=en&pref=dark", width: 390, height: 844, full: true },
 ];
 
-for (const s of CHART_SHOTS) {
+for (const s of DASH_SHOTS) {
 	test(s.name, async ({ page }) => {
 		const problems = watch_console(page);
 		await open(page, s.query, s);
 		await to_charts(page);
+		if (s.full) await load_all(page);
 		await page.screenshot({ path: path.join(CHARTS_OUT, `${s.name}.png`), fullPage: Boolean(s.full) });
-		// Labels are not cut by the plot: every text of the chart is inside it (a donut has
-		// its categories as a list next to it).
-		const labels = await page.evaluate(() => {
-			const plot = document.querySelector(".rv-chart-plot").getBoundingClientRect();
-			return [...document.querySelectorAll(".rv-chart-plot svg text")].map((t) => {
-				const r = t.getBoundingClientRect();
-				const inside = r.left >= plot.left - 1 && r.right <= plot.right + 1 && r.top >= plot.top - 1 && r.bottom <= plot.bottom + 1;
-				return inside ? "" : t.textContent;
-			});
-		});
-		const donut = await page.evaluate(() => window.rv_page.charts.debug_data().type === "donut");
-		if (donut) expect(await page.locator(".rv-chart-dlegend li").count()).toBeGreaterThan(0);
-		else expect(labels.length).toBeGreaterThan(0);
-		expect(labels.filter(Boolean), "labels outside the plot").toEqual([]);
+		const shown = (await cards(page)).filter((c) => c.loaded);
+		expect(shown.length).toBeGreaterThan(1);
+		// a donut has its categories as a list next to it, every category with its share
+		for (const c of shown.filter((c) => c.type === "donut")) expect(c.labels.length).toBeGreaterThan(0);
+		expect(await page.locator(".rv-dcard.is-donut .rv-chart-dlegend li").count()).toBe(
+			shown.filter((c) => c.type === "donut").reduce((a, c) => a + c.labels.length, 0)
+		);
+		expect(await labels_outside(page), "labels outside the plot").toEqual([]);
 		expect(problems, "console errors/warnings").toEqual([]);
 	});
 }
 
-// What the grid shows by the chart's dimension: rows of depth 0 of the tree "as is", or the
-// first-level groups of a grouped (or re-grouped) view, read from the grid's own view.
-const grid_rows = (page, series, tree) =>
-	page.evaluate(
-		async ({ series, tree }) => {
-			const cols = await window.rv_page.opened.view.to_columns();
-			const out = [];
-			if (tree) {
-				cols.__rid.forEach((rid, i) => {
-					if (cols.__depth[i] === 0) out.push({ id: rid, values: series.map((k) => cols[k][i]) });
-				});
-			} else {
-				cols.__ROW_PATH__.forEach((p, i) => {
-					if (p.length === 1) out.push({ id: p[0], values: series.map((k) => cols[k][i]) });
-				});
-			}
-			return { rows: out, totals: window.rv_page.debug_totals().totals };
+// What the grid shows grouped by a column under some filters: {id: [values]} of its first
+// level and its grand total. The table is shown for it, then left without filter nor group.
+async function grid_by(page, x, series, filters = []) {
+	await page.evaluate(
+		({ x, filters }) => {
+			const p = window.rv_page;
+			p.state.mode = "grid";
+			p.state.filters = filters;
+			p.state.quick_filters = [];
+			p.controls.set_group([x]);
 		},
-		{ series, tree }
+		{ x, filters }
 	);
-
-const chart_rows = (page) =>
-	page.evaluate(() => {
-		const d = window.rv_page.charts.debug_data();
-		const ids = d.route === "nodes" ? d.rids : d.categories;
-		return { route: d.route, series: d.series, rows: ids.map((id, i) => ({ id, values: d.series.map((k) => d.values[k][i]) })) };
+	await page.waitForFunction(() => window.rv_page.result?.mode === "group" && window.rv_page.grid.current === window.rv_page.opened);
+	const out = await page.evaluate(
+		async ({ series }) => {
+			const cols = await window.rv_page.opened.view.to_columns();
+			const rows = {};
+			cols.__ROW_PATH__.forEach((p, i) => {
+				if (p.length === 1) rows[String(p[0])] = series.map((k) => cols[k][i]);
+			});
+			return { rows, totals: window.rv_page.debug_totals().totals };
+		},
+		{ series }
+	);
+	await page.evaluate(() => {
+		window.rv_page.state.filters = [];
+		window.rv_page.controls.set_group([]);
 	});
-
-function same_numbers(chart, grid, label) {
-	expect(chart.rows.length, `${label}: categories`).toBeGreaterThan(0);
-	const by_id = new Map(grid.rows.map((r) => [r.id, r.values]));
-	for (const row of chart.rows) {
-		const values = by_id.get(row.id);
-		expect(values, `${label}: ${row.id} in the grid`).toBeTruthy();
-		row.values.forEach((v, i) => expect(Math.abs(v - values[i]), `${label}: ${row.id} ${chart.series[i]}`).toBeLessThan(0.005));
-	}
-	// every category of the grid is drawn, and they add up to the grand total shown
-	expect(chart.rows.length).toBe(grid.rows.length);
-	chart.series.forEach((key, i) => {
-		const sum = chart.rows.reduce((a, r) => a + r.values[i], 0);
-		expect(Math.abs(sum - grid.totals[key]), `${label}: total ${key}`).toBeLessThan(0.005);
-	});
+	await page.waitForFunction(() => window.rv_page.result && window.rv_page.result.mode !== "group" && window.rv_page.grid.current === window.rv_page.opened);
+	return out;
 }
 
-test("charts: the numbers of the chart are the grid's for the same filters (tb, ar, gl)", async ({ page }) => {
+function same_card(card, grid, label) {
+	expect(card.categories.length, `${label}: categories`).toBeGreaterThan(0);
+	card.categories.forEach((id, i) => {
+		const values = grid.rows[String(id)];
+		expect(values, `${label}: ${id} in the grid`).toBeTruthy();
+		card.series.forEach((k, j) => expect(Math.abs((card.values[k][i] ?? 0) - (values[j] ?? 0)), `${label}: ${id} ${k}`).toBeLessThan(0.005));
+	});
+	// a card that shows every category adds up to the grid's grand total
+	if (!card.top) card.series.forEach((k) => expect(Math.abs(card.total[k].value - grid.totals[k]), `${label}: total ${k}`).toBeLessThan(0.005));
+}
+
+// The dashboard's filters as the grid's own: a slicer of values, a card's filter, a cross-filter.
+const as_grid_filters = (slicers) => slicers.map((s) => ({ key: s.key, type: "set", values: s.values, exclude: false }));
+
+test("dashboard: the numbers of every card are the grid's for the same filters (tb, ar, gl)", async ({ page }) => {
+	test.setTimeout(120_000);
 	const problems = watch_console(page);
-	// trial balance, tree "as is": the top-level rows of the report
-	await open(page, "report=tb&lang=ar");
+	// trial balance: the closing card reads the tree "as is" (its top rows); the others the facts
+	await open(page, "report=tb&lang=ar", { height: 1400 });
 	await to_charts(page);
-	let chart = await chart_rows(page);
-	expect(chart.route).toBe("nodes");
-	expect(chart.series).toEqual(["closing_debit", "closing_credit"]);
-	await to_grid(page);
-	same_numbers(chart, await grid_rows(page, chart.series, true), "tb");
+	await load_all(page);
+	const tb = await cards(page);
+	expect(tb.map((c) => c.id)).toEqual(["closing", "expenses", "moving"]);
+	expect(tb[0].route).toBe("nodes");
+	const top_rows = await page.evaluate(async () => {
+		const p = window.rv_page;
+		await p.render();
+		const cols = await p.opened.view.to_columns();
+		const out = {};
+		cols.__rid.forEach((rid, i) => {
+			if (cols.__depth[i] === 0) out[rid] = [cols.closing_debit[i], cols.closing_credit[i]];
+		});
+		return out;
+	});
+	tb[0].rids.forEach((rid, i) => {
+		expect(Math.abs(tb[0].values.closing_debit[i] - top_rows[rid][0])).toBeLessThan(0.005);
+		expect(Math.abs(tb[0].values.closing_credit[i] - top_rows[rid][1])).toBeLessThan(0.005);
+	});
+	same_card(tb[1], await grid_by(page, "account", tb[1].series, [{ key: "account__root_type", type: "set", values: ["Expense"], exclude: false }]), "tb expenses");
+	same_card(tb[2], await grid_by(page, "account", tb[2].series), "tb moving");
 
-	// trial balance with a quick filter: the re-grouped grid's top level (engine sums)
-	await page.evaluate(() => window.rv_page.controls.toggle_quick("moving"));
-	await page.waitForFunction(() => window.rv_page.result?.mode === "tree" && window.rv_page.opened?.post.shape === "levels");
-	await to_charts(page);
-	chart = await chart_rows(page);
-	expect(chart.route).toBe("facts");
-	await to_grid(page);
-	same_numbers(chart, await grid_rows(page, chart.series, false), "tb filtered");
-
-	// receivables and general ledger: the grid grouped by the chart's dimension
-	for (const [report, x] of [["ar", "party"], ["gl", "account"]]) {
-		await open(page, `report=${report}&lang=en`);
+	// receivables and the general ledger: every card by its dimension; the measures side by side = the grand total
+	for (const report of ["ar", "gl"]) {
+		await open(page, `report=${report}&lang=en`, { height: 1400 });
 		await to_charts(page);
-		chart = await chart_rows(page);
-		expect(await page.evaluate(() => window.rv_page.charts.debug_data().x)).toBe(x);
-		await to_grid(page);
-		await page.evaluate((x) => window.rv_page.controls.set_group([x]), x);
-		await page.waitForFunction(() => window.rv_page.result?.mode === "group" && window.rv_page.grid.current === window.rv_page.opened);
-		same_numbers(chart, await grid_rows(page, chart.series, false), report);
+		await load_all(page);
+		const list = await cards(page);
+		for (const c of list) {
+			if (c.route === "totals") {
+				const totals = await page.evaluate(() => window.rv_page.debug_totals().totals);
+				c.series.forEach((k) => expect(Math.abs(c.total[k].value - (totals[k] ?? 0)), `${report} ${c.id} ${k}`).toBeLessThan(0.005));
+				continue;
+			}
+			same_card(c, await grid_by(page, c.x, c.series), `${report} ${c.id}`);
+		}
 	}
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
-test("charts: type, dimension and measures from the panel; filters and the theme redraw the chart", async ({ page }) => {
+test("dashboard: add, edit, duplicate, resize and remove a card; kept in the URL and the user's settings", async ({ page }) => {
 	const problems = watch_console(page);
-	await open(page, "report=ar&lang=ar");
+	await open(page, "report=gl&lang=ar", { height: 1400 });
 	await to_charts(page);
-	const data = () => page.evaluate(() => window.rv_page.charts.debug_data());
-	await page.locator('.rv-ctype[data-type="hbar"]').click();
-	await page.waitForFunction(() => window.rv_page.charts.debug_data()?.type === "hbar");
-	expect(await page.evaluate(() => window.rv_page.state.chart.type)).toBe("hbar");
-	await page.selectOption(".rv-chart-select", "voucher_type");
-	await page.waitForFunction(() => window.rv_page.charts.debug_data()?.x === "voucher_type");
-	await page.locator('.rv-chart-measures input[data-key="outstanding"]').check();
-	await page.waitForFunction(() => window.rv_page.charts.debug_data()?.series.includes("outstanding"));
-	expect((await data()).series).toEqual(["invoiced", "paid", "outstanding"]);
-	// the chart is in the URL (rv), restored on opening
+	const ids = async () => (await cards(page)).map((c) => c.id);
+	expect(await ids()).toEqual(["accounts", "vouchers", "dates"]);
+	// add: a new card opens its editor
+	await page.locator('[data-action="add-card"]').click();
+	await page.waitForSelector(".rv-ced-pop");
+	expect((await ids()).length).toBe(4);
+	await shot_dash(page, "dashboard-gl-editor-rtl");
+	// edit: type, dimension, measures, Top N, sort, title
+	const id = (await ids())[3];
+	await page.locator('.rv-ced-pop .rv-ctype[data-type="donut"]').click();
+	await page.waitForFunction((id) => window.rv_page.state.charts?.cards.find((c) => c.id === id)?.type === "donut", id);
+	await page.selectOption('.rv-ced-pop [data-f="x"]', "party");
+	await page.waitForFunction((id) => window.rv_page.state.charts.cards.find((c) => c.id === id).x === "party", id);
+	await page.locator('.rv-ced-pop .rv-chart-measures input[data-key="credit"]').check();
+	await page.waitForFunction((id) => window.rv_page.state.charts.cards.find((c) => c.id === id).series.includes("credit"), id);
+	await page.locator('.rv-ced-pop [data-top="5"]').click();
+	await page.waitForFunction((id) => window.rv_page.state.charts.cards.find((c) => c.id === id).top === 5, id);
+	await page.fill(".rv-ced-pop .rv-ced-title", "حسب الطرف");
+	await page.press(".rv-ced-pop .rv-ced-title", "Enter");
+	await page.waitForFunction((id) => window.rv_page.state.charts.cards.find((c) => c.id === id).title === "حسب الطرف", id);
+	await page.keyboard.press("Escape");
+	await page.waitForFunction((id) => {
+		const c = window.rv_page.charts.debug_cards().find((x) => x.id === id);
+		return c.type === "donut" && c.x === "party" && c.loaded;
+	}, id);
+	expect(await page.locator(`.rv-dcard[data-card="${id}"] h3`).textContent()).toBe("حسب الطرف");
+	// a donut with more than one measure says it shows the first one
+	await expect(page.locator(`.rv-dcard[data-card="${id}"] .rv-chart-note`)).toBeVisible();
+	// card menu: full width, duplicate, remove
+	const menu = async (card, item) => {
+		await page.locator(`.rv-dcard[data-card="${card}"] .rv-dcard-menu`).click();
+		await page.locator(`.rv-pop [data-item="${item}"]`).click();
+	};
+	await menu("accounts", "size");
+	await page.waitForFunction(() => document.querySelector('.rv-dcard[data-card="accounts"]').classList.contains("wide"));
+	await menu("accounts", "duplicate");
+	await page.waitForFunction(() => window.rv_page.charts.debug_cards().length === 5);
+	expect((await ids())[1]).not.toBe("accounts");
+	await menu("vouchers", "remove");
+	await page.waitForFunction(() => !window.rv_page.charts.debug_cards().some((c) => c.id === "vouchers"));
+	// the dashboard is in the URL (rv) and in the user's settings (no cross-filter there)
 	await page.waitForFunction(() => /[?&]rv=/.test(window.location.search));
-	// a filter of the page redraws the chart from a new view
-	const before = (await data()).categories.length;
-	await page.evaluate(() => window.rv_page.controls.set_filter("voucher_type", { key: "voucher_type", type: "set", values: ["Payment Entry"], exclude: false }));
-	await page.waitForFunction((n) => window.rv_page.charts.debug_data()?.categories.length === 1 && n > 1, before);
-	// theme: the colours of the series are re-read from the tokens (--c1..--c3 of the new theme)
-	const drawn_with_c1 = () =>
-		page.evaluate(() => {
-			const css = getComputedStyle(window.rv_page.root);
-			const tokens = [1, 2, 3].map((i) => css.getPropertyValue(`--c${i}`).trim().toLowerCase());
-			return [...document.querySelectorAll(".rv-chart-plot svg path")].some((p) => tokens.includes((p.getAttribute("fill") || "").toLowerCase()));
-		});
-	expect(await drawn_with_c1()).toBe(true);
-	await page.locator("[data-action='theme']").click();
-	await page.waitForFunction(() => window.rv_page.root.classList.contains("dark"));
-	await page.waitForFunction(() => {
-		const css = getComputedStyle(window.rv_page.root);
-		const tokens = [1, 2, 3].map((i) => css.getPropertyValue(`--c${i}`).trim().toLowerCase());
-		return [...document.querySelectorAll(".rv-chart-plot svg path")].some((p) => tokens.includes((p.getAttribute("fill") || "").toLowerCase()));
-	});
+	await page.waitForFunction(() => frappe.model.user_settings.store["Report View:General Ledger"]?.charts?.cards.length === 4, null, { timeout: 5000 });
+	// a link with this dashboard opens it
+	const charts = await page.evaluate(() => window.rv_page.state.charts);
+	await open(page, `report=gl&lang=ar&rv=${dash_rv(charts)}`);
+	await to_charts(page);
+	expect((await ids()).length).toBe(4);
+	expect((await ids()).includes("vouchers")).toBe(false);
+	// back to the report's default
+	await page.locator('[data-action="dash-menu"]').click();
+	await page.locator('.rv-pop [data-item="reset"]').click();
+	await page.waitForFunction(() => window.rv_page.state.charts === null);
+	await page.waitForFunction(() => window.rv_page.charts.debug_cards().map((c) => c.id).join() === "accounts,vouchers,dates");
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
-test("charts lifecycle: no handle left after 20 switches between table and charts, a re-run and leaving", async ({ page }) => {
+async function shot_dash(page, name) {
+	await page.waitForTimeout(350);
+	await page.screenshot({ path: path.join(CHARTS_OUT, `${name}.png`) });
+}
+
+// Middle of the bar of a category (first series) of a bar card, to click it as the user does.
+const bar_point = (page, id, index) =>
+	page.evaluate(
+		({ id, index }) => {
+			const card = window.rv_page.charts.cards.get(id);
+			card.el.scrollIntoView({ block: "center" });
+			const r = card.chart.getModel().getSeriesByIndex(0).getData().getItemLayout(index);
+			const box = card.plot.getBoundingClientRect();
+			return { x: box.left + r.x + r.width / 2, y: box.top + r.y + r.height / 2 };
+		},
+		{ id, index }
+	);
+
+test("dashboard: slicers and the cross-filter filter every card with the grid's numbers", async ({ page }) => {
+	test.setTimeout(90_000);
+	const problems = watch_console(page);
+	await open(page, "report=gl&lang=ar", { height: 1400 });
+	await to_charts(page);
+	await load_all(page);
+	const before = await cards(page);
+	// a slicer of values: its list and counts from a temporary view
+	await page.locator('[data-action="add-slicer"]').click();
+	await page.locator('.rv-pop [data-item="voucher_type"]').click();
+	await page.waitForSelector(".rv-set-pop .rv-setitem:not(.all)");
+	await shot_dash(page, "dashboard-gl-slicer-rtl");
+	expect(await page.evaluate(() => window.rv_page.debug_handles().filter((h) => /unique/.test(h.name)).length)).toBe(0);
+	// keep Payment Entry only: untick the others
+	const labels = await page.locator(".rv-set-pop .rv-setitem:not(.all)").allTextContents();
+	for (let i = 0; i < labels.length; i++) {
+		if (!labels[i].includes("Payment Entry")) await page.locator(".rv-set-pop .rv-setitem:not(.all) input").nth(i).uncheck();
+	}
+	await page.keyboard.press("Escape");
+	await page.waitForFunction(() => {
+		const s = window.rv_page.state.charts?.slicers?.[0];
+		return s && s.values?.length === 1 && s.values[0] === "Payment Entry";
+	});
+	await load_all(page);
+	await expect(page.locator(".rv-slicer.on")).toHaveCount(1);
+	const sliced = await cards(page);
+	sliced.forEach((c, i) => expect(JSON.stringify(c.values) !== JSON.stringify(before[i].values) || c.categories.length !== before[i].categories.length, c.id).toBe(true));
+	expect(sliced.find((c) => c.id === "vouchers").categories).toEqual(["Payment Entry"]);
+	const filters = as_grid_filters([{ key: "voucher_type", values: ["Payment Entry"] }]);
+	for (const c of sliced) same_card(c, await grid_by(page, c.x, c.series, filters), `sliced ${c.id}`);
+	await to_charts(page);
+	await load_all(page);
+
+	// cross-filter: a click on an account's bar filters the other cards; the chip clears it
+	const account = (await cards(page)).find((c) => c.id === "accounts");
+	const hit = await bar_point(page, "accounts", 0);
+	await page.mouse.click(hit.x, hit.y);
+	await page.waitForFunction((v) => window.rv_page.state.charts?.cross?.value === v, account.categories[0]);
+	await page.waitForFunction(() => window.rv_page.charts.debug_cards().every((c) => !c.visible || c.loaded));
+	await expect(page.locator(".rv-slicer.cross")).toHaveCount(1);
+	await page.evaluate(() => window.scrollTo(0, 0));
+	await shot_dash(page, "dashboard-gl-cross-rtl");
+	await load_all(page);
+	const crossed = await cards(page);
+	// the card that was clicked keeps its categories; the others show that account only
+	expect(crossed.find((c) => c.id === "accounts").categories).toEqual(account.categories);
+	const both = as_grid_filters([
+		{ key: "voucher_type", values: ["Payment Entry"] },
+		{ key: "account", values: [account.categories[0]] },
+	]);
+	for (const c of crossed.filter((c) => c.id !== "accounts")) same_card(c, await grid_by(page, c.x, c.series, both), `cross ${c.id}`);
+	await to_charts(page);
+	// the chip clears it
+	await page.locator(".rv-slicer.cross .rv-chip-x").click();
+	await page.waitForFunction(() => window.rv_page.state.charts.cross === null);
+	// removing the slicer: every card back to all the rows
+	await page.locator(".rv-slicer [data-remove]").click();
+	await page.waitForFunction(() => window.rv_page.state.charts.slicers.length === 0);
+	await load_all(page);
+	const back = await cards(page);
+	back.forEach((c, i) => expect(c.values, c.id).toEqual(before[i].values));
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("dashboard: a cross-filter from a bar of the tree, again to clear; a date slicer", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=tb&lang=ar", { height: 1100 });
+	await to_charts(page);
+	const p = await bar_point(page, "closing", 0);
+	await page.mouse.click(p.x, p.y);
+	await page.waitForFunction(() => window.rv_page.state.charts?.cross?.key === "level_1");
+	await page.waitForFunction(() => window.rv_page.charts.debug_cards().every((c) => !c.visible || c.loaded));
+	await shot_dash(page, "dashboard-tb-cross-rtl");
+	// the other cards read the facts of that top-level group only
+	const moving = (await cards(page)).find((c) => c.id === "moving");
+	expect(moving.route).toBe("facts");
+	const p2 = await bar_point(page, "closing", 0);
+	await page.mouse.click(p2.x, p2.y);
+	await page.waitForFunction(() => window.rv_page.state.charts.cross === null);
+
+	// a date slicer on the general ledger, LTR
+	await open(page, "report=gl&lang=en", { height: 1100 });
+	await to_charts(page);
+	await page.locator('[data-action="add-slicer"]').click();
+	await page.locator('.rv-pop [data-item="posting_date"]').click();
+	await page.waitForSelector(".rv-dslicer-pop");
+	await page.locator('.rv-dslicer-pop [data-f="from"] input').fill("19-04-2026");
+	await page.locator('.rv-dslicer-pop [data-f="from"] input').dispatchEvent("change");
+	await page.waitForFunction(() => window.rv_page.state.charts?.slicers?.[0]?.from === "2026-04-19");
+	await page.waitForFunction(() => window.rv_page.charts.debug_cards().every((c) => !c.visible || c.loaded));
+	await shot_dash(page, "dashboard-gl-date-slicer-ltr");
+	const dates = (await cards(page)).find((c) => c.id === "dates");
+	expect(dates.categories.every((ms) => ms >= Date.UTC(2026, 3, 19))).toBe(true);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("dashboard lifecycle: no handle or chart left after 20 switches, slicer changes, a re-run and leaving", async ({ page }) => {
+	test.setTimeout(120_000);
 	const problems = watch_console(page);
 	const kinds = () => page.evaluate(() => window.rv_page.debug_handles().map((h) => h.kind).sort().join(","));
-	const names = () => page.evaluate(() => window.rv_page.debug_handles().map((h) => h.name));
 	await open(page, "report=tb&lang=ar");
 	const grid_handles = await kinds();
 	for (let i = 0; i < 20; i++) {
 		if (i % 2 === 0) {
 			await to_charts(page);
-			expect((await names()).filter((n) => /\/chart_/.test(n)).length, `switch ${i}`).toBe(1);
+			// a card's view is deleted once read: the page keeps only the grid's handles
+			expect(await kinds(), `switch ${i}`).toBe(grid_handles);
 		} else {
 			await to_grid(page);
 			expect(await kinds(), `switch ${i}`).toBe(grid_handles);
-			expect((await names()).filter((n) => /\/chart_/.test(n))).toEqual([]);
-			// the ECharts instance is gone with the view
-			expect(await page.evaluate(() => window.rv_page.charts.chart)).toBeNull();
+			expect(await page.evaluate(() => window.rv_page.charts.debug_instances()), `switch ${i}`).toBe(0);
 		}
 	}
-	// a re-run in the Charts view: the old chart view went with its tables
 	await to_charts(page);
+	for (let i = 0; i < 20; i++) {
+		const values = i % 3 === 0 ? null : i % 3 === 1 ? ["Asset"] : ["Expense", "Income"];
+		await page.evaluate((values) => window.rv_page.set_chart({ cards: window.rv_page.charts.current().cards, slicers: [{ key: "account__root_type", type: "set", values }], cross: null }), values);
+	}
+	await page.waitForFunction(() => window.rv_page.charts.debug_cards().every((c) => !c.visible || c.loaded));
+	expect(await kinds()).toBe(grid_handles);
+	// a re-run in the Charts view: the cards read the new result
 	await page.evaluate(() => window.rv_page.run());
-	await page.waitForFunction(() => window.rv_page.charts?.debug_data()?.drawn);
-	expect((await names()).filter((n) => /\/chart_/.test(n)).length).toBe(1);
+	await page.waitForFunction(() => window.rv_page.charts?.debug_cards().some((c) => c.loaded && c.drawn));
+	expect(await kinds()).toBe(grid_handles);
 	await page.evaluate(() => window.rv_page.hide());
 	await page.waitForFunction(() => window.rv_page.debug_handles().length === 0);
-	expect(await page.evaluate(() => window.rv_page.charts.chart)).toBeNull();
+	expect(await page.evaluate(() => window.rv_page.charts.debug_instances())).toBe(0);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("dashboard from the bundles written by `bench build` (charts bundle loaded on first use)", async ({ page }) => {
+	const manifest = path.resolve(__dirname, "../../../../sites/assets/assets.json");
+	const built = fs.existsSync(manifest) ? JSON.parse(fs.readFileSync(manifest, "utf8"))["report_view_charts.bundle.js"] : null;
+	test.skip(!built || !fs.existsSync(path.resolve(__dirname, "../../../../sites", `.${built}`)), "no build output");
+	const problems = watch_console(page);
+	const requests = [];
+	page.on("request", (r) => requests.push(new URL(r.url()).pathname));
+	await open(page, "report=tb&lang=ar&built=1");
+	expect(requests).not.toContain(built);
+	await to_charts(page);
+	expect(requests).toContain(built);
+	expect((await cards(page)).filter((c) => c.loaded && c.drawn).length).toBeGreaterThan(1);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+// ------------------------------------------------------------------ Pivot (phase 5b tasks 2, 3, 5)
+// Screenshots to docs/progress/screens/phase-5a2/pivot-*.png (reference:
+// reference/design/screens/pivot.png, pivot_drill.png, sidecols_pivot.png).
+const PIVOT_OUT = path.resolve(__dirname, "../../docs/progress/screens/phase-5a2");
+const pivot_shot = (page, name, full = false) => page.screenshot({ path: path.join(PIVOT_OUT, `${name}.png`), fullPage: full });
+const PIVOT_DESIGN = { width: 1440, height: 1100 };
+const pivot_handles = (page) => page.evaluate(() => window.rv_page.debug_handles().map((h) => h.kind).sort().join(","));
+const FIXTURES = path.resolve(__dirname, "../../report_view/tests/fixtures/normalize");
+const raw_rows = (file) => JSON.parse(fs.readFileSync(path.join(FIXTURES, file), "utf8")).input.raw.result;
+const pivot_rv = (pivot, extra = {}) => rv({ mode: "pivot", pivot, ...extra });
+const PV_TB_SPLIT = { rows: ["level_1", "level_2"], cols: ["account__root_type"], values: [{ key: "closing_debit", agg: "sum" }, { key: "closing_credit", agg: "sum" }] };
+const PV_AR = { rows: ["party"], cols: ["voucher_type"], values: [{ key: "paid", agg: "sum" }] };
+const PV_AR_COUNT = { rows: ["party"], cols: ["voucher_type"], values: [{ key: "paid", agg: "sum" }, { key: "paid", agg: "count" }] };
+const PV_GL = { rows: ["account"], cols: ["voucher_type", "party_type"], values: [{ key: "debit", agg: "sum" }, { key: "credit", agg: "sum" }] };
+
+const pivot_shown = (page) => page.waitForFunction(() => window.rv_page.debug_pivot()?.shown);
+
+async function to_pivot(page) {
+	await page.locator('.rv-views [data-mode="pivot"]').click();
+	await pivot_shown(page);
+	await settle(page);
+}
+
+// The pivot after a change made in the page: a new pivot view is shown and drawn.
+async function pivot_changed(page, test) {
+	await page.waitForFunction(test);
+	await pivot_shown(page);
+	await settle(page);
+}
+
+async function grid_back(page) {
+	await page.waitForFunction(() => window.rv_page.state.mode === "grid" && window.rv_page.grid.current === window.rv_page.opened && window.rv_page.grid.rt);
+	await settle(page);
+}
+
+const PIVOT_SHOTS = [
+	{ name: "pivot-tb-light-rtl", query: "report=tb&lang=ar" },
+	{ name: "pivot-tb-dark-rtl", query: "report=tb&lang=ar&desk=dark" },
+	{ name: "pivot-tb-light-ltr", query: "report=tb&lang=en" },
+	{ name: "pivot-tb-dark-ltr", query: "report=tb&lang=en&desk=dark" },
+	{ name: "pivot-tb-compact-rtl", query: "report=tb&lang=ar&density=compact" },
+	{ name: "pivot-tb-split-light-rtl", query: `report=tb&lang=ar&rv=${pivot_rv(PV_TB_SPLIT)}` },
+	{ name: "pivot-tb-split-dark-ltr", query: `report=tb&lang=en&desk=dark&rv=${pivot_rv(PV_TB_SPLIT)}` },
+	{ name: "pivot-ar-light-rtl", query: `report=ar&lang=ar&rv=${pivot_rv(PV_AR_COUNT)}` },
+	{ name: "pivot-ar-dark-ltr", query: `report=ar&lang=en&desk=dark&rv=${pivot_rv(PV_AR_COUNT)}` },
+	{ name: "pivot-gl-light-ltr", query: `report=gl&lang=en&rv=${pivot_rv(PV_GL)}` },
+	{ name: "pivot-gl-dark-rtl", query: `report=gl&lang=ar&desk=dark&rv=${pivot_rv(PV_GL)}` },
+	{ name: "pivot-gl-default-light-rtl", query: "report=gl&lang=ar" },
+	{ name: "pivot-tb-390-rtl", query: `report=tb&lang=ar&rv=${pivot_rv(PV_TB_SPLIT)}`, width: 390, height: 844, full: true },
+	{ name: "pivot-gl-390-dark-ltr", query: `report=gl&lang=en&pref=dark&rv=${pivot_rv(PV_GL)}`, width: 390, height: 844, full: true },
+];
+
+for (const s of PIVOT_SHOTS) {
+	test(s.name, async ({ page }) => {
+		const problems = watch_console(page);
+		await open(page, s.query, { width: s.width || PIVOT_DESIGN.width, height: s.height || PIVOT_DESIGN.height });
+		// a link with mode "pivot" opens on the pivot; others switch to it with the tab
+		if (!(await page.evaluate(() => window.rv_page.debug_pivot()?.shown))) await to_pivot(page);
+		await expect(page.locator('.rv-views [data-mode="pivot"]')).toHaveClass(/on/);
+		await expect(page.locator(".rv-pivotbar")).toBeVisible();
+		await pivot_shot(page, s.name, Boolean(s.full));
+		// header rows: one level per pivot column, plus the value's name when there are several values
+		const info = await page.evaluate(() => ({ p: window.rv_page.debug_pivot(), rows: document.querySelectorAll(".rv-pivotgrid regular-table thead tr").length }));
+		const levels = info.p.cols.length + (info.p.values.length > 1 || !info.p.cols.length ? 1 : 0);
+		expect(info.rows, "header rows").toBe(levels);
+		expect(problems, "console errors/warnings").toEqual([]);
+	});
+}
+
+for (const [name, query, act] of [
+	["pivot-tb-drill-light-rtl", `report=tb&lang=ar&rv=${pivot_rv(PV_TB_SPLIT)}`, null],
+	["pivot-ar-drill-dark-ltr", `report=ar&lang=en&desk=dark&rv=${pivot_rv(PV_AR_COUNT)}`, null],
+	["pivot-tb-sidecols-light-rtl", "report=tb&lang=ar", "sidecols"],
+	["pivot-ar-sidecols-dark-ltr", `report=ar&lang=en&desk=dark&rv=${pivot_rv(PV_AR)}`, "sidecols"],
+]) {
+	test(name, async ({ page }) => {
+		const problems = watch_console(page);
+		await open(page, query, PIVOT_DESIGN);
+		if (!(await page.evaluate(() => window.rv_page.debug_pivot()?.shown))) await to_pivot(page);
+		if (act === "sidecols") {
+			await page.locator('[data-side="columns"]').click();
+			await expect(page.locator('.rv-panel [data-action="pivot-mode"]')).toHaveAttribute("aria-checked", "true");
+		} else {
+			await page.locator(".rv-pivotgrid regular-table tbody td.pv").first().click();
+			await page.waitForFunction(() => document.querySelector(".rv-pv-drill .rv-pv-sub")?.dataset.count);
+		}
+		await page.waitForTimeout(300);
+		await pivot_shot(page, name);
+		expect(problems, "console errors/warnings").toEqual([]);
+	});
+}
+
+const pivot_data = (page) =>
+	page.evaluate(async () => {
+		const o = window.rv_page.pivot_opened;
+		const t = await o.totals.to_columns();
+		const p = o.view ? await o.view.to_columns() : {};
+		return { paths: t.__ROW_PATH__, t, p, total: o.total, column_paths: o.column_paths };
+	});
+
+const close_to = (a, b, label) => expect(Math.abs((a ?? 0) - (b ?? 0)), `${label}: ${a} != ${b}`).toBeLessThan(0.005);
+
+test("pivot: values = a manual check on three combinations of the fixture; grand total = the grid's total", async ({ page }) => {
+	const problems = watch_console(page);
+	// receivables: party x voucher type, paid (sum and count)
+	const ar = raw_rows("accounts_receivable_frappe_total.json").filter((r) => r.party && r.voucher_type);
+	await open(page, `report=ar&lang=en&rv=${pivot_rv(PV_AR_COUNT)}`);
+	let d = await pivot_data(page);
+	const combos = [];
+	for (const party of [...new Set(ar.map((r) => r.party))]) {
+		for (const type of [...new Set(ar.map((r) => r.voucher_type))]) {
+			const rows = ar.filter((r) => r.party === party && r.voucher_type === type);
+			if (rows.length) combos.push({ party, type, sum: rows.reduce((a, r) => a + (r.paid || 0), 0), count: rows.length });
+		}
+	}
+	expect(combos.length).toBeGreaterThanOrEqual(3);
+	for (const c of combos.slice(0, 3)) {
+		const i = d.paths.findIndex((p) => p.length === 1 && p[0] === c.party);
+		close_to(d.p[`${c.type}|__pv0`][i], c.sum, `${c.party} / ${c.type}`);
+		expect(d.p[`${c.type}|__pv1`][i]).toBe(c.count);
+	}
+	// what the screen shows is that number: the cell of the first combination
+	const first = combos[0];
+	const shown = await page.evaluate(({ party, type }) => {
+		const rt = document.querySelector(".rv-pivotgrid regular-table");
+		const x = window.rv_page.pivot_opened.column_paths.indexOf(`${type}|__pv0`);
+		for (const td of rt.querySelectorAll("tbody td")) {
+			const th = td.parentElement.querySelector("th");
+			if (rt.getMeta(td).x === x && th.textContent.includes(party)) return td.textContent;
+		}
+		return null;
+	}, first);
+	expect(shown).not.toBeNull();
+	if (Math.abs(first.sum) < 0.005) expect(shown.trim()).toBe("—");
+	else close_to(Number(shown.replace(/[^\d.-]/g, "")), first.sum, "cell on screen");
+	// grand total of the pivot = the grid's total for the same measure and filters
+	const pivot_total = d.total.__pv0;
+	await page.locator('.rv-views [data-mode="grid"]').click();
+	await grid_back(page);
+	close_to(pivot_total, (await page.evaluate(() => window.rv_page.debug_totals().totals)).paid, "ar total");
+
+	// with a filter of the page: the same filter on both
+	await page.evaluate(() => window.rv_page.controls.set_filter("voucher_type", { key: "voucher_type", type: "set", values: ["Payment Entry"], exclude: false }));
+	await page.waitForFunction(() => window.rv_page.opened?.post.fact_filter.length && window.rv_page.grid.current === window.rv_page.opened);
+	const grid_filtered = (await page.evaluate(() => window.rv_page.debug_totals().totals)).paid;
+	await to_pivot(page);
+	d = await pivot_data(page);
+	close_to(d.total.__pv0, grid_filtered, "ar filtered total");
+	expect(d.column_paths.every((n) => n.startsWith("Payment Entry|"))).toBe(true);
+
+	// general ledger: two pivot columns, the grand total = the grid's debit and credit
+	const gl = raw_rows("general_ledger_consolidated.json").filter((r) => r.voucher_type && !String(r.account).startsWith("'"));
+	await open(page, `report=gl&lang=en&rv=${pivot_rv(PV_GL)}`);
+	d = await pivot_data(page);
+	let checked = 0;
+	for (const name of d.column_paths.filter((n) => n.endsWith("|__pv0"))) {
+		const [vt, pt] = name.split("|");
+		for (let i = 1; i < d.paths.length && checked < 3; i++) {
+			const rows = gl.filter((r) => r.account === d.paths[i][0] && r.voucher_type === vt && (r.party_type || "null") === pt);
+			if (!rows.length) continue;
+			close_to(d.p[name][i], rows.reduce((a, r) => a + (r.debit || 0), 0), `${d.paths[i][0]} / ${name}`);
+			checked += 1;
+		}
+	}
+	expect(checked).toBe(3);
+	const gl_total = d.total;
+	await page.locator('.rv-views [data-mode="grid"]').click();
+	await grid_back(page);
+	const grid = await page.evaluate(() => window.rv_page.debug_totals().totals);
+	close_to(gl_total.__pv0, grid.debit, "gl debit");
+	close_to(gl_total.__pv1, grid.credit, "gl credit");
+
+	// trial balance: period debit and credit (the leaves add up to the report's total)
+	await open(page, `report=tb&lang=en&rv=${pivot_rv({ rows: ["level_1"], cols: ["account__root_type"], values: [{ key: "debit", agg: "sum" }, { key: "credit", agg: "sum" }] })}`);
+	d = await pivot_data(page);
+	await page.locator('.rv-views [data-mode="grid"]').click();
+	await grid_back(page);
+	const tb = await page.evaluate(() => window.rv_page.debug_totals().totals);
+	close_to(d.total.__pv0, tb.debit, "tb debit");
+	close_to(d.total.__pv1, tb.credit, "tb credit");
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pivot drill-down: the rows behind a cell, as many as its count, from a temporary view deleted at once", async ({ page }) => {
+	const problems = watch_console(page);
+	const ar = raw_rows("accounts_receivable_frappe_total.json").filter((r) => r.party && r.voucher_type);
+	await open(page, `report=ar&lang=ar&rv=${pivot_rv(PV_AR_COUNT)}`);
+	const before = await pivot_handles(page);
+	// count cells on screen: the drill-down of each lists that many rows (= the fixture's rows)
+	const cells = await page.evaluate(() => {
+		const rt = document.querySelector(".rv-pivotgrid regular-table");
+		const o = window.rv_page.pivot_opened;
+		const out = [];
+		rt.querySelectorAll("tbody td.pv").forEach((td, i) => {
+			const name = o.column_paths[rt.getMeta(td).x];
+			if (name && name.endsWith("|__pv1")) out.push({ i, count: Number(td.textContent.replace(/[^\d]/g, "")), type: name.split("|")[0], party: td.parentElement.querySelector("th").textContent });
+		});
+		return out;
+	});
+	expect(cells.length).toBeGreaterThan(0);
+	for (const c of cells.slice(0, 3)) {
+		await page.locator(".rv-pivotgrid regular-table tbody td.pv").nth(c.i).click();
+		await page.waitForFunction(() => document.querySelector(".rv-pv-drill .rv-pv-sub")?.dataset.count);
+		const listed = await page.evaluate(() => ({
+			count: Number(document.querySelector(".rv-pv-drill .rv-pv-sub").dataset.count),
+			items: document.querySelectorAll(".rv-pv-drill .rv-pv-item").length,
+		}));
+		expect(listed.count, `drill of ${c.party} / ${c.type}`).toBe(c.count);
+		expect(listed.items).toBe(c.count);
+		const party = ar.map((r) => r.party).find((p) => c.party.includes(p));
+		expect(ar.filter((r) => r.party === party && r.voucher_type === c.type).length).toBe(c.count);
+		// the temporary view was deleted in `finally`
+		expect(await pivot_handles(page)).toBe(before);
+		await page.keyboard.press("Escape");
+		await expect(page.locator(".rv-pv-drill")).toHaveCount(0);
+	}
+	// the grand total row: every row of the report under the page's filters
+	await page.locator(".rv-pivot .rv-rt-total .rv-c.pv").last().click();
+	await page.waitForFunction(() => document.querySelector(".rv-pv-drill .rv-pv-sub")?.dataset.count);
+	expect(await page.evaluate(() => Number(document.querySelector(".rv-pv-drill .rv-pv-sub").dataset.count))).toBe(ar.length);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pivot from the columns panel: switch, zones, aggregate; the URL keeps the pivot; drag a column to the pivot columns", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=ar&lang=en", PIVOT_DESIGN);
+	await page.locator('[data-side="columns"]').click();
+	const sw = page.locator('.rv-panel [data-action="pivot-mode"]');
+	await expect(sw).toHaveAttribute("aria-checked", "false");
+	await expect(page.locator('.rv-panel [data-zone="pivot"]')).toHaveClass(/off/);
+	// a column dragged to the pivot columns zone turns the pivot mode on with it
+	await page.locator('.rv-panel [data-zone="pivot"]').scrollIntoViewIfNeeded();
+	await page.locator('.rv-panel .rv-colitem[data-key="voucher_type"]').dragTo(page.locator('.rv-panel [data-zone="pivot"]'));
+	await pivot_changed(page, () => window.rv_page.state.mode === "pivot" && window.rv_page.debug_pivot()?.cols.join() === "voucher_type");
+	await expect(sw).toHaveAttribute("aria-checked", "true");
+	expect((await page.evaluate(() => window.rv_page.debug_pivot())).rows).toEqual(["party"]);
+	// "+ Add" lists: a row level and a value; the aggregate of a value
+	await page.locator('.rv-panel [data-add="rows"]').selectOption("posting_date");
+	await pivot_changed(page, () => window.rv_page.debug_pivot()?.rows.join() === "party,posting_date");
+	await page.locator('.rv-panel [data-add="values"]').selectOption("outstanding");
+	await pivot_changed(page, () => window.rv_page.debug_pivot()?.values.length === 2);
+	await page.locator('.rv-panel [data-pagg="1"]').selectOption("max");
+	await pivot_changed(page, () => window.rv_page.debug_pivot()?.values[1].agg === "max");
+	expect(await page.evaluate(() => window.rv_page.pivot_opened.spec.config.aggregates.__pv1)).toBe("high");
+	// a pivot column moved to the rows: it leaves the columns
+	await page.locator(".rv-pivotbar .rv-gchip").first().dragTo(page.locator(".rv-gp:not(.pv) .rv-gp-chips"));
+	await pivot_changed(page, () => window.rv_page.debug_pivot()?.cols.length === 0);
+	expect((await page.evaluate(() => window.rv_page.debug_pivot())).rows).toContain("voucher_type");
+	// the URL carries the pivot; a page opened with it shows the same pivot
+	// (the URL is written 300 ms after the last change)
+	await page.waitForTimeout(500);
+	const search = await page.evaluate(() => new URLSearchParams(window.location.search).get("rv"));
+	expect(search).toBeTruthy();
+	const pivot = await page.evaluate(() => window.rv_page.state.pivot);
+	await open(page, `report=ar&lang=en&rv=${search}`, PIVOT_DESIGN);
+	await pivot_shown(page);
+	expect(await page.evaluate(() => window.rv_page.state.pivot)).toEqual(pivot);
+	expect(await page.evaluate(() => window.rv_page.state.mode)).toBe("pivot");
+	// the switch off: the table again, the pivot's views deleted
+	await page.locator('[data-side="columns"]').click();
+	await page.locator('.rv-panel [data-action="pivot-mode"]').click();
+	await grid_back(page);
+	expect(await page.evaluate(() => window.rv_page.debug_handles().filter((h) => /pivot/.test(h.name)))).toEqual([]);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pivot: folding a row in both views; expand all and collapse all", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=tb&lang=ar&rv=${pivot_rv(PV_TB_SPLIT)}`);
+	const rows = () => page.evaluate(() => window.rv_page.pivot.body_rows);
+	const all = await rows();
+	await page.locator(".rv-gp:not(.pv) [data-action='collapse-all']").click();
+	await page.waitForFunction((n) => window.rv_page.pivot.body_rows < n, all);
+	const tops = await rows();
+	const data = await pivot_data(page);
+	expect(data.paths.slice(1).every((p) => p.length === 1)).toBe(true);
+	expect(data.p.__ROW_PATH__).toEqual(data.paths);
+	await page.locator(".rv-pivotgrid regular-table tbody .rv-caret").first().click();
+	await page.waitForFunction((n) => window.rv_page.pivot.body_rows > n, tops);
+	await page.locator(".rv-gp:not(.pv) [data-action='expand-all']").click();
+	await page.waitForFunction((n) => window.rv_page.pivot.body_rows === n, all);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pivot: more split columns than the limit are not drawn; a notice says so", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=gl&lang=en&rows=1200&rv=${pivot_rv({ rows: ["account"], cols: ["voucher_no"], values: [{ key: "debit", agg: "sum" }] })}`);
+	const p = await page.evaluate(() => window.rv_page.debug_pivot());
+	expect(p.blocked).toBe(true);
+	expect(p.cols).toEqual([]);
+	await expect(page.locator(".rv-notice")).toContainText("500");
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pivot lifecycle: no handle left after 20 switches and pivot changes, a re-run and leaving", async ({ page }) => {
+	const problems = watch_console(page);
+	const names = () => page.evaluate(() => window.rv_page.debug_handles().map((h) => h.name));
+	await open(page, `report=tb&lang=ar&rv=${rv({ pivot: PV_TB_SPLIT })}`);
+	const grid_handles = await pivot_handles(page);
+	for (let i = 0; i < 20; i++) {
+		if (i % 2 === 0) {
+			await to_pivot(page);
+			if (i % 4 === 0) {
+				await page.evaluate((n) => window.rv_page.controls.set_pivot_cols(n ? ["account__root_type"] : []), i % 8);
+				await pivot_changed(page, () => window.rv_page.pivot.current === window.rv_page.pivot_opened);
+			}
+			const pv = (await names()).filter((n) => /\/pivot/.test(n));
+			const split = (await page.evaluate(() => window.rv_page.debug_pivot().cols.length)) > 0;
+			expect(pv.length, `switch ${i}`).toBe(split ? 2 : 1);
+		} else {
+			await page.locator('.rv-views [data-mode="grid"]').click();
+			await grid_back(page);
+			expect(await pivot_handles(page), `switch ${i}`).toBe(grid_handles);
+		}
+	}
+	await to_pivot(page);
+	await page.evaluate(() => window.rv_page.run());
+	await pivot_changed(page, () => window.rv_page.debug_pivot()?.shown);
+	expect((await names()).filter((n) => /\/pivot/.test(n)).length).toBeLessThanOrEqual(2);
+	await page.evaluate(() => window.rv_page.hide());
+	await page.waitForFunction(() => window.rv_page.debug_handles().length === 0);
 	expect(problems, "console errors/warnings").toEqual([]);
 });

@@ -1132,3 +1132,187 @@ msgstr "الدائري يعرض المقياس الأول فقط."
 
 msgid "Categories that mix currencies have no total and are not drawn."
 msgstr "الفئات التي تخلط عملات مختلفة بلا إجمالي ولا تُرسم."
+
+msgid "Pivot rows"
+msgstr "صفوف التحليل"
+
+msgid "Turn the values of a dimension into columns"
+msgstr "تحويل قيم بُعد إلى أعمدة ديناميكية"
+
+msgid "Turn on pivot mode, or drag a dimension here to turn it on"
+msgstr "فعّل وضع التحليل، أو اسحب بُعداً هنا لتفعيله تلقائياً"
+
+msgid "Drag a column here to turn its values into columns"
+msgstr "اسحب عموداً هنا لتحويل قيمه إلى أعمدة"
+
+msgid "+ Add…"
+msgstr "+ إضافة…"
+
+msgid "Value: {0}"
+msgstr "القيمة: {0}"
+
+msgid "Sum of {0}"
+msgstr "مجموع {0}"
+
+msgid "Average of {0}"
+msgstr "متوسط {0}"
+
+msgid "Count of {0}"
+msgstr "عدد {0}"
+
+msgid "Minimum of {0}"
+msgstr "أدنى {0}"
+
+msgid "Maximum of {0}"
+msgstr "أعلى {0}"
+
+msgid "Rows behind this value"
+msgstr "الصفوف المكوّنة لهذه القيمة"
+
+msgid "{0} · {1} rows"
+msgstr "{0} · {1} صف مكوّن"
+
+msgid "{0} · {1} rows, the largest {2} shown"
+msgstr "{0} · {1} صف مكوّن، يُعرض أكبر {2}"
+
+msgid "The rows could not be read"
+msgstr "تعذّرت قراءة الصفوف"
+
+msgid "The pivot columns would make {0} columns, more than {1}: the pivot is shown without them. Choose a dimension with fewer values, or filter the rows."
+msgstr "أعمدة التحليل ستنتج {0} عموداً، أكثر من {1}: يُعرض التحليل بدونها. اختر بُعداً بقيم أقل، أو صفِّ الصفوف."
+
+msgid "Closing balances by account type"
+msgstr "الأرصدة الختامية حسب نوع الحساب"
+
+msgid "Expenses distribution"
+msgstr "توزيع المصروفات"
+
+msgid "Accounts with the most movement in the period"
+msgstr "أكثر الحسابات حركة خلال الفترة"
+
+msgid "Outstanding by party"
+msgstr "المستحق حسب الطرف"
+
+msgid "Outstanding by ageing range"
+msgstr "المستحق حسب فترة التقادم"
+
+msgid "Add a chart to see the report's numbers by any of its columns."
+msgstr "أضف رسماً لعرض أرقام التقرير حسب أي عمود من أعمدته."
+
+msgid "Add chart"
+msgstr "إضافة رسم"
+
+msgid "Add filter"
+msgstr "إضافة فلتر"
+
+msgid "Aggregate"
+msgstr "التجميع"
+
+msgid "As in the report"
+msgstr "كما في التقرير"
+
+msgid "By category"
+msgstr "حسب الفئة"
+
+msgid "Chart filters"
+msgstr "فلاتر الرسوم"
+
+msgid "Chart options"
+msgstr "خيارات الرسم"
+
+msgid "Clear the chart filter"
+msgstr "إلغاء فلتر الرسم"
+
+msgid "Dashboard options"
+msgstr "خيارات اللوحة"
+
+msgid "Edit chart"
+msgstr "تعديل الرسم"
+
+msgid "Filter the charts by"
+msgstr "فلترة الرسوم حسب"
+
+msgid "Filtered by"
+msgstr "مفلتر حسب"
+
+msgid "Full width"
+msgstr "بعرض كامل"
+
+msgid "Half width"
+msgstr "بنصف العرض"
+
+msgid "Largest first"
+msgstr "الأكبر أولاً"
+
+msgid "Smallest first"
+msgstr "الأصغر أولاً"
+
+msgid "No charts yet"
+msgstr "لا توجد رسوم بعد"
+
+msgid "No more columns"
+msgstr "لا توجد أعمدة أخرى"
+
+msgid "None: the measures side by side"
+msgstr "بلا بُعد: المقاييس متجاورة"
+
+msgid "Number card"
+msgstr "بطاقة رقم"
+
+msgid "Stacked bars"
+msgstr "أشرطة مكدّسة"
+
+msgid "Remove chart"
+msgstr "حذف الرسم"
+
+msgid "Remove filter {0}"
+msgstr "إزالة فلتر {0}"
+
+msgid "Report default dashboard"
+msgstr "لوحة التقرير الافتراضية"
+
+msgid "Showing {0} of {1}"
+msgstr "يعرض {0} من {1}"
+
+msgid "The current filters left no rows. Remove some of them."
+msgstr "لم تُبقِ الفلاتر الحالية أي صف. أزل بعضها."
+
+msgid "This chart could not be drawn"
+msgstr "تعذّر رسم هذا الرسم"
+
+msgid "Top {0}"
+msgstr "أعلى {0}"
+
+msgid "Totals of the measures"
+msgstr "إجماليات المقاييس"
+
+msgid "{0} by {1}"
+msgstr "{0} حسب {1}"
+
+msgctxt "Report View"
+msgid "Area"
+msgstr "مساحي"
+
+msgctxt "Report View"
+msgid "Automatic"
+msgstr "تلقائي"
+
+msgctxt "Report View"
+msgid "Done"
+msgstr "تم"
+
+msgctxt "Report View"
+msgid "Duplicate"
+msgstr "تكرار"
+
+msgctxt "Report View"
+msgid "Show"
+msgstr "العرض"
+
+msgctxt "Report View"
+msgid "Title"
+msgstr "العنوان"
+
+msgctxt "Report View"
+msgid "Sort"
+msgstr "الترتيب"

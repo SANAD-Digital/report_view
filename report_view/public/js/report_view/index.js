@@ -20,12 +20,16 @@ import { fold_all, toggle_tree_node, visible_columns } from "./engine/view_confi
 import { default_state, sanitize, reconcile } from "./state/view_state.js";
 import { decode_state, make_url_updater } from "./state/url.js";
 import { sanitize_groups } from "./state/column_groups.js";
+import { sanitize_dashboard } from "./state/dashboard_state.js";
 import { open_column_groups } from "./components/column_groups_dialog.js";
 import { load_report_settings, MissingFiltersError } from "./filters/report_filters.js";
 import { CriteriaBar } from "./filters/criteria.js";
 import { install_facade, make_facade } from "./filters/facade.js";
 import { make_formatter } from "./format.js";
 import { GridView } from "./views/grid_view.js";
+import { PivotView } from "./views/pivot_view.js";
+import { PivotBar } from "./components/pivot_bar.js";
+import { open_pivot_drill, DRILL_LIMIT } from "./components/pivot_drill.js";
 import { StateOverlay } from "./components/states.js";
 import { Header } from "./components/header.js";
 import { Toolbar } from "./components/toolbar.js";
@@ -122,7 +126,7 @@ export class ReportViewPage {
 				<div class="rv-message"></div>
 				<div class="rv-summary-slot"></div>
 				<div class="rv-charts-slot"></div>
-				<div class="rv-gridwrap"><div class="rv-body"><div class="rv-grid"></div></div></div>
+				<div class="rv-gridwrap"><div class="rv-body"><div class="rv-grid"></div><div class="rv-grid rv-pivotgrid"></div></div></div>
 			</div>`;
 		this.page.main.get(0).replaceChildren(root);
 		this.root = root;
@@ -148,13 +152,20 @@ export class ReportViewPage {
 		const body = this.$(".rv-body");
 		this.group_panel = new GroupPanel({
 			parent: wrap,
-			on_change: (by) => this.controls.set_group(by),
-			groupable: (key) => this.controls.groupable(key),
+			on_change: (by) => (this.state?.mode === "pivot" ? this.controls.set_pivot_rows(by) : this.controls.set_group(by)),
+			groupable: (key) => (this.state?.mode === "pivot" ? this.controls.pivotable(key) : this.controls.groupable(key)),
 			on_subtotals: (on) => this.set_subtotals(on),
 			on_fold_all: (open) => this.fold_all(open),
 			on_column_groups: () => open_column_groups(this.controls),
 		});
 		wrap.prepend(this.group_panel.el);
+		this.pivot_bar = new PivotBar({
+			parent: wrap,
+			after: this.group_panel.el,
+			on_change: (cols) => this.controls.set_pivot_cols(cols),
+			allowed: (key) => this.controls.pivotable(key),
+			on_row_moved: (key, at) => this.controls.move_pivot_dim(key, "cols", at),
+		});
 		this.overlay = new StateOverlay(wrap);
 		this.notices = new NoticeBar({ parent: wrap, before: body });
 		this.cells = new HeaderCells({
@@ -176,6 +187,14 @@ export class ReportViewPage {
 			on_fold_changed: (expanded) => this.save_fold(expanded),
 			on_column_resized: (key, width) => this.save_width(key, width),
 		});
+		this.pivot = new PivotView({
+			parent: this.$(".rv-pivotgrid"),
+			rtl: this.rtl,
+			fold: (opened, change) => this.session.fold_pivot(opened, change),
+			on_cell: (cell) => this.open_pivot_cell(cell),
+		});
+		this.pivot_token = 0;
+		this.pivot_opened = null;
 		this.side = new SidePanel({ body, host: this.controls.side_host() });
 		this.status = new StatusBar({ parent: wrap });
 		this.apply_density();
@@ -212,6 +231,27 @@ export class ReportViewPage {
 		}
 	}
 
+	// The user's charts dashboard of this report (cards and slicers; the cross-filter of a
+	// click is not kept), in the same user settings. A link with its own dashboard (rv) wins.
+	async load_user_charts() {
+		if (!frappe.model?.user_settings?.get) return;
+		try {
+			const saved = sanitize_dashboard((await frappe.model.user_settings.get(this.user_settings_key()))?.charts);
+			if (saved) this.state.charts = { ...saved, cross: null };
+		} catch {
+			// no saved dashboard: the report's default
+		}
+	}
+
+	save_user_charts(dashboard) {
+		if (!frappe.model?.user_settings?.save) return;
+		// One request after a burst of changes (ticking slicer values one by one).
+		clearTimeout(this._charts_save);
+		const key = this.user_settings_key();
+		const value = dashboard ? { ...dashboard, cross: null } : null;
+		this._charts_save = setTimeout(() => frappe.model.user_settings.save(key, "charts", value), 800);
+	}
+
 	save_user_groups(groups) {
 		if (!frappe.model?.user_settings?.save) return;
 		frappe.model.user_settings.save(
@@ -228,6 +268,26 @@ export class ReportViewPage {
 		this.toolbar.search.refresh();
 		this.cells.refresh();
 		this.side.refresh();
+		const pivot = this.state.mode === "pivot" ? this.controls.pivot() : null;
+		this.pivot_bar.show(Boolean(pivot));
+		if (pivot) {
+			const labels = Object.fromEntries([...pivot.rows, ...pivot.cols].map((k) => [k, this.controls.dim_title(k)]));
+			this.group_panel.set({
+				by: pivot.rows,
+				labels,
+				foldable: pivot.rows.length > 1,
+				subtotals: false,
+				hierarchical: false,
+				pivot: { cols: pivot.cols, on_column: (key, at) => this.controls.move_pivot_dim(key, "rows", at) },
+			});
+			this.pivot_bar.set({
+				cols: pivot.cols,
+				rows: pivot.rows,
+				labels,
+				values: pivot.values.map((v) => this.controls.value_title(v)).join(__(", ")),
+			});
+			return;
+		}
 		this.group_panel.set({
 			by: this.state.group.by,
 			labels: Object.fromEntries(this.state.group.by.map((k) => [k, this.controls.title(k)])),
@@ -237,11 +297,12 @@ export class ReportViewPage {
 		});
 	}
 
-	// View switcher: the table or the charts (Pivot is not built yet: shown as the table).
+	// View switcher: the table, the pivot or the charts.
 	apply_mode() {
-		const charts = this.state?.mode === "charts";
-		this.root.classList.toggle("rv-mode-charts", charts);
-		this.toolbar.set_mode(charts ? "charts" : "grid");
+		const mode = this.state?.mode || "grid";
+		this.root.classList.toggle("rv-mode-charts", mode === "charts");
+		this.root.classList.toggle("rv-mode-pivot", mode === "pivot");
+		this.toolbar.set_mode(mode);
 	}
 
 	set_mode(mode) {
@@ -254,9 +315,91 @@ export class ReportViewPage {
 	// The user changed the chart (type, dimension, measures): only the chart's view is opened again.
 	set_chart(chart) {
 		if (!this.state) return;
-		this.state.chart = chart;
+		this.state.charts = chart;
+		this.save_user_charts(chart);
 		this.update_url(this.last_filters, this.state, default_state(this.config));
 		if (this.charts) this.charts.refresh().catch((e) => this.show_error(e));
+	}
+
+	// The user changed the pivot (rows, columns, values): only the pivot's views are opened again.
+	set_pivot(pivot, mode = null) {
+		if (!this.state) return;
+		if (mode && this.state.mode !== mode) {
+			this.change((s) => {
+				s.pivot = pivot;
+				s.mode = mode;
+			});
+			return;
+		}
+		this.state.pivot = pivot;
+		this.refresh_controls();
+		this.update_url(this.last_filters, this.state, default_state(this.config));
+		if (this.state.mode === "pivot" && this.session && this.opened) this.show_pivot(this.session).catch((e) => this.show_error(e));
+	}
+
+	/**
+	 * Pivot mode (docs/architecture.md §11.1 #67): the pivot's two views are opened, swapped
+	 * into the pivot table, then the previous ones are deleted. A newer call supersedes this one.
+	 */
+	async show_pivot(session) {
+		const token = ++this.pivot_token;
+		const pivot = this.controls.pivot();
+		if (!pivot) return;
+		const opened = await session.open_pivot(this.state, pivot);
+		if (!opened) return;
+		if (token !== this.pivot_token || session !== this.session || this.state.mode !== "pivot") {
+			await session.close_pivot(opened);
+			return;
+		}
+		const previous = this.pivot_opened;
+		this.pivot_opened = opened;
+		this.notices.show(describe_notices([...(this.opened?.post.notices || []), ...opened.post.notices], this.report.columns));
+		try {
+			await this.pivot.show({
+				opened,
+				report: this.report,
+				state: this.state,
+				config: this.config,
+				controls: this.controls,
+				fmt: this.formatter,
+			});
+		} finally {
+			if (previous) await session.close_pivot(previous);
+		}
+	}
+
+	/** Leaves pivot mode: the pivot table goes, its views are deleted. */
+	async close_pivot() {
+		this.pivot_token += 1;
+		const opened = this.pivot_opened;
+		this.pivot_opened = null;
+		this.pivot.destroy();
+		if (opened && this.session) await this.session.close_pivot(opened);
+	}
+
+	// A pivot cell was pressed: the report rows behind it (a temporary view, deleted at once).
+	open_pivot_cell(cell) {
+		const session = this.session;
+		if (!session || cell.opened !== this.pivot_opened) return;
+		const label_key = this.controls.label_key();
+		const label = this.controls.column(label_key);
+		const parts = this.config?.tree?.name_key ? this.config.tree : null;
+		const column = this.controls.column(cell.value.key);
+		const fmt = this.formatter;
+		open_pivot_drill({
+			root: this.root,
+			cell,
+			load: () => session.pivot_drill(cell.opened, cell.row_path, cell.col_values, cell.value, label_key, DRILL_LIMIT),
+			row_of: (rid) => session.rows_by_rid.get(rid) || null,
+			label_html: (row) => {
+				if (parts && row[parts.name_key]) {
+					const no = parts.number_key && row[parts.number_key] ? `<bdi class="rv-accno">${esc(row[parts.number_key])}</bdi>` : "";
+					return `${no}${esc(row[parts.name_key])}`;
+				}
+				return label ? fmt.caption_html(label, row) || esc(__("Not Set")) : "";
+			},
+			value_of: (row) => ({ html: fmt.value_html(column, { ...row, __kind: "group" }), sign: fmt.sign_of(column, row) }),
+		});
 	}
 
 	// The Charts view and ECharts load on first use (report_view_charts.bundle.js).
@@ -397,6 +540,10 @@ export class ReportViewPage {
 		this.grid.destroy();
 		this.notices.show(null);
 		await this.close_charts();
+		// The pivot's views go with the tables of the session.
+		this.pivot_token += 1;
+		this.pivot_opened = null;
+		this.pivot.destroy();
 		if (session) await session.close();
 	}
 
@@ -469,6 +616,7 @@ export class ReportViewPage {
 		const from_url = decode_state(params.get("rv"));
 		this.state = sanitize(from_url || default_state(this.config), this.config);
 		if (!from_url?.columns?.groups) await this.load_user_groups();
+		if (!from_url?.charts) await this.load_user_charts();
 		this.state.ui.density = this.density;
 		this.prepared_report_name = route_options.prepared_report_name || null;
 
@@ -666,6 +814,7 @@ export class ReportViewPage {
 		const session = this.session;
 		if (!report.rows.length) {
 			await this.close_charts();
+			await this.close_pivot();
 			this.grid.destroy();
 			this.notices.show(null);
 			const notes = report.notices.filter((n) => n.code === "SERVER_MESSAGE").map((n) => n.detail);
@@ -704,10 +853,14 @@ export class ReportViewPage {
 		this.notices.show(describe_notices(opened.post.notices, report.columns));
 		this.refresh_controls();
 		const charts = this.state.mode === "charts";
-		if (charts) {
+		const pivot = this.state.mode === "pivot";
+		if (charts || pivot) {
 			this.grid.destroy();
+			if (charts) await this.close_pivot();
+			else await this.close_charts();
 		} else {
 			await this.close_charts();
+			await this.close_pivot();
 			await this.grid.show({
 				report,
 				opened,
@@ -723,6 +876,7 @@ export class ReportViewPage {
 			await this.update_summary(opened, session);
 		}
 		if (charts && this.opened === opened) await this.show_charts(session);
+		if (pivot && this.opened === opened) await this.show_pivot(session);
 		this.update_url(this.last_filters, this.state, default_state(this.config));
 	}
 
@@ -834,6 +988,10 @@ export class ReportViewPage {
 	// "Expand all" / "collapse all" of the toolbar.
 	fold_all(open) {
 		if (!this.report || !this.state) return;
+		if (this.state.mode === "pivot") {
+			this.pivot.fold_all(open).catch((e) => this.show_error(e));
+			return;
+		}
 		const change = fold_all(this.state, this.report, open);
 		if (!change) return;
 		Object.assign(this.state, change);
@@ -925,6 +1083,22 @@ export class ReportViewPage {
 	// Raw values read by the Playwright test: totals of the current view.
 	debug_totals() {
 		return this.opened ? { mode: this.result.mode, totals: this.opened.expected.totals } : null;
+	}
+
+	// What the pivot shows (read by the Playwright tests).
+	debug_pivot() {
+		const o = this.pivot_opened;
+		if (!o) return null;
+		return {
+			rows: o.post.rows,
+			cols: o.post.cols,
+			values: o.post.values.map((v) => ({ key: v.key, agg: v.agg, name: v.name })),
+			column_paths: o.column_paths,
+			body_rows: o.body_rows,
+			total: o.total,
+			blocked: o.post.blocked,
+			shown: this.pivot.current === o && Boolean(this.pivot.rt),
+		};
 	}
 
 	// Views and tables not deleted yet (development counter, §8أ.3).

@@ -14,12 +14,12 @@
 .rv-gchip.pv{background:var(--dr-soft);border-color:transparent}
 
 /* rows: the deepest level is a plain row (.pvleaf), the levels above it groups */
-.rv regular-table tbody tr.group.pvleaf > *{background:var(--surface);font-weight:400}
-.rv regular-table tbody tr.group.pvleaf:hover > *{background:var(--hover)}
+.rv-pivot regular-table tbody tr.group.pvleaf > *{background:var(--surface);font-weight:400}
+.rv-pivot regular-table tbody tr.group.pvleaf:hover > *{background:var(--hover)}
 /* a value opens the rows behind it (.rv-c.pv.click) */
-.rv regular-table tbody td.pv,.rv-pivot .rv-rt-total .rv-c.pv{cursor:pointer}
-.rv regular-table tbody td.pv:hover .rv-cc,.rv-pivot .rv-rt-total .rv-c.pv:hover{text-decoration:underline;text-underline-offset:3px}
-.rv regular-table tbody td.neg .rv-cc.rv-n,.rv-pivot .rv-rt-total .rv-c.neg .rv-n{color:var(--cr)}
+.rv-pivot regular-table tbody td.pv,.rv-pivot .rv-rt-total .rv-c.pv{cursor:pointer}
+.rv-pivot regular-table tbody td.pv:hover .rv-cc,.rv-pivot .rv-rt-total .rv-c.pv:hover{text-decoration:underline;text-underline-offset:3px}
+.rv-pivot regular-table tbody td.neg .rv-cc.rv-n,.rv-pivot .rv-rt-total .rv-c.neg .rv-n{color:var(--cr)}
 /* header bands of the pivot columns: the value of the column path, a line at the end of a band */
 .rv-pivot regular-table thead th.rv-hb{border-inline-end:0}
 .rv-pivot regular-table thead th.rv-hb:not(.empty){border-inline-end:1px solid var(--line)}
@@ -37,4 +37,4 @@
 .rv-pv-drill .rv-pv-item{cursor:default}
 .rv-pv-drill .rv-pv-item .nm{display:flex;align-items:center;gap:6px;min-width:0}
 .rv-pv-drill .rv-pv-item .v.zero{color:var(--tx-4)}
-.rv-pop:has(> .rv-pv-drill):focus{outline:0}
+.rv-pv-pop:focus{outline:0}

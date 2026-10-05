@@ -33,6 +33,7 @@ export function open_pivot_drill({ root, cell, load, row_of, label_html, value_o
 		anchor: cell.anchor,
 		content,
 		width: 360,
+		cls: "rv-pv-pop",
 		label: __("Rows behind this value"),
 	});
 	// The focus goes into the popover: Escape closes it and gives the focus back to the cell.

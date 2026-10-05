@@ -11,6 +11,7 @@ import { build_table_input, batches, perspective_type, KIND } from "./schema.js"
 import { build_nodes, build_facts } from "./tree_nodes.js";
 import { build_report_rows } from "./report_rows.js";
 import { to_view_config, CURRENCY_COUNT_PREFIX } from "./view_config.js";
+import { to_chart_config } from "./chart_config.js";
 import * as queries from "./queries.js";
 
 // Must equal the pinned version in package.json (tests/js/engine.test.mjs checks it): it
@@ -298,6 +299,7 @@ export class ReportSession {
 		this.level_rids = new Map();
 		this.rows_by_rid = new Map(normalized.rows.map((r) => [r.__rid, r]));
 		this.slot = `main:${Math.random().toString(36).slice(2)}`;
+		this.chart_slot = `chart:${this.slot}`;
 		this.closed = false;
 	}
 
@@ -475,6 +477,35 @@ export class ReportSession {
 	async toggle_group(opened, view_row, open) {
 		await queries.toggle_group(opened.view, opened.post, view_row, open);
 		return queries.row_depths(opened.view, opened.post);
+	}
+
+	/**
+	 * Opens the dedicated view of a chart (engine/chart_config.js) and reads its data. The
+	 * view stays open while the chart is shown; close_chart() deletes it.
+	 * @param {{type, x, series}} chart a resolved chart
+	 * @returns {Promise<object|null>} {spec, view, data}; null when a newer chart superseded it
+	 */
+	async open_chart(view_state, chart) {
+		const opts = { quick_filters: this.quick_filters };
+		const first = to_chart_config(view_state, this.normalized, chart, opts);
+		const counted = this.tables[first.count.table];
+		const categories = first.count.grouped
+			? await queries.count_groups(this.handles, counted, first.count.config)
+			: await queries.count_rows(this.handles, counted, first.count.config.filter);
+		const spec = to_chart_config(view_state, this.normalized, chart, { ...opts, categories });
+		const view = await this.handles.latest_view(this.chart_slot, this.tables[spec.table], spec.config, "chart");
+		if (!view) return null;
+		try {
+			const data = await queries.chart_columns(view, spec.post);
+			return { spec, view, data };
+		} catch (e) {
+			if (this.handles.is_alive(view)) await this.handles.delete(view);
+			throw e;
+		}
+	}
+
+	async close_chart(opened) {
+		if (opened && this.handles.is_alive(opened.view)) await this.handles.delete(opened.view);
 	}
 
 	async close_view(opened) {

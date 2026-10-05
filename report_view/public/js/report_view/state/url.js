@@ -41,6 +41,8 @@ function same_list(a, b) {
 // Nothing of the view differs from the default one of the report: the URL carries no `rv`.
 function is_default_view(state, base) {
 	return (
+		state.mode === (base?.mode || "grid") &&
+		!state.chart &&
 		!state.sort.length &&
 		!state.filters.length &&
 		!(state.quick_filters || []).length &&

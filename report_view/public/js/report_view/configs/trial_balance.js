@@ -3,7 +3,7 @@
 // browser-side presentation: bands of the grouped header, debit/credit sides (colours of the
 // design), the "number + name" account label, the summary cards (debit = credit of each
 // band), the quick filters of the search box (engine expressions, docs/architecture.md
-// §8أ.2) and the root type as the values offered in it.
+// §8أ.2), the root type as the values offered in it, and the default chart.
 
 // A value is "not zero" above half a cent: abs() also leaves empty cells out.
 const NOT_ZERO = (key) => `abs("${key}") > 0.005`;
@@ -47,4 +47,7 @@ report_view.register("Trial Balance", {
 		{ id: "credit_closing", label: __("Credit closing balances"), expression: NOT_ZERO("closing_credit"), exclusive: "closing_side" },
 	],
 	search_facet: "account__root_type",
+	// Charts view (design: reference/design/screens/charts.png): closing debit and credit of
+	// the top-level groups of the tree.
+	chart: { type: "bar", x: "level_1", series: ["closing_debit", "closing_credit"] },
 });

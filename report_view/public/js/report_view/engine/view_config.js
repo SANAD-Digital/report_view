@@ -80,7 +80,7 @@ export function quick_filter_terms(view_state, definitions = []) {
 	return { filter, expressions, notices };
 }
 
-function aggregate_of(column, view_state) {
+export function aggregate_of(column, view_state) {
 	const chosen = (view_state?.values || []).find((v) => v.key === column.key)?.agg;
 	const agg = chosen || column.agg;
 	if (column.role !== "measure" || !agg || column.original?.disable_total) return null;

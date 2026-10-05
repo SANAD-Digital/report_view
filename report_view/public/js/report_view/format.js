@@ -6,6 +6,10 @@
 
 const ORIGINAL_KINDS = new Set(["data", "internal_total", "opening", "closing"]);
 const FORMAT_OPTS = { inline: true, always_show_decimals: true };
+// What query_report.js passes to a report's formatter as default_formatter (QJ:1403): HTML
+// with its wrappers (<a> for links, <div> for numbers). Report formatters build on it, e.g.
+// snd_accounting wraps the result with $(out), which needs HTML, not bare text.
+const REPORT_FORMAT_OPTS = { for_print: false, always_show_decimals: true };
 const NUMERIC_TYPES = new Set(["Currency", "Float", "Int", "Percent"]);
 
 function esc(s) {
@@ -42,7 +46,7 @@ export function make_formatter({ report_settings, columns }) {
 	const by_key = new Map(columns.map((c) => [c.key, c]));
 
 	const default_formatter = (value, row, column, data) =>
-		frappe.format(value, { ...column, fieldtype: by_key.get(column.fieldname)?.fieldtype || column.fieldtype }, FORMAT_OPTS, data);
+		frappe.format(value, { ...column, fieldtype: by_key.get(column.fieldname)?.fieldtype || column.fieldtype }, REPORT_FORMAT_OPTS, data);
 
 	const wrap_number = (html, column) =>
 		column.role === "measure" ? `<bdi class="rv-n">${html}</bdi>` : html;
@@ -69,8 +73,14 @@ export function make_formatter({ report_settings, columns }) {
 		}
 		if (sign_of(column, row) === "zero") return `<bdi class="rv-n">—</bdi>`;
 		if (report_formatter && ORIGINAL_KINDS.has(row.__kind) && !column.enriched) {
-			const out = report_formatter(value, null, column.original, row, default_formatter);
-			return wrap_number(out ?? "", column);
+			// A report formatter that throws must not stop the drawing of the whole table:
+			// that cell falls back to the standard format below.
+			try {
+				const out = report_formatter(value, null, column.original, row, default_formatter);
+				return wrap_number(out ?? "", column);
+			} catch {
+				// standard format below
+			}
 		}
 		if (value === null || value === undefined || value === "") return "";
 		if (Array.isArray(value)) return esc(value.join(", "));

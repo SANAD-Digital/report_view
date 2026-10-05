@@ -2,7 +2,7 @@
 // toolbar, grid_view, status bar, the Perspective engine in its worker and the app CSS) with
 // fixture data and stubbed Frappe. The page code itself comes from harness.mjs (sources) or
 // from the bundle `bench build` produced (harness_built.mjs).
-// URL parameters: report=tb|ar|ar_party|gl|gl_account, lang=ar|en, desk=light|dark (Desk theme), density=compact,
+// URL parameters: report=tb|ar|ar_party|ar_jq|gl|gl_account, lang=ar|en, desk=light|dark (Desk theme), density=compact,
 // pref=light|dark (the page's own theme button), group=<column key>[,<column key>].
 
 const params = new URLSearchParams(window.location.search);
@@ -63,6 +63,20 @@ const REPORTS = {
 	},
 };
 REPORTS.ar_party = { ...REPORTS.ar, fixture: "accounts_receivable_group_by_party.json" };
+// A formatter in the style of snd_accounting's party reports: it wraps default_formatter's
+// output with $(out), which needs the HTML query_report.js gives (a bare "100.00" or an
+// Arabic name is read by jQuery as a selector and throws).
+REPORTS.ar_jq = {
+	...REPORTS.ar,
+	formatter(value, row, column, data, default_formatter) {
+		const out = default_formatter(value, row, column, data);
+		if (data && column.fieldtype === "Currency") {
+			return $(out).css("font-weight", "bold").wrap("<span></span>").parent().html();
+		}
+		if (data && column.fieldname === "party") return $(out).css("font-weight", "bold").wrap("<span></span>").parent().html();
+		return out;
+	},
+};
 REPORTS.gl = {
 	name: "General Ledger",
 	fixture: "general_ledger_consolidated.json",

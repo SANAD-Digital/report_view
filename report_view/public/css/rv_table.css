@@ -143,3 +143,7 @@
 .rv-row.rv-rt-closing:first-child{border-top-color:var(--line-3)}
 .rv-row.rv-rt-opening:hover{background:var(--grp-0)}
 .rv-row.rv-rt-closing:hover{background:var(--foot)}
+
+/* A report formatter builds on query-report's default_formatter, whose numbers come in
+   <div style="text-align: right">: the cell keeps its own alignment (end, RTL aware). */
+.rv .rv-n div,.rv .rv-pin-label div{display:inline;text-align:inherit !important}

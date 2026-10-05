@@ -41,9 +41,11 @@ const SYS = { float_precision: "3", currency_precision: "", number_format: "#,##
 function format(value, df = {}, options = {}) {
 	if (value === null || value === undefined || value === "") return "";
 	const ft = df.fieldtype;
-	if (ft === "Currency") return number(value, parseInt(df.precision, 10) || parseInt(SYS.currency_precision, 10) || 2);
-	if (ft === "Float" || ft === "Percent") return number(value, parseInt(df.precision, 10) || parseInt(SYS.float_precision, 10) || 2);
-	if (ft === "Int") return number(value, 0);
+	// frappe.form.formatters._right: numbers outside inline mode come in a right-aligned div.
+	const right = (html) => (options.inline || options.only_value ? html : `<div style="text-align: right">${html}</div>`);
+	if (ft === "Currency") return right(number(value, parseInt(df.precision, 10) || parseInt(SYS.currency_precision, 10) || 2));
+	if (ft === "Float" || ft === "Percent") return right(number(value, parseInt(df.precision, 10) || parseInt(SYS.float_precision, 10) || 2));
+	if (ft === "Int") return right(number(value, 0));
 	if (ft === "Date") return date(value);
 	if (ft === "Datetime") return date(value);
 	if (ft === "Link" && df.link_onclick) {

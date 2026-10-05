@@ -1409,3 +1409,15 @@ test("column groups: the user names a group of chosen columns; others stay plain
 	expect(await page.evaluate(() => window.rv_page.state.columns.groups)).toBeNull();
 	expect(problems, "console errors/warnings").toEqual([]);
 });
+
+test("a report formatter that wraps default_formatter with $(out) gets HTML, as on query-report", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=ar_jq&lang=en&rv=${AR_AMOUNTS}`);
+	// the amounts are drawn (bold, from the report's formatter), not empty cells
+	const amounts = await page.evaluate(() =>
+		[...document.querySelectorAll("regular-table tbody td.num")].map((td) => td.textContent.trim()).filter((t) => /\d/.test(t)).length
+	);
+	expect(amounts).toBeGreaterThan(10);
+	expect(await page.locator("regular-table tbody td.num [style*='bold']").count()).toBeGreaterThan(0);
+	expect(problems, "console errors/warnings").toEqual([]);
+});

@@ -1,0 +1,74 @@
+/* Charts view (views/charts_view.js; design: reference/design/screens/charts.png and the
+   chart-type panel of the integrated chart, Main.dc.html). The cards, legend, donut list and
+   chart-type buttons are the design's (rv_components.css); this file lays them out around
+   the ECharts plot. Logical properties only; colours from the tokens only. */
+
+/* ---------- table or charts ---------- */
+.rv:not(.rv-mode-charts) .rv-chartsv{display:none}
+.rv.rv-mode-charts .rv-gridwrap{display:none}
+/* A state of the page (loading, error, no rows, missing filters) is shown where it always is,
+   in the grid frame, in place of the charts. */
+.rv.rv-mode-charts .rv-gridwrap:has(> .rv-stateov:not([hidden])){display:flex}
+.rv.rv-mode-charts:has(.rv-gridwrap > .rv-stateov:not([hidden])) .rv-chartsv{display:none}
+
+/* ---------- layout: the chart, its settings at the inline end ---------- */
+.rv-charts.rv-chartsv{flex:none;overflow:visible;grid-template-columns:minmax(0,1fr) 260px;align-items:start}
+.rv-chart-card{min-height:440px}
+.rv-chart-titles{min-width:0}
+.rv-chart-card .rv-card-hd{flex-wrap:wrap}
+.rv-chart-card .rv-legend{justify-content:flex-end}
+.rv-chart-note{font-size:var(--fs-xs);color:var(--warn);background:var(--warn-soft);border:1px solid var(--warn-line);border-radius:var(--r-sm);padding:6px 10px}
+.rv-chart-body{display:flex;align-items:center;gap:22px;min-width:0}
+.rv-chart-plotwrap{position:relative;flex:1;min-width:0}
+.rv-chart-plot{width:100%;height:380px}
+.rv-chart-state{flex:1;display:grid;place-items:center;padding:24px}
+
+/* donut: the ring, its total in the middle, the categories as a list next to it */
+.rv-chartsv.is-donut .rv-chart-plotwrap{flex:0 1 320px}
+.rv-chartsv.is-donut .rv-chart-plot{height:300px}
+.rv-chart-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;pointer-events:none}
+.rv-chart-center span{font-size:var(--fs-xs);color:var(--tx-3);max-width:120px;text-align:center}
+.rv-chart-center b{font-size:16px;font-weight:600;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;color:var(--tx)}
+.rv-chart-dlegend{max-height:300px;overflow:auto}
+.rv-chart-dlegend .v{white-space:nowrap}
+
+/* colour swatches: one token per series / category (--c1..--c7) */
+.rv-sw{display:inline-block;width:10px;height:10px;border-radius:2px;flex:none;background:var(--surface-3)}
+.rv-legend .rv-sw{margin-inline-end:6px;vertical-align:-1px}
+.rv-sw-1{background:var(--c1)} .rv-sw-2{background:var(--c2)} .rv-sw-3{background:var(--c3)}
+.rv-sw-4{background:var(--c4)} .rv-sw-5{background:var(--c5)} .rv-sw-6{background:var(--c6)}
+.rv-sw-7{background:var(--c7)}
+.rv-sw.off{background:var(--surface-3);box-shadow:inset 0 0 0 1px var(--line-2)}
+
+/* settings panel */
+.rv-chart-side{gap:16px;background:var(--surface-2)}
+.rv-chart-sec{display:flex;flex-direction:column;gap:8px;min-width:0}
+.rv-chart-types .rv-ctype{text-align:center;line-height:1.35}
+.rv-chart-types .rv-ctype:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
+.rv-chart-select{height:var(--ctl);width:100%;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:var(--tx);font-size:var(--fs-sm);padding:0 8px}
+.rv-chart-select:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
+.rv-chart-measures{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto}
+.rv-chart-measures .rv-check span{white-space:normal}
+.rv-chart-measures input:disabled{cursor:default}
+.rv-chart-foot{padding:0}
+
+/* tooltip (ECharts places it inside the plot, so the tokens of .rv apply) */
+.rv-ctip-hd{font-weight:600;margin-bottom:4px;color:var(--tx)}
+.rv-ctip-row{display:flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--tx-2)}
+.rv-ctip-row i{width:10px;height:10px;border-radius:2px;flex:none}
+.rv-ctip-row .nm{flex:1}
+.rv-ctip-row .v{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;font-weight:500;color:var(--tx)}
+.rv-ctip-p{color:var(--tx-3);font-variant-numeric:tabular-nums}
+
+/* ---------- narrow screens: settings below the chart, the donut list below the ring ---------- */
+@media (max-width: 900px){
+  .rv-charts.rv-chartsv{grid-template-columns:minmax(0,1fr)}
+  .rv-chart-types{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@media (max-width: 560px){
+  .rv-chart-types{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .rv-chart-body{flex-direction:column;align-items:stretch}
+  .rv-chartsv.is-donut .rv-chart-plotwrap{flex:none}
+  .rv-chart-card{padding:12px}
+  .rv-chart-plot{height:300px}
+}

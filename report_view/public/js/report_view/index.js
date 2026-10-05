@@ -121,6 +121,7 @@ export class ReportViewPage {
 				<div class="rv-message"></div>
 				<div class="rv-summary-slot"></div>
 				<div class="rv-toolbar-slot"></div>
+				<div class="rv-charts-slot"></div>
 				<div class="rv-gridwrap"><div class="rv-body"><div class="rv-grid"></div></div></div>
 			</div>`;
 		this.page.main.get(0).replaceChildren(root);
@@ -136,7 +137,12 @@ export class ReportViewPage {
 		});
 		this.summary = new Summary({ parent: this.$(".rv-summary-slot") });
 		this.$(".rv-summary-slot").replaceWith(this.summary.el);
-		this.toolbar = new Toolbar({ root, parent: this.$(".rv-toolbar-slot"), search: this.controls.search_host() });
+		this.toolbar = new Toolbar({
+			root,
+			parent: this.$(".rv-toolbar-slot"),
+			search: this.controls.search_host(),
+			on_mode: (mode) => this.set_mode(mode),
+		});
 		this.$(".rv-toolbar-slot").replaceWith(this.toolbar.el);
 		const wrap = this.$(".rv-gridwrap");
 		const body = this.$(".rv-body");
@@ -218,6 +224,7 @@ export class ReportViewPage {
 	// Controls that show the view state: facets, header cells, group panel, side panel.
 	refresh_controls() {
 		if (!this.state) return;
+		this.apply_mode();
 		this.toolbar.search.refresh();
 		this.cells.refresh();
 		this.side.refresh();
@@ -228,6 +235,49 @@ export class ReportViewPage {
 			subtotals: this.state.group.subtotals !== false,
 			hierarchical: Boolean(this.result && this.result.mode !== "flat"),
 		});
+	}
+
+	// View switcher: the table or the charts (Pivot is not built yet: shown as the table).
+	apply_mode() {
+		const charts = this.state?.mode === "charts";
+		this.root.classList.toggle("rv-mode-charts", charts);
+		this.toolbar.set_mode(charts ? "charts" : "grid");
+	}
+
+	set_mode(mode) {
+		if (!this.state || this.state.mode === mode) return;
+		this.change((s) => {
+			s.mode = mode;
+		});
+	}
+
+	// The user changed the chart (type, dimension, measures): only the chart's view is opened again.
+	set_chart(chart) {
+		if (!this.state) return;
+		this.state.chart = chart;
+		this.update_url(this.last_filters, this.state, default_state(this.config));
+		if (this.charts) this.charts.refresh().catch((e) => this.show_error(e));
+	}
+
+	// The Charts view and ECharts load on first use (report_view_charts.bundle.js).
+	async show_charts(session) {
+		if (!this.charts) {
+			if (!window.report_view?.ChartsView) await frappe.require("report_view_charts.bundle.js");
+			if (!this.charts) {
+				this.charts = new report_view.ChartsView({
+					parent: this.$(".rv-charts-slot"),
+					root: this.root,
+					rtl: this.rtl,
+					on_change: (chart) => this.set_chart(chart),
+				});
+			}
+		}
+		if (session !== this.session || this.state.mode !== "charts") return;
+		await this.charts.show({ session, report: this.report, state: this.state, config: this.config, controls: this.controls });
+	}
+
+	async close_charts() {
+		if (this.charts) await this.charts.close();
 	}
 
 	// Theme: the Desk theme by default (data-theme is the resolved light/dark value, also in
@@ -276,7 +326,17 @@ export class ReportViewPage {
 	// The grid is as tall as the window below Desk's sticky bars: the criteria and the
 	// summary scroll away above it, and the report then has the whole screen. On small
 	// screens it keeps a minimum height.
+	// Asked by several observers while the page builds: one measure per frame, at the frame,
+	// instead of a forced layout in the middle of the work for each of them.
 	fit_height() {
+		if (this._fit_frame) return;
+		this._fit_frame = requestAnimationFrame(() => {
+			this._fit_frame = 0;
+			this.measure_height();
+		});
+	}
+
+	measure_height() {
 		const wrap = this.$(".rv-gridwrap");
 		if (!wrap || !wrap.isConnected) return;
 		let sticky = 0;
@@ -336,6 +396,7 @@ export class ReportViewPage {
 		this.render_token += 1;
 		this.grid.destroy();
 		this.notices.show(null);
+		await this.close_charts();
 		if (session) await session.close();
 	}
 
@@ -604,6 +665,7 @@ export class ReportViewPage {
 		const report = this.report;
 		const session = this.session;
 		if (!report.rows.length) {
+			await this.close_charts();
 			this.grid.destroy();
 			this.notices.show(null);
 			const notes = report.notices.filter((n) => n.code === "SERVER_MESSAGE").map((n) => n.detail);
@@ -621,7 +683,8 @@ export class ReportViewPage {
 		const token = ++this.render_token;
 		let opened;
 		try {
-			opened = await session.open(this.state, this.state.mode);
+			// The main view also stands behind the charts: summary cards, status bar, export.
+			opened = await session.open(this.state, "grid");
 		} catch (e) {
 			// The result was replaced (its tables deleted) while this view was being opened.
 			if (session !== this.session) return;
@@ -640,19 +703,26 @@ export class ReportViewPage {
 		// What the view state asks for and the screen does not do is said, once, not dropped.
 		this.notices.show(describe_notices(opened.post.notices, report.columns));
 		this.refresh_controls();
-		await this.grid.show({
-			report,
-			opened,
-			session,
-			state: this.state,
-			config: this.config,
-			fmt: this.formatter,
-		});
+		const charts = this.state.mode === "charts";
+		if (charts) {
+			this.grid.destroy();
+		} else {
+			await this.close_charts();
+			await this.grid.show({
+				report,
+				opened,
+				session,
+				state: this.state,
+				config: this.config,
+				fmt: this.formatter,
+			});
+		}
 		if (previous) await session.close_view(previous);
 		if (this.opened === opened) {
 			this.update_status(opened.counts);
 			await this.update_summary(opened, session);
 		}
+		if (charts && this.opened === opened) await this.show_charts(session);
 		this.update_url(this.last_filters, this.state, default_state(this.config));
 	}
 

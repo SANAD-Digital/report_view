@@ -1057,3 +1057,78 @@ msgstr "مجموعة أخرى"
 
 msgid "Add group"
 msgstr "إضافة مجموعة"
+
+msgid "Grouped columns"
+msgstr "أعمدة مجمّعة"
+
+msgid "Stacked columns"
+msgstr "أعمدة مكدّسة"
+
+msgid "Horizontal bars"
+msgstr "أشرطة أفقية"
+
+msgid "Line"
+msgstr "خطي"
+
+msgid "Donut"
+msgstr "دائري مجوّف"
+
+msgid "Chart settings"
+msgstr "إعدادات الرسم"
+
+msgid "Chart type"
+msgstr "نوع الرسم"
+
+msgid "Dimension"
+msgstr "البُعد"
+
+msgid "Measures"
+msgstr "المقاييس"
+
+msgid "Top-level groups"
+msgstr "المجموعات الرئيسية"
+
+msgid "Level {0}"
+msgstr "المستوى {0}"
+
+msgid "By {0}"
+msgstr "حسب {0}"
+
+msgid "{0} categories"
+msgstr "الفئات: {0}"
+
+msgid "{0} of {1} categories shown."
+msgstr "يُعرض {0} من {1} فئة."
+
+msgid "Nothing to chart"
+msgstr "لا يوجد ما يُرسم"
+
+msgid "This report has no numeric column the engine can add up."
+msgstr "لا يحتوي هذا التقرير على عمود رقمي يمكن تجميعه."
+
+msgid "Preparing the charts…"
+msgstr "جارٍ تجهيز الرسوم…"
+
+msgid "Charts are built from the same rows, once they arrive."
+msgstr "تُبنى الرسوم من نفس الصفوف بعد وصولها من الخادم."
+
+msgid "No data to chart"
+msgstr "لا توجد بيانات للرسم"
+
+msgid "The current filters left no rows. Remove some of them from the search box."
+msgstr "الفلاتر الحالية استبعدت كل الصفوف. أزل بعضها من شريط البحث."
+
+msgid "The report's own values of each group at this level"
+msgstr "قيم التقرير نفسه لكل مجموعة في هذا المستوى"
+
+msgid "Values added up by the engine for each category"
+msgstr "مجموع القيم لكل فئة كما يحسبه المحرك"
+
+msgid "Showing the {0} largest of {1} categories by {2}."
+msgstr "يُعرض أكبر {0} من {1} فئة حسب {2}."
+
+msgid "A donut shows the first measure only."
+msgstr "الدائري يعرض المقياس الأول فقط."
+
+msgid "Categories that mix currencies have no total and are not drawn."
+msgstr "الفئات التي تخلط عملات مختلفة بلا إجمالي ولا تُرسم."

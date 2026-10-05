@@ -8,6 +8,8 @@
 import { perspective_type } from "./engine/schema.js";
 import { visible_columns, ordered_columns } from "./engine/view_config.js";
 import { default_state } from "./state/view_state.js";
+import { resolve_pivot, pivot_dimensions, pivot_measures, PIVOT_AGGS } from "./engine/pivot_config.js";
+import { AGG_TITLES } from "./views/pivot_view.js";
 import { header_bands, order_for_groups } from "./state/column_groups.js";
 import { icons } from "./components/icons.js";
 import { open_popover, close_popover, menu_content } from "./components/popover.js";
@@ -401,6 +403,101 @@ export class ViewControls {
 		});
 	}
 
+	// ------------------------------------------------------------ pivot (analysis) mode
+
+	/** The pivot of the view state, made valid for the report (its default one when not set). */
+	pivot() {
+		if (!this.report || !this.state) return null;
+		return resolve_pivot(this.state, this.report, this.config, this.label_key());
+	}
+
+	/** Title of a pivot dimension: a level of the report tree, or a column. */
+	dim_title(key) {
+		const level = /^level_(\d+)$/.exec(key || "");
+		if (level) return Number(level[1]) === 1 ? __("Top-level groups") : __("Level {0}", [level[1]]);
+		return this.title(key);
+	}
+
+	pivot_dims() {
+		return this.report ? pivot_dimensions(this.report).map((d) => ({ key: d.key, label: this.dim_title(d.key), type: d.type })) : [];
+	}
+
+	pivot_measures() {
+		return this.report ? pivot_measures(this.report).map((key) => ({ key, label: this.full_title(key) })) : [];
+	}
+
+	/** A dimension the pivot may group or split by. */
+	pivotable(key) {
+		return this.pivot_dims().some((d) => d.key === key);
+	}
+
+	value_title(v) {
+		return AGG_TITLES[v.agg](this.full_title(v.key));
+	}
+
+	/**
+	 * Change the pivot: `fn` edits a copy of the resolved pivot. A pivot column is never also a
+	 * row: the place it is put wins.
+	 */
+	edit_pivot(fn, mode = null) {
+		const p = this.pivot();
+		if (!p) return;
+		const next = { rows: [...p.rows], cols: [...p.cols], values: p.values.map((v) => ({ ...v })), totals: { ...p.totals } };
+		fn(next);
+		this.page.set_pivot(next, mode);
+	}
+
+	set_pivot_rows(rows) {
+		this.edit_pivot((p) => {
+			p.rows = rows.filter((k) => this.pivotable(k));
+			p.cols = p.cols.filter((k) => !p.rows.includes(k));
+		});
+	}
+
+	// A pivot column added outside pivot mode (dropped on the pivot zone) turns the mode on (design).
+	set_pivot_cols(cols) {
+		this.edit_pivot(
+			(p) => {
+				p.cols = cols.filter((k) => this.pivotable(k));
+				p.rows = p.rows.filter((k) => !p.cols.includes(k));
+			},
+			cols.length ? "pivot" : null
+		);
+	}
+
+	/** A pivot column dropped among the rows at `at` (or a row among the columns). */
+	move_pivot_dim(key, to, at) {
+		this.edit_pivot((p) => {
+			const from = to === "rows" ? "cols" : "rows";
+			p[from] = p[from].filter((k) => k !== key);
+			const list = p[to].filter((k) => k !== key);
+			list.splice(Math.min(at ?? list.length, list.length), 0, key);
+			p[to] = list;
+		});
+	}
+
+	add_pivot_value(key, agg = null) {
+		const column = this.column(key);
+		this.edit_pivot((p) => {
+			const a = agg || (PIVOT_AGGS.includes(column?.agg) ? column.agg : "sum");
+			if (!p.values.some((v) => v.key === key && v.agg === a)) p.values.push({ key, agg: a });
+		});
+	}
+
+	set_pivot_agg(index, agg) {
+		this.edit_pivot((p) => {
+			if (!p.values[index] || !PIVOT_AGGS.includes(agg)) return;
+			p.values[index].agg = agg;
+			p.values = p.values.filter((v, i) => p.values.findIndex((o) => o.key === v.key && o.agg === v.agg) === i);
+		});
+	}
+
+	remove_pivot_value(index) {
+		this.edit_pivot((p) => {
+			p.values = p.values.filter((_, i) => i !== index);
+		});
+	}
+
 	// ------------------------------------------------------------ column menu
 
 	open_column_menu(key, anchor) {
@@ -498,6 +595,15 @@ export class ViewControls {
 			set_group: (by) => this.set_group(by),
 			groupable: (key) => this.groupable(key),
 			set_agg: (key, agg) => this.set_agg(key, agg),
+			mode: () => this.state?.mode || "grid",
+			set_mode: (mode) => this.page.set_mode(mode),
+			pivot: () => this.pivot_data(),
+			pivot_rows: (rows) => this.set_pivot_rows(rows),
+			pivot_cols: (cols) => this.set_pivot_cols(cols),
+			pivot_add_value: (key) => this.add_pivot_value(key),
+			pivot_agg: (i, agg) => this.set_pivot_agg(i, agg),
+			pivot_remove_value: (i) => this.remove_pivot_value(i),
+			pivotable: (key) => this.pivotable(key),
 			clear_filters: () => this.clear_filters(),
 			set_filter: (key, f) => this.set_filter(key, f),
 			set_range: (key, kind, a, b) => this.set_range(key, kind, a, b),
@@ -524,6 +630,22 @@ export class ViewControls {
 			.filter((c) => c.role === "measure" && c.agg)
 			.map((c) => ({ key: c.key, label: this.full_title(c.key), agg: (s.values || []).find((v) => v.key === c.key)?.agg || c.agg }));
 		return { items, groups: s.group.by.map((k) => ({ key: k, label: this.title(k) })), values };
+	}
+
+	/** What the columns panel shows of the pivot: its rows, columns and values with labels, and what may be added. */
+	pivot_data() {
+		const p = this.pivot();
+		if (!p) return null;
+		const dims = this.pivot_dims();
+		const label = (k) => dims.find((d) => d.key === k)?.label || k;
+		const used = new Set([...p.rows, ...p.cols]);
+		return {
+			rows: p.rows.map((k) => ({ key: k, label: label(k) })),
+			cols: p.cols.map((k) => ({ key: k, label: label(k) })),
+			values: p.values.map((v) => ({ key: v.key, agg: v.agg, label: this.full_title(v.key) })),
+			dims: dims.filter((d) => !used.has(d.key)),
+			measures: this.pivot_measures(),
+		};
 	}
 
 	filters_data() {

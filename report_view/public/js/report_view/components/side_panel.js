@@ -1,14 +1,15 @@
 // Tool panels at the side of the grid (docs/architecture.md §11.1 #61-#65; design:
 // reference/design/screens/sidecols.png, sidefilters.png): the vertical tabs "Columns" and
 // "Filters" and their panels. Columns: show / hide with a type tag, the row-group zone, the
-// value zone with its aggregate, and the Pivot zone (shown, off until phase 5b). Filters: a
+// value zone with its aggregate, and the pivot mode: its switch and the pivot columns zone
+// (in pivot mode the row-group and value zones edit the pivot's rows and values). Filters: a
 // section per column (contains, values with counts, from / to) and the quick filters.
 // Everything is written to the view state through the host; values and counts come from
 // temporary engine views the host deletes in `finally`.
 
 import { icons } from "./icons.js";
 import { SetList } from "./set_filter.js";
-import { DRAG_COLUMN, accepts, dragged } from "./group_panel.js";
+import { DRAG_COLUMN, DRAG_GROUP, DRAG_PIVOT, accepts, dragged } from "./group_panel.js";
 
 function esc(s) {
 	return frappe.utils.escape_html(String(s ?? ""));
@@ -108,33 +109,70 @@ export class SidePanel {
 			)
 			.join("");
 		const remove = esc(__("Remove", null, "Report View"));
-		const groups = data.groups
-			.map(
-				(g, i) => `<div class="rv-zchip"><span class="rv-grip">${icons.grip()}</span><span class="lbl">${esc(g.label)}</span>
-					<button type="button" class="rv-chip-x" data-ungroup="${i}" aria-label="${remove}" title="${remove}">${icons.close()}</button></div>`
-			)
-			.join("");
-		const values = data.values
-			.map(
-				(v) => `<div class="rv-zchip"><span class="lbl">${esc(v.label)}</span>
-					<select data-agg="${esc(v.key)}" aria-label="${esc(__("Aggregate function"))}">${AGGS.map(
-						([id, label]) => `<option value="${id}" ${v.agg === id ? "selected" : ""}>${esc(__(label, null, "Report View"))}</option>`
-					).join("")}</select>
+		const pivot = this.host.mode() === "pivot" ? this.host.pivot() : null;
+		const chip = (g, i, attr, drag) =>
+			`<div class="rv-zchip"${drag ? ` draggable="true" data-drag="${drag}" data-index="${i}"` : ""}><span class="rv-grip">${icons.grip()}</span><span class="lbl">${esc(g.label)}</span>
+				<button type="button" class="rv-chip-x" ${attr}="${i}" aria-label="${remove}" title="${remove}">${icons.close()}</button></div>`;
+		const agg_select = (attr, id, agg) =>
+			`<select ${attr}="${esc(id)}" aria-label="${esc(__("Aggregate function"))}">${AGGS.map(
+				([a, label]) => `<option value="${a}" ${agg === a ? "selected" : ""}>${esc(__(label, null, "Report View"))}</option>`
+			).join("")}</select>`;
+		const adder = (zone, items) =>
+			items.length
+				? `<select class="rv-zone-add" data-add="${zone}" aria-label="${esc(__("Add"))}"><option value="">${esc(__("+ Add…"))}</option>${items
+						.map((it) => `<option value="${esc(it.key)}">${esc(it.label)}</option>`)
+						.join("")}</select>`
+				: "";
+		let groups;
+		let values;
+		if (pivot) {
+			groups = pivot.rows.map((g, i) => chip(g, i, "data-unrow", "row")).join("");
+			values = pivot.values
+				.map(
+					(v, i) => `<div class="rv-zchip"><span class="lbl">${esc(v.label)}</span>${agg_select("data-pagg", i, v.agg)}
+					<button type="button" class="rv-chip-x" data-unvalue="${i}" aria-label="${remove}" title="${remove}">${icons.close()}</button></div>`
+				)
+				.join("");
+		} else {
+			groups = data.groups.map((g, i) => chip(g, i, "data-ungroup", null)).join("");
+			values = data.values
+				.map(
+					(v) => `<div class="rv-zchip"><span class="lbl">${esc(v.label)}</span>${agg_select("data-agg", v.key, v.agg)}
 					<button type="button" class="rv-chip-x" data-hide="${esc(v.key)}" aria-label="${remove}" title="${remove}">${icons.close()}</button></div>`
-			)
-			.join("");
-		// The pivot mode and its zone join this panel when they work (phase 5b).
+				)
+				.join("");
+		}
+		const pcols = pivot ? pivot.cols.map((g, i) => chip(g, i, "data-uncol", "col")).join("") : "";
+		const on = Boolean(pivot);
+		const sw_label = esc(__("Pivot mode"));
 		this.panel.innerHTML = `${this.header(__("Columns"))}
 			<div class="rv-panel-bd">
+				<div class="rv-switch-row">
+					<div>${esc(__("Pivot mode"))}<small>${esc(__("Turn the values of a dimension into columns"))}</small></div>
+					<button type="button" class="rv-switch${on ? " on" : ""}" role="switch" data-action="pivot-mode" aria-checked="${on}" aria-label="${sw_label}" title="${sw_label}"></button>
+				</div>
 				<input type="text" class="rv-input sm" data-action="col-search" aria-label="${esc(__("Search the columns"))}" placeholder="${esc(__("Search the columns…"))}" value="${esc(this.col_query)}">
 				<div class="rv-collist">${list}</div>
 				<div class="rv-zone" data-zone="groups">
-					<div class="rv-zone-hd">${icons.group()}${esc(__("Row groups"))}</div>
+					<div class="rv-zone-hd">${icons.group()}${esc(pivot ? __("Pivot rows") : __("Row groups"))}</div>
 					${groups ? `<div class="rv-zone-chips">${groups}</div>` : `<div class="rv-zone-empty">${esc(__("Drag columns here to group the rows"))}</div>`}
+					${pivot ? adder("rows", pivot.dims) : ""}
 				</div>
 				<div class="rv-zone" data-zone="values">
 					<div class="rv-zone-hd">${icons.sigma()}${esc(__("Values"))}</div>
 					${values ? `<div class="rv-zone-chips">${values}</div>` : `<div class="rv-zone-empty">${esc(__("Drag a numeric column here"))}</div>`}
+					${pivot ? adder("values", pivot.measures) : ""}
+				</div>
+				<div class="rv-zone${on ? "" : " off"}" data-zone="pivot">
+					<div class="rv-zone-hd">${icons.pivot_cols()}${esc(__("Pivot columns"))}</div>
+					${
+						!on
+							? `<div class="rv-zone-empty">${esc(__("Turn on pivot mode, or drag a dimension here to turn it on"))}</div>`
+							: pcols
+							? `<div class="rv-zone-chips">${pcols}</div>`
+							: `<div class="rv-zone-empty">${esc(__("Drag a column here to turn its values into columns"))}</div>`
+					}
+					${pivot ? adder("cols", pivot.dims) : ""}
 				</div>
 			</div>`;
 		this.bind_close();
@@ -155,6 +193,8 @@ export class SidePanel {
 		for (const box of this.panel.querySelectorAll("[data-col]")) {
 			box.addEventListener("change", () => this.host.toggle_column(box.dataset.col, box.checked));
 		}
+		this.panel.querySelector('[data-action="pivot-mode"]').addEventListener("click", () => this.host.set_mode(on ? "grid" : "pivot"));
+		if (pivot) this.bind_pivot(pivot);
 		for (const b of this.panel.querySelectorAll("[data-ungroup]")) {
 			b.addEventListener("click", () => this.host.set_group(data.groups.filter((_, i) => i !== Number(b.dataset.ungroup)).map((g) => g.key)));
 		}
@@ -177,19 +217,95 @@ export class SidePanel {
 			z.addEventListener("drop", (e) => {
 				z.classList.remove("drop");
 				const d = dragged(e);
-				if (!d || d.type !== "column") return;
+				if (!d) return;
 				e.preventDefault();
-				drop(d.key);
+				// chips of the pivot zones: rows travel as "group", pivot columns as "pivot"
+				drop(d.type === "group" ? { ...d, type: "pivot-row" } : d.type === "pivot" ? { ...d, type: "pivot-col" } : d);
 			});
 		};
-		zone("groups", (key) => {
+		zone("groups", (d) => {
+			if (pivot) {
+				if (d.type === "pivot-col") this.host.pivot_rows([...pivot.rows.map((g) => g.key), pivot.cols[d.index].key]);
+				else if (d.type === "column" && this.host.pivotable(d.key) && !pivot.rows.some((g) => g.key === d.key)) {
+					this.host.pivot_rows([...pivot.rows.map((g) => g.key), d.key]);
+				}
+				return;
+			}
+			if (d.type !== "column") return;
 			const by = data.groups.map((g) => g.key);
-			if (!by.includes(key) && this.host.groupable(key)) this.host.set_group([...by, key]);
+			if (!by.includes(d.key) && this.host.groupable(d.key)) this.host.set_group([...by, d.key]);
 		});
-		zone("values", (key) => {
-			const it = data.items.find((i) => i.key === key);
-			if (it && it.tag === "num" && !it.on) this.host.toggle_column(key, true);
+		zone("values", (d) => {
+			if (d.type !== "column") return;
+			if (pivot) {
+				if (pivot.measures.some((m) => m.key === d.key)) this.host.pivot_add_value(d.key);
+				return;
+			}
+			const it = data.items.find((i) => i.key === d.key);
+			if (it && it.tag === "num" && !it.on) this.host.toggle_column(d.key, true);
 		});
+		zone("pivot", (d) => {
+			// A dimension dropped here turns the pivot mode on with it as a pivot column (design).
+			const key = d.type === "column" ? d.key : d.type === "pivot-row" && pivot ? pivot.rows[d.index]?.key : null;
+			if (!key || !this.host.pivotable(key)) return;
+			const cols = pivot ? pivot.cols.map((g) => g.key).filter((k) => k !== key) : [];
+			this.host.pivot_cols([...cols, key]);
+		});
+	}
+
+	// Chips of the pivot zones (reorder by drag, × to remove) and the "+ Add" lists.
+	bind_pivot(pivot) {
+		const rows = pivot.rows.map((g) => g.key);
+		const cols = pivot.cols.map((g) => g.key);
+		for (const b of this.panel.querySelectorAll("[data-unrow]")) {
+			b.addEventListener("click", () => this.host.pivot_rows(rows.filter((_, i) => i !== Number(b.dataset.unrow))));
+		}
+		for (const b of this.panel.querySelectorAll("[data-uncol]")) {
+			b.addEventListener("click", () => this.host.pivot_cols(cols.filter((_, i) => i !== Number(b.dataset.uncol))));
+		}
+		for (const b of this.panel.querySelectorAll("[data-unvalue]")) {
+			b.addEventListener("click", () => this.host.pivot_remove_value(Number(b.dataset.unvalue)));
+		}
+		for (const sel of this.panel.querySelectorAll("[data-pagg]")) {
+			sel.addEventListener("change", () => this.host.pivot_agg(Number(sel.dataset.pagg), sel.value));
+		}
+		for (const sel of this.panel.querySelectorAll("[data-add]")) {
+			sel.addEventListener("change", () => {
+				const key = sel.value;
+				if (!key) return;
+				if (sel.dataset.add === "rows") this.host.pivot_rows([...rows, key]);
+				else if (sel.dataset.add === "cols") this.host.pivot_cols([...cols, key]);
+				else this.host.pivot_add_value(key);
+			});
+		}
+		for (const c of this.panel.querySelectorAll("[data-drag]")) {
+			c.addEventListener("dragstart", (e) => {
+				e.dataTransfer.setData(c.dataset.drag === "row" ? DRAG_GROUP : DRAG_PIVOT, c.dataset.index);
+				e.dataTransfer.effectAllowed = "move";
+			});
+		}
+		// a chip dropped on a chip of its own zone: reorder
+		for (const [attr, list, set] of [
+			["row", rows, (l) => this.host.pivot_rows(l)],
+			["col", cols, (l) => this.host.pivot_cols(l)],
+		]) {
+			this.panel.querySelectorAll(`[data-drag="${attr}"]`).forEach((c, at) => {
+				c.addEventListener("dragover", (e) => {
+					if (accepts(e)) e.preventDefault();
+				});
+				c.addEventListener("drop", (e) => {
+					const d = dragged(e);
+					const own = attr === "row" ? "group" : "pivot";
+					if (!d || d.type !== own || !list[d.index]) return;
+					e.preventDefault();
+					e.stopPropagation();
+					const next = [...list];
+					const [moved] = next.splice(d.index, 1);
+					next.splice(at, 0, moved);
+					set(next);
+				});
+			});
+		}
 	}
 
 	// ------------------------------------------------------------ filters

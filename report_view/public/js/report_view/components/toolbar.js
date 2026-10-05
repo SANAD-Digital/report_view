@@ -1,7 +1,6 @@
 // Toolbar (docs/architecture.md §11.1 #25-#31; design: reference/design/screens/main.png):
-// the view switcher (Table / Charts) and the search box with its options. Pivot and the
-// favourites button join it when they work (phase 5b and the saved views); nothing that
-// does not work yet is shown.
+// the view switcher (Table / Pivot analysis / Charts) and the search box with its options.
+// The favourites button joins it with the saved views; nothing that does not work yet is shown.
 
 import { icons } from "./icons.js";
 import { SearchBox } from "./search.js";
@@ -12,6 +11,7 @@ function esc(s) {
 
 const MODES = [
 	{ mode: "grid", icon: () => icons.table(), label: () => __("Table") },
+	{ mode: "pivot", icon: () => icons.pivot(), label: () => __("Pivot analysis") },
 	{ mode: "charts", icon: () => icons.chart(), label: () => __("Charts") },
 ];
 
@@ -21,7 +21,7 @@ export class Toolbar {
 	 * @param {HTMLElement} opts.root the .rv element (popovers)
 	 * @param {HTMLElement} opts.parent
 	 * @param {object} opts.search host of the search box (components/search.js)
-	 * @param {(mode: "grid"|"charts") => void} [opts.on_mode] a tab of the view switcher was chosen
+	 * @param {(mode: "grid"|"pivot"|"charts") => void} [opts.on_mode] a tab of the view switcher was chosen
 	 */
 	constructor({ root, parent, search, on_mode }) {
 		const el = document.createElement("div");
@@ -46,7 +46,7 @@ export class Toolbar {
 
 	/** Marks the tab of the view shown (any mode without a tab of its own shows the table). */
 	set_mode(mode) {
-		const shown = mode === "charts" ? "charts" : "grid";
+		const shown = MODES.some((m) => m.mode === mode) ? mode : "grid";
 		for (const tab of this.tabs) {
 			const on = tab.dataset.mode === shown;
 			tab.classList.toggle("on", on);

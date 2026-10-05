@@ -9,6 +9,8 @@ import { icons } from "./icons.js";
 // Data types of what is dragged around the page.
 export const DRAG_COLUMN = "application/x-rv-column";
 export const DRAG_GROUP = "application/x-rv-group";
+// A chip of the pivot columns bar (components/pivot_bar.js), by its index.
+export const DRAG_PIVOT = "application/x-rv-pivot";
 
 function esc(s) {
 	return frappe.utils.escape_html(String(s ?? ""));
@@ -18,13 +20,14 @@ function esc(s) {
 export function dragged(e) {
 	const types = [...(e.dataTransfer?.types || [])];
 	if (types.includes(DRAG_GROUP)) return { type: "group", index: Number(e.dataTransfer.getData(DRAG_GROUP)) };
+	if (types.includes(DRAG_PIVOT)) return { type: "pivot", index: Number(e.dataTransfer.getData(DRAG_PIVOT)) };
 	if (types.includes(DRAG_COLUMN)) return { type: "column", key: e.dataTransfer.getData(DRAG_COLUMN) };
 	return null;
 }
 
 export function accepts(e) {
 	const types = [...(e.dataTransfer?.types || [])];
-	return types.includes(DRAG_GROUP) || types.includes(DRAG_COLUMN);
+	return types.includes(DRAG_GROUP) || types.includes(DRAG_COLUMN) || types.includes(DRAG_PIVOT);
 }
 
 export class GroupPanel {
@@ -45,11 +48,11 @@ export class GroupPanel {
 		const el = document.createElement("div");
 		el.className = "rv-gp";
 		el.innerHTML = `
-			<span class="rv-gp-lbl">${icons.group()}<span>${esc(__("Row groups"))}</span></span>
+			<span class="rv-gp-lbl">${icons.group()}<span data-title>${esc(__("Row groups"))}</span></span>
 			<span class="rv-gp-chips"></span>
 			<div class="rv-gp-tools">
-				<button type="button" class="rv-btn sm" data-action="column-groups">${icons.columns()}<span>${esc(__("Column groups"))}</span></button>
-				<span class="rv-vsep" data-fold></span>
+				<button type="button" class="rv-btn sm" data-action="column-groups" data-grid>${icons.columns()}<span>${esc(__("Column groups"))}</span></button>
+				<span class="rv-vsep" data-fold data-grid></span>
 				<label class="rv-check sm" data-subtotals><input type="checkbox" data-action="subtotals"><span>${esc(__("Group subtotals"))}</span></label>
 				<span class="rv-vsep" data-subtotals></span>
 				<button type="button" class="rv-btn icon sm ghost" data-fold data-action="expand-all" aria-label="${expand}" title="${expand}">${icons.expand_all()}</button>
@@ -85,7 +88,12 @@ export class GroupPanel {
 		e.stopPropagation();
 		const by = [...this.by];
 		const end = at === null ? by.length : at;
-		if (d.type === "group") {
+		if (d.type === "pivot") {
+			// a pivot column moved to the rows (pivot mode)
+			if (!this.on_pivot_column || !this.pivot_cols?.[d.index]) return;
+			this.on_pivot_column(this.pivot_cols[d.index], end);
+			return;
+		} else if (d.type === "group") {
 			if (!Number.isInteger(d.index) || !by[d.index]) return;
 			const [moved] = by.splice(d.index, 1);
 			by.splice(d.index < end ? end - 1 : end, 0, moved);
@@ -97,10 +105,16 @@ export class GroupPanel {
 	}
 
 	/**
-	 * @param {object} s {by: string[], labels: {key: label}, foldable, subtotals, hierarchical}
+	 * @param {object} s {by: string[], labels: {key: label}, foldable, subtotals, hierarchical,
+	 *   pivot: null, or {cols, on_column(key, at)} in pivot mode}
 	 */
-	set({ by, labels, foldable, subtotals, hierarchical }) {
+	set({ by, labels, foldable, subtotals, hierarchical, pivot = null }) {
 		this.by = [...by];
+		// Pivot mode: the chips are the pivot's rows; subtotals and column groups belong to the table.
+		this.pivot_cols = pivot?.cols || null;
+		this.on_pivot_column = pivot?.on_column || null;
+		this.el.querySelector("[data-title]").textContent = pivot ? __("Pivot rows") : __("Row groups");
+		for (const x of this.el.querySelectorAll("[data-grid]")) x.hidden = Boolean(pivot);
 		const remove = esc(__("Remove from the grouping"));
 		this.chips_el.innerHTML = by.length
 			? by
@@ -127,8 +141,8 @@ export class GroupPanel {
 			b.addEventListener("click", () => this.on_change(this.by.filter((_, j) => j !== Number(b.dataset.remove))));
 		}
 		this.subtotals.checked = Boolean(subtotals);
-		for (const x of this.el.querySelectorAll("[data-subtotals]")) x.hidden = !hierarchical;
-		// "Column groups" is always there; folding only where rows fold.
-		for (const x of this.el.querySelectorAll("[data-fold]")) x.hidden = !foldable;
+		for (const x of this.el.querySelectorAll("[data-subtotals]")) x.hidden = !hierarchical || Boolean(pivot);
+		// "Column groups" is always there in the table; folding only where rows fold.
+		for (const x of this.el.querySelectorAll("[data-fold]")) x.hidden = !foldable || (Boolean(pivot) && x.classList.contains("rv-vsep"));
 	}
 }

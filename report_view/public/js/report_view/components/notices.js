@@ -32,6 +32,13 @@ export function describe_notices(notices, columns) {
 		if (FILTER_TEXTS[n.code]) {
 			lines.push(FILTER_TEXTS[n.code](__(label_of(n.detail))));
 			filters += 1;
+		} else if (n.code === "PIVOT_TOO_MANY_COLUMNS") {
+			lines.push(
+				__("The pivot columns would make {0} columns, more than {1}: the pivot is shown without them. Choose a dimension with fewer values, or filter the rows.", [
+					n.detail,
+					n.limit,
+				])
+			);
 		} else if (n.code === "REPORT_ROWS_HIDDEN") {
 			lines.push(
 				__("{0} subtotal rows of the report itself (opening, total and closing of its own groups) are hidden while a filter, a grouping or a sort is applied: they describe the report as it came, not the rows shown now.", [

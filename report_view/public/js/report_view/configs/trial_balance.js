@@ -50,4 +50,14 @@ report_view.register("Trial Balance", {
 	// Charts view (design: reference/design/screens/charts.png): closing debit and credit of
 	// the top-level groups of the tree.
 	chart: { type: "bar", x: "level_1", series: ["closing_debit", "closing_credit"] },
+	// Pivot mode (design: reference/design/screens/pivot.png): the top-level groups and the
+	// groups below them as rows (the design's root account > parent account), the closing
+	// debit and credit as values; pivot columns are the user's choice.
+	pivot: {
+		rows: ["level_1", "level_2"],
+		values: [
+			{ key: "closing_debit", agg: "sum" },
+			{ key: "closing_credit", agg: "sum" },
+		],
+	},
 });

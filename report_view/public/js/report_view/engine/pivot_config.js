@@ -175,7 +175,7 @@ export function to_pivot_config(view_state, normalized, pivot, opts = {}) {
 	const measured = Number.isFinite(opts.split_columns) ? opts.split_columns : null;
 	const blocked = wanted_cols.length > 0 && measured !== null && measured > MAX_PIVOT_COLUMNS;
 	const cols = blocked ? [] : wanted_cols;
-	if (blocked) notices.push({ code: "PIVOT_TOO_MANY_COLUMNS", detail: measured });
+	if (blocked) notices.push({ code: "PIVOT_TOO_MANY_COLUMNS", detail: measured, limit: MAX_PIVOT_COLUMNS });
 
 	const value_expressions = Object.fromEntries(values.map((v) => [v.name, `"${v.key}"`]));
 	const value_aggregates = Object.fromEntries(values.map((v) => [v.name, AGGREGATES[v.agg]]));

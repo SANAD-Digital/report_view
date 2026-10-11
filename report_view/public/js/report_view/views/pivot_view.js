@@ -5,25 +5,20 @@
 // totals view, which has the same rows in the same order. The grand total row is pinned
 // below the body, from row 0 of both views. Column headers: one level per pivot column
 // (the values of its column path), then the value's name when there are several values.
-//
-// Same techniques as views/grid_view.js (perf, bf42c36): cells keep their element and get
-// text, header widths are read only when the columns on screen change, no inherited CSS
-// variables on the table.
+// The plumbing of the element (mount, sizes, scroll range, header widths, column resize)
+// is views/rt_base.js, shared with the grid.
 
-import { apply_rtl } from "./rtl_adapter.js";
-import { perspective_type, KIND } from "../engine/schema.js";
+import { RtView, ROW_PATH, caret, css_int, engine_value } from "./rt_base.js";
+import { KIND } from "../engine/schema.js";
 import { CURRENCY_COUNT_PREFIX } from "../engine/view_config.js";
-import { split_value } from "../engine/pivot_config.js";
+import { esc } from "../util.js";
 
-const ROW_PATH = "__ROW_PATH__";
-const CELL_HTML = new WeakMap();
-const BARE_NUMBER = /^<bdi class="rv-n">([^<]*)<\/bdi>$/;
 const CELL_CLASSES = ["num", "zero", "neg", "pv", "band-end", "tot"];
-const CHEVRON =
-	'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>';
 // Design widths (Main.dc.html pivotModel): 156px a value column, 12px more for a total.
 const VALUE_WIDTH = 156;
 const TOTAL_WIDTH = 168;
+// Size key of the label column in the remembered widths.
+const LABEL_KEY = "__label";
 
 export const AGG_TITLES = {
 	sum: (t) => __("Sum of {0}", [t]),
@@ -33,30 +28,7 @@ export const AGG_TITLES = {
 	max: (t) => __("Maximum of {0}", [t]),
 };
 
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
-
-function css_int(el, name, fallback) {
-	const v = parseInt(getComputedStyle(el).getPropertyValue(name), 10);
-	return Number.isFinite(v) ? v : fallback;
-}
-
-function caret(open) {
-	const label = open ? __("Collapse group") : __("Expand group");
-	return `<button type="button" class="rv-caret${open ? " open" : ""}" aria-expanded="${open}" aria-label="${esc(label)}" title="${esc(label)}">${CHEVRON}</button>`;
-}
-
-// A group value as the report would carry it: Perspective returns dates as milliseconds.
-function report_value(column, value) {
-	if (value === null || value === undefined || !column) return value;
-	const type = perspective_type(column.fieldtype);
-	if (type === "date" && typeof value === "number") return new Date(value).toISOString().slice(0, 10);
-	if (type === "boolean") return value ? 1 : 0;
-	return value;
-}
-
-export class PivotView {
+export class PivotView extends RtView {
 	/**
 	 * @param {object} opts
 	 * @param {HTMLElement} opts.parent
@@ -65,20 +37,14 @@ export class PivotView {
 	 * @param {(cell: object) => void} opts.on_cell a value cell was pressed (drill-down)
 	 */
 	constructor({ parent, rtl, fold, on_cell }) {
-		this.parent = parent;
-		this.rtl = rtl;
+		super({ parent, rtl });
 		this.fold = fold;
 		this.on_cell = on_cell || (() => {});
-		this.rt = null;
-		this.current = null;
-		this.model = null;
-		this.epoch = 0;
-		this.windows = [];
-		this.rendered = new WeakMap();
-		this.listener = (x0, y0, x1, y1) => this.read(x0, y0, x1, y1);
-		this.styler = () => this.style();
-		this.on_click = (e) => this.click(e);
-		this.on_scrolled = () => this.scrolled();
+		this.cell_classes = CELL_CLASSES;
+		this.host_class = "rv-rt rv-pivot";
+		// Widths the user dragged, by column name (the pivot keeps them while it is shown).
+		this.widths = new Map();
+		this.column_totals = null;
 	}
 
 	// ------------------------------------------------------------ model
@@ -99,12 +65,10 @@ export class PivotView {
 		const id = (parts) => `${parts.length}\u0001${parts.join("\u0002")}`;
 		const cols = [];
 		if (split) {
-			for (const name of opened.column_paths) {
-				const segs = name.split("|");
-				const alias = segs.pop();
+			for (const { name, alias, values: raw } of opened.columns) {
 				const value = values.find((v) => v.name === alias);
-				if (!value || segs.length !== post.cols.length) continue;
-				const raw = segs.map((s, d) => split_value(post.dims[post.cols[d]], s));
+				if (!value) continue;
+				const segs = raw.map((v, d) => (v === null ? "null" : String(v)));
 				const parts = [];
 				for (let d = 0; d < segs.length; d++) {
 					const pid = id(segs.slice(0, d + 1));
@@ -141,10 +105,10 @@ export class PivotView {
 			}
 		}
 		// A value column is as wide as its title needs (up to 320px), not cut to the design's
-		// 156px: "Sum of Closing (Dr)" would read "Sum of Clos…".
+		// 156px: "Sum of Closing (Dr)" would read "Sum of Clos…". A width the user dragged wins.
 		for (const c of cols) {
 			const title = labels.get(c.parts[c.parts.length - 1]) || "";
-			c.width = Math.max(c.width, Math.min(320, Math.ceil(title.length * 7.4) + 40));
+			c.width = this.widths.get(c.name) || Math.max(c.width, Math.min(320, Math.ceil(title.length * 7.4) + 40));
 		}
 		// The end of a band: a full-height line between the groups of the first pivot column.
 		cols.forEach((c, i) => {
@@ -152,7 +116,7 @@ export class PivotView {
 			c.band_end = split && levels > 1 && (!next || next.parts[0] !== c.parts[0]);
 		});
 		// Label column: design width 300px, narrower on phones so numbers stay visible.
-		const label_width = Math.round(Math.min(300, Math.max(150, this.parent.clientWidth * 0.45)));
+		const label_width = this.widths.get(LABEL_KEY) || Math.round(Math.min(300, Math.max(150, this.parent.clientWidth * 0.45)));
 		const tree_label = report.tree?.enabled ? report.tree.label_key : null;
 		return {
 			post,
@@ -190,7 +154,7 @@ export class PivotView {
 			}
 			return String(value);
 		}
-		return ctx.controls.value_text(key, report_value(ctx.controls.column(key), value)) || String(value);
+		return ctx.controls.value_text(key, engine_value(ctx.controls.column(key), value)) || String(value);
 	}
 
 	/** Label of a row of the pivot: the value of its last row dimension. */
@@ -206,7 +170,7 @@ export class PivotView {
 		}
 		if (dim?.type === "boolean") return `<span class="rv-glabel">${esc(value ? __("Yes") : __("No"))}</span>`;
 		const column = this.ctx.controls.column(key);
-		return fmt.group_label_html({ __group_key: key, __group_value: report_value(column, value) });
+		return fmt.group_label_html({ __group_key: key, __group_value: engine_value(column, value) });
 	}
 
 	// ------------------------------------------------------------ show / destroy
@@ -232,113 +196,51 @@ export class PivotView {
 		this.epoch += 1;
 		this.windows = [];
 		this.header_key = null;
-		const signature = JSON.stringify({ c: model.cols.map((c) => c.name), l: model.levels, d: state.ui?.density, w: model.cols.map((c) => c.width), lw: model.label_width });
+		if (opened.unresolved_columns) {
+			frappe.show_alert({
+				message: __("{0} pivot columns could not be matched to their values and are not shown.", [opened.unresolved_columns]),
+				indicator: "orange",
+			});
+		}
+		// What needs a new table: the columns and the density. Widths and rows do not.
+		const signature = JSON.stringify({ c: model.cols.map((c) => c.name), l: model.levels, d: state.ui?.density });
 		if (!this.rt || this.signature !== signature) this.mount(signature);
-		this.render_total();
+		else this.apply_sizes();
+		this.render_pinned();
 		await this.rt.draw();
 	}
 
-	mount(signature) {
-		this.unmount();
-		this.signature = signature;
-		const host = document.createElement("div");
-		host.className = "rv-rt rv-pivot";
-		host.innerHTML = `<div class="rv-rt-scroll"><regular-table></regular-table><div class="rv-rt-edge pin-edge-s"></div></div><div class="rv-rt-bottom"></div>`;
-		this.parent.replaceChildren(host);
-		this.host = host;
-		this.bottom_el = host.querySelector(".rv-rt-bottom");
-		const rt = host.querySelector("regular-table");
-		this.rt = rt;
-		this.row_height = css_int(host, "--rh", 36) + 1;
-		const band = css_int(host, "--bh", 30);
-		const head = css_int(host, "--hh", 34);
-		this.header_height = (this.model.levels - 1) * band + head;
-		this.row_trim = Math.max(0, this.model.levels * this.row_height - this.header_height) / this.row_height;
-		rt.setDataListener(this.listener, { column_classes: true });
-		if (this.rtl) apply_rtl(rt);
+	host_markup() {
+		return `<div class="rv-rt-scroll"><regular-table></regular-table><div class="rv-rt-edge pin-edge-s"></div></div><div class="rv-rt-bottom"></div>`;
+	}
+
+	header_rows() {
+		return this.model.levels;
+	}
+
+	header_height_px(host) {
+		return (this.model.levels - 1) * css_int(host, "--bh", 30) + css_int(host, "--hh", 34);
+	}
+
+	size_widths() {
 		const m = this.model;
-		const sizes = { 0: m.label_width };
-		m.cols.forEach((c, i) => (sizes[i + 1] = c.width));
-		rt.restoreColumnSizes(sizes);
-		host.style.setProperty("--rv-pin-w", `${m.label_width}px`);
-		this.remove_styler = rt.addStyleListener(this.styler);
-		rt.addEventListener("click", this.on_click);
-		rt.addEventListener("regular-table-scroll", this.on_scrolled);
+		return [m.label_width, ...m.cols.map((c) => c.width)];
+	}
+
+	size_heads() {
+		return 1;
+	}
+
+	mounted() {
 		this.bottom_el.addEventListener("click", this.on_click);
-		this.rt_width = rt.clientWidth;
-		this.resize_observer = new ResizeObserver(() => {
-			if (this.rt !== rt || !this.current) return;
-			this.rt_width = rt.clientWidth;
-			rt.draw();
-		});
-		this.resize_observer.observe(rt);
-		this.fit_scroll_range();
 	}
 
-	// The horizontal scroll range is exactly the width of the columns (as in grid_view.js).
-	fit_scroll_range() {
-		const rt = this.rt;
-		const panel = rt.shadowRoot?.querySelector(".rt-virtual-panel");
-		if (!panel) return;
-		const fit = () => {
-			const m = this.model;
-			if (!m || this.rt !== rt) return;
-			const measured = rt.e?.indices || [];
-			const nominal = [m.label_width, ...m.cols.map((c) => c.width)];
-			const total = nominal.reduce((sum, w, i) => sum + Math.max(w, measured[i] || 0), 0);
-			if (total <= rt.clientWidth) return;
-			const want = `${Math.ceil(total)}px`;
-			if (panel.style.width !== want) panel.style.width = want;
-		};
-		this.panel_observer = new MutationObserver(fit);
-		this.panel_observer.observe(panel, { attributes: true, attributeFilter: ["style"] });
-		fit();
-	}
-
-	unmount() {
-		if (this.panel_observer) this.panel_observer.disconnect();
-		this.panel_observer = null;
-		if (this.resize_observer) this.resize_observer.disconnect();
-		this.resize_observer = null;
-		if (this.rt) {
-			this.rt.removeEventListener("click", this.on_click);
-			this.rt.removeEventListener("regular-table-scroll", this.on_scrolled);
-			if (this.remove_styler) this.remove_styler();
-		}
+	unmounting() {
 		if (this.bottom_el) this.bottom_el.removeEventListener("click", this.on_click);
-		this.remove_styler = null;
-		this.rt = null;
-		this.host = null;
-		this.bottom_el = null;
-		this.signature = null;
-		this.drawn = null;
 	}
 
-	/** Detach from the engine views (the caller deletes them) and remove the table. */
-	destroy() {
-		this.current = null;
-		this.model = null;
-		this.windows = [];
+	cleared() {
 		this.column_totals = null;
-		this.unmount();
-		this.parent.replaceChildren();
-	}
-
-	// The total row follows the sub-column shift of the table (rv_table.css --rv-sx-out).
-	sync_sub_x() {
-		const rt = this.rt;
-		if (!rt || !this.host) return;
-		const raw = parseFloat(rt.f?.style?.getPropertyValue("--regular-table--transform-x")) || 0;
-		const x = this.rtl ? -raw : raw;
-		if (x !== this.sub_x) {
-			this.sub_x = x;
-			this.host.style.setProperty("--rv-sx-out", `${x}px`);
-		}
-	}
-
-	scrolled() {
-		this.sync_sub_x();
-		this.host?.classList.toggle("scrolled-x", Math.abs(this.rt?.scrollLeft || 0) > 0);
 	}
 
 	// ------------------------------------------------------------ data model
@@ -428,24 +330,6 @@ export class PivotView {
 		return { html: this.fmt.value_html(column, row), sign: this.fmt.sign_of(column, row) };
 	}
 
-	style_cell(cell, col, out) {
-		const flags = { num: true, zero: out.sign === "zero", neg: out.sign === "neg", pv: out.html !== "", "band-end": col.band_end, tot: col.total };
-		for (const name of CELL_CLASSES) cell.classList.toggle(name, Boolean(flags[name]));
-		let cc = cell.firstElementChild;
-		if (!cc || cell.childNodes.length !== 1 || !cc.classList.contains("rv-cc")) {
-			cc = document.createElement("div");
-			cc.className = "rv-cc";
-			cell.replaceChildren(cc);
-		}
-		if (CELL_HTML.get(cc) === out.html) return;
-		CELL_HTML.set(cc, out.html);
-		const number = BARE_NUMBER.exec(out.html);
-		const text = number ? number[1] : out.html;
-		cc.classList.toggle("rv-n", Boolean(number));
-		if (/[<&]/.test(text)) cc.innerHTML = text;
-		else cc.textContent = text;
-	}
-
 	label_html(rec) {
 		const m = this.model;
 		const key = m.post.rows[rec.depth];
@@ -470,7 +354,10 @@ export class PivotView {
 			const corner = meta.type === "corner";
 			const col = !corner && meta.x !== undefined ? m.cols[meta.x] : null;
 			const text = corner ? (leaf ? m.label_title : "") : m.labels.get(meta.value) ?? "";
-			if (th.textContent !== text) th.textContent = text;
+			// The text goes into the span regular-table keeps in the cell (the header value is
+			// an id): the cell keeps its resize handle and is not drawn again on the next frame.
+			const span = th.firstElementChild;
+			if (span && !span.classList.contains("rt-column-resize") && span.textContent !== text) span.textContent = text;
 			th.classList.toggle("rv-hd", leaf);
 			th.classList.toggle("rv-hb", !leaf);
 			th.classList.toggle("empty", !leaf && !text);
@@ -478,24 +365,11 @@ export class PivotView {
 			th.classList.toggle("band-end", Boolean(col?.band_end));
 			th.classList.toggle("tot", Boolean(col?.total));
 			if (leaf) {
-				leaves.push({ th, text, col, x: meta.x, corner });
+				leaves.push({ th, text, col, head: corner ? 0 : -1, x: meta.x });
 				if (col) shown.push(meta.x);
 			}
 		}
-		const header_key = `${this.epoch}:${shown.join(",")}:${this.rt_width}`;
-		if (header_key !== this.header_key || !this.drawn) {
-			this.header_key = header_key;
-			const drawn = { label: null, data: new Map() };
-			for (const { th, text, col, x, corner } of leaves) {
-				const w = th.getBoundingClientRect().width;
-				if (col) drawn.data.set(x, w);
-				else if (corner) drawn.label = w;
-				if (th.scrollWidth > th.clientWidth) th.title = text;
-				else th.removeAttribute("title");
-			}
-			this.drawn = drawn;
-			if (drawn.label) this.host.style.setProperty("--rv-pin-w", `${drawn.label.toFixed(2)}px`);
-		}
+		this.measure_headers(leaves, shown);
 		for (const tr of rt.querySelectorAll("tbody tr")) {
 			const lead = tr.firstElementChild;
 			const meta = lead && rt.getMeta(lead);
@@ -516,17 +390,18 @@ export class PivotView {
 				else {
 					const col = m.cols[cm.x];
 					if (!col) continue;
-					this.style_cell(cell, col, this.value_cell(col, rec, cm.user?.v));
+					const out = this.value_cell(col, rec, cm.user?.v);
+					this.style_cell(cell, { num: true, zero: out.sign === "zero", neg: out.sign === "neg", pv: out.html !== "", "band-end": col.band_end, tot: col.total }, out);
 				}
 				this.rendered.set(cell, cell_stamp);
 			}
 		}
-		this.render_total(shown);
+		this.render_pinned(shown);
 	}
 
 	// ------------------------------------------------------------ grand total row
 
-	render_total(shown = null) {
+	render_pinned(shown = null) {
 		const cur = this.current;
 		const m = this.model;
 		if (!cur || !m || !this.bottom_el) return;
@@ -534,16 +409,12 @@ export class PivotView {
 			this.bottom_el.replaceChildren();
 			return;
 		}
-		const xs = shown || this.total_shown || [];
+		const xs = shown || this.pinned_shown || [];
 		const d = this.drawn;
-		const width = (x, nominal) => {
-			const w = d && (x === null ? d.label : d.data.get(x));
-			return w ? `${w.toFixed(2)}px` : `${nominal}px`;
-		};
 		const signature = `${this.epoch}:${xs.join(",")}:${xs.map((x) => Math.round(d?.data.get(x) || 0)).join(",")}:${Math.round(d?.label || 0)}`;
-		if (signature === this.total_signature && this.bottom_el.firstChild) return;
-		this.total_signature = signature;
-		this.total_shown = xs;
+		if (signature === this.pinned_signature && this.bottom_el.firstChild) return;
+		this.pinned_signature = signature;
+		this.pinned_shown = xs;
 		const t = cur.total;
 		const rec = { currencies: {}, mixed: {} };
 		for (const ck of m.post.currency_keys) {
@@ -556,11 +427,35 @@ export class PivotView {
 			const v = col.source === "pivot" ? this.column_totals?.[col.name]?.[0] : t[col.name];
 			const out = this.value_cell(col, rec, v ?? null);
 			const cls = ["rv-c", "num", out.sign, out.html ? "pv" : "", col.band_end ? "band-end" : ""].filter(Boolean).join(" ");
-			return `<div class="${cls}" data-x="${x}" style="width:${width(x, col.width)}">${out.html}</div>`;
+			return `<div class="${cls}" data-x="${x}" data-col="${esc(col.name)}" style="width:${this.drawn_width("data", x, col.width)}">${out.html}</div>`;
 		});
 		const label = `<span class="rv-glabel">${esc(__("Grand Total"))}</span>${this.fmt.count_html(t[KIND])}`;
-		this.bottom_el.innerHTML = `<div class="rv-row total rv-rt-total"><div class="rv-c pinned pin-edge-s rv-pin-label" style="width:${width(null, m.label_width)}">${label}</div>${cells.join("")}</div>`;
+		this.bottom_el.innerHTML = `<div class="rv-row total rv-rt-total"><div class="rv-c pinned pin-edge-s rv-pin-label" data-col="${LABEL_KEY}" style="width:${this.drawn_width("label", 0, m.label_width)}">${label}</div>${cells.join("")}</div>`;
 	}
+
+	// ------------------------------------------------------------ column widths
+
+	// The column a header cell stands for: {size_key, column or null for the label}.
+	resize_target(th) {
+		const meta = th && this.rt.getMeta(th);
+		const m = this.model;
+		if (!meta || !m || meta.column_header_y !== m.levels - 1) return null;
+		if (meta.type === "corner") return { size_key: 0, head: 0, col: null, key: LABEL_KEY };
+		const col = m.cols[meta.x];
+		return col ? { size_key: 1 + meta.x, x: meta.x, col, key: col.name } : null;
+	}
+
+	width_of(target) {
+		return target.col ? target.col.width : this.model.label_width;
+	}
+
+	assign_width(target, width) {
+		if (target.col) target.col.width = width;
+		else this.model.label_width = width;
+		this.widths.set(target.key, width);
+	}
+
+	width_changed() {}
 
 	// ------------------------------------------------------------ interaction
 

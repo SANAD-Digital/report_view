@@ -44,6 +44,10 @@ AR_FILTERS = {
 	"range": "30, 60, 90, 120",
 	"party_type": "Customer",
 }
+AP_FILTERS = dict(AR_FILTERS, party_type="Supplier")
+# Reports with `add_total_row` (N2.1). Frappe switches a report to `prepared_report=1` on
+# its own after a slow run (ADR-009), so a test that needs rows tries them in turn.
+TOTAL_ROW_REPORTS = (("Accounts Payable", AP_FILTERS), ("Accounts Receivable", AR_FILTERS))
 
 
 def email(kind: str) -> str:

@@ -5,16 +5,16 @@ import frappe
 from frappe.desk import query_report
 
 from report_view import api
-from report_view.core import engine, normalize
+from report_view.core import engine, normalize, runner
 from report_view.core.errors import RVInvalidInput
 from report_view.core.settings import load_settings
 from report_view.tests.utils import (
-	AR_FILTERS,
 	COMPANY,
 	OTHER_COMPANY,
 	TB_FILTERS,
 	TB_JS_FILTERS,
 	TB_MEASURES,
+	TOTAL_ROW_REPORTS,
 	RVTestCase,
 )
 
@@ -45,12 +45,32 @@ class TestApiRun(RVTestCase):
 			self.assertAlmostEqual(totals[key], reference[key], places=2, msg=key)
 
 	def test_row_count_excludes_frappe_total(self):
+		"""N2.1: the total row Frappe appends (a list after dict rows) is not a row."""
+		response = None
 		with self.as_user("accountant"):
-			response = api.run("Accounts Receivable", AR_FILTERS)
+			for report, filters in TOTAL_ROW_REPORTS:
+				candidate = api.run(report, filters)
+				# A prepared report answers without rows (ADR-009): not what this test is about.
+				if candidate["status"] == "ok" and candidate["raw"].get("result"):
+					response = candidate
+					break
+		if response is None:
+			self.skipTest("no report with add_total_row answers with rows on this site")
 		raw = response["raw"]
 		self.assertTrue(raw["add_total_row"])
 		self.assertIsInstance(raw["result"][-1], list)
+		self.assertIsInstance(raw["result"][0], dict)
 		self.assertEqual(response["row_count"], len(raw["result"]) - 1)
+
+	def test_count_rows_rule(self):
+		"""The rule itself, independent of the site's data (runner.count_rows, N2.1)."""
+		rows = [{"a": 1}, {"a": 2}, [3, None]]
+		self.assertEqual(runner.count_rows({"result": rows, "add_total_row": 1}), 2)
+		self.assertEqual(runner.count_rows({"result": rows, "add_total_row": 1, "skip_total_row": 1}), 3)
+		self.assertEqual(runner.count_rows({"result": rows, "add_total_row": 0}), 3)
+		self.assertEqual(runner.count_rows({"result": [{"a": 1}], "add_total_row": 1}), 1)
+		self.assertEqual(runner.count_rows({"result": [], "add_total_row": 1}), 0)
+		self.assertEqual(runner.count_rows({}), 0)
 
 	def test_denied_user_without_roles(self):
 		with self.as_user("none"), self.assertRaises(frappe.PermissionError):

@@ -18,6 +18,7 @@ from report_view.core.guard import (
 	can_export,
 	can_print,
 	guard_export,
+	guard_print,
 	guard_report,
 	guard_report_quiet,
 )
@@ -25,6 +26,7 @@ from report_view.core.inputs import parse_json_arg
 from report_view.core.settings import get_row_limit, load_settings
 
 MAX_ENRICH_NAMES = 5000
+MAX_TRANSLATION_MESSAGES = 2000
 _FIELD_RE = re.compile(r"^[A-Za-z0-9_]+$")
 
 
@@ -181,3 +183,109 @@ def export_xlsx(report_name: str, export_model: dict | str) -> Any:
 	frappe.response["filecontent"] = content
 	frappe.response["type"] = "binary"
 	return None
+
+
+# ------------------------------------------------- the Pages view (ADR-014)
+
+
+@frappe.whitelist(methods=["GET"])
+def get_print_options(report_name: str, company: str | None = None) -> dict:
+	"""What the Pages view offers to a user who may print the report (§2.8, ADR-014): the
+	letter heads, the report's own print formats (JS, as the query-report dialog lists
+	them), the languages the site enables, and the default letter head of ``company``.
+
+	Every list is read with ``frappe.get_list``: a user who may not read letter heads gets
+	none, as on the query-report page.
+	"""
+	report = guard_report(report_name)
+	guard_print(report)
+	letter_heads: list[dict] = []
+	default_letter_head = None
+	if frappe.has_permission("Letter Head"):
+		letter_heads = frappe.get_list(
+			"Letter Head",
+			filters={"disabled": 0},
+			fields=["name", "is_default"],
+			order_by="name asc",
+			limit=0,
+		)
+		if isinstance(company, str) and company and frappe.has_permission("Company", doc=company):
+			rows = frappe.get_list(
+				"Company", filters={"name": company}, fields=["default_letter_head"], limit=1
+			)
+			default_letter_head = rows[0].default_letter_head if rows else None
+		if not default_letter_head:
+			default_letter_head = next((lh.name for lh in letter_heads if lh.is_default), None)
+		if default_letter_head not in {lh.name for lh in letter_heads}:
+			default_letter_head = None
+	print_formats = frappe.get_list(
+		"Print Format",
+		filters=_print_format_filters(report_name, report.name),
+		fields=["name"],
+		order_by="name asc",
+		limit=0,
+	)
+	languages = frappe.get_list(
+		"Language", filters={"enabled": 1}, fields=["name", "language_name"], order_by="language_name asc", limit=0
+	)
+	return {
+		"letter_heads": [{"name": lh.name, "is_default": bool(lh.is_default)} for lh in letter_heads],
+		"default_letter_head": default_letter_head,
+		"print_formats": [pf.name for pf in print_formats],
+		"languages": [{"name": lg.name, "label": lg.language_name or lg.name} for lg in languages],
+		"lang": frappe.local.lang,
+	}
+
+
+def _print_format_filters(report_name: str, resolved_name: str) -> dict:
+	"""Report print formats of the query-report dialog (print_utils.js): JS, enabled, for
+	this report (a Custom Report resolves to its reference report)."""
+	names = list(dict.fromkeys([report_name, resolved_name]))
+	return {
+		"print_format_for": "Report",
+		"report": ["in", names],
+		"print_format_type": "JS",
+		"disabled": 0,
+	}
+
+
+@frappe.whitelist(methods=["GET"])
+def get_print_format(report_name: str, name: str) -> dict:
+	"""The template of one report print format (§2.8). ``html`` and ``css`` are read for
+	a user who may print the report, as ``frappe.www.printview`` reads a document's print
+	format for a user who may print the document (ADR-014); the Print Format itself needs
+	no ``read`` of its own.
+	"""
+	report = guard_report(report_name)
+	guard_print(report)
+	if not isinstance(name, str) or not name.strip():
+		frappe.throw(_("Print format name is required"), RVInvalidInput)
+	found = frappe.get_list(
+		"Print Format",
+		filters={"name": name, **_print_format_filters(report_name, report.name)},
+		fields=["name"],
+		limit=1,
+	)
+	if not found:
+		frappe.throw(
+			_("Print Format {0} is not available for report {1}").format(name, _(report.name)),
+			frappe.DoesNotExistError,
+		)
+	doc = frappe.get_doc("Print Format", name)
+	return {"name": doc.name, "html": doc.html or "", "css": doc.css or ""}
+
+
+@frappe.whitelist(methods=["POST"])
+def get_translations(report_name: str, lang: str, messages: list | str) -> dict:
+	"""Translations of ``messages`` in ``lang`` (§2.9, ADR-014): the Pages view prints a
+	report in a language other than the session's. ``lang`` must be a language the site
+	enables; keys with a context come as Frappe keys them (``"<msgid>:<context>"``).
+	"""
+	guard_report(report_name)
+	messages = parse_json_arg(messages, "messages", list)
+	if not isinstance(lang, str) or lang not in (frappe.translate.get_all_languages() or []):
+		frappe.throw(_("Language {0} is not enabled on this site").format(lang), RVInvalidInput)
+	if len(messages) > MAX_TRANSLATION_MESSAGES or not all(isinstance(m, str) for m in messages):
+		frappe.throw(_("Invalid translation request"), RVInvalidInput)
+	translations = frappe.translate.get_all_translations(lang)
+	return {m: translations[m] for m in dict.fromkeys(messages) if m in translations}

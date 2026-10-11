@@ -21,6 +21,9 @@
   /* charts (categorical, similar lightness) */
   --c1:#2D5C93; --c2:#8A2D3B; --c3:#2F7D5F; --c4:#B07A22; --c5:#6A5A9C; --c6:#2A8791; --c7:#A5AFA9;
   --scrim:rgba(19,27,23,.34);
+  /* paper (the printed page of the Pages view): the same in both themes */
+  --pp-bg:#FFFFFF; --pp-tx:#1B1F1D; --pp-tx-2:#4A524E; --pp-tx-3:#6B736F; --pp-line:#D9DFDB; --pp-line-2:#9AA39E;
+  --pp-soft:#F3F5F4; --pp-total:#EEF2EF; --pp-dr:#2D5C93; --pp-cr:#8A2D3B; --pp-shadow:0 2px 12px rgba(0,0,0,.12);
   --sh-1:0 1px 2px rgba(17,24,20,.06);
   --sh-2:0 2px 8px rgba(17,24,20,.06);
   --sh-pop:0 12px 32px rgba(17,24,20,.14),0 2px 6px rgba(17,24,20,.06);
@@ -49,6 +52,7 @@
   --grp:#171F1B; --grp-0:#1C2621; --foot:#1A231F; --total:#1D3029;
   --c1:#7EA8DD; --c2:#DE8F9B; --c3:#66BD95; --c4:#D9AE5C; --c5:#A596D6; --c6:#63BCC4; --c7:#5E6B64;
   --scrim:rgba(0,0,0,.5);
+  --pp-shadow:0 2px 14px rgba(0,0,0,.5);
   --sh-1:0 1px 2px rgba(0,0,0,.3); --sh-2:0 2px 8px rgba(0,0,0,.3);
   --sh-pop:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);
   --sh-drawer:0 0 48px rgba(0,0,0,.5);

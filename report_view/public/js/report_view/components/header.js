@@ -1,6 +1,6 @@
-// Page actions (refresh, density, theme, Excel), placed in Desk's own sticky page head so the report
-// keeps the screen: the title is Desk's page title. PDF and Print come back with the server
-// side of phase 6; nothing that does not work yet is shown.
+// Page actions (refresh, density, theme, Excel, Print), placed in Desk's own sticky page head so the
+// report keeps the screen: the title is Desk's page title. Print opens the Pages view, where
+// the pages are printed from (ADR-014); PDF from the server comes with phase 6.
 // The element carries the .rv class itself: it lives outside the page root, and the design
 // tokens (light / dark / compact) are defined on .rv.
 
@@ -14,7 +14,7 @@ export class Header {
 	/**
 	 * @param {object} opts {parent, dir, on_refresh(), on_density(d), on_theme(), on_export()}
 	 */
-	constructor({ parent, dir, on_refresh, on_density, on_theme, on_export }) {
+	constructor({ parent, dir, on_refresh, on_density, on_theme, on_export, on_print }) {
 		const refresh = esc(__("Refresh"));
 		const el = document.createElement("div");
 		el.className = "rv rv-headbar";
@@ -28,6 +28,7 @@ export class Header {
 				</div>
 				<button type="button" class="rv-btn icon ghost" data-action="theme"></button>
 				<button type="button" class="rv-btn" data-action="export" hidden>${icons.sheet()}<span>${esc(__("Excel"))}</span></button>
+				<button type="button" class="rv-btn" data-action="print" hidden>${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
 			</div>`;
 		parent.prepend(el);
 		this.el = el;
@@ -38,15 +39,22 @@ export class Header {
 		this.$('[data-action="refresh"]').addEventListener("click", () => on_refresh());
 		this.$('[data-action="theme"]').addEventListener("click", () => on_theme());
 		this.$('[data-action="export"]').addEventListener("click", () => on_export());
+		this.$('[data-action="print"]').addEventListener("click", () => on_print && on_print());
 	}
 
 	get export_button() {
 		return this.$('[data-action="export"]');
 	}
 
-	/** @param {object} r {can_export} */
-	set_report({ can_export }) {
+	/** @param {object} r {can_export, can_print} */
+	set_report({ can_export, can_print = false }) {
 		this.export_button.hidden = !can_export;
+		this.$('[data-action="print"]').hidden = !can_print;
+	}
+
+	/** The Print action shows the current mode: pressed while the pages are on screen. */
+	set_mode(mode) {
+		this.$('[data-action="print"]').classList.toggle("on", mode === "pages");
 	}
 
 	set_density(density) {

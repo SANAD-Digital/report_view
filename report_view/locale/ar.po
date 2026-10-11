@@ -480,8 +480,8 @@ msgstr "الفلتر على «{0}» لا يجمع الخلايا الفارغة 
 msgid "A filter refers to a column that is not in this report: {0}"
 msgstr "فلتر يشير إلى عمود غير موجود في هذا التقرير: {0}"
 
-msgid "Excel export is refused while these filters are set. Remove them to export."
-msgstr "يُرفض تصدير Excel ما دامت هذه الفلاتر مفعّلة. احذفها لتتمكن من التصدير."
+msgid "Excel export is not available while these filters are set: the file would not match the screen. Remove them to export."
+msgstr "تصدير Excel غير متاح مع هذه الفلاتر: الملف لن يطابق الشاشة. أزلها لتتمكن من التصدير."
 
 msgid "{0} subtotal rows of the report itself (opening, total and closing of its own groups) are hidden while a filter, a grouping or a sort is applied: they describe the report as it came, not the rows shown now."
 msgstr "{0} صفاً من مجاميع التقرير نفسه (افتتاحي وإجمالي وختامي مجموعاته) مخفية ما دام فلتر أو تجميع أو فرز مطبّقاً: هي تصف التقرير كما ورد، لا الصفوف المعروضة الآن."
@@ -642,8 +642,8 @@ msgstr "اختيار الفترة"
 msgid "Clear all"
 msgstr "مسح الكل"
 
-msgid "Click a column title to sort · drag it to the group panel to group · ≡ for the column menu"
-msgstr "انقر على رأس العمود للترتيب · اسحبه إلى لوحة المجموعات للتجميع · ≡ لقائمة العمود"
+msgid "Click a title to sort · drag it to group · ≡ column menu"
+msgstr "انقر العنوان للترتيب · اسحبه للتجميع · ≡ قائمة العمود"
 
 msgid "Click another month to pick a range of months, or Apply for one month"
 msgstr "انقر شهراً آخر لتحديد نطاق أشهر، أو «تطبيق» لشهر واحد"
@@ -681,11 +681,11 @@ msgstr "فرق بسبب الفلترة"
 msgid "Difference {0} · all {1} ({2})"
 msgstr "الفرق {0} · جميع {1} ({2})"
 
-msgid "Difference {0} — check the entries that are not balanced"
-msgstr "الفرق {0} — راجع القيود غير المتوازنة"
+msgid "Difference {0}: check the entries"
+msgstr "الفرق {0}: راجع القيود"
 
-msgid "Difference {0} — from the rows the filters left out, not an error in the entries"
-msgstr "الفرق {0} — ناتج عن استبعاد صفوف بالفلاتر، وليس خطأ في القيود"
+msgid "Difference {0}: rows the filters left out"
+msgstr "الفرق {0}: صفوف استبعدتها الفلاتر"
 
 msgid "Dim."
 msgstr "بُعد"
@@ -790,7 +790,7 @@ msgid "Last 7 days"
 msgstr "آخر 7 أيام"
 
 msgid "Last fiscal year"
-msgstr "السنة الماضية"
+msgstr "السنة المالية الماضية"
 
 msgid "Last month"
 msgstr "الشهر الماضي"
@@ -967,7 +967,7 @@ msgid "{0} days"
 msgstr "{0} يوماً"
 
 msgid "{0} values"
-msgstr "{0} قيم محددة"
+msgstr "{0} من القيم"
 
 msgid "{0} {1} of {2}"
 msgstr "{0} {1} من {2}"
@@ -1316,3 +1316,186 @@ msgstr "العنوان"
 msgctxt "Report View"
 msgid "Sort"
 msgstr "الترتيب"
+
+msgid "Pages"
+msgstr "صفحات"
+
+msgctxt "Report View"
+msgid "Print"
+msgstr "طباعة"
+
+msgid "Print pages"
+msgstr "صفحات الطباعة"
+
+msgid "Print settings"
+msgstr "إعدادات الطباعة"
+
+msgid "{0} pages"
+msgstr "{0} صفحة"
+
+msgid "Paper"
+msgstr "الورق"
+
+msgid "Paper size"
+msgstr "مقاس الورق"
+
+msgid "Margins"
+msgstr "الهوامش"
+
+msgid "Narrow margins"
+msgstr "هوامش ضيقة"
+
+msgid "Normal margins"
+msgstr "هوامش عادية"
+
+msgid "Wide margins"
+msgstr "هوامش واسعة"
+
+msgid "Orientation"
+msgstr "اتجاه الصفحة"
+
+msgctxt "Report View"
+msgid "Portrait"
+msgstr "عمودي"
+
+msgctxt "Report View"
+msgid "Landscape"
+msgstr "أفقي"
+
+msgid "Template and letter head"
+msgstr "القالب والترويسة"
+
+msgid "Print template"
+msgstr "قالب الطباعة"
+
+msgid "Report View (standard)"
+msgstr "قالب Report View (القياسي)"
+
+msgctxt "Report View"
+msgid "Letter Head"
+msgstr "الترويسة"
+
+msgid "No letter head"
+msgstr "بدون ترويسة"
+
+msgctxt "Report View"
+msgid "Language"
+msgstr "اللغة"
+
+msgid "Session language ({0})"
+msgstr "لغة الجلسة ({0})"
+
+msgctxt "Report View"
+msgid "Content"
+msgstr "المحتوى"
+
+msgid "Applied filters"
+msgstr "الفلاتر المطبقة"
+
+msgid "Signature boxes"
+msgstr "خانات التوقيع"
+
+msgid "Page numbers"
+msgstr "ترقيم الصفحات"
+
+msgid "Print date and user"
+msgstr "تاريخ الطباعة واسم الطابع"
+
+msgid "Printed columns"
+msgstr "الأعمدة المطبوعة"
+
+msgid "The pages show the table as it is: the same filters, grouping and folded groups."
+msgstr "تُطبع البيانات كما تظهر في الجدول: نفس الفلاتر والتجميع والمجموعات المطوية."
+
+msgid "Zoom"
+msgstr "التكبير"
+
+msgid "Zoom in"
+msgstr "تكبير"
+
+msgid "Zoom out"
+msgstr "تصغير"
+
+msgctxt "Report View"
+msgid "Fit"
+msgstr "ملاءمة"
+
+msgid "Printed on {0}"
+msgstr "تاريخ الطباعة: {0}"
+
+msgid "Printed by {0}"
+msgstr "طبعه: {0}"
+
+msgid "Grouped by {0}"
+msgstr "التجميع: {0}"
+
+msgid "{0} rows"
+msgstr "عدد الصفوف: {0}"
+
+msgid "For the period from {0} to {1}"
+msgstr "عن الفترة من {0} إلى {1}"
+
+msgid "As on {0}"
+msgstr "كما في {0}"
+
+msgid "Fiscal Year {0}"
+msgstr "السنة المالية {0}"
+
+msgid "Accountant"
+msgstr "المحاسب"
+
+msgid "Finance Manager"
+msgstr "المدير المالي"
+
+msgid "General Manager"
+msgstr "المدير العام"
+
+msgctxt "Report View"
+msgid "Name"
+msgstr "الاسم"
+
+msgctxt "Report View"
+msgid "Signature"
+msgstr "التوقيع"
+
+msgid "The columns are wider than the page: try landscape, or hide some columns."
+msgstr "الأعمدة أعرض من الصفحة: جرّب الاتجاه الأفقي أو أخفِ بعض الأعمدة."
+
+msgid "The letter head and the margins leave no room for rows on this paper."
+msgstr "الترويسة والهوامش لا تترك مكاناً للصفوف على هذا الورق."
+
+msgid "The language could not be loaded: {0}"
+msgstr "تعذّر تحميل اللغة: {0}"
+
+msgid "The letter head could not be loaded: {0}"
+msgstr "تعذّر تحميل الترويسة: {0}"
+
+msgid "The print format could not be loaded: {0}"
+msgstr "تعذّر تحميل قالب الطباعة: {0}"
+
+msgid "The print format could not be rendered: {0}"
+msgstr "تعذّر عرض قالب الطباعة: {0}"
+
+msgid "The report could not run in the chosen language; labels stay in the session language."
+msgstr "تعذّر تشغيل التقرير باللغة المختارة؛ تبقى العناوين بلغة الجلسة."
+
+msgid "Too many pages to print"
+msgstr "صفحات أكثر مما يمكن طباعته"
+
+msgid "{0} pages are more than the browser prints at once ({1}). Narrow the filters, fold groups or export to Excel."
+msgstr "{0} صفحة أكثر مما يطبعه المتصفح دفعة واحدة ({1}). ضيّق الفلاتر أو اطوِ المجموعات أو صدّر إلى Excel."
+
+msgid "Print Format {0} is not available for report {1}"
+msgstr "قالب الطباعة {0} غير متاح للتقرير {1}"
+
+msgid "Print format name is required"
+msgstr "اسم قالب الطباعة مطلوب"
+
+msgid "Language {0} is not enabled on this site"
+msgstr "اللغة {0} غير مفعّلة على هذا الموقع"
+
+msgid "Invalid translation request"
+msgstr "طلب ترجمة غير صالح"
+
+msgid "The print format is wider than the page: try landscape or a larger paper."
+msgstr "قالب الطباعة أعرض من الصفحة: جرّب الاتجاه الأفقي أو ورقاً أكبر."

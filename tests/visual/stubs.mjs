@@ -178,6 +178,10 @@ class Control {
 
 window.frappe = {
 	boot: { lang: LANG, sysdefaults: SYS, developer_mode: 0 },
+	// the session's translations (the pages look up the msgid of a translated label there)
+	_messages: MESSAGES,
+	session: { user: "rv_admin@rv.test", user_fullname: "RV Admin" },
+	defaults: { get_default: () => null },
 	utils: {
 		is_rtl: () => LANG === "ar",
 		escape_html: esc,
@@ -270,7 +274,9 @@ window.frappe = {
 		for (const part of ns.split(".")) o = o[part] ||= {};
 		return o;
 	},
+	// The answer comes in a task of its own, as a response from the server does: the page's
+	// work on it is not merged with the harness's own setup in one long task.
 	call({ method, args, callback }) {
-		Promise.resolve(window.RV_SERVER(method, args)).then((message) => callback({ message }));
+		setTimeout(() => Promise.resolve(window.RV_SERVER(method, args)).then((message) => callback({ message })), 0);
 	},
 };

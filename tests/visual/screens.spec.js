@@ -2175,3 +2175,246 @@ test("pivot lifecycle: no handle left after 20 switches and pivot changes, a re-
 	await page.waitForFunction(() => window.rv_page.debug_handles().length === 0);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
+
+// ------------------------------------------------------------------------------------------
+// Pages view (ADR-014; docs/progress/pages-print.md): the report as printed pages next to
+// the table, compared with reference/design/screens/print.png. Saved to
+// docs/progress/screens/pages/. The harness answers the print options, a letter head and
+// the translations; the language re-run answers the same fixture.
+const OUT3 = path.resolve(__dirname, "../../docs/progress/screens/pages");
+fs.mkdirSync(OUT3, { recursive: true });
+const shot3 = (page, name, full = false) => page.screenshot({ path: path.join(OUT3, `${name}.png`), fullPage: full });
+const PAGES = rv({ mode: "pages" });
+const pages_settings = (s) => `&pages=${encodeURIComponent(JSON.stringify(s))}`;
+
+const pages_state = (page) =>
+	page.evaluate(() => {
+		const v = window.rv_page.pages;
+		return {
+			pages: v.pages.map((p) => [p.start, p.end]),
+			count: v.pages.length,
+			filled: v.filled.size,
+			rows: v.layout ? v.layout.size : 0,
+			box: v.box && { w: v.box.w, h: v.box.h, inner_w: v.box.inner_w },
+			measure: v.measure,
+			dir: v.sheets.dir,
+			note: document.querySelector(".rv-print-note").textContent,
+			count_text: document.querySelector(".rv-print-count").textContent,
+			titles: [...document.querySelectorAll('.rv-page[data-page="0"] .rv-pt thead th')].map((th) => th.textContent.trim()).filter(Boolean),
+			first_rows: [...document.querySelectorAll('.rv-page[data-page="0"] .rv-pt tbody tr')].map((tr) => tr.className),
+			footer: document.querySelector('.rv-page[data-page="0"] .rv-page-foot-line').textContent.replace(/\s+/g, " ").trim(),
+			letterhead: Boolean(document.querySelector('.rv-page[data-page="0"] .rv-page-lh')),
+			total: Boolean(document.querySelector(".rv-page .rv-pt tr.total")),
+			signatures: document.querySelectorAll(".rv-page .rv-page-sign div").length,
+		};
+	});
+
+const PAGE_SHOTS = [
+	// the trial balance opens in landscape by itself (too wide for a portrait page)
+	{ name: "pages-tb-light-rtl", query: `report=tb&lang=ar&rv=${PAGES}` },
+	{ name: "pages-tb-dark-rtl", query: `report=tb&lang=ar&desk=dark&rv=${PAGES}` },
+	{ name: "pages-tb-light-ltr", query: `report=tb&lang=en&rv=${PAGES}` },
+	{ name: "pages-tb-dark-ltr", query: `report=tb&lang=en&desk=dark&rv=${PAGES}` },
+	{ name: "pages-tb-portrait-signatures-light-rtl", query: `report=tb&lang=ar&rv=${PAGES}${pages_settings({ orientation: "portrait", signatures: true })}` },
+	{ name: "pages-tb-no-letterhead-a3-light-ltr", query: `report=tb&lang=en&rv=${PAGES}${pages_settings({ letter_head: "", size: "A3", margins: "wide" })}` },
+	{ name: "pages-tb-compact-light-rtl", query: `report=tb&lang=ar&density=compact&rv=${PAGES}` },
+	{ name: "pages-gl-light-rtl", query: `report=gl&lang=ar&rv=${PAGES}` },
+	{ name: "pages-gl-landscape-light-ltr", query: `report=gl&lang=en&rv=${PAGES}${pages_settings({ orientation: "landscape" })}` },
+	{ name: "pages-gl-by-account-light-rtl", query: `report=gl_account&lang=ar&rv=${PAGES}` },
+	{ name: "pages-ar-group-light-ltr", query: `report=ar&lang=en&group=party&rv=${PAGES}` },
+	{ name: "pages-ar-group-dark-rtl", query: `report=ar&lang=ar&desk=dark&group=party&rv=${PAGES}${pages_settings({ orientation: "landscape" })}` },
+	{ name: "pages-tb-390-rtl", query: `report=tb&lang=ar&rv=${PAGES}`, width: 390, height: 844, full: true },
+];
+
+for (const s of PAGE_SHOTS) {
+	test(s.name, async ({ page }) => {
+		const problems = watch_console(page);
+		await open(page, s.query, s);
+		await settle(page);
+		await shot3(page, s.name, Boolean(s.full));
+		const st = await pages_state(page);
+		expect(st.count).toBeGreaterThan(0);
+		expect(st.filled).toBeGreaterThan(0);
+		expect(problems, "console errors/warnings").toEqual([]);
+	});
+}
+
+test("pages: the rows of the view are cut into pages without a gap; every page repeats the titles and numbers itself", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=gl&lang=ar&rv=${PAGES}`);
+	await settle(page);
+	const st = await pages_state(page);
+	// contiguous, every display row once
+	let at = 0;
+	for (const [start, end] of st.pages) {
+		expect(start).toBe(at);
+		at = end;
+	}
+	expect(at).toBe(st.rows);
+	expect(st.count_text).toContain(String(st.count));
+	expect(st.measure.row_h).toBeGreaterThan(10);
+	// the report's opening row stands first on the first page, the closing rows and the total last
+	expect(st.first_rows[0]).toBe("opening");
+	expect(st.total).toBe(true);
+	expect(st.titles.length).toBeGreaterThan(5);
+	expect(st.footer).toMatch(/1/);
+	expect(st.letterhead).toBe(true);
+	// every page has the column titles and the footer with its number
+	const all = await page.evaluate(async () => {
+		const v = window.rv_page.pages;
+		await v.fill_all();
+		const pages = [...document.querySelectorAll(".rv-page")];
+		return pages.map((el, i) => ({
+			titles: el.querySelectorAll(".rv-pt thead th").length,
+			foot: el.querySelector(".rv-page-foot-line")?.textContent.includes(String(i + 1)),
+			rows: el.querySelectorAll(".rv-pt tbody tr").length,
+			overflow: el.scrollHeight > el.clientHeight + 1,
+		}));
+	});
+	for (const p of all) {
+		expect(p.titles).toBeGreaterThan(5);
+		expect(p.foot).toBe(true);
+		expect(p.overflow).toBe(false);
+	}
+	expect(all.reduce((n, p) => n + p.rows, 0)).toBeGreaterThanOrEqual(st.rows);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: paper, orientation, margins, content and columns change the pages; the settings are saved for the user", async ({ page }) => {
+	const problems = watch_console(page);
+	// the trial balance is too wide for a portrait page: without a saved choice it opens in landscape
+	await open(page, `report=tb&lang=en&rv=${PAGES}`);
+	expect((await pages_state(page)).box.w).toBeGreaterThan((await pages_state(page)).box.h);
+	await page.click('.rv-orient [data-orient="portrait"]');
+	await settle(page);
+	await settle(page);
+	const portrait = await pages_state(page);
+	expect(portrait.box.w).toBeLessThan(portrait.box.h);
+	await page.click('.rv-orient [data-orient="landscape"]');
+	await settle(page);
+	const landscape = await pages_state(page);
+	expect(landscape.box.w).toBeGreaterThan(landscape.box.h);
+	expect(landscape.measure.body_h).toBeLessThan(portrait.measure.body_h);
+	await page.selectOption('select[data-set="size"]', "A3");
+	await settle(page);
+	const a3 = await pages_state(page);
+	expect(a3.box.w).toBeGreaterThan(landscape.box.w);
+	await page.selectOption('select[data-set="margins"]', "wide");
+	await settle(page);
+	const wide = await pages_state(page);
+	expect(wide.box.inner_w).toBeLessThan(a3.box.inner_w);
+	// signatures and no grand total
+	await page.click('input[data-set="signatures"]');
+	await settle(page);
+	expect((await pages_state(page)).signatures).toBe(3);
+	await page.click('input[data-set="include_total"]');
+	await settle(page);
+	expect((await pages_state(page)).total).toBe(false);
+	// a column hidden for print only: the grid keeps it
+	const before = (await pages_state(page)).titles.length;
+	await page.click('input[data-col="account__account_type"]');
+	await settle(page);
+	const after = await pages_state(page);
+	expect(after.titles.length).toBe(before - 1);
+	expect(after.titles).not.toContain("Account Type");
+	const saved = await page.evaluate(() => frappe.model.user_settings.store["Report View:Trial Balance"]?.pages);
+	await page.waitForTimeout(900);
+	const saved2 = await page.evaluate(() => frappe.model.user_settings.store["Report View:Trial Balance"]?.pages);
+	expect((saved2 || saved).orientation).toBe("landscape");
+	expect((saved2 || saved).hidden).toEqual(["account__account_type"]);
+	const hidden_in_grid = await page.evaluate(() => window.rv_page.state.columns.hidden);
+	expect(hidden_in_grid).not.toContain("account__account_type");
+	await shot3(page, "pages-tb-settings-changed-light-ltr");
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: another language runs the report again and turns the pages; the session language comes back", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=tb&lang=ar&rv=${PAGES}`);
+	await settle(page);
+	const arabic = await pages_state(page);
+	expect(arabic.dir).toBe("rtl");
+	expect(arabic.footer).toContain("صفحة");
+	await page.selectOption('select[data-set="lang"]', "en");
+	await settle(page);
+	const english = await pages_state(page);
+	expect(english.dir).toBe("ltr");
+	expect(english.footer).toMatch(/Page 1 of/);
+	expect(english.titles).toContain("Debit");
+	// the fixture's columns are wider than a portrait page: that note may stand, no failure may
+	expect(english.note).not.toMatch(/could not|تعذّر/);
+	await shot3(page, "pages-tb-english-from-arabic-session");
+	await page.selectOption('select[data-set="lang"]', "");
+	await settle(page);
+	const back = await pages_state(page);
+	expect(back.dir).toBe("rtl");
+	expect(back.titles).toEqual(arabic.titles);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: print fills every page and leaves the sheets alone in the document with the paper's @page rule, then puts them back", async ({ page }) => {
+	const problems = watch_console(page);
+	// an explicit portrait: the general ledger would open in landscape by itself
+	await open(page, `report=gl&lang=ar&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await settle(page);
+	const prepared = await page.evaluate(async () => {
+		const v = window.rv_page.pages;
+		window.__restore = await v.prepare_print();
+		const root = document.querySelector("body > .rv-print-root");
+		return {
+			root: Boolean(root),
+			dir: root?.dir,
+			css: root?.querySelector("style")?.textContent || "",
+			filled: v.filled.size,
+			pages: v.pages.length,
+			in_stage: Boolean(document.querySelector(".rv-print-stage .rv-print-sheets")),
+			button_disabled: document.querySelector('.rv-print-ft [data-action="print"]').disabled,
+		};
+	});
+	expect(prepared.root).toBe(true);
+	expect(prepared.dir).toBe("rtl");
+	expect(prepared.filled).toBe(prepared.pages);
+	expect(prepared.in_stage).toBe(false);
+	expect(prepared.button_disabled).toBe(true);
+	expect(prepared.css).toContain("@page{size:210mm 297mm;margin:0}");
+	expect(prepared.css).toContain("body>*:not(.rv-print-root){display:none!important}");
+	await page.emulateMedia({ media: "print" });
+	await shot3(page, "pages-gl-print-media-rtl", true);
+	await page.emulateMedia({ media: "screen" });
+	const restored = await page.evaluate(() => {
+		window.__restore();
+		const v = window.rv_page.pages;
+		return {
+			root: Boolean(document.querySelector(".rv-print-root")),
+			in_stage: Boolean(document.querySelector(".rv-print-stage .rv-print-sheets")),
+			printing: v.printing,
+			button_disabled: document.querySelector('.rv-print-ft [data-action="print"]').disabled,
+		};
+	});
+	expect(restored).toEqual({ root: false, in_stage: true, printing: false, button_disabled: false });
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: only the pages near the viewport carry content; far ones give it back; the Print action of the head opens the pages", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=gl&lang=ar&rows=20000");
+	await page.click('.rv-headbar [data-action="print"]');
+	await page.waitForFunction(() => window.rv_page.state.mode === "pages" && window.rv_page.pages.pages.length > 0);
+	await settle(page);
+	const st = await pages_state(page);
+	expect(st.count).toBeGreaterThan(100);
+	expect(st.filled).toBeLessThan(12);
+	await page.evaluate(() => {
+		const stage = document.querySelector(".rv-print-stage");
+		stage.scrollTop = stage.scrollHeight / 2;
+	});
+	await page.waitForTimeout(600);
+	await settle(page);
+	const mid = await page.evaluate(() => ({ filled: window.rv_page.pages.filled.size, pos: document.querySelector(".rv-print-pos").textContent }));
+	expect(mid.filled).toBeLessThan(40);
+	expect(mid.pos).not.toContain("الصفحة 1 من");
+	await page.click('.rv-views [data-mode="grid"]');
+	await page.waitForFunction(() => window.rv_page.state.mode === "grid" && window.rv_page.grid.rt);
+	expect(await page.evaluate(() => window.rv_page.pages.pages.length)).toBe(0);
+	expect(problems, "console errors/warnings").toEqual([]);
+});

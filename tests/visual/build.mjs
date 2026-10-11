@@ -40,7 +40,7 @@ for (const entry of ["harness", "harness_built"]) {
 
 // 2. App CSS, same order as report_view.bundle.scss.
 const css_dir = path.join(app, "report_view/public/css");
-const app_css = ["rv_tokens.css", "rv_components.css", "rv_table.css", "rv_page.css", "rv_charts.css", "rv_pivot.css"]
+const app_css = ["rv_tokens.css", "rv_components.css", "rv_table.css", "rv_page.css", "rv_charts.css", "rv_pivot.css", "rv_pages.css"]
 	.map((f) => fs.readFileSync(path.join(css_dir, f), "utf8"))
 	.join("\n");
 fs.writeFileSync(path.join(dist, "app.css"), app_css);

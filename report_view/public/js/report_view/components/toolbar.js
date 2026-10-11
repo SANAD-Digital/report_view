@@ -1,5 +1,6 @@
 // Toolbar (docs/architecture.md §11.1 #25-#31; design: reference/design/screens/main.png):
-// the view switcher (Table / Pivot analysis / Charts) and the search box with its options.
+// the view switcher (Table / Pivot analysis / Charts / Pages) and the search box with its options.
+// The Pages tab shows for a user who may print the report (set_report).
 // The favourites button joins it with the saved views; nothing that does not work yet is shown.
 
 import { icons } from "./icons.js";
@@ -13,6 +14,7 @@ const MODES = [
 	{ mode: "grid", icon: () => icons.table(), label: () => __("Table") },
 	{ mode: "pivot", icon: () => icons.pivot(), label: () => __("Pivot analysis") },
 	{ mode: "charts", icon: () => icons.chart(), label: () => __("Charts") },
+	{ mode: "pages", icon: () => icons.pages(), label: () => __("Pages"), needs: "can_print" },
 ];
 
 export class Toolbar {
@@ -42,6 +44,14 @@ export class Toolbar {
 		this.search = new SearchBox({ root, parent: slot, host: search });
 		slot.replaceWith(this.search.el);
 		this.set_mode("grid");
+	}
+
+	/** The tabs a report offers: Pages needs the print permission. */
+	set_report({ can_print }) {
+		for (const tab of this.tabs) {
+			const m = MODES.find((x) => x.mode === tab.dataset.mode);
+			tab.hidden = m?.needs === "can_print" && !can_print;
+		}
 	}
 
 	/** Marks the tab of the view shown (any mode without a tab of its own shows the table). */

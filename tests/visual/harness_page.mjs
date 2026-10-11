@@ -4,7 +4,9 @@
 // from the bundle `bench build` produced (harness_built.mjs).
 // URL parameters: report=tb|ar|ar_party|ar_jq|gl|gl_account, lang=ar|en, desk=light|dark (Desk theme), density=compact,
 // pref=light|dark (the page's own theme button), group=<column key>[,<column key>],
-// rows=N (repeat the report's rows up to about N, for performance checks).
+// rows=N (repeat the report's rows up to about N, for performance checks), pipe=1 (the first
+// voucher type of the general ledger gets a "|" in its name: Perspective's column path separator),
+// pages=<JSON> (saved settings of the Pages view, e.g. {"orientation":"landscape"}).
 
 const params = new URLSearchParams(window.location.search);
 const which = params.get("report") || "tb";
@@ -117,12 +119,23 @@ async function main() {
 		};
 		const copies = [];
 		for (let i = 0; i < k; i++) for (const r of body) copies.push(i ? { ...r, voucher_no: `${r.voucher_no}-${i}` } : r);
-		input.raw.result = [rows[0], ...copies, scale(rows[rows.length - 2]), scale(rows[rows.length - 1])];
+		// Rows as the server sends them, parsed from JSON: an object built key by key (a spread
+		// lowered by the build, Object.assign) is a dictionary-mode object in V8, which makes
+		// every pass over the rows several times slower than on the site.
+		input.raw.result = JSON.parse(JSON.stringify([rows[0], ...copies, scale(rows[rows.length - 2]), scale(rows[rows.length - 1])]));
 	}
 
+	if (params.get("pipe") && Array.isArray(input.raw.result)) {
+		const first = input.raw.result.find((r) => r && r.voucher_type)?.voucher_type;
+		for (const r of input.raw.result) if (r && r.voucher_type === first) r.voucher_type = `${first.split(" ")[0]}|${first.split(" ").slice(1).join(" ") || "X"}`;
+	}
 	if (params.get("desk") === "dark") document.documentElement.setAttribute("data-theme", "dark");
 	else document.documentElement.setAttribute("data-theme", "light");
 	window.localStorage.clear();
+	// Saved settings of the Pages view, as frappe.model.user_settings would return them.
+	if (params.get("pages")) {
+		frappe.model.user_settings.store[`Report View:${conf.name}`] = { pages: JSON.parse(params.get("pages")) };
+	}
 	if (params.get("density")) window.localStorage.setItem("report_view:density", params.get("density"));
 	if (params.get("pref")) window.localStorage.setItem("report_view:theme", params.get("pref"));
 
@@ -141,6 +154,27 @@ async function main() {
 			};
 		}
 		if (method === "report_view.api.run") return { status: "ok", raw: input.raw };
+		// Pages view: what the site offers a user who may print.
+		if (method === "report_view.api.get_print_options") {
+			return {
+				letter_heads: [{ name: "SND Accounting", is_default: true }, { name: "Company Letterhead", is_default: false }],
+				default_letter_head: "SND Accounting",
+				print_formats: [],
+				languages: [{ name: "ar", label: "العربية" }, { name: "en", label: "English" }],
+				lang: frappe.boot.lang,
+			};
+		}
+		if (method === "report_view.api.get_print_format") throw new Error("harness: no print formats");
+		if (method === "report_view.api.get_translations") {
+			const dict = args.lang === "ar" ? window.RV_MESSAGES || {} : {};
+			return Object.fromEntries(args.messages.filter((m) => dict[m]).map((m) => [m, dict[m]]));
+		}
+		if (method === "frappe.utils.print_format.render_letterhead_for_print") {
+			return {
+				header: `<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:6px"><div><div style="font-size:16px;font-weight:700">${args.letterhead}</div><div style="font-size:9px;color:#666">P.O. Box 1234 · Sana'a · +967 1 234 567</div></div><div style="width:46px;height:46px;border-radius:8px;background:#1E5C45"></div></div>`,
+				footer: `<div style="text-align:center;font-size:8.5px;color:#666">${args.letterhead} · www.example.com · CR 1234567</div>`,
+			};
+		}
 		if (method === "report_view.api.enrich") {
 			const rows = {};
 			for (const n of args.names) rows[n] = conf.enrich(n);
@@ -163,12 +197,17 @@ async function main() {
 			title_el.textContent = t;
 		},
 	};
+	// The page starts here (tests/perf/measure.cjs measures the load from this mark).
+	performance.mark("rv:page:start");
 	const page = new report_view.ReportViewPage(wrapper);
 	window.rv_page = page;
 	page.show();
-	// The table of the view state's mode: the grid, or the pivot (rv with mode "pivot").
+	// The table of the view state's mode: the grid, the pivot (rv with mode "pivot") or the pages.
 	const shown = () =>
-		page.opened && ((page.grid.current === page.opened && page.grid.rt) || (page.state.mode === "pivot" && page.pivot.current && page.pivot.rt));
+		page.opened &&
+		((page.grid.current === page.opened && page.grid.rt) ||
+			(page.state.mode === "pivot" && page.pivot.current && page.pivot.rt) ||
+			(page.state.mode === "pages" && page.pages.current === page.opened && page.pages.pages.length && page.pages.filled.size));
 	await wait_for(shown);
 	const group = params.get("group");
 	if (group) {
@@ -181,7 +220,14 @@ async function main() {
 
 // Resolves when the table has drawn everything that is pending.
 window.rv_settle = async () => {
-	const rt = window.rv_page.grid.rt || window.rv_page.pivot.rt;
+	const page = window.rv_page;
+	if (page.state?.mode === "pages") {
+		await page.pages.ready;
+		while (page.pages.queue.length || page.pages.filling.size) await new Promise((r) => setTimeout(r, 30));
+		await new Promise((r) => setTimeout(r, 150));
+		return;
+	}
+	const rt = page.grid.rt || page.pivot.rt;
 	await rt.draw();
 	await rt.flush();
 	await new Promise((r) => setTimeout(r, 150));

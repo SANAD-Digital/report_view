@@ -211,6 +211,17 @@ guard_report_quiet(report_name) -> Report | None
 
 **واجهات Frappe القياسية.** `/api/resource/Report View Saved View` و `frappe.client.get_list/get` و `frappe.desk.reportview.get` لا تمر بـ `guard_report`. لذلك قاعدة «رؤية العرض مشروطة برؤية التقرير» تُنفَّذ أيضاً في الـ pqc و hook القراءة (§6)، لا في الـ API وحده.
 
+
+### 2.8 وضع «صفحات»: `get_print_options`، `get_print_format` (ADR-014)
+
+| الدالة | الطريقة | الفحوص | المخرجات |
+|---|---|---|---|
+| `get_print_options(report_name, company=None)` | GET | `guard_report` ثم `guard_print`؛ الترويسات بـ `frappe.get_list("Letter Head", disabled=0)` إن كان للمستخدم قراءتها (وإلا لا شيء، كما في boot)؛ الترويسة الافتراضية من `Company.default_letter_head` (بصلاحية الشركة) ثم `is_default`؛ قوالب التقرير بـ `frappe.get_list("Print Format", print_format_for=Report, report in [report_name, الاسم المحلول], print_format_type=JS, disabled=0)`؛ اللغات المفعّلة | `{letter_heads: [{name, is_default}], default_letter_head, print_formats: [name], languages: [{name, label}], lang}` |
+| `get_print_format(report_name, name)` | GET | `guard_report` ثم `guard_print`، ثم وجود القالب بالفلاتر نفسها (`DoesNotExistError`)، ثم `frappe.get_doc` لقراءة `html` و`css` كما تقرؤها `frappe.www.printview` لمن يملك طباعة المستند | `{name, html, css}` |
+
+### 2.9 الترجمة: `get_translations(report_name, lang, messages)` (ADR-014)
+
+POST. `guard_report` أولاً. `lang` من `frappe.translate.get_all_languages()` وإلا `RVInvalidInput`؛ `messages` قائمة نصوص (حد 2,000). المخرجات: `{msgid: ترجمة}` لما له ترجمة في `get_all_translations(lang)` (المفاتيح ذات السياق كما يخزّنها Frappe: `"<msgid>:<context>"`). الاستعمال: كلمات الصفحة وتسميات السجل والفلاتر حين تُطبع الصفحات بلغة غير لغة الجلسة؛ تسميات التقرير نفسه تأتي من `api.run` بمعامل `_lang` (Frappe يقرأه قبل الطلب).
 ---
 
 ## 3. عقد التطبيع
@@ -670,7 +681,7 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 ```js
 {
   v: 1,
-  mode: "grid" | "pivot" | "charts",
+  mode: "grid" | "pivot" | "charts" | "pages",   // pages = التقرير صفحات مطبوعة (ADR-014)
   report_filters: { /* فلاتر التقرير (معايير الخادم) */ },
   columns: {
     order: [key],              // الأعمدة الظاهرة بالترتيب
@@ -907,7 +918,7 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 | 74 | نافذة الرسم من النطاق | `components/chart_dialog.js` | Frappe `frappe.ui.Dialog` + ECharts | 5د |
 | 75 | درج كشف الحساب | `components/drill_drawer.js` | بناء؛ **البيانات من `api.run("General Ledger", …)`** عبر `drilldowns` وليس من قيود في المتصفح كما في النموذج (§11.3) | 5د |
 | 76 | نافذة تفاصيل القيد | `components/voucher_dialog.js` | `frappe.ui.Dialog`؛ السطور من `api.run("General Ledger", {voucher_no})`؛ «قبض/صرف» من `account_type` المثرى لا من أرقام حسابات ثابتة | 5د |
-| 77 | معاينة الطباعة/PDF (الاتجاه، الأعمدة، الفلاتر، المجاميع، التوقيعات، الترقيم) | `components/print_preview.js` ⇒ `api.export_pdf` | الجانب بناء؛ الصفحات تُولَّد في الخادم (ADR-001) والمعاينة تعرض PDF الناتج | 6 |
+| 77 | وضع «صفحات»: التقرير صفحات مطبوعة (الورق والاتجاه والهوامش، القالب، الترويسة، اللغة، الفلاتر، المجاميع، التوقيعات، الترقيم) والطباعة من المكان نفسه | `views/pages_view.js` + `engine/page_layout.js` + `views/grid_rows.js` ⇒ `api.get_print_options`، `api.get_print_format`، `api.get_translations`، `api.run(_lang)` | بناء؛ الصفحات تُقطع في المتصفح من `view` الجدول نفسه وتُطبع بنافذة المتصفح (ADR-014). PDF من الخادم يبقى زراً لاحقاً (المرحلة 6، ADR-001) | 5هـ |
 | 78 | النافذة العامة | — | Frappe `frappe.ui.Dialog` بأصناف التصميم | 5أ |
 | 79 | تموضع النوافذ المنبثقة | `components/popover.js` | بناء (يحترم RTL والحافة) | 5أ |
 | 80 | التنبيه المؤقت | — | Frappe `frappe.show_alert` بتنسيق `.rv-toast` | 3 |
@@ -935,7 +946,7 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 | الرسوم | CSS/SVG يدوي | ECharts | `docs/brief.md` |
 | العروض المحفوظة | محلية بلا مشاركة | DocType مع مشاركة وافتراضي | `docs/brief.md` والمرحلة 5هـ |
 | شريط الخادم | فلتران ثابتان (الشركة، الفترة) | فلاتر سكربت التقرير كلها، ومكوّن الفترة عند وجود فلاتر التاريخ | عمومية المحرك لأي تقرير |
-| معاينة الطباعة | صفحات مولّدة في المتصفح | PDF من الخادم | ADR-001 (قابلية الإثبات، `print`) |
+| معاينة الطباعة | صفحات مولّدة في المتصفح | صفحات مولّدة في المتصفح من `view` الجدول، تُطبع من المتصفح (ADR-014)؛ PDF الخادم زر لاحق | ADR-014 (طلب صاحب المشروع 2026-10-12) |
 | أزرار Excel/PNG للنطاق | تنبيه فقط | تنفيذ فعلي (Excel للنطاق عبر `scope: selection`؛ PNG من ECharts) | إكمال السلوك |
 | عمود الإجراءات المثبّت في النهاية | عمود ثالث مثبّت يسار الجدول بثلاثة أزرار | زر «…» يظهر عند المرور داخل العمود المثبّت في البداية، ويفتح قائمة الصف نفسها | `regular-table` لا يدعم تثبيت عمود في النهاية؛ البديل (عنصر مستقل و `view` ثانٍ) كلفته أعلى من فائدته (`perspective-experiments.md` §2.4). يُعاد النظر إن طلب صاحب المشروع |
 | ترتيب الأعمدة في RTL | sticky يمين/يسار | محوّل RTL خاص فوق `regular-table` | المكتبة لا تدعم RTL (§9.2) |

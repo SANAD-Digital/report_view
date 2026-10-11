@@ -103,12 +103,28 @@ const message = (p) => p.then((r) => r.message);
 export const api = {
 	get_meta: (report_name) => message(call("report_view.api.get_meta", { report_name })),
 
-	run: (report_name, filters, js_filters, prepared_report_name = null) =>
+	// `lang`: the report runs in that language (frappe reads `_lang` from the request),
+	// for the pages printed in a language other than the session's (ADR-014).
+	run: (report_name, filters, js_filters, prepared_report_name = null, lang = null) =>
 		call(
 			"report_view.api.run",
-			{ report_name, filters, js_filters, prepared_report_name },
+			{ report_name, filters, js_filters, prepared_report_name, ...(lang ? { _lang: lang } : {}) },
 			{ type: "POST" }
 		),
+
+	// Pages view (ADR-014): what a user who may print the report may choose from.
+	get_print_options: (report_name, company = null) =>
+		message(call("report_view.api.get_print_options", { report_name, company })),
+
+	get_print_format: (report_name, name) => message(call("report_view.api.get_print_format", { report_name, name })),
+
+	get_translations: (report_name, lang, messages) =>
+		message(call("report_view.api.get_translations", { report_name, lang, messages }, { type: "POST" })),
+
+	// Frappe's own: the letter head rendered with the report's filters as `doc`, as the
+	// query-report page prints it.
+	render_letterhead: (letterhead, doc) =>
+		message(call("frappe.utils.print_format.render_letterhead_for_print", { letterhead, doc }, { type: "POST" })),
 
 	enrich: (report_name, source_column, doctype, names, fields) =>
 		message(

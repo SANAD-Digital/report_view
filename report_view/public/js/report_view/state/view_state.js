@@ -1,4 +1,4 @@
-// View state v1 (docs/architecture.md §7.1), the subset used so far: mode, columns (order,
+// View state v1 (docs/architecture.md §7.1), the subset used so far: mode (grid, pivot, charts, pages), columns (order,
 // hidden, widths, pinned, groups), sort, filters, quick_filters, group (by, subtotals, expanded),
 // tree (depth, expanded), values, charts (cards, slicers, cross), pivot (rows, cols, values), ui (density, side_panel). Unknown
 // keys are dropped (not rejected) in the browser.
@@ -7,7 +7,7 @@ import { sanitize_groups } from "./column_groups.js";
 import { sanitize_dashboard } from "./dashboard_state.js";
 
 export const VERSION = 1;
-const MODES = ["grid", "pivot", "charts"];
+const MODES = ["grid", "pivot", "charts", "pages"];
 const LIMIT_GROUP = 50;
 const DENSITIES = ["comfortable", "compact"];
 const LIMIT_EXPANDED = 5000;

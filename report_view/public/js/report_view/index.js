@@ -4,7 +4,7 @@
 
 import { api } from "./api.js";
 import { register, get_config } from "./register.js";
-import { normalize } from "./adapter/normalize.js";
+import { normalize_async } from "./adapter/normalize.js";
 import { enrich_batches, apply_enrichment } from "./adapter/enrich.js";
 import {
 	get_engine,
@@ -28,6 +28,7 @@ import { install_facade, make_facade } from "./filters/facade.js";
 import { make_formatter } from "./format.js";
 import { GridView } from "./views/grid_view.js";
 import { PivotView } from "./views/pivot_view.js";
+import { PagesView } from "./views/pages_view.js";
 import { PivotBar } from "./components/pivot_bar.js";
 import { open_pivot_drill, DRILL_LIMIT } from "./components/pivot_drill.js";
 import { StateOverlay } from "./components/states.js";
@@ -47,6 +48,8 @@ const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
 // Local preferences of this browser (the theme is not part of the view state, §7.1).
 const THEME_KEY = "report_view:theme";
 const DENSITY_KEY = "report_view:density";
+// The pages settings of a report are saved after a burst of changes.
+const PAGES_SAVE_MS = 800;
 
 function read_pref(key) {
 	try {
@@ -126,7 +129,7 @@ export class ReportViewPage {
 				<div class="rv-message"></div>
 				<div class="rv-summary-slot"></div>
 				<div class="rv-charts-slot"></div>
-				<div class="rv-gridwrap"><div class="rv-body"><div class="rv-grid"></div><div class="rv-grid rv-pivotgrid"></div></div></div>
+				<div class="rv-gridwrap"><div class="rv-body"><div class="rv-grid"></div><div class="rv-grid rv-pivotgrid"></div><div class="rv-pages"></div></div></div>
 			</div>`;
 		this.page.main.get(0).replaceChildren(root);
 		this.root = root;
@@ -138,6 +141,7 @@ export class ReportViewPage {
 			on_density: (d) => this.set_density(d),
 			on_theme: () => this.toggle_theme(),
 			on_export: () => this.export_xlsx(),
+			on_print: () => this.print(),
 		});
 		this.summary = new Summary({ parent: this.$(".rv-summary-slot") });
 		this.$(".rv-summary-slot").replaceWith(this.summary.el);
@@ -195,6 +199,7 @@ export class ReportViewPage {
 		});
 		this.pivot_token = 0;
 		this.pivot_opened = null;
+		this.pages = new PagesView({ parent: this.$(".rv-pages"), root, rtl: this.rtl, host: this });
 		this.side = new SidePanel({ body, host: this.controls.side_host() });
 		this.status = new StatusBar({ parent: wrap });
 		this.apply_density();
@@ -302,14 +307,27 @@ export class ReportViewPage {
 		const mode = this.state?.mode || "grid";
 		this.root.classList.toggle("rv-mode-charts", mode === "charts");
 		this.root.classList.toggle("rv-mode-pivot", mode === "pivot");
+		this.root.classList.toggle("rv-mode-pages", mode === "pages");
 		this.toolbar.set_mode(mode);
+		this.header.set_mode(mode);
 	}
 
 	set_mode(mode) {
 		if (!this.state || this.state.mode === mode) return;
+		if (mode === "pages" && !this.meta?.perms?.can_print) return;
 		this.change((s) => {
 			s.mode = mode;
 		});
+	}
+
+	// The Print action of the page head: the pages, where the print button is (ADR-014).
+	print() {
+		if (!this.state || !this.meta?.perms?.can_print) return;
+		if (this.state.mode !== "pages") {
+			this.set_mode("pages");
+			return;
+		}
+		this.pages.print();
 	}
 
 	// The user changed the chart (type, dimension, measures): only the chart's view is opened again.
@@ -544,6 +562,7 @@ export class ReportViewPage {
 		this.pivot_token += 1;
 		this.pivot_opened = null;
 		this.pivot.destroy();
+		this.pages.destroy();
 		if (session) await session.close();
 	}
 
@@ -587,7 +606,8 @@ export class ReportViewPage {
 		warm_up();
 		await this.close_session();
 		this.page.set_title(__(name));
-		this.header.set_report({ can_export: false });
+		this.header.set_report({ can_export: false, can_print: false });
+		this.toolbar.set_report({ can_print: false });
 		this.show_loading();
 		const route_options = frappe.route_options || {};
 		frappe.route_options = null;
@@ -609,12 +629,16 @@ export class ReportViewPage {
 			return;
 		}
 		this.config = get_config(name);
-		this.header.set_report({ can_export: Boolean(this.meta.perms?.can_export) });
+		const can_print = Boolean(this.meta.perms?.can_print);
+		this.header.set_report({ can_export: Boolean(this.meta.perms?.can_export), can_print });
+		this.toolbar.set_report({ can_print });
 		if (frappe.breadcrumbs && this.meta.report?.module) frappe.breadcrumbs.add(this.meta.report.module);
 
 		const params = new URLSearchParams(window.location.search);
 		const from_url = decode_state(params.get("rv"));
 		this.state = sanitize(from_url || default_state(this.config), this.config);
+		// The pages need the print permission: a link to them opens the table otherwise.
+		if (this.state.mode === "pages" && !can_print) this.state.mode = "grid";
 		if (!from_url?.columns?.groups) await this.load_user_groups();
 		if (!from_url?.charts) await this.load_user_charts();
 		this.state.ui.density = this.density;
@@ -749,7 +773,7 @@ export class ReportViewPage {
 		}
 
 		this.raw = res.raw;
-		const report = normalize(
+		const report = await normalize_async(
 			{
 				raw: res.raw,
 				filters: values,
@@ -759,6 +783,7 @@ export class ReportViewPage {
 			},
 			{ translate: __ }
 		);
+		if (token !== this.run_token) return;
 		report.__report_type = this.meta.report?.report_type;
 		await this.enrich(report);
 		if (token !== this.run_token) return;
@@ -815,6 +840,7 @@ export class ReportViewPage {
 		if (!report.rows.length) {
 			await this.close_charts();
 			await this.close_pivot();
+			this.pages.destroy();
 			this.grid.destroy();
 			this.notices.show(null);
 			const notes = report.notices.filter((n) => n.code === "SERVER_MESSAGE").map((n) => n.detail);
@@ -854,29 +880,39 @@ export class ReportViewPage {
 		this.refresh_controls();
 		const charts = this.state.mode === "charts";
 		const pivot = this.state.mode === "pivot";
-		if (charts || pivot) {
-			this.grid.destroy();
-			if (charts) await this.close_pivot();
-			else await this.close_charts();
-		} else {
-			await this.close_charts();
-			await this.close_pivot();
-			await this.grid.show({
-				report,
-				opened,
-				session,
-				state: this.state,
-				config: this.config,
-				fmt: this.formatter,
-			});
+		const pages = this.state.mode === "pages";
+		try {
+			if (charts || pivot || pages) {
+				this.grid.destroy();
+				if (!pivot) await this.close_pivot();
+				if (!charts) await this.close_charts();
+				if (!pages) this.pages.destroy();
+			} else {
+				await this.close_charts();
+				await this.close_pivot();
+				this.pages.destroy();
+				await this.grid.show({
+					report,
+					opened,
+					session,
+					state: this.state,
+					config: this.config,
+					fmt: this.formatter,
+				});
+			}
+		} finally {
+			// The view shown before goes even when the grid failed to draw the new one.
+			if (previous) await session.close_view(previous);
 		}
-		if (previous) await session.close_view(previous);
 		if (this.opened === opened) {
 			this.update_status(opened.counts);
 			await this.update_summary(opened, session);
 		}
 		if (charts && this.opened === opened) await this.show_charts(session);
 		if (pivot && this.opened === opened) await this.show_pivot(session);
+		if (pages && this.opened === opened) {
+			await this.pages.show({ report, opened, session, state: this.state, config: this.config, fmt: this.formatter });
+		}
 		this.update_url(this.last_filters, this.state, default_state(this.config));
 	}
 
@@ -1014,6 +1050,83 @@ export class ReportViewPage {
 			code: exc || "",
 			actions: [{ label: __("Try again"), primary: true, action: () => this.run() }],
 		});
+	}
+
+	// ------------------------------------------------------------ the Pages view (ADR-014)
+
+	/** What the pages print around the table: the report, its criteria and the company. */
+	pages_context() {
+		const company = this.last_filters?.company || frappe.defaults?.get_default?.("company") || null;
+		return {
+			report_name: this.report_name,
+			company: company ? String(company) : null,
+			filters: this.last_filters || {},
+			defs: this.report_settings?.filters || [],
+			group_labels: (this.state?.group?.by || []).map((k) => this.controls.title(k)),
+			raw: this.raw,
+			report_settings: this.report_settings,
+		};
+	}
+
+	pages_options(company) {
+		return api.get_print_options(this.report_name, company);
+	}
+
+	pages_letterhead(name) {
+		const ctx = this.pages_context();
+		return api.render_letterhead(name, { ...ctx.filters, company: ctx.filters.company || ctx.company });
+	}
+
+	pages_format(name) {
+		return api.get_print_format(this.report_name, name);
+	}
+
+	pages_translations(lang, messages) {
+		return api.get_translations(this.report_name, lang, messages);
+	}
+
+	/**
+	 * The report run again in another language (its labels and captions translated by the
+	 * server), normalised like the one on screen with the captions of that language. Null
+	 * when it cannot stand for the rows shown (a different result).
+	 * @param {Promise<object>} pack_p the translation pack of the language
+	 */
+	async pages_run_lang(lang, pack_p) {
+		const shown = this.report;
+		const [res, pack] = await Promise.all([
+			api.run(this.report_name, this.last_filters, this.filters.js_filters(), this.prepared_report_name, lang),
+			pack_p,
+		]);
+		if (res.message?.status !== "ok" || this.report !== shown) return null;
+		const report = await normalize_async(
+			{
+				raw: res.message.raw,
+				filters: this.last_filters,
+				report_settings: this.report_settings,
+				register: this.config,
+				server_messages: res.server_messages,
+			},
+			{ translate: (s) => pack?.[s] || s }
+		);
+		if (this.report !== shown || report.rows.length !== shown.rows.length) return null;
+		for (let i = 0; i < report.rows.length; i++) if (report.rows[i].__kind !== shown.rows[i].__kind) return null;
+		return report;
+	}
+
+	async pages_settings_load() {
+		if (!frappe.model?.user_settings?.get) return null;
+		try {
+			return (await frappe.model.user_settings.get(this.user_settings_key()))?.pages || null;
+		} catch {
+			return null;
+		}
+	}
+
+	pages_settings_save(settings) {
+		if (!frappe.model?.user_settings?.save) return;
+		clearTimeout(this._pages_save);
+		const key = this.user_settings_key();
+		this._pages_save = setTimeout(() => frappe.model.user_settings.save(key, "pages", settings), PAGES_SAVE_MS);
 	}
 
 	// Export model v1 (docs/architecture.md §4.1).

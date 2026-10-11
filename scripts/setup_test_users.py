@@ -12,7 +12,7 @@ by the app.
 import sys
 
 import frappe
-from frappe.permissions import update as update_perm
+from frappe.permissions import update_permission_property
 
 USERS = {
 	"rv_admin": {"roles": ["System Manager"], "password": "***REMOVED***"},
@@ -59,7 +59,7 @@ def remove_export_for_accounts_user():
 	# Export is a role-level permission in Frappe, so the only way to give an
 	# Accounts User no export right is to clear it on the role itself.
 	for doctype in NO_EXPORT_DOCTYPES:
-		update_perm(doctype, "Accounts User", 0, "export", 0)
+		update_permission_property(doctype, "Accounts User", 0, "export", 0)
 
 
 def main(site, company=None):

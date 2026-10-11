@@ -123,7 +123,7 @@ def enrich(
 			doctype,
 			filters={"name": ["in", unique]},
 			fields=["name", *permitted],
-			limit_page_length=0,
+			limit=0,
 		):
 			rows[doc["name"]] = {f: doc.get(f) for f in permitted}
 	meta = frappe.get_meta(doctype)

@@ -12,7 +12,7 @@ import { build_nodes, build_facts } from "./tree_nodes.js";
 import { build_report_rows } from "./report_rows.js";
 import { to_view_config, CURRENCY_COUNT_PREFIX } from "./view_config.js";
 import { to_card_config, dashboard_terms, level_of } from "./chart_config.js";
-import { to_pivot_config, drill_config } from "./pivot_config.js";
+import { to_pivot_config, drill_config, resolve_column_paths } from "./pivot_config.js";
 import * as queries from "./queries.js";
 
 import { SERVER_WASM, CLIENT_WASM, WORKER_JS } from "./assets.js";
@@ -568,7 +568,24 @@ export class ReportSession {
 				totals.num_rows(),
 				queries.read_total_row(totals),
 			]);
-			return { spec, post: spec.post, view, totals, column_paths: paths, body_rows: Math.max(0, rows - 1), total };
+			// The split columns from the column paths; a text value with "|" in it needs the
+			// exact combinations of the pivot columns (a temporary view, deleted in `finally`).
+			let resolved = resolve_column_paths(paths, spec.post);
+			if (resolved.ambiguous && spec.count) {
+				const combos = await queries.group_paths(this.handles, facts, spec.count[0], spec.post.cols.length);
+				resolved = resolve_column_paths(paths, spec.post, combos);
+			}
+			return {
+				spec,
+				post: spec.post,
+				view,
+				totals,
+				column_paths: paths,
+				columns: resolved.columns,
+				unresolved_columns: resolved.unresolved,
+				body_rows: Math.max(0, rows - 1),
+				total,
+			};
 		} catch (e) {
 			await drop();
 			throw e;

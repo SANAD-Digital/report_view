@@ -36,6 +36,23 @@ export function count_groups(handles, table, config) {
 	return handles.with_view(table, config, async (view) => (await view.num_rows()) - 1, "groups");
 }
 
+/**
+ * Value tuples of the groups at one depth of a grouping (the row paths of a temporary
+ * grouped view, deleted in `finally`): what the pivot needs to read its column paths apart.
+ * @returns {Promise<Array<Array>>}
+ */
+export function group_paths(handles, table, config, depth) {
+	return handles.with_view(
+		table,
+		config,
+		async (view) => {
+			const cols = await view.to_columns({ start_row: 1, start_col: 0, end_col: 0 });
+			return (cols[ROW_PATH] || []).filter((path) => path.length === depth);
+		},
+		"paths"
+	);
+}
+
 /** Rows of the body: a grouped view carries its grand total as row 0, shown pinned instead. */
 export async function body_rows(view, post) {
 	return Math.max(0, (await view.num_rows()) - post.row_offset);

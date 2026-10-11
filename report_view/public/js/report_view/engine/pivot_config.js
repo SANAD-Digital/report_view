@@ -265,6 +265,55 @@ export function split_value(dim, text) {
 	return text;
 }
 
+/** A value of a dimension as Perspective writes it in a column path (a row path gives dates as milliseconds). */
+function path_segment(dim, value) {
+	if (value === null || value === undefined) return "null";
+	if (dim.type === "date" && typeof value === "number") return new Date(value).toISOString().slice(0, 10);
+	return String(value);
+}
+
+/**
+ * The split columns of a pivot view from its column paths ("x|y|__pv0"). Perspective joins
+ * the values of the pivot columns with "|", so a text value that contains "|" gives more
+ * segments than there are pivot columns. With one pivot column the value is the whole path
+ * before the value's name; with several, the exact combinations of the pivot columns'
+ * values (`combos`, the row paths of a view grouped by them, queries.group_paths) tell the
+ * values apart. The literal text "null" and a null value read alike (both "null").
+ * @param {string[]} paths view.column_paths()
+ * @param {object} post to_pivot_config().post
+ * @param {Array<Array>|null} [combos] value tuples of the pivot columns, when known
+ * @returns {{columns: Array<{name: string, alias: string, values: Array}>, unresolved: number,
+ *   ambiguous: boolean}} ambiguous: some path needs `combos` to be read
+ */
+export function resolve_column_paths(paths, post, combos = null) {
+	const n = post.cols.length;
+	const dims = post.cols.map((k) => post.dims[k]);
+	const by_key = new Map();
+	for (const tuple of combos || []) by_key.set(tuple.map((v, d) => path_segment(dims[d], v)).join("|"), tuple);
+	const columns = [];
+	let unresolved = 0;
+	let ambiguous = false;
+	for (const name of paths) {
+		const segs = name.split("|");
+		const alias = segs.pop();
+		if (!post.values.some((v) => v.name === alias)) continue;
+		let values = null;
+		if (segs.length === n) values = segs.map((s, d) => split_value(dims[d], s));
+		else if (n === 1) values = [split_value(dims[0], segs.join("|"))];
+		else {
+			ambiguous = true;
+			const tuple = by_key.get(segs.join("|"));
+			if (tuple) values = tuple.map((v, d) => split_value(dims[d], path_segment(dims[d], v)));
+		}
+		if (!values) {
+			unresolved += 1;
+			continue;
+		}
+		columns.push({ name, alias, values });
+	}
+	return { columns, unresolved, ambiguous };
+}
+
 /**
  * Config of the temporary view behind one pivot cell (§11.1 #68): the facts of its row path
  * and its column path under the pivot's filters, largest first by the value, as the design

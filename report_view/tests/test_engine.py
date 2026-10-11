@@ -419,6 +419,46 @@ class TestEngine(UnitTestCase):
 		included = sum(1 for r in nr["facts"] if r["party"] == parties[0])
 		self.assertEqual(excluded["row_count"] + included, len(nr["facts"]))
 
+	def test_quick_filter_narrows_the_facts(self):
+		"""ADR-013: an active quick filter is a browser filter; its definition travels with it."""
+		nr = _nr("trial_balance_fy2026")
+		definitions = [
+			{"id": "debit_closing", "expression": 'abs("closing_debit") > 0.005'},
+			{"id": "other", "expression": '"debit" > 1e9'},
+		]
+		expected = [r for r in nr["facts"] if abs(r.get("closing_debit") or 0) > 0.005]
+		self.assertTrue(0 < len(expected) < len(nr["facts"]))
+		result = engine.apply(nr, {"v": 1, "quick_filters": ["debit_closing"]}, quick_filters=definitions)
+		self.assertEqual(result["layout_mode"], "levels")
+		self.assertEqual(result["total_source"], "engine")
+		self.assertEqual(result["row_count"], len(expected))
+		for key in TB_MEASURES:
+			self.assertAlmostEqual(
+				result["totals"][key], sum(_num(r[key]) for r in expected), places=2, msg=key
+			)
+		leaves = [r["rid"] for r in result["rows"] if r["kind"] == "data"]
+		self.assertEqual(leaves, [r["__rid"] for r in expected])
+		# Two active quick filters are an "and"; an id without a definition is not applied.
+		both = engine.apply(
+			nr, {"v": 1, "quick_filters": ["debit_closing", "other"]}, quick_filters=definitions
+		)
+		self.assertEqual(both["row_count"], 0)
+		unknown = engine.apply(
+			nr, {"v": 1, "quick_filters": ["debit_closing", "nope"]}, quick_filters=definitions
+		)
+		self.assertEqual(unknown["row_count"], len(expected))
+		# Without an active id the definitions change nothing: the tree "as is".
+		plain = engine.apply(nr, {"v": 1}, quick_filters=definitions)
+		self.assertEqual((plain["layout_mode"], plain["total_source"]), ("tree", "reference"))
+		# With a column filter too, both narrow.
+		state = {
+			"v": 1,
+			"quick_filters": ["debit_closing"],
+			"filters": [{"key": "credit", "type": "range", "min": 0.005, "max": None}],
+		}
+		narrowed = engine.apply(nr, state, quick_filters=definitions)
+		self.assertEqual(narrowed["row_count"], sum(1 for r in expected if (r.get("credit") or 0) >= 0.005))
+
 	def test_frappe_total_row_matches_engine_total(self):
 		"""ADR-008: without filters the engine total equals Frappe's own total row."""
 		for name in ("accounts_receivable_frappe_total", "stock_balance", "stock_projected_qty"):

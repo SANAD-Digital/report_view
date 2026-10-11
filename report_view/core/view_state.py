@@ -1,9 +1,9 @@
 """View state schema v1: validation and migration (docs/architecture.md §7).
 
 The export uses ``v``, ``mode``, ``columns``, ``sort``, ``filters`` (text / set /
-range / date), ``group``, ``tree`` and ``values``. The remaining schema keys are
-type-checked and ignored by the engine. Unknown keys are rejected on the server
-(§7.2).
+range / date), ``quick_filters`` (ids; their definitions travel in the export model,
+ADR-013), ``group``, ``tree`` and ``values``. The remaining schema keys are type-checked
+and ignored by the engine. Unknown keys are rejected on the server (§7.2).
 
 ``check_exportable`` refuses, for an export only, what the schema allows but the
 browser engine does not apply yet (§4.2 step 4): the file must not differ from

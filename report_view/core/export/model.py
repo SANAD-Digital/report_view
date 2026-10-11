@@ -9,7 +9,9 @@ from frappe.utils import cint
 from frappe.utils.number_format import NUMBER_FORMAT_MAP
 
 from report_view.core import view_state as vs
+from report_view.core.engine import value_type
 from report_view.core.errors import RVExportMismatch, RVInvalidInput, RVInvalidViewState
+from report_view.core.expressions import ExpressionError, compile_expression
 from report_view.core.inputs import parse_json_arg, validate_js_filters, validate_report_filters
 
 MODEL_KEYS = frozenset(
@@ -20,6 +22,7 @@ MODEL_KEYS = frozenset(
 		"js_filters",
 		"prepared_report_name",
 		"view_state",
+		"quick_filters",
 		"scope",
 		"selection",
 		"expected",
@@ -27,6 +30,7 @@ MODEL_KEYS = frozenset(
 		"locale",
 	)
 )
+MAX_QUICK_FILTERS = 50
 LAYOUT_KEYS = frozenset(
 	(
 		"title",
@@ -69,6 +73,7 @@ def parse(export_model: Any, fmt: str) -> dict:
 	state = vs.validate(model.get("view_state") or {"v": 1})
 	if state.get("mode", "grid") != "grid":
 		frappe.throw(_("Only the grid view can be exported in this version"), RVInvalidViewState)
+	quick_filters = _parse_quick_filters(model.get("quick_filters"), state)
 
 	scope = model.get("scope") or "all"
 	if scope not in ("all", "selection"):
@@ -123,6 +128,7 @@ def parse(export_model: Any, fmt: str) -> dict:
 		"js_filters": js_filters,
 		"prepared_report_name": prepared or None,
 		"view_state": state,
+		"quick_filters": quick_filters,
 		"scope": scope,
 		"selection": selection,
 		"expected": expected,
@@ -135,11 +141,73 @@ def parse(export_model: Any, fmt: str) -> dict:
 	}
 
 
+def _parse_quick_filters(raw: Any, state: dict) -> list[dict]:
+	"""ADR-013: the definitions of the quick filters, ``[{id, expression}]``, each expression
+	of the closed grammar; every id the view state activates must have one."""
+	if raw is None:
+		raw = []
+	if not isinstance(raw, list) or len(raw) > MAX_QUICK_FILTERS:
+		_bad(_("Invalid quick filters"))
+	out: list[dict] = []
+	seen: set[str] = set()
+	for item in raw:
+		if (
+			not isinstance(item, dict)
+			or set(item) - {"id", "expression"}
+			or not isinstance(item.get("id"), str)
+			or not item["id"]
+			or not isinstance(item.get("expression"), str)
+		):
+			_bad(_("Invalid quick filters"))
+		if item["id"] in seen:
+			_bad(_("Invalid quick filters"))
+		seen.add(item["id"])
+		try:
+			compile_expression(item["expression"])
+		except ExpressionError as e:
+			frappe.throw(
+				_("Quick filter {0} cannot be exported: {1}").format(item["id"], str(e)), RVInvalidViewState
+			)
+		out.append({"id": item["id"], "expression": item["expression"]})
+	missing = [qid for qid in state.get("quick_filters") or [] if qid not in seen]
+	if missing:
+		frappe.throw(
+			_("Quick filters without a definition: {0}").format(", ".join(sorted(set(missing)))),
+			RVInvalidViewState,
+		)
+	return out
+
+
+def _check_quick_filters(model: dict, nr: dict) -> None:
+	"""The active quick filters read number columns that exist (§4.2 step 3 for ADR-013)."""
+	by_key = {c["key"]: c for c in nr["columns"]}
+	active = set(model["view_state"].get("quick_filters") or [])
+	for item in model["quick_filters"]:
+		if item["id"] not in active:
+			continue
+		keys = compile_expression(item["expression"]).keys
+		unknown = sorted(k for k in keys if k not in by_key)
+		if unknown:
+			frappe.throw(
+				_("Quick filter {0} refers to unknown columns: {1}").format(item["id"], ", ".join(unknown)),
+				RVInvalidViewState,
+			)
+		not_numbers = sorted(k for k in keys if value_type(by_key[k]["fieldtype"]) != "float")
+		if not_numbers:
+			frappe.throw(
+				_("Quick filter {0} compares columns that are not numbers: {1}").format(
+					item["id"], ", ".join(not_numbers)
+				),
+				RVInvalidViewState,
+			)
+
+
 def check_against_report(model: dict, nr: dict) -> None:
 	"""§4.2 steps 3-5: keys exist in the server-built NormalizedReport, and the view state
 	holds nothing the screen does not apply."""
 	vs.check_against_columns(model["view_state"], nr["columns"])
 	vs.check_exportable(model["view_state"], nr["columns"])
+	_check_quick_filters(model, nr)
 	known = {c["key"] for c in nr["columns"]}
 	unknown = [c["key"] for c in model["layout"]["columns"] if c["key"] not in known]
 	selection = model["selection"] or {}

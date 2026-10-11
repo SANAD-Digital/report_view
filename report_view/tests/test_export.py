@@ -12,7 +12,7 @@ from report_view.core.errors import RVExportMismatch, RVInvalidInput, RVInvalidV
 from report_view.core.export import model as export_model
 from report_view.core.export import xlsx
 from report_view.core.normalize import normalize
-from report_view.core.settings import empty_settings
+from report_view.core.settings import empty_settings, load_settings
 from report_view.tests.utils import AR_FILTERS, TB_FILTERS, TB_JS_FILTERS, RVTestCase, load_fixtures
 
 
@@ -318,6 +318,99 @@ class TestExportXlsx(RVTestCase):
 			elif out["kind"] == "foot":
 				self.assertEqual(values[0], f"Total {parties[0]}")
 		self.assertEqual([out["kind"] for out in result["rows"]].count("foot"), 1)
+
+	# ------------------------------------------------- quick filters (ADR-013)
+
+	DEBIT_CLOSING = 'abs("closing_debit") > 0.005'
+
+	def _leaves(self, raw: dict) -> list[dict]:
+		rows = [r for r in raw["result"] if r.get("account") != "'Total'"]
+		return [r for i, r in enumerate(rows) if i + 1 == len(rows) or rows[i + 1]["indent"] <= r["indent"]]
+
+	def test_quick_filter_export_equals_the_filtered_totals(self):
+		with self.as_user("accountant"):
+			raw = api.run("Trial Balance", TB_FILTERS, TB_JS_FILTERS)["raw"]
+		leaves = self._leaves(raw)
+		kept = [r for r in leaves if abs(r.get("closing_debit") or 0) > 0.005]
+		self.assertTrue(0 < len(kept) < len(leaves))
+		keys = ("debit", "credit", "closing_debit", "closing_credit")
+		expected = {"row_count": len(kept), "totals": {k: sum(r.get(k) or 0 for r in kept) for k in keys}}
+		model = tb_model(
+			view_state={"v": 1, "quick_filters": ["debit_closing"]},
+			quick_filters=[
+				{"id": "debit_closing", "expression": self.DEBIT_CLOSING},
+				{"id": "unused", "expression": '"debit" > 1'},
+			],
+			expected=expected,
+		)
+		with self.as_user("accountant"):
+			ws = self._export("Trial Balance", model).active
+		rows = body_rows(ws)
+		# The leaves of the file are the kept ones; the grand total is their sum.
+		nr = normalize(raw, TB_FILTERS, load_settings("Trial Balance")["report_settings"])
+		keys = [c["key"] for c in nr["columns"] if not c["hidden"] or c["export_hidden"]]
+		account, closing_debit = keys.index("account"), keys.index("closing_debit")
+		written = [values[account] for _r, values in rows[:-1]]
+		self.assertTrue(all(r["account"] in written for r in kept))
+		dropped = [r["account"] for r in leaves if r not in kept]
+		self.assertTrue(dropped and not any(a in written for a in dropped))
+		self.assertAlmostEqual(rows[-1][1][closing_debit], expected["totals"]["closing_debit"], places=2)
+		# What the screen would send for the unfiltered tree no longer matches: refused, not written.
+		with (
+			patch("report_view.core.export.model.frappe.log_error"),
+			self.as_user("accountant"),
+			self.assertRaises(RVExportMismatch),
+		):
+			self._export("Trial Balance", dict(model, expected={"totals": self._reference_totals()}))
+
+	def test_quick_filter_definitions_are_validated(self):
+		cases = (
+			# an active id without a definition
+			({"v": 1, "quick_filters": ["debit_closing"]}, [], RVInvalidViewState),
+			(
+				{"v": 1, "quick_filters": ["q"]},
+				[{"id": "x", "expression": self.DEBIT_CLOSING}],
+				RVInvalidViewState,
+			),
+			# outside the grammar
+			(
+				{"v": 1, "quick_filters": ["q"]},
+				[{"id": "q", "expression": 'not("debit" > 0)'}],
+				RVInvalidViewState,
+			),
+			# unknown column, text column
+			({"v": 1, "quick_filters": ["q"]}, [{"id": "q", "expression": '"nope" > 0'}], RVInvalidViewState),
+			(
+				{"v": 1, "quick_filters": ["q"]},
+				[{"id": "q", "expression": 'abs("account") > 0'}],
+				RVInvalidViewState,
+			),
+			# shape
+			({"v": 1}, {"id": "q"}, RVInvalidInput),
+			({"v": 1}, [{"id": "q"}], RVInvalidInput),
+			({"v": 1}, [{"id": "q", "expression": '"debit" > 0', "label": "x"}], RVInvalidInput),
+			({"v": 1}, [{"id": "q", "expression": 1}], RVInvalidInput),
+			({"v": 1}, [{"id": "q", "expression": '"debit" > 0'}] * 2, RVInvalidInput),
+			({"v": 1}, [{"id": str(i), "expression": '"debit" > 0'} for i in range(51)], RVInvalidInput),
+		)
+		with self.as_user("accountant"):
+			for state, definitions, error in cases:
+				with self.subTest(state=state, definitions=definitions), self.assertRaises(error):
+					self._export("Trial Balance", tb_model(view_state=state, quick_filters=definitions))
+			# An inactive definition that refers to a column this report lacks is not checked:
+			# the browser does not apply it either.
+			self._export(
+				"Trial Balance",
+				tb_model(view_state={"v": 1}, quick_filters=[{"id": "q", "expression": '"nope" > 0'}]),
+			)
+
+	def test_quick_filter_denied_user(self):
+		model = tb_model(
+			view_state={"v": 1, "quick_filters": ["debit_closing"]},
+			quick_filters=[{"id": "debit_closing", "expression": self.DEBIT_CLOSING}],
+		)
+		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
+			self._export("Trial Balance", model)
 
 	def test_user_without_export_rejected(self):
 		model = tb_model(filters=AR_FILTERS, js_filters=[], view_state={"v": 1})

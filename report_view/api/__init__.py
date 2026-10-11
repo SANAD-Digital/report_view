@@ -44,8 +44,8 @@ def run(
 def get_meta(report_name: str) -> dict:
 	"""Report metadata, script, permissions and server settings (§2.2).
 
-	Phase 3: settings come only from ``report_view/defaults/<scrub(report)>.json``;
-	the settings DocTypes and saved views arrive in phase 4.
+	Settings come from ``report_view/defaults/<scrub(report)>.json`` only (``core/settings``);
+	``defaults`` is empty until the saved views exist (§2.7).
 	"""
 	report = guard_report(report_name)
 	settings = load_settings(report.name)
@@ -167,7 +167,12 @@ def export_xlsx(report_name: str, export_model: dict | str) -> Any:
 	nr = normalize.normalize(response["raw"], model["filters"], settings["report_settings"], {}, translate=_)
 	export_model_mod.check_against_report(model, nr)
 	result = engine.apply(
-		nr, model["view_state"], model["selection"], model["layout"]["columns"], lang=frappe.local.lang
+		nr,
+		model["view_state"],
+		model["selection"],
+		model["layout"]["columns"],
+		lang=frappe.local.lang,
+		quick_filters=model["quick_filters"],
 	)
 	export_model_mod.compare_expected(model, result, nr, report.name)
 

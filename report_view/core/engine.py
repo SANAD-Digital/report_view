@@ -12,6 +12,8 @@ Shapes (``layout_mode`` of the result), as in ``to_view_config``:
   is the report's reference row (last ``internal_total``, ADR-008), not a computed sum.
 - ``levels``: a tree report under a browser filter (or a selection). The matching leaves
   and their ancestors; the values of a parent are aggregated from its matching leaves.
+  A quick filter (``quick_filters``, an expression of ``core/expressions.py``, ADR-013) is
+  a browser filter here and in ``flat``.
 - ``group``: ``group.by``. Groups of the (filtered) facts, ordered by their key.
 - ``flat``: a report without a tree. Without a filter the report's own opening stands
   first and its closing rows last, also under a sort; without a filter and a sort the
@@ -37,6 +39,7 @@ import unicodedata
 from decimal import Decimal
 from typing import Any
 
+from report_view.core.expressions import Expression, ExpressionError, compile_expression
 from report_view.core.normalize import (
 	KIND_CLOSING,
 	KIND_DATA,
@@ -255,6 +258,37 @@ def filter_facts(facts: list[dict], filters: list[dict], by_key: dict[str, dict]
 		return list(facts)
 	pairs = [(f, by_key[f["key"]]) for f in filters]
 	return [r for r in facts if all(_row_matches(r, f, c) for f, c in pairs)]
+
+
+def quick_filter_expressions(state: dict, definitions: list[dict] | None) -> list[Expression]:
+	"""The active quick filters (``state.quick_filters``, ids) as compiled expressions, from
+	their definitions ``[{id, expression}]`` (twin of ``view_config.quick_filter_terms``: an id
+	without a definition is not applied; the export model refuses it before this point).
+	"""
+	by_id = {d["id"]: d["expression"] for d in definitions or [] if isinstance(d, dict)}
+	out = []
+	for qid in state.get("quick_filters") or []:
+		text = by_id.get(qid)
+		if text is None:
+			continue
+		try:
+			out.append(compile_expression(text))
+		except ExpressionError:
+			continue
+	return out
+
+
+def filter_quick(facts: list[dict], expressions: list[Expression]) -> list[dict]:
+	"""Facts that pass every active quick filter, read as the browser loads them (floats)."""
+	if not expressions:
+		return list(facts)
+	keys = sorted(set().union(*(e.keys for e in expressions)))
+	out = []
+	for row in facts:
+		values = {k: _to_float(row.get(k)) for k in keys}
+		if all(e.matches(values) for e in expressions):
+			out.append(row)
+	return out
 
 
 # ---------------------------------------------------------------- sort
@@ -834,8 +868,12 @@ def apply(
 	selection: dict | None = None,
 	layout_columns: list[dict] | None = None,
 	lang: str | None = None,
+	quick_filters: list[dict] | None = None,
 ) -> dict:
 	"""Apply a validated view state.
+
+	``quick_filters``: the definitions ``[{id, expression}]`` of the quick filters the state
+	may name (ADR-013); an active one narrows the facts like a column filter.
 
 	Returns ``{columns, label_key, rows, totals, total_source, row_count, layout_mode}``.
 	``rows``: ``{kind, level, values, rid, label, group_key, count, open, hidden, bold}``
@@ -847,14 +885,15 @@ def apply(
 	view = _View(nr, state, lang)
 	by_key = view.by_key
 	filters = effective_filters(state.get("filters"), by_key)
+	quick = quick_filter_expressions(state, quick_filters)
 	row_rids = set(selection["row_rids"]) if selection and selection.get("row_rids") is not None else None
 	column_keys = selection.get("column_keys") if selection else None
 	columns, label_key = export_columns(nr, state, layout_columns, column_keys)
 
-	facts = filter_facts(nr["facts"], filters, by_key)
+	facts = filter_quick(filter_facts(nr["facts"], filters, by_key), quick)
 	if row_rids is not None:
 		facts = [r for r in facts if r["__rid"] in row_rids]
-	narrowed = bool(filters) or row_rids is not None
+	narrowed = bool(filters) or bool(quick) or row_rids is not None
 	group_keys = [k for k in (state.get("group") or {}).get("by") or [] if k in by_key]
 	sort = [s for s in state.get("sort") or [] if s["key"] in by_key]
 	by_rid = {r["__rid"]: r for r in nr["rows"]}

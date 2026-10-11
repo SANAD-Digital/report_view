@@ -5,7 +5,16 @@
 export const RID = "__rid";
 export const KIND = "__kind";
 export const SORT_PREFIX = "__sort__";
-export const BATCH_ROWS = 50000;
+// Rows per table.update: the client encodes a batch on the main thread (about 12 ms per
+// 1,000 rows of a 40-column report), so a batch stays well under a frame's worth of work;
+// the worker ingests one batch while the next is encoded (docs/architecture.md §8).
+export const BATCH_ROWS = 5000;
+// The main thread is given back after this much work (build_table_input_async).
+const YIELD_BUDGET_MS = 40;
+// Unique values above which a collator sort is done in runs, with the main thread given
+// back between them: 20,000 unique strings sort in about 70 ms, 100,000 in a long freeze.
+const CHUNK_SORT_ABOVE = 4096;
+const SORT_RUN = 4096;
 
 const FLOAT_TYPES = new Set(["Currency", "Float", "Percent", "Duration", "Int"]);
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -110,6 +119,82 @@ export function make_collator(locale) {
 	return new Intl.Collator(locale || undefined, { numeric: true, sensitivity: "base" });
 }
 
+/** Gives the main thread back for one macrotask (input and paint happen in between). */
+export function yield_to_main() {
+	return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+// A `tick` yields only once a budget of work has been spent since the last yield, so that
+// a run of small steps costs no extra tasks.
+function make_ticker(budget_ms = YIELD_BUDGET_MS) {
+	let last = Date.now();
+	return async () => {
+		if (Date.now() - last < budget_ms) return;
+		await yield_to_main();
+		last = Date.now();
+	};
+}
+
+function merge_runs(a, b, compare) {
+	const out = new Array(a.length + b.length);
+	let i = 0;
+	let j = 0;
+	let k = 0;
+	while (i < a.length && j < b.length) out[k++] = compare(a[i], b[j]) <= 0 ? a[i++] : b[j++];
+	while (i < a.length) out[k++] = a[i++];
+	while (j < b.length) out[k++] = b[j++];
+	return out;
+}
+
+// The same order as `items.sort(compare)` (stable), in runs with the main thread given back
+// between them: the comparator is the collator's and never yields itself.
+async function sort_in_runs(items, compare, tick) {
+	let runs = [];
+	for (let start = 0; start < items.length; start += SORT_RUN) {
+		runs.push(items.slice(start, start + SORT_RUN).sort(compare));
+		await tick();
+	}
+	while (runs.length > 1) {
+		const next = [];
+		for (let i = 0; i < runs.length; i += 2) {
+			next.push(runs[i + 1] ? merge_runs(runs[i], runs[i + 1], compare) : runs[i]);
+			await tick();
+		}
+		runs = next;
+	}
+	return runs[0] || [];
+}
+
+/** sort_keys with the main thread given back while a large set of unique values is sorted. */
+async function sort_keys_async(values, collator, tick) {
+	const unique = [...new Set(values.filter((v) => v !== null))];
+	const sorted = unique.length > CHUNK_SORT_ABOVE ? await sort_in_runs(unique, collator.compare, tick) : unique.sort(collator.compare);
+	const rank = new Map(sorted.map((v, i) => [v, i]));
+	return values.map((v) => (v === null ? unique.length : rank.get(v)));
+}
+
+function new_input(rows) {
+	const schema = {};
+	const data = {};
+	const add = (name, type, values) => {
+		if (Object.hasOwn(schema, name)) throw new Error(`report_view: duplicate engine column "${name}"`);
+		schema[name] = type;
+		data[name] = values;
+	};
+	return { schema, data, size: rows.length, add };
+}
+
+function add_technical(input, columns, rows, extras) {
+	for (const key of aux_currency_keys(columns)) {
+		input.add(key, "string", rows.map((r) => to_string(r[key])));
+	}
+	input.add(RID, "float", rows.map((r) => r.__rid));
+	input.add(KIND, "string", rows.map((r) => r.__kind));
+	for (const extra of extras || []) input.add(extra.name, extra.type, extra.values);
+	const { schema, data, size } = input;
+	return { schema, data, size };
+}
+
 /**
  * Schema and columnar data of one Perspective table.
  *
@@ -123,27 +208,36 @@ export function make_collator(locale) {
  */
 export function build_table_input(columns, rows, opts = {}) {
 	const collator = make_collator(opts.locale);
-	const schema = {};
-	const data = {};
-	const add = (name, type, values) => {
-		if (Object.hasOwn(schema, name)) throw new Error(`report_view: duplicate engine column "${name}"`);
-		schema[name] = type;
-		data[name] = values;
-	};
-
+	const input = new_input(rows);
 	for (const c of columns) {
 		const type = perspective_type(c.fieldtype);
 		const values = rows.map((r) => convert(type, r[c.key]));
-		add(c.key, type, values);
-		if (type === "string") add(SORT_PREFIX + c.key, "float", sort_keys(values, collator));
+		input.add(c.key, type, values);
+		if (type === "string") input.add(SORT_PREFIX + c.key, "float", sort_keys(values, collator));
 	}
-	for (const key of aux_currency_keys(columns)) {
-		add(key, "string", rows.map((r) => to_string(r[key])));
+	return add_technical(input, columns, rows, opts.extras);
+}
+
+/**
+ * build_table_input with the main thread given back between columns (and inside the sort
+ * of a column with many unique values), so that no step is a freeze: the same output.
+ * @param {number} [opts.budget_ms] work between two yields
+ */
+export async function build_table_input_async(columns, rows, opts = {}) {
+	const collator = make_collator(opts.locale);
+	const tick = make_ticker(opts.budget_ms);
+	const input = new_input(rows);
+	for (const c of columns) {
+		const type = perspective_type(c.fieldtype);
+		const values = rows.map((r) => convert(type, r[c.key]));
+		input.add(c.key, type, values);
+		await tick();
+		if (type === "string") {
+			input.add(SORT_PREFIX + c.key, "float", await sort_keys_async(values, collator, tick));
+			await tick();
+		}
 	}
-	add(RID, "float", rows.map((r) => r.__rid));
-	add(KIND, "string", rows.map((r) => r.__kind));
-	for (const extra of opts.extras || []) add(extra.name, extra.type, extra.values);
-	return { schema, data, size: rows.length };
+	return add_technical(input, columns, rows, opts.extras);
 }
 
 /** Columnar batches of at most `size` rows (peak memory of the load, §8). */

@@ -4,10 +4,13 @@
 // shared cases in report_view/tests/fixtures/normalize/.
 
 import { normalize_columns } from "./columns.js";
-import { classify_rows } from "./classify.js";
+import { make_classifier } from "./classify.js";
 import { detect_tree, resolve_label_key, link_tree } from "./tree.js";
 
 const BOOLEAN_LIKE = [null, undefined, true, false, 0, 1];
+// Rows copied, or classified, between two points where normalize_async gives the main
+// thread back (about 20 ms of work each on a wide report).
+const CHUNK_ROWS = 4000;
 
 function is_empty(v) {
 	if (v === null || v === undefined || v === "" || v === 0 || v === false) return true;
@@ -46,11 +49,13 @@ function row_to_dict(raw_row, columns) {
 		for (const c of columns) row[c.key] = c.source_index < raw_row.length ? raw_row[c.source_index] : null;
 		return row;
 	}
-	// Object.assign, not a spread: the build turns a spread into a helper call per key,
-	// slow over tens of thousands of rows.
-	const row = Object.assign({}, raw_row);
+	// A plain loop, not a spread (the build turns a spread into a helper call per key) nor
+	// Object.assign (three times slower here): rows parsed from JSON share one shape, and
+	// copying them key by key keeps it, so every later pass over the rows stays fast.
+	const row = {};
+	for (const key in raw_row) row[key] = raw_row[key];
 	for (const c of columns) {
-		if (!Object.hasOwn(row, c.key)) row[c.key] = row[c.fieldname] ?? null;
+		if (!(c.key in row)) row[c.key] = row[c.fieldname] ?? null;
 	}
 	return row;
 }
@@ -60,6 +65,28 @@ function row_to_dict(raw_row, columns) {
  * @param {object} [opts] {translate}
  */
 export function normalize(input, opts = {}) {
+	const steps = normalize_steps(input, opts);
+	let step = steps.next();
+	while (!step.done) step = steps.next();
+	return step.value;
+}
+
+/**
+ * normalize with the main thread given back between runs of rows (the copy and the
+ * classification are the long parts on tens of thousands of rows): the same output.
+ */
+export async function normalize_async(input, opts = {}) {
+	const steps = normalize_steps(input, opts);
+	let step = steps.next();
+	while (!step.done) {
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		step = steps.next();
+	}
+	return step.value;
+}
+
+// The normalisation as steps: a yield after every run of CHUNK_ROWS rows.
+function* normalize_steps(input, opts) {
 	const translate = opts.translate || ((s) => s);
 	const raw = input.raw || {};
 	const filters = input.filters || {};
@@ -91,12 +118,21 @@ export function normalize(input, opts = {}) {
 	// N2.2
 	const has_list = raw_rows.some(is_list);
 	const has_dict = raw_rows.some(is_dict);
-	const rows = raw_rows.map((r) => row_to_dict(r, columns));
+	const rows = [];
+	for (let i = 0; i < raw_rows.length; i++) {
+		rows.push(row_to_dict(raw_rows[i], columns));
+		if ((i + 1) % CHUNK_ROWS === 0) yield;
+	}
 
 	const tree_enabled = detect_tree(rows, register);
 	const label_key = resolve_label_key(columns, report_settings, register);
 
-	classify_rows(rows, { columns, label_key, tree_enabled, register, translate });
+	const classifier = make_classifier(rows, { columns, label_key, tree_enabled, register, translate });
+	for (let i = 0; i < rows.length; i++) {
+		classifier.classify(rows[i], i);
+		if ((i + 1) % CHUNK_ROWS === 0) yield;
+	}
+	classifier.finish();
 	link_tree(rows, { enabled: tree_enabled, report_settings, notices });
 
 	// N4.6: facts are data rows, and only leaves in tree reports.

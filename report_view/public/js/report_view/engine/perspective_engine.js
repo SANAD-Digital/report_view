@@ -7,7 +7,7 @@
 // we own its handle (terminate() is the only way to give WASM memory back).
 
 import perspective from "@finos/perspective";
-import { build_table_input, batches, perspective_type, KIND, RID } from "./schema.js";
+import { build_table_input_async, batches, yield_to_main, perspective_type, KIND, RID } from "./schema.js";
 import { build_nodes, build_facts } from "./tree_nodes.js";
 import { build_report_rows } from "./report_rows.js";
 import { to_view_config, CURRENCY_COUNT_PREFIX } from "./view_config.js";
@@ -186,9 +186,14 @@ function start_wasm() {
 	perspective.init_client(fetch(CLIENT_WASM));
 }
 
-/** Starts the WASM download (once per page), in parallel with the first api.run. */
+/**
+ * Starts the WASM download and the worker (once per page), in parallel with the first
+ * api.run and the normalisation of its result: the engine is ready when the rows are.
+ * A failure surfaces at the first open_session (get_engine starts again then).
+ */
 export function warm_up() {
 	start_wasm();
+	get_engine().catch(() => {});
 }
 
 function terminate_now() {
@@ -314,12 +319,21 @@ export class ReportSession {
 		return session;
 	}
 
+	// The columnar input is built with the main thread given back between columns, and
+	// loaded in batches: the client encodes one batch while the worker ingests the previous.
 	async _load_table(label, rows, extras) {
-		const input = build_table_input(this.normalized.columns, rows, { locale: this.locale, extras });
+		const input = await build_table_input_async(this.normalized.columns, rows, { locale: this.locale, extras });
 		const table = await this.handles.table(input.schema, label);
 		this.tables[label] = table;
 		this.sizes[label] = input.size;
-		for (const batch of batches(input.data, input.size)) await table.update(batch);
+		// The worker takes the batches in order: each one is encoded in a task of its own
+		// while the worker ingests the one before.
+		const pending = [];
+		for (const batch of batches(input.data, input.size)) {
+			pending.push(table.update(batch));
+			await yield_to_main();
+		}
+		await Promise.all(pending);
 	}
 
 	async load() {

@@ -166,7 +166,9 @@ export class RtView {
 			// A column is never narrower than drawn (regular-table's measured widths).
 			const measured = rt.e?.indices || [];
 			const total = nominal.reduce((sum, w, i) => sum + Math.max(w, measured[i] || 0), 0);
-			if (total <= rt.clientWidth) return;
+			// The cached width: the library writes the panel on every draw, and reading the
+			// element's width here forced a layout in the middle of each draw.
+			if (total <= (this.rt_width || rt.clientWidth)) return;
 			const want = `${Math.ceil(total)}px`;
 			if (panel.style.width !== want) panel.style.width = want;
 		};

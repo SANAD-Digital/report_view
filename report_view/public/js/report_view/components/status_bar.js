@@ -19,7 +19,7 @@ export class StatusBar {
 		const el = document.createElement("footer");
 		el.className = "rv-status";
 		el.innerHTML = `<div class="rv-status-grp"></div><div class="rv-status-grp"><span class="rv-status-hint">${esc(
-			__("Click a column title to sort · drag it to the group panel to group · ≡ for the column menu")
+			__("Click a title to sort · drag it to group · ≡ column menu")
 		)}</span></div>`;
 		parent.appendChild(el);
 		this.el = el;

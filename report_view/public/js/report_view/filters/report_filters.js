@@ -60,7 +60,7 @@ export class ReportFilters {
 	make(def) {
 		const df = def;
 		const label = __(df.label, null, df.parent);
-		if (!df.placeholder) df.placeholder = df.label;
+		if (!df.placeholder) df.placeholder = label;
 		// The design's input frame (.rv-input) for plain inputs only: Frappe puts input_class
 		// on a MultiSelectList's own wrapper too, which then framed its box a second time.
 		df.input_class = df.fieldtype === "MultiSelectList" ? "input-xs" : "input-xs rv-input";

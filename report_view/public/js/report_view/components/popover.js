@@ -1,7 +1,8 @@
 // Popovers of the page (docs/architecture.md §11.1 #79): one at a time, placed under their
 // anchor with the inline-start edges aligned (the right edges in RTL), kept inside the page
-// frame, flipped above the anchor when there is no room below. Escape and a press outside
-// close it; the focus goes back to the anchor when it was inside the popover.
+// frame and the window: flipped above the anchor when there is no room below, moved up over
+// it when there is no room either way. Escape and a press outside close it; whenever a
+// popover closes while the focus was inside it, the focus goes back to its anchor.
 
 let current = null;
 
@@ -49,7 +50,10 @@ export function open_popover({ root, anchor, content, cls = "", width = null, al
 		const start_edge = rtl === (align === "start") ? a.right - w : a.left;
 		const left = Math.max(rr.left + 8, Math.min(start_edge, rr.right - 8 - w));
 		let top = a.bottom + 4;
-		if (top + h > window.innerHeight - 8 && a.top - h - 4 > 8) top = a.top - h - 4;
+		if (top + h > window.innerHeight - 8) {
+			if (a.top - h - 4 > 8) top = a.top - h - 4;
+			else top = Math.max(8, window.innerHeight - 8 - h);
+		}
 		el.style.left = `${Math.round(left - rr.left)}px`;
 		el.style.top = `${Math.round(top - rr.top)}px`;
 	};
@@ -61,15 +65,15 @@ export function open_popover({ root, anchor, content, cls = "", width = null, al
 		if (e.target.closest?.(".awesomplete, .dropdown-menu, .datepicker")) return;
 		handle.close();
 	};
-	// On the document: content that re-renders may drop the focus to the body.
+	// On the document: content that re-renders may drop the focus to the body. A Frappe
+	// dropdown open inside the popover (awesomplete of a Link control, the date picker of a
+	// Date control) takes the first Escape itself.
 	const on_key = (e) => {
 		if (e.key !== "Escape") return;
-		const active = document.activeElement;
-		const inside = el.contains(active) || !active || active === document.body;
-		if (!inside && !anchor?.contains(active)) return;
+		const t = e.target;
+		if (t?.closest?.(".awesomplete")?.querySelector("ul:not([hidden])") || document.querySelector(".datepicker.active")) return;
 		e.stopPropagation();
 		handle.close();
-		if (inside) anchor?.focus?.();
 	};
 	const on_resize = () => handle.close();
 	document.addEventListener("pointerdown", on_press, true);
@@ -88,7 +92,10 @@ export function open_popover({ root, anchor, content, cls = "", width = null, al
 			document.removeEventListener("keydown", on_key, true);
 			window.removeEventListener("resize", on_resize);
 			anchor?.setAttribute("aria-expanded", "false");
+			const active = document.activeElement;
+			const inside = el.contains(active) || !active || active === document.body;
 			el.remove();
+			if (inside && anchor?.isConnected) anchor.focus?.({ preventScroll: true });
 			if (current === handle) current = null;
 			if (on_close) on_close();
 		},

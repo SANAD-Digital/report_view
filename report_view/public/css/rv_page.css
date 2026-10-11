@@ -1,46 +1,34 @@
-/* Report View page: layout of the design frame inside a Frappe page, Frappe controls styled
-   as the design's fields (.rv-field / .rv-input), states and narrow screens.
-   Logical properties only; colours from the tokens only. */
+/* Report View page: the design frame inside a Frappe page, Frappe controls styled as the
+   design's fields (.rv-field / .rv-input), the page actions in Desk's page head, notices,
+   the column groups dialog (a Frappe dialog) and narrow screens.
+   Logical properties only; colours from the tokens only (rv_tokens.css). */
 
 .rv [hidden]{display:none !important}
 /* popovers (.rv-pop) are placed inside the page frame */
-.rv{position:relative}
-
+.rv{position:relative;border-radius:var(--r-lg)}
 /* Desk sets letter-spacing .02em on the body: with it the digits of a 13px number land on
    uneven pixels ("886,31 6.00"). The design has none. */
-.rv{border-radius:var(--r-lg);letter-spacing:0}
-.rv-muted{color:var(--tx-4)}
-.rv-mixed{color:var(--tx-4);cursor:help}
-
-/* ---------- header ---------- */
-.rv-top{flex-wrap:wrap}
-.rv-top-main{min-width:0}
-.rv-meta:empty{display:none}
-.rv-title{overflow-wrap:anywhere}
-.rv-tag{white-space:nowrap}
-.rv-actions{flex-wrap:wrap}
-.rv-seg button[aria-disabled=true]{opacity:.45;cursor:default}
-.rv-seg button[aria-disabled=true]:hover{color:var(--tx-2)}
-/* shown, not available yet (PDF, Print, Favorites, Pivot switch): disabled look, title kept */
-.rv-btn[aria-disabled=true]{opacity:.45;cursor:default}
+.rv{letter-spacing:0}
+/* shown, not available yet (PDF, Print, the pivot switch): disabled look, title kept */
+.rv-btn[aria-disabled=true],.rv-seg button[aria-disabled=true]{opacity:.45;cursor:default}
 .rv-btn[aria-disabled=true]:hover{background:var(--surface);border-color:var(--line-2)}
+.rv-seg button[aria-disabled=true]:hover{color:var(--tx-2)}
 .rv-switch[aria-disabled=true]{opacity:.55;cursor:default}
 /* Desk draws its own checkbox; the design uses the native one in the brand colour */
 .rv input[type=checkbox]{appearance:auto;-webkit-appearance:checkbox;width:15px;height:15px;margin:0;background:none;border:0;box-shadow:none;accent-color:var(--pri);cursor:pointer}
 .rv input[type=checkbox]::before,.rv input[type=checkbox]::after{content:none;display:none}
 .rv input[type=checkbox]:disabled{cursor:default}
-/* RTL-drawn arrows point the other way in LTR */
-.rv[dir=ltr] .rv-flip svg{transform:scaleX(-1)}
-.rv-btn .ico-dr{display:inline-flex}
+.rv-message{font-size:var(--fs-sm);color:var(--tx-2)}
+.rv-message:empty{display:none}
 
-/* ---------- server bar with Frappe controls ---------- */
-.rv-server{flex-wrap:wrap}
-.rv-server-tag{flex:none}
-.rv-filters{display:flex;align-items:flex-end;flex:1 1 420px;min-width:0}
-.rv-criteria-main{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px;min-width:0}
-.rv-server-side{display:flex;align-items:center;gap:14px;margin-inline-start:auto;align-self:flex-end;min-height:var(--ctl)}
-.rv-server-side .rv-server-note{margin-inline-start:0}
-.rv-server-note:empty{display:none}
+/* ---------- page actions in Desk's page head (components/header.js) ---------- */
+.rv.rv-headbar{display:flex;align-items:center;background:transparent;margin-inline-end:8px}
+.rv.rv-headbar .rv-actions{flex-wrap:nowrap}
+
+/* ---------- report filters: Frappe controls as the design's fields ---------- */
+/* Field titles show inside the empty field and as a tooltip (as on query-report); the
+   label itself is read by screen readers only. */
+.rv-server .rv-field-lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .rv-filter.rv-field{width:210px;min-width:0}
 .rv-filter.rv-field[data-fieldtype=Date]{width:160px}
 .rv-filter.hide-control,.rv-filter .hide-control{display:none}
@@ -50,12 +38,10 @@
 .rv-filter-check{display:flex;align-items:center;min-height:var(--ctl)}
 
 .rv .rv-field .frappe-control,.rv .rv-field .form-group,
-.rv .rv-filter-check .frappe-control,.rv .rv-filter-check .form-group,
-.rv .rv-group .frappe-control,.rv .rv-group .form-group{margin:0;padding:0}
-.rv .rv-field .form-control,.rv .rv-group .form-control{height:var(--ctl);padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:var(--tx);font-family:inherit;font-size:var(--fs-sm);font-weight:400;letter-spacing:0;line-height:calc(var(--ctl) - 2px);box-shadow:none}
-.rv .rv-field .form-control:focus,.rv .rv-group .form-control:focus,
-.rv .rv-group .multiselect-list.show .form-control{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft);outline:0}
-.rv .rv-server .rv-field .rv-input{width:100%}
+.rv .rv-filter-check .frappe-control,.rv .rv-filter-check .form-group{margin:0;padding:0}
+.rv .rv-field .form-control{height:var(--ctl);padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:var(--tx);font-family:inherit;font-size:var(--fs-sm);font-weight:400;letter-spacing:0;line-height:calc(var(--ctl) - 2px);box-shadow:none}
+.rv .rv-field .form-control:focus,.rv .rv-field .multiselect-list.show .form-control{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft);outline:0}
+.rv .rv-field .rv-input{width:100%}
 .rv .rv-field .form-control::placeholder{color:var(--tx-4)}
 .rv .rv-field select.form-control{padding-inline-end:28px}
 .rv .rv-field .select-icon{top:0;bottom:0;display:flex;align-items:center;color:var(--tx-3)}
@@ -63,61 +49,32 @@
 .rv .rv-field .placeholder{position:absolute;top:0;bottom:0;inset-inline:10px 28px;display:flex;align-items:center;font-size:var(--fs-sm);color:var(--tx-4);pointer-events:none}
 .rv .rv-field .link-btn{top:1px;bottom:1px;height:auto;background:var(--surface)}
 .rv .rv-field .link-btn .icon{stroke:var(--tx-3)}
-.rv .rv-field input[type=date],.rv .rv-field [data-fieldtype=Date] .form-control{font-variant-numeric:tabular-nums}
+.rv .rv-field [data-fieldtype=Date] .form-control{font-variant-numeric:tabular-nums}
 .rv .rv-filter-check .checkbox label{display:inline-flex;align-items:center;gap:0;padding:0;font-size:var(--fs-xs);font-weight:500;color:var(--tx-2);white-space:nowrap;cursor:pointer}
 .rv .rv-filter-check .label-area{color:var(--tx-2)}
 .rv .rv-filter-check .checkbox input[type=checkbox]{accent-color:var(--pri);margin-block:0}
 .rv .rv-filter-check .help-box,.rv .rv-filter-check .help{display:none}
+/* Frappe MultiSelectList inside our fields: one frame, the menu within the field */
+.rv .rv-field .multiselect-list{position:relative}
+.rv .rv-field .multiselect-list > .form-control{display:flex;align-items:center;height:var(--ctl);min-height:0;padding-block:0;padding-inline-end:28px;cursor:pointer}
+.rv .rv-field .multiselect-list .status-text{position:static;flex:1;min-width:0;margin:0;padding:0;border:0;background:none;box-shadow:none;line-height:normal;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv .rv-field .multiselect-list .status-text .text-extra-muted{color:var(--tx-4)}
+.rv .rv-field .multiselect-list .dropdown-menu{inset-inline:0;width:100%;min-width:0;max-width:100%;padding:6px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);box-shadow:var(--sh-pop)}
+.rv .rv-field .multiselect-list .dropdown-menu .form-control{height:var(--ctl-sm)}
+.rv .rv-field .multiselect-list .dropdown-menu li.d-flex{flex-wrap:wrap;gap:6px;padding-top:6px}
+.rv .rv-field .multiselect-list .dropdown-menu .btn{margin:0 !important}
 
-/* ---------- period field and "More options" ---------- */
-.rv-period .rv-datefield .ltr{white-space:nowrap}
+/* ---------- the period field and "More options" ---------- */
+.rv-period .rv-datefield{max-width:100%}
 .rv-more .rv-count-badge{min-width:18px;height:18px}
-.rv-pop.rv-more-pop{padding:14px 16px}
+/* the popover shows the fields with their titles: no title again as a placeholder */
+.rv-pop.rv-more-pop{padding:12px 16px 14px}
+.rv-more-pop .rv-field-lbl{position:static;width:auto;height:auto;clip:auto}
+.rv-more-pop .rv-field .form-control::placeholder{color:transparent}
+.rv-more-pop .rv-field .placeholder,.rv-more-pop .rv-field .status-text .text-extra-muted{visibility:hidden}
 .rv-more-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px}
 .rv-more-filters .rv-filter.rv-field{width:calc(50% - 7px)}
 .rv-more-filters .rv-filter-check{width:100%;min-height:auto}
-.rv-pop.dp .dp-nav:disabled{opacity:.35;cursor:default;background:transparent}
-.rv[dir=ltr] .dp-in input{text-align:left}
-
-/* ---------- summary cards ---------- */
-/* the loading bar takes the line of the number it stands for: no jump when it arrives */
-.rv-sum-skel{display:inline-block;width:150px;height:18px;margin:0;align-self:center}
-.rv-sum-side b .rv-n{color:inherit}
-.rv-pill svg{flex:none}
-
-/* ---------- toolbar ---------- */
-.rv-toolbar{flex-wrap:wrap}
-.rv-facets{display:contents}
-.rv-search .rv-btn.icon.sm{flex:none}
-.rv-fav-btn{flex:none}
-.rv-pop.rv-search-pop{padding:4px}
-.rv-sdrop.one{grid-template-columns:minmax(0,1fr)}
-.rv-sdrop-hint{padding:4px 8px}
-.rv-sdrop .rv-mi[aria-pressed=true] .rv-mi-lbl{color:var(--tx)}
-.rv-message{font-size:var(--fs-sm);color:var(--tx-2)}
-.rv-message:empty{display:none}
-
-/* ---------- grid frame ---------- */
-/* inline-size containment: the table never widens the Frappe layout (390px phones, wide reports) */
-.rv-gridwrap{flex:none;min-height:360px;contain:inline-size}
-.rv-body{flex:1;min-height:0;display:flex;position:relative}
-.rv-grid{flex:1;min-width:0;min-height:0;position:relative}
-.rv-gp-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
-.rv-gchip .rv-chip-x{width:20px;height:20px}
-.rv-gp .rv-gp-tools{flex:none}
-
-/* ---------- tool panels ---------- */
-.rv-panel .rv-collist{flex:none}
-.rv-zchip select{color:var(--tx)}
-.rv-setlist.short{max-height:180px}
-.rv-fsec-hd > span:first-child{display:inline-flex;color:var(--tx-3);transition:transform .15s}
-.rv[dir=ltr] .rv-fsec-hd > span.open{transform:rotate(90deg)}
-.rv-panel .rv-panel-hd .rv-count-badge{flex:none}
-.rv-sidetab > span{white-space:nowrap}
-.rv-pop.rv-set-pop{padding:4px}
-.rv-set-pop .rv-setlist{padding:0 4px 4px}
-.rv-set-pop .rv-pop-hd{padding-inline:10px}
-.rv-status{flex-wrap:wrap}
 
 /* ---------- notices of the view, above the grid ---------- */
 .rv-notice{display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--surface-2);color:var(--tx-2);font-size:var(--fs-xs);flex:none}
@@ -125,78 +82,6 @@
 .rv-notice svg{margin-top:2px}
 .rv-notice-bd{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .rv-notice .rv-chip-x{color:inherit;flex:none}
-
-/* ---------- states (the overlay covers the whole grid frame) ---------- */
-.rv-gridwrap > .rv-stateov{inset:0;z-index:12}
-.rv-stateov[hidden]{display:none}
-.rv-state-ico{font-size:22px;font-weight:600}
-.rv-state-ico.warn{background:var(--warn-soft);color:var(--warn)}
-.rv-state p{white-space:pre-line}
-.rv-state-actions{flex-wrap:wrap;justify-content:center}
-.rv-state .rv-skel{width:220px}
-
-/* ---------- narrow screens (390px phones) ---------- */
-@media (max-width:600px){
-  .rv{--pad:12px}
-  .rv-shell{padding:var(--pad)}
-  .rv-top{flex-direction:column;align-items:stretch;gap:10px}
-  .rv-title{font-size:20px}
-  .rv-server{padding:10px;gap:10px}
-  .rv-server-tag{flex:1 1 100%;border-inline-end:0;padding-inline-end:0}
-  .rv-filters{flex:1 1 100%}
-  .rv-filter.rv-field,.rv-filter.rv-field[data-fieldtype=Date]{width:calc(50% - 7px)}
-  .rv-server-side{width:100%;justify-content:space-between;margin-inline-start:0}
-  .rv-server-side .rv-btn.primary{margin-inline-start:auto}
-  .rv-criteria-main{flex:1 1 100%}
-  .rv-period,.rv-period .rv-datefield{width:100%;min-width:0}
-  .rv-more{width:100%}
-  .rv-summary{grid-template-columns:minmax(0,1fr)}
-  .rv-search{flex:1 1 100%;order:3}
-  .rv-fav-btn{margin-inline-start:auto}
-  .rv-more-filters .rv-filter.rv-field{width:100%}
-  .rv-pop.dp .dp-wrap{flex-direction:column}
-  .rv-pop.dp .dp-presets{width:auto;flex-direction:row;overflow-x:auto;border-inline-end:0;border-bottom:1px solid var(--line)}
-  .rv-pop.dp .dp-pre{white-space:nowrap}
-  .rv-pop.dp .dp-pre-sep{width:1px;height:auto;margin:6px 2px}
-  .rv-pop.dp .dp-cals{grid-template-columns:minmax(0,1fr)}
-  .rv-pop.dp .dp-cal + .dp-cal{display:none}
-  .rv-pop.dp .dp-cal .dp-nav.ph{visibility:visible}
-  .rv-pop.dp .dp-ft{flex-wrap:wrap}
-  .rv-pop.dp .dp-fy-row{flex-wrap:wrap}
-  .rv-pop.dp .dp-fy-note{padding-inline-start:0}
-  .rv-sdrop{grid-template-columns:minmax(0,1fr)}
-  .rv-sdrop-col + .rv-sdrop-col{border-inline-start:0;border-top:1px solid var(--line)}
-  .rv-gp{flex-wrap:wrap}
-  .rv-gp .rv-gp-tools{margin-inline-start:0}
-  .rv-panel{position:absolute;inset-block:0;inset-inline-end:34px;z-index:14;width:min(300px,calc(100% - 34px));box-shadow:var(--sh-pop)}
-  .rv-status{height:auto;min-height:34px;padding-block:6px}
-}
-
-/* ---------- actions in Desk's page head (components/header.js) ---------- */
-.rv.rv-headbar{display:flex;align-items:center;background:transparent;margin-inline-end:8px}
-.rv.rv-headbar .rv-actions{flex-wrap:nowrap}
-
-/* ---------- one-line summary cards: the report keeps the screen ---------- */
-.rv-sum{flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px 14px;padding:8px 14px}
-.rv-sum-hd{flex:1 1 100%}
-/* the numbers line has one height, loading or not: the cards never change size */
-.rv-sum-eq{align-items:baseline;gap:10px;height:22px}
-.rv.compact .rv-sum-eq{height:19px}
-.rv-sum-side{flex-direction:row;align-items:baseline;gap:6px}
-.rv-sum-side b{font-size:17px}
-.rv.compact .rv-sum-side b{font-size:15px}
-.rv-sum-op{font-size:15px;padding:0}
-.rv-sum-foot{margin-inline-start:auto}
-
-/* ---------- Frappe MultiSelectList inside our fields: one frame, the menu within the field ---------- */
-.rv .rv-field .multiselect-list{position:relative}
-.rv .rv-field .multiselect-list > .form-control{display:flex;align-items:center;padding-inline-end:28px;cursor:pointer}
-.rv .rv-field .multiselect-list .status-text{position:static;flex:1;min-width:0;margin:0;padding:0;border:0;background:none;box-shadow:none;line-height:normal;color:var(--tx)}
-.rv .rv-field .multiselect-list .status-text .text-extra-muted{color:var(--tx-4)}
-.rv .rv-field .multiselect-list .dropdown-menu{inset-inline:0;width:100%;min-width:0;max-width:100%;padding:6px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);box-shadow:var(--sh-pop)}
-.rv .rv-field .multiselect-list .dropdown-menu .form-control{height:30px}
-.rv .rv-field .multiselect-list .dropdown-menu li.d-flex{flex-wrap:wrap;gap:6px;padding-top:6px}
-.rv .rv-field .multiselect-list .dropdown-menu .btn{margin:0 !important}
 
 /* ---------- column groups dialog (a Frappe dialog: Desk's own variables) ---------- */
 .rv-cg{display:flex;flex-direction:column;gap:12px}
@@ -211,12 +96,39 @@
 .rv-cg-col.taken span{color:var(--text-muted)}
 .rv-cg-add{align-self:flex-start}
 
-/* ---------- one command bar: the report's criteria, then search and the views ----------
-   Field titles show inside the empty field and as a tooltip (as on query-report); the
-   bar keeps one line on a desktop screen and wraps on narrow ones. */
-.rv-server{align-items:center;gap:8px 10px;padding:6px 8px}
-.rv-server .rv-filters{flex:0 1 auto;align-items:center}
-.rv-server .rv-criteria-main{align-items:center;gap:8px}
-.rv-server .rv-field-lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.rv-server .rv-toolbar{flex:1 1 360px;min-width:0}
-.rv-server .rv-search{flex:1 1 auto}
+/* ---------- narrow screens (390px phones) ---------- */
+@media (max-width:600px){
+  .rv{--pad:12px}
+  .rv-shell{padding:var(--pad)}
+  /* Desk's page head keeps one line: icons only, the density switch tighter */
+  .rv.rv-headbar{margin-inline-end:0}
+  .rv.rv-headbar .rv-actions{gap:4px}
+  .rv.rv-headbar .rv-btn:not(.icon){width:var(--ctl);padding:0}
+  .rv.rv-headbar .rv-btn:not(.icon) > span:not(.ico-dr){display:none}
+  .rv.rv-headbar .rv-seg button{padding:0 7px;font-size:var(--fs-xs)}
+  .rv-server{padding:8px;gap:8px}
+  .rv-filters,.rv-criteria-main{flex:1 1 100%}
+  .rv-filter.rv-field,.rv-filter.rv-field[data-fieldtype=Date]{width:calc(50% - 4px)}
+  .rv-period,.rv-period .rv-datefield{width:100%;min-width:0}
+  .rv-more{width:100%}
+  .rv-summary{grid-template-columns:minmax(0,1fr)}
+  .rv-toolbar{flex-wrap:wrap}
+  .rv-search{flex:1 1 100%}
+  .rv-more-filters .rv-filter.rv-field{width:100%}
+  .rv-pop.dp .dp-wrap{flex-direction:column}
+  .rv-pop.dp .dp-presets{width:auto;flex-direction:row;overflow-x:auto;border-inline-end:0;border-bottom:1px solid var(--line)}
+  .rv-pop.dp .dp-pre{white-space:nowrap}
+  .rv-pop.dp .dp-pre-sep{width:1px;height:auto;margin:6px 2px}
+  .rv-pop.dp .dp-cals{grid-template-columns:minmax(0,1fr)}
+  .rv-pop.dp .dp-cal + .dp-cal{display:none}
+  .rv-pop.dp .dp-cal .dp-nav.ph{visibility:visible}
+  .rv-pop.dp .dp-fy{min-height:0}
+  .rv-pop.dp .dp-fy-row{flex-wrap:wrap}
+  .rv-pop.dp .dp-fy-note{padding-inline-start:0}
+  .rv-sdrop{grid-template-columns:minmax(0,1fr)}
+  .rv-sdrop-col + .rv-sdrop-col{border-inline-start:0;border-top:1px solid var(--line)}
+  .rv-gp{flex-wrap:wrap}
+  .rv-gp .rv-gp-tools{margin-inline-start:0}
+  .rv-panel{position:absolute;inset-block:0;inset-inline-end:34px;z-index:14;width:min(300px,calc(100% - 34px));box-shadow:var(--sh-pop)}
+  .rv-status-hint{display:none}
+}

@@ -9,6 +9,7 @@ import {
 	make_collator,
 	aux_currency_keys,
 	build_table_input,
+	build_table_input_async,
 	batches,
 	RID,
 	KIND,
@@ -121,10 +122,31 @@ test("a report column may not take the name of an engine column", () => {
 });
 
 test("batches: columnar, at most `size` rows each, nothing lost", () => {
-	const data = { a: Array.from({ length: 120001 }, (_, i) => i), b: Array.from({ length: 120001 }, () => "x") };
-	const parts = [...batches(data, 120001)];
-	assert.deepEqual(parts.map((p) => p.a.length), [50000, 50000, 20001]);
-	assert.equal(parts[2].a.at(-1), 120000);
+	const data = { a: Array.from({ length: 12001 }, (_, i) => i), b: Array.from({ length: 12001 }, () => "x") };
+	const parts = [...batches(data, 12001)];
+	assert.deepEqual(parts.map((p) => p.a.length), [5000, 5000, 2001]);
+	assert.equal(parts[2].a.at(-1), 12000);
+	assert.deepEqual([...batches(data, 12001, 50000)].map((p) => p.a.length), [12001]);
 	assert.ok(parts.every((p) => p.a.length === p.b.length));
 	assert.deepEqual([...batches({ a: [] }, 0)], []);
+});
+
+test("build_table_input_async gives the same schema and data as the sync build, also above the chunked-sort threshold", async () => {
+	const columns = [
+		{ key: "name", fieldtype: "Data", role: "dimension" },
+		{ key: "amount", fieldtype: "Currency", role: "measure", currency: { kind: "row", key: "cur" } },
+		{ key: "posting_date", fieldtype: "Date", role: "dimension" },
+	];
+	const rows = [];
+	for (let i = 0; i < 9000; i++) {
+		rows.push({ __rid: i, __kind: "data", name: i % 7 ? `Item ${(i * 7919) % 9000}` : null, amount: i, posting_date: `2026-01-${String(1 + (i % 28)).padStart(2, "0")}`, cur: "YER" });
+	}
+	const extras = [{ name: "__x", type: "float", values: rows.map((r) => r.__rid * 2) }];
+	const a = build_table_input(columns, rows, { locale: "en", extras });
+	const b = await build_table_input_async(columns, rows, { locale: "en", extras, budget_ms: 1 });
+	assert.deepEqual(b.schema, a.schema);
+	assert.equal(b.size, a.size);
+	assert.deepEqual(Object.keys(b.data), Object.keys(a.data));
+	for (const key of Object.keys(a.data)) assert.deepEqual(b.data[key], a.data[key], key);
+	assert.equal(new Set(a.data.__sort__name).size, new Set(rows.map((r) => r.name)).size);
 });

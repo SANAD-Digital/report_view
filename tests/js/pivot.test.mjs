@@ -22,6 +22,7 @@ import {
 	to_pivot_config,
 	drill_config,
 	split_value,
+	resolve_column_paths,
 } from "../../report_view/public/js/report_view/engine/pivot_config.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -293,6 +294,60 @@ test("pivot views: a superseded pivot is deleted, nothing is left after 20 chang
 			handles.debug_handles().filter((h) => h.kind === "view"),
 			[]
 		);
+	});
+	assert.deepEqual(handles.debug_handles(), []);
+});
+
+test("column paths: a value with \"|\" in it is read whole with one pivot column, from the combinations with two", () => {
+	const dims = { voucher_type: { type: "string" }, party_type: { type: "string" }, posting_date: { type: "date" } };
+	const values = [{ name: "__pv0" }, { name: "__pv1" }];
+	// one pivot column: the whole path before the value's name is the value
+	const one = resolve_column_paths(["Sales|Invoice|__pv0", "Sales|Invoice|__pv1", "null|__pv0", "Payment Entry|__pv0", "x|__other"], { cols: ["voucher_type"], dims, values });
+	assert.deepEqual(one.columns.map((c) => [c.name, c.alias, c.values]), [
+		["Sales|Invoice|__pv0", "__pv0", ["Sales|Invoice"]],
+		["Sales|Invoice|__pv1", "__pv1", ["Sales|Invoice"]],
+		["null|__pv0", "__pv0", [null]],
+		["Payment Entry|__pv0", "__pv0", ["Payment Entry"]],
+	]);
+	assert.equal(one.unresolved, 0);
+	assert.equal(one.ambiguous, false);
+	// two pivot columns: plain paths split; a path with more segments needs the combinations
+	const post = { cols: ["voucher_type", "party_type"], dims, values: [values[0]] };
+	const paths = ["Sales Invoice|Customer|__pv0", "A|B|Customer|__pv0", "null|null|__pv0"];
+	const blind = resolve_column_paths(paths, post);
+	assert.equal(blind.ambiguous, true);
+	assert.equal(blind.unresolved, 1);
+	assert.deepEqual(blind.columns.map((c) => c.values), [["Sales Invoice", "Customer"], [null, null]]);
+	const combos = [["Sales Invoice", "Customer"], ["A|B", "Customer"], [null, null]];
+	const known = resolve_column_paths(paths, post, combos);
+	assert.equal(known.unresolved, 0);
+	assert.deepEqual(known.columns.map((c) => c.values), [["Sales Invoice", "Customer"], ["A|B", "Customer"], [null, null]]);
+	// a date in a combination (milliseconds in a row path) matches its text in the column path
+	const dated = resolve_column_paths(["2026-01-05|A|B|__pv0"], { cols: ["posting_date", "voucher_type"], dims, values }, [[Date.UTC(2026, 0, 5), "A|B"]]);
+	assert.deepEqual(dated.columns[0].values, ["2026-01-05", "A|B"]);
+});
+
+test("engine: a pivot column value with \"|\" in it gets its column, and its drill-down counts its facts", async () => {
+	const gl = load("general_ledger_consolidated");
+	const type = gl.facts[0].voucher_type;
+	let marked = 0;
+	for (const r of gl.facts) {
+		if (r.voucher_type === type && marked < 3) {
+			r.voucher_type = "Sales|Invoice";
+			marked += 1;
+		}
+	}
+	assert.equal(marked, 3);
+	await with_session(gl, async (session) => {
+		const opened = await session.open_pivot(state(), { rows: ["account"], cols: ["voucher_type", "party_type"], values: [{ key: "debit", agg: "sum" }] });
+		assert.equal(opened.unresolved_columns, 0);
+		const piped = opened.columns.filter((c) => c.values[0] === "Sales|Invoice");
+		assert.ok(piped.length >= 1, "a column per combination with the piped value");
+		assert.ok(opened.column_paths.includes(piped[0].name));
+		assert.equal(opened.columns.length, opened.column_paths.length);
+		const drill = await session.pivot_drill(opened, [], piped[0].values, opened.post.values[0], "posting_date");
+		assert.equal(drill.count, gl.facts.filter((r) => r.voucher_type === "Sales|Invoice" && (r.party_type ?? null) === piped[0].values[1]).length);
+		await session.close_pivot(opened);
 	});
 	assert.deepEqual(handles.debug_handles(), []);
 });

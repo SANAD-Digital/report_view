@@ -59,12 +59,12 @@ export class Summary {
 				} else if (filtered) {
 					icon = icons.funnel(12);
 					pill_text = __("Difference from the filters");
-					note = __("Difference {0} — from the rows the filters left out, not an error in the entries", [`<bdi class="ltr">${esc(c.diff_text)}</bdi>`]);
+					note = __("Difference {0}: rows the filters left out", [`<bdi class="ltr">${esc(c.diff_text)}</bdi>`]);
 				} else {
 					pill = "err";
 					icon = icons.alert_xs();
 					pill_text = __("Not balanced");
-					note = __("Difference {0} — check the entries that are not balanced", [`<bdi class="ltr">${esc(c.diff_text)}</bdi>`]);
+					note = __("Difference {0}: check the entries", [`<bdi class="ltr">${esc(c.diff_text)}</bdi>`]);
 				}
 				const loading = status === "loading";
 				const side = (cls, label, html) => `

@@ -1,7 +1,9 @@
 // The "Period" field of the criteria bar and its popover (docs/architecture.md §11.1 #17-#22,
 // design: reference/design/screens/date.png): presets, a date range on two months, or a part
-// of a fiscal year; the number of days; Apply / Cancel. It writes the report's own filters
-// (from / to date, fiscal year) through the page; the report then runs as before.
+// of a fiscal year; the number of days; Apply / Cancel. Enter in a field commits its date,
+// elsewhere it applies; Escape closes
+// (components/popover.js). It writes the report's own filters (from / to date, fiscal year)
+// through the page; the report then runs as before.
 
 import { icons } from "../components/icons.js";
 import { open_popover, close_popover } from "../components/popover.js";
@@ -155,6 +157,18 @@ export class PeriodPicker {
 		const content = document.createElement("div");
 		content.className = "dp-wrap";
 		this.content = content;
+		// Enter in a date field commits the typed date (the calendars follow it, the other
+		// end is still to pick); Enter anywhere else in the picker applies.
+		content.addEventListener("keydown", (e) => {
+			if (e.key !== "Enter" || e.target.closest("button")) return;
+			e.preventDefault();
+			const input = e.target.closest("[data-input]");
+			if (input) {
+				if (parse_user_date(input.value)) this.typed(input.dataset.input, input.value);
+				return;
+			}
+			this.apply();
+		});
 		this.render();
 		this.popover = open_popover({
 			root: this.root,
@@ -366,9 +380,6 @@ export class PeriodPicker {
 		}
 		for (const input of c.querySelectorAll("[data-input]")) {
 			input.addEventListener("change", () => this.typed(input.dataset.input, input.value));
-			input.addEventListener("keydown", (e) => {
-				if (e.key === "Enter") input.blur();
-			});
 		}
 		for (const b of c.querySelectorAll("[data-fy]")) {
 			b.addEventListener("click", () => {

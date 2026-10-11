@@ -3,7 +3,8 @@
 // and "Clear". The values and counts come from a temporary Perspective view (group_by on the
 // column, under the other filters) that the page deletes in `finally` (§8أ.4); the search
 // asks the engine again (a "contains" filter). The selection is the set filter of the view
-// state: no filter = everything selected.
+// state: no filter = everything selected. Enter in the search keeps only the values listed
+// (with a text) and closes; Escape closes (components/popover.js).
 
 import { open_popover } from "./popover.js";
 
@@ -122,6 +123,17 @@ export function open_set_filter({ root, anchor, title, load, selected, on_change
 	search.addEventListener("input", () => {
 		clearTimeout(timer);
 		timer = setTimeout(() => fill(search.value.trim()), 250);
+	});
+	search.addEventListener("keydown", (e) => {
+		if (e.key !== "Enter") return;
+		e.preventDefault();
+		if (search.value.trim() && list.values.length) {
+			const keep = list.values.map((v) => v.value);
+			const keys = new Set(keep.map(key_of));
+			current = all.every((v) => keys.has(key_of(v))) ? null : keep;
+			on_change(current);
+		}
+		handle.close();
 	});
 	fill().catch(() => {
 		body.innerHTML = `<div class="rv-zone-empty">${esc(__("The values could not be read"))}</div>`;

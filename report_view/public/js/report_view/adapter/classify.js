@@ -38,6 +38,17 @@ function num(v) {
  * ctx: {columns, label_key, tree_enabled, register, translate}
  */
 export function classify_rows(rows, ctx) {
+	const classifier = make_classifier(rows, ctx);
+	rows.forEach((row, rid) => classifier.classify(row, rid));
+	classifier.finish();
+}
+
+/**
+ * The same classification a row at a time, so that a caller may give the main thread back
+ * between runs of rows: classify(row, rid) for every row in order, then finish() (N3.7).
+ * @returns {{classify: (row: object, rid: number) => void, finish: () => void}}
+ */
+export function make_classifier(rows, ctx) {
 	const t = ctx.translate || ((s) => s);
 	const dims = ctx.columns.filter((c) => c.role === "dimension").map((c) => c.key);
 	const measures = ctx.columns.filter((c) => c.role === "measure").map((c) => c.key);
@@ -53,7 +64,7 @@ export function classify_rows(rows, ctx) {
 	const header_key = ctx.register?.group_header_key;
 	const custom = ctx.register?.classify_row;
 
-	rows.forEach((row, rid) => {
+	const classify = (row, rid) => {
 		row.__rid = rid;
 		row.__bold = Boolean(row.bold);
 		row.__label_raw = null;
@@ -113,18 +124,20 @@ export function classify_rows(rows, ctx) {
 		}
 
 		row.__kind = kind || "data";
-	});
+	};
 
 	// N3.7 exception: in a flat report with an unquoted bold "Total" (N3.3), other bold
 	// data rows are the report's own subtotals (AR group_by_party), not facts.
-	if (!ctx.tree_enabled) {
+	const finish = () => {
+		if (ctx.tree_enabled) return;
 		const has_bold_total = rows.some(
 			(r) => r.__kind === "internal_total" && r.__bold && r.__label_raw === null
 		);
 		if (has_bold_total) {
 			for (const r of rows) if (r.__kind === "data" && r.__bold) r.__kind = "internal_total";
 		}
-	}
+	};
+	return { classify, finish };
 }
 
 export { num };

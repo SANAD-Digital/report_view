@@ -171,14 +171,15 @@ export class CriteriaBar {
 		this.more.querySelector("input, select, .form-control")?.focus();
 	}
 
-	// Filters behind "More options" whose value is not the report's default.
+	// Filters behind "More options" whose value is not the report's default (a filter hidden
+	// by depends_on is not counted: it is not sent). An unticked box with no default is empty.
 	changed_count() {
 		let n = 0;
+		const empty = (x) => x === null || x === undefined || x === "" || x === 0 || x === false || (Array.isArray(x) && !x.length);
 		for (const c of this.filters.controls) {
-			if (this.plan.place.get(c.df.fieldname) !== "more") continue;
+			if (this.plan.place.get(c.df.fieldname) !== "more" || c.df.hidden_due_to_dependency) continue;
 			const v = c.get_value();
 			const d = c.df.default ?? null;
-			const empty = (x) => x === null || x === undefined || x === "" || (Array.isArray(x) && !x.length);
 			if (empty(v) && empty(d)) continue;
 			if (JSON.stringify(v) !== JSON.stringify(d) && String(v) !== String(d)) n += 1;
 		}

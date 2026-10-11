@@ -48,7 +48,7 @@ export function describe_notices(notices, columns) {
 		}
 	}
 	if (!lines.length) return null;
-	if (filters) lines.push(__("Excel export is refused while these filters are set. Remove them to export."));
+	if (filters) lines.push(__("Excel export is not available while these filters are set: the file would not match the screen. Remove them to export."));
 	return { signature: JSON.stringify(notices), tone: filters ? "warn" : "info", lines: [...new Set(lines)] };
 }
 

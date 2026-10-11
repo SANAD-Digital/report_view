@@ -28,7 +28,7 @@ class TestGetMeta(RVTestCase):
 		self.assertEqual(
 			[d["fieldname"] for d in meta["settings"]["filter_defs"]], ["company", "fiscal_year"]
 		)
-		self.assertEqual(meta["limits"], {"max_rows": 50000, "worker_threshold": 10000})
+		self.assertEqual(meta["limits"], {"max_rows": 50000})
 		self.assertEqual(meta["defaults"], {"saved_view": None, "source": None})
 
 	def test_report_without_settings(self):

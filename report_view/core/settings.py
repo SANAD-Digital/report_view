@@ -1,8 +1,8 @@
 """Server-side report settings (docs/architecture.md §5.3).
 
-Phase 3 reads only the shipped ``report_view/defaults/<scrub(report)>.json``.
-The ``Report View Settings`` / ``Report View Global Settings`` DocTypes arrive
-in phase 4; until then the global defaults below apply.
+Only the shipped ``report_view/defaults/<scrub(report)>.json`` is read so far; the
+``Report View Settings`` / ``Report View Global Settings`` DocTypes (§5.2) are not built
+yet, so the global defaults below apply.
 """
 
 import json
@@ -12,7 +12,6 @@ import re
 import frappe
 
 DEFAULT_MAX_ROWS = 50000
-DEFAULT_WORKER_THRESHOLD = 10000
 _DEFAULTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "defaults")
 _FIELDNAME_RE = re.compile(r"^[A-Za-z0-9_]+$")
 
@@ -43,7 +42,7 @@ def _split_fields(value: object) -> list[str]:
 
 
 def load_settings(report_name: str) -> dict:
-	"""Merged server settings for ``report_name`` (shipped defaults only in phase 3)."""
+	"""Merged server settings for ``report_name`` (shipped defaults only, see the module docstring)."""
 	settings = empty_settings(report_name)
 	path = os.path.join(_DEFAULTS_DIR, frappe.scrub(report_name) + ".json")
 	if not os.path.isfile(path):

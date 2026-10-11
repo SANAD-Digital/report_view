@@ -80,8 +80,7 @@ KIND_CLOSING = "closing"
 KIND_GROUP_HEADER = "group_header"
 KIND_SEPARATOR = "separator"
 SUMMARY_KINDS = frozenset((KIND_INTERNAL_TOTAL, KIND_OPENING, KIND_CLOSING))
-
-META_KEYS = ("__rid", "__kind", "__indent", "__parent", "__is_leaf", "__bold", "__label_raw")
+# Meta keys every row carries: __rid, __kind, __indent, __parent, __is_leaf, __bold, __label_raw.
 
 # A Link whose options look like a fieldname (snake_case) refers to a report filter (N1.8).
 _FILTER_OPTION_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
@@ -179,7 +178,7 @@ def normalize(
 			"internal": [r for r in rows if r["__kind"] == KIND_INTERNAL_TOTAL],
 		},
 		"message": raw.get("message") or None,
-		"chart": _normalize_chart(raw.get("chart")),
+		"chart": raw.get("chart") or None,
 		"report_summary": raw.get("report_summary") or None,
 		"flags": {
 			"add_total_row": add_total_row,
@@ -529,12 +528,3 @@ def _clean_number(value: Any) -> Any:
 	if isinstance(value, float) and value.is_integer():
 		return int(value)
 	return value
-
-
-# ------------------------------------------------------------------- N5
-
-
-def _normalize_chart(chart: Any) -> Any:
-	if not chart:
-		return None
-	return chart

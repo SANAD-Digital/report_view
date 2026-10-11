@@ -22,7 +22,7 @@ from report_view.core.guard import (
 	guard_report_quiet,
 )
 from report_view.core.inputs import parse_json_arg
-from report_view.core.settings import DEFAULT_WORKER_THRESHOLD, get_row_limit, load_settings
+from report_view.core.settings import get_row_limit, load_settings
 
 MAX_ENRICH_NAMES = 5000
 _FIELD_RE = re.compile(r"^[A-Za-z0-9_]+$")
@@ -64,7 +64,7 @@ def get_meta(report_name: str) -> dict:
 		"perms": {"can_export": can_export(report), "can_print": can_print(report)},
 		"settings": settings,
 		"include_js": list(frappe.get_hooks("report_view_include_js") or []),
-		"limits": {"max_rows": get_row_limit(), "worker_threshold": DEFAULT_WORKER_THRESHOLD},
+		"limits": {"max_rows": get_row_limit()},
 		"defaults": {"saved_view": None, "source": None},
 	}
 

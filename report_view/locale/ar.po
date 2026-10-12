@@ -1499,3 +1499,6 @@ msgstr "طلب ترجمة غير صالح"
 
 msgid "The print format is wider than the page: try landscape or a larger paper."
 msgstr "قالب الطباعة أعرض من الصفحة: جرّب الاتجاه الأفقي أو ورقاً أكبر."
+
+msgid "Letter head on every page"
+msgstr "الترويسة في كل الصفحات"

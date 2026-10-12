@@ -43,55 +43,68 @@
 .rv-print-probe:empty{display:none}
 
 /* ---------- a page (paper) ---------- */
-.rv-page{background:var(--pp-bg);color:var(--pp-tx);box-shadow:var(--pp-shadow);display:flex;flex-direction:column;flex:none;position:relative;overflow:hidden;box-sizing:border-box;font-size:var(--pp-fs,10px);line-height:1.35;letter-spacing:0;font-family:var(--font);-webkit-font-smoothing:antialiased}
+.rv-page{background:var(--pp-bg);color:var(--pp-tx);box-shadow:var(--pp-shadow);display:flex;flex-direction:column;flex:none;position:relative;overflow:hidden;box-sizing:border-box;font-size:var(--pp-fs,12px);line-height:1.35;letter-spacing:0;font-family:var(--font);-webkit-font-smoothing:antialiased}
 .rv-page *{box-sizing:border-box}
 .rv-page-ph{position:absolute;inset:0;display:grid;place-items:center;font-size:28px;font-weight:600;color:var(--pp-line);font-variant-numeric:tabular-nums}
 .rv-page-top{flex:none}
+.rv-page .sep{display:inline-block;margin:0 .55em;color:var(--pp-line-2)}
+
+/* letter head: its own design, kept to a band of the page (full on the first page; a
+   slim line names the report on the others unless asked for every page) */
 .rv-page-lh,.rv-page-lhf{overflow:hidden;max-width:100%}
-/* a letter head keeps its design; an image taller than a quarter of the page is scaled down */
-.rv-page-lh img{max-width:100%;max-height:calc(var(--pp-h,1123px) * .25);object-fit:contain}
-.rv-page-lhf img{max-width:100%;max-height:calc(var(--pp-h,1123px) * .12);object-fit:contain}
-.rv-page-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:8px;border-bottom:1.5px solid var(--pp-tx);margin-bottom:8px}
-.rv-page-titles{min-width:0}
-.rv-page-hd .co{font-size:1.3em;font-weight:700}
-.rv-page-hd .ti{font-size:1.7em;font-weight:700;margin-top:2px;line-height:1.25}
-.rv-page-hd .pe{font-size:1em;color:var(--pp-tx-2);margin-top:3px}
-.rv-page-hd .meta{text-align:end;font-size:.9em;color:var(--pp-tx-2);line-height:1.7;flex:none;max-width:45%}
-.rv-page-filt{font-size:.9em;color:var(--pp-tx-2);margin-bottom:8px;padding:5px 8px;background:var(--pp-soft);border-radius:3px;line-height:1.6}
+.rv-page-lh{max-height:32mm;margin-bottom:3mm;border-bottom:.6px solid var(--pp-line);padding-bottom:2mm}
+.rv-page-lh img{max-width:100%;max-height:26mm;width:auto;height:auto;object-fit:contain}
+.rv-page-lh *{max-height:30mm}
+.rv-page-lhf{max-height:14mm;margin-bottom:1.5mm}
+.rv-page-lhf img{max-width:100%;max-height:11mm;width:auto;height:auto;object-fit:contain}
+
+/* title block of the first page: centred, as a formal statement */
+.rv-page-hd{text-align:center;padding:1mm 0 2.5mm}
+.rv-page-hd .co{font-size:1.25em;font-weight:700;color:var(--pp-tx-2)}
+.rv-page-hd .ti{font-size:1.75em;font-weight:700;line-height:1.25;letter-spacing:.01em}
+.rv-page-hd .pe{font-size:1em;color:var(--pp-tx-2);margin-top:1mm}
+.rv-page-meta{display:flex;justify-content:space-between;gap:12px;font-size:.84em;color:var(--pp-tx-3);border-top:1.2px solid var(--pp-tx);padding:1.2mm 0 0;margin-bottom:2mm}
+.rv-page-meta > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-page-filt{font-size:.86em;color:var(--pp-tx-2);margin-bottom:2.5mm;padding:1.4mm 2.5mm;background:var(--pp-soft);border-inline-start:2px solid var(--pp-line-2);line-height:1.6}
 .rv-page-filt b{color:var(--pp-tx);font-weight:600}
 .rv-page-filter{white-space:nowrap}
+/* continuation pages: one line */
+.rv-page-cont{display:flex;align-items:baseline;flex-wrap:nowrap;overflow:hidden;white-space:nowrap;font-size:.9em;color:var(--pp-tx-2);border-bottom:1.2px solid var(--pp-tx);padding-bottom:1.2mm;margin-bottom:2.5mm}
+.rv-page-cont b{color:var(--pp-tx);font-weight:700}
 .rv-pnum{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;white-space:nowrap}
 
-/* the table: fixed layout, one line per row, numbers at the end */
+/* the table: fixed layout, one line per row, numbers at the end, black on white */
 .rv-pt{table-layout:fixed;border-collapse:collapse;border-spacing:0;color:var(--pp-tx);font-size:inherit}
-.rv-pt th,.rv-pt td{padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:start;vertical-align:middle;font-weight:400}
-.rv-pt thead th{font-weight:700;border-bottom:1.2px solid var(--pp-tx);padding-block:3px;background:transparent;white-space:normal;line-height:1.2;vertical-align:bottom;overflow-wrap:anywhere}
+.rv-pt th,.rv-pt td{padding:0 .55em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:start;vertical-align:middle;font-weight:400}
+.rv-pt thead th{font-weight:700;font-size:.92em;color:var(--pp-tx);background:var(--pp-head);border-top:1.2px solid var(--pp-tx);border-bottom:1px solid var(--pp-tx);padding-block:1.6mm;white-space:normal;line-height:1.2;vertical-align:bottom;overflow-wrap:normal;word-break:normal;hyphens:auto}
+.rv-pt thead tr + tr th{border-top:0}
 .rv-pt thead th.num{text-align:end}
-.rv-pt thead th.rv-pt-band{text-align:center;border-bottom:.6px solid var(--pp-line);font-size:.92em;padding-block:2px}
-.rv-pt thead th.rv-pt-nb{border-bottom:1.2px solid var(--pp-tx)}
-.rv-pt tbody th,.rv-pt tbody td{height:calc(var(--pp-fs,10px) * 2.05);border-bottom:.6px solid var(--pp-line)}
-.rv-pt td.num{text-align:end}
+.rv-pt thead th.rv-pt-band{text-align:center;vertical-align:middle;border-bottom:.6px solid var(--pp-line-2);padding-block:1mm;letter-spacing:.02em}
+.rv-pt thead th.be,.rv-pt td.be{border-inline-end:.6px solid var(--pp-line)}
+.rv-pt thead th:last-child,.rv-pt td:last-child{border-inline-end:0}
+.rv-pt tbody th,.rv-pt tbody td{height:calc(var(--pp-fs,12px) * 2.1);border-bottom:.5px solid var(--pp-line)}
+.rv-pt td.num{text-align:end;font-variant-numeric:tabular-nums}
 .rv-pt tbody th.lc{color:var(--pp-tx)}
-.rv-pt tr.group > *{font-weight:700;background:var(--pp-soft)}
-.rv-pt tr.foot > *{font-weight:700;border-top:.8px solid var(--pp-line-2)}
+.rv-pt tbody tr:not(.group):not(.foot):not(.total):not(.opening):nth-child(even) > *{background:var(--pp-zebra)}
+.rv-pt tr.group > *{font-weight:700;background:var(--pp-soft);border-bottom-color:var(--pp-line-2)}
+.rv-pt tr.group.d0 > *{background:var(--pp-head)}
+.rv-pt tr.foot > *{font-weight:700;border-top:.8px solid var(--pp-tx-3);border-bottom:.8px solid var(--pp-line-2)}
 .rv-pt tr.bold > *{font-weight:700}
-.rv-pt tr.opening > *{color:var(--pp-tx-2);font-weight:500;background:var(--pp-soft)}
+.rv-pt tr.opening > *{color:var(--pp-tx-2);font-weight:600;background:var(--pp-soft)}
 .rv-pt tr.closing > *{border-bottom-color:var(--pp-line-2)}
-.rv-pt tr.total > *{font-weight:700;border-top:1.2px solid var(--pp-tx);border-bottom:2.4px double var(--pp-tx);background:var(--pp-total)}
-.rv-pt .rv-lc{display:flex;align-items:center;gap:4px;min-width:0;padding-inline-start:calc(var(--lv,0) * 1.4em)}
+.rv-pt tr.total > *{font-weight:700;font-size:1.04em;border-top:1.2px solid var(--pp-tx);border-bottom:3px double var(--pp-tx);background:var(--pp-head);height:calc(var(--pp-fs,12px) * 2.4)}
+.rv-pt .rv-lc{display:flex;align-items:center;gap:.4em;min-width:0;padding-inline-start:calc(var(--lv,0) * 1.3em)}
 .rv-pt .rv-lc > *{flex:none}
 .rv-pt .rv-lc > .rv-acc,.rv-pt .rv-lc > .rv-glabel,.rv-pt .rv-lc > a,.rv-pt .rv-lc > p{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.rv-pt .rv-caret,.rv-pt .rv-caret-sp{display:none}
+.rv-pt .rv-caret,.rv-pt .rv-caret-sp,.rv-pt .rv-gcount{display:none}
 /* the label parts of the grid (format.js) take the paper's colours and size, not the theme's */
-.rv-pt .rv-acc{display:inline-flex;align-items:baseline;gap:6px;min-width:0;font-size:inherit;color:inherit;cursor:default}
+.rv-pt .rv-acc{display:inline-flex;align-items:baseline;gap:.5em;min-width:0;font-size:inherit;color:inherit;cursor:default}
 .rv-pt .rv-accno{color:var(--pp-tx-3);font-size:.92em;font-weight:500;font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
 .rv-pt .rv-accname{overflow:hidden;text-overflow:ellipsis;color:inherit}
 .rv-pt .rv-glabel{overflow:hidden;text-overflow:ellipsis;color:inherit}
 .rv-pt .rv-muted{color:var(--pp-tx-3)}
-.rv-pt .rv-gcount{margin-inline-start:4px;font-size:.85em;font-weight:600;color:var(--pp-tx-3);background:transparent;border:.6px solid var(--pp-line-2);border-radius:999px;padding:0 5px;line-height:1.5;font-variant-numeric:tabular-nums}
-.rv-pt .rv-n{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
-.rv-pt td.dr .rv-n{color:var(--pp-dr)}
-.rv-pt td.cr .rv-n,.rv-pt td.neg .rv-n{color:var(--pp-cr)}
+.rv-pt .rv-n{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;color:inherit}
+.rv-pt td.neg .rv-n{color:var(--pp-neg)}
 .rv-pt td.zero .rv-n{color:var(--pp-tx-3)}
 .rv-pt .rv-mixed{color:var(--pp-tx-3)}
 .rv-pt a{color:inherit;text-decoration:none}
@@ -99,11 +112,11 @@
 .rv-pt b,.rv-pt strong,.rv-pt [style*="font-weight"]{font-weight:700 !important}
 .rv-pt .rv-n div,.rv-pt .lc div{display:inline;text-align:inherit !important}
 .rv-page-tail{flex:none}
-.rv-page-sign{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:30px}
-.rv-page-sign div{border-top:1px solid var(--pp-tx);padding-top:6px;font-weight:700}
-.rv-page-sign span{display:block;font-weight:400;color:var(--pp-tx-2);margin-top:12px;white-space:nowrap;overflow:hidden}
-.rv-page-foot{margin-top:auto;padding-top:8px;flex:none}
-.rv-page-foot-line{display:flex;justify-content:space-between;gap:12px;font-size:.88em;color:var(--pp-tx-3);border-top:.6px solid var(--pp-line);padding-top:5px}
+.rv-page-sign{display:grid;grid-template-columns:repeat(3,1fr);gap:10mm;margin-top:12mm}
+.rv-page-sign div{border-top:1px solid var(--pp-tx);padding-top:1.5mm;font-weight:700;text-align:center}
+.rv-page-sign span{display:block;font-weight:400;color:var(--pp-tx-2);margin-top:4mm;white-space:nowrap;overflow:hidden;text-align:start}
+.rv-page-foot{margin-top:auto;padding-top:2mm;flex:none}
+.rv-page-foot-line{display:flex;justify-content:space-between;gap:12px;font-size:.82em;color:var(--pp-tx-3);border-top:.6px solid var(--pp-line-2);padding-top:1.2mm}
 .rv-page-foot-line > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* a report print format flows as it came: its own styles, the page's font */
 .rv-page-flow{flex:none;min-width:0;overflow:hidden}

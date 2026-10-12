@@ -23,14 +23,41 @@ test("page box: A4 portrait and landscape in CSS px, margins inside", () => {
 	assert.equal(u.margin, p.margin);
 });
 
-test("fit columns: narrower columns fill the page, wider ones shrink with the font down to a floor", () => {
-	const fill = fit_columns([100, 100, 200], 800, 10);
+test("fit columns: brought to the print font, narrower columns fill the page", () => {
+	// without a text column the room is shared by all
+	const fill = fit_columns([130, 130, 260], 800, 13);
 	assert.deepEqual(fill.widths.map(Math.round), [200, 200, 400]);
-	assert.equal(fill.font, 10);
+	// with one, the text column takes it all: the numbers keep their width
+	const text = fit_columns([{ width: 200, flex: true }, 100, 100], 800, 13);
+	assert.deepEqual(text.widths.map(Math.round), [600, 100, 100]);
+	assert.equal(fill.font, 13);
+	assert.equal(fill.scale, 1);
 	assert.equal(fill.overflow, false);
-	const shrink = fit_columns([400, 400], 640, 10);
-	assert.deepEqual(shrink.widths, [320, 320]);
-	assert.equal(shrink.font, 8);
+	// the grid's widths are for its 13px font: at a 12px print font they need 12/13 of it
+	const half = fit_columns([1300], 1300, 6.5);
+	assert.equal(Math.round(half.widths[0]), 1300);
+});
+
+test("fit columns: text columns give their room first, numbers keep their width", () => {
+	// 400 text + 400 number into 640: the text column narrows to 240, the number stays
+	const out = fit_columns([{ width: 400, flex: true }, { width: 400 }], 640, 13);
+	assert.deepEqual(out.widths.map(Math.round), [240, 400]);
+	assert.equal(out.scale, 1);
+	assert.equal(out.font, 13);
+});
+
+test("fit columns: a heavier text column takes more of the narrowing, a light one (the label) less", () => {
+	const out = fit_columns([{ width: 300, flex: true, weight: 0.5 }, { width: 300, flex: true, weight: 1 }, { width: 200 }], 650, 13);
+	// 150 to give: twice as much from the second column as from the label
+	assert.deepEqual(out.widths.map(Math.round), [250, 200, 200]);
+});
+
+test("fit columns: past the text room every column shrinks with the font, down to a floor", () => {
+	const shrink = fit_columns([{ width: 200, flex: true }, { width: 400 }, { width: 400 }], 800, 13);
+	// text 200 -> 90 (45%); 890 left for 800: scale 0.9
+	assert.equal(Math.round(shrink.scale * 100), 90);
+	assert.equal(Math.round(shrink.widths.reduce((a, b) => a + b, 0)), 800);
+	assert.equal(shrink.font.toFixed(1), (13 * 0.9).toFixed(1));
 	assert.equal(shrink.overflow, false);
 	const cut = fit_columns([1000, 1000], 500, 10);
 	assert.equal(cut.font, 10 * MIN_FONT_SCALE);

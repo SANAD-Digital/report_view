@@ -13,9 +13,14 @@ export const PAGE_SIZES = {
 export const MARGINS = { narrow: 8, normal: 12, wide: 18 };
 /** CSS pixels per millimetre (CSS inch = 96px). */
 export const MM = 96 / 25.4;
-/** Base font size of a printed row in px, and the smallest scale the columns shrink it to. */
-export const PAGE_FONT = { comfortable: 10, compact: 9 };
-export const MIN_FONT_SCALE = 0.7;
+/** Base font size of a printed row in px (9pt / 8.25pt), and the smallest scale the columns
+ * shrink it to (about 7.2pt): below it the cells are cut, never the font. */
+export const PAGE_FONT = { comfortable: 12, compact: 11 };
+export const MIN_FONT_SCALE = 0.8;
+/** Font size of the grid the nominal column widths were made for. */
+export const SCREEN_FONT = 13;
+/** A text column gives up to this share of its width before every column shrinks. */
+export const TEXT_SHRINK = 0.45;
 
 /**
  * The box of a page in CSS px.
@@ -42,21 +47,58 @@ export function page_box({ size = "A4", orientation = "portrait", margins = "nor
 }
 
 /**
- * Column widths scaled to the width of the page body: filled exactly when they are
- * narrower, shrunk (and the font with them, down to MIN_FONT_SCALE) when wider.
- * @param {number[]} widths nominal widths of the columns on screen
+ * Column widths fitted to the width of the page body. The nominal widths are the grid's
+ * (made for its 13px font): they are first brought to the print font. Columns narrower than
+ * the page give the spare room to their text columns; wider ones first narrow their text columns (`flex`) down
+ * to TEXT_SHRINK of their width (numbers keep theirs), then shrink all together with the
+ * font, down to MIN_FONT_SCALE.
+ * @param {Array<number|{width: number, flex?: boolean, weight?: number}>} cols nominal widths;
+ *   a number is a fixed (numeric) column; `weight` sets how much of the narrowing (and of the
+ *   spare room) a text column takes
  * @param {number} inner_w width of the page inside its margins
  * @param {number} font base font size
- * @returns {{widths: number[], scale: number, font: number, overflow: boolean}} `overflow`:
- *   the columns are wider than the smallest font allows, cells will be cut
+ * @returns {{widths: number[], scale: number, font: number, overflow: boolean}} `scale`:
+ *   the shrink after the text columns gave their room (1 = no shrink); `overflow`: the font
+ *   reached its floor, cells will be cut
  */
-export function fit_columns(widths, inner_w, font) {
-	const total = widths.reduce((a, b) => a + b, 0);
-	if (!total || !inner_w) return { widths: widths.slice(), scale: 1, font, overflow: false };
-	const scale = inner_w / total;
-	const out = widths.map((w) => (w * inner_w) / total);
-	const font_scale = Math.max(MIN_FONT_SCALE, Math.min(1, scale));
-	return { widths: out, scale, font: font * font_scale, overflow: scale < MIN_FONT_SCALE };
+export function fit_columns(cols, inner_w, font) {
+	const items = cols.map((c) =>
+		typeof c === "number" ? { width: c, flex: false, weight: 1 } : { width: c.width, flex: Boolean(c.flex), weight: c.weight ?? 1 }
+	);
+	const ratio = font / SCREEN_FONT;
+	const base = items.map((c) => c.width * ratio);
+	const total = base.reduce((a, b) => a + b, 0);
+	if (!total || !inner_w) return { widths: base, scale: 1, font, overflow: false };
+	const share = (list, amount) => {
+		// `amount` spread over the text columns by width x weight (all columns without any)
+		const keys = base.map((w, i) => (items[i].flex ? w * items[i].weight : 0));
+		const sum = keys.reduce((a, b) => a + b, 0);
+		return list.map((w, i) => w + (sum ? (amount * keys[i]) / sum : (amount * w) / total));
+	};
+	if (total <= inner_w) {
+		// the room left goes to the text columns (the label first, by its weight)
+		return { widths: share(base, inner_w - total), scale: 1, font, overflow: false };
+	}
+	// narrow the text columns first, by weight, none below TEXT_SHRINK of its width
+	let narrowed = base.slice();
+	let need = total - inner_w;
+	for (let pass = 0; pass < 4 && need > 0.5; pass++) {
+		const keys = narrowed.map((w, i) => (items[i].flex && w > base[i] * TEXT_SHRINK + 0.5 ? base[i] * items[i].weight : 0));
+		const sum = keys.reduce((a, b) => a + b, 0);
+		if (!sum) break;
+		let taken = 0;
+		narrowed = narrowed.map((w, i) => {
+			if (!keys[i]) return w;
+			const cut = Math.min(w - base[i] * TEXT_SHRINK, (need * keys[i]) / sum);
+			taken += cut;
+			return w - cut;
+		});
+		need -= taken;
+	}
+	const after = narrowed.reduce((a, b) => a + b, 0);
+	const scale = Math.min(1, inner_w / after);
+	const widths = narrowed.map((w) => (w * inner_w) / after);
+	return { widths, scale, font: font * Math.max(MIN_FONT_SCALE, scale), overflow: scale < MIN_FONT_SCALE };
 }
 
 /**

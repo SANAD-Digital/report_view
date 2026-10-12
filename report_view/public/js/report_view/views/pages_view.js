@@ -15,7 +15,7 @@
 
 import { GridRows } from "./grid_rows.js";
 import { build_layout } from "../engine/row_layout.js";
-import { page_box, fit_columns, paginate, PAGE_SIZES, MARGINS, PAGE_FONT, MIN_FONT_SCALE } from "../engine/page_layout.js";
+import { page_box, fit_columns, paginate, PAGE_SIZES, MARGINS, PAGE_FONT, SCREEN_FONT } from "../engine/page_layout.js";
 import { icons } from "../components/icons.js";
 import { esc } from "../util.js";
 
@@ -44,10 +44,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	signatures: false,
 	page_numbers: true,
 	printed_on: true,
+	letterhead_all: false,
 	hidden: [],
 	zoom: "fit",
 });
-const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on"];
+const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "letterhead_all"];
 
 // The page's own words, by msgid, for the translation pack of another language.
 const PAGE_MESSAGES = [
@@ -239,9 +240,13 @@ export class PagesView {
 		// No choice made yet for this report: a table too wide for a portrait page at the
 		// smallest font opens in landscape, as Frappe prints reports by default.
 		if (this.unsaved && !this.settings.template) {
-			const total = this.print_columns().reduce((sum, d) => sum + d.width, 0);
 			const portrait = page_box({ size: this.settings.size, orientation: "portrait", margins: this.settings.margins });
-			this.settings.orientation = total > portrait.inner_w / MIN_FONT_SCALE ? "landscape" : "portrait";
+			// Portrait when the columns fit without shrinking and the label keeps most of its
+			// width; else landscape.
+			const input = this.fit_input();
+			const fit = fit_columns(input, portrait.inner_w, this.base_font());
+			const label_kept = fit.widths[0] / ((input[0].width * this.base_font()) / SCREEN_FONT);
+			this.settings.orientation = fit.scale >= 1 && label_kept >= 0.75 ? "portrait" : "landscape";
 		}
 		this.render_panel();
 		this.ready = this.relayout(token);
@@ -381,6 +386,7 @@ export class PagesView {
 					${check("signatures", __("Signature boxes"))}
 					${check("page_numbers", __("Page numbers"))}
 					${check("printed_on", __("Print date and user"))}
+					${s.letter_head ? check("letterhead_all", __("Letter head on every page")) : ""}
 				</div>
 			</div>
 			${
@@ -420,6 +426,28 @@ export class PagesView {
 	}
 
 	// ------------------------------------------------------------ layout
+
+	base_font() {
+		return PAGE_FONT[this.state?.ui?.density === "compact" ? "compact" : "comfortable"];
+	}
+
+	/**
+	 * Widths for fit_columns. A number column is as wide as its widest value needs (the grand
+	 * total's, or its title's longest word), not the grid's width; text columns may narrow, the
+	 * label less than the others and it takes the spare room.
+	 */
+	fit_input() {
+		const cur = this.current;
+		const total = cur ? this.rows.total_row(cur, cur.counts) : null;
+		const chars = (html) => frappe.utils.html2text(String(html || "")).trim().length;
+		return this.print_columns().map((d) => {
+			if (d.label) return { width: d.width, flex: true, weight: 0.5 };
+			if (!d.numeric) return { width: d.width, flex: true, weight: 1 };
+			const longest = Math.max(10, chars(total?.cell(d).html), ...String(this.title_of(d)).split(/\s+/).map((w) => w.length));
+			// tabular digits are about 0.6em; the padding of a cell is 1.1em (rv_pages.css)
+			return { width: Math.min(d.width, Math.ceil((longest * 0.6 + 1.6) * 13)), flex: false };
+		});
+	}
 
 	/** The columns printed: the label, then the pinned and data columns not hidden for print. */
 	print_columns() {
@@ -541,25 +569,35 @@ export class PagesView {
 		return other && other.__kind === row.__kind ? other : row;
 	}
 
+	/**
+	 * Head of a page. The first page: the letter head, the title block (company, report,
+	 * period), a line of print details, the applied filters. The others: the letter head
+	 * only when asked for every page, else one slim line naming the report.
+	 */
 	head_html(first, letterhead) {
 		const s = this.settings;
 		const t = (m, a) => this.t(m, a);
 		const ctx = this.ctx;
 		const company = ctx.company || "";
 		const title = t(ctx.report_name);
-		const meta = [];
-		if (s.printed_on) {
-			meta.push(esc(t("Printed on {0}", [frappe.datetime.str_to_user(frappe.datetime.now_datetime())])));
-			if (frappe.session?.user_fullname) meta.push(esc(t("Printed by {0}", [frappe.session.user_fullname])));
-		}
-		if (ctx.group_labels?.length) meta.push(esc(t("Grouped by {0}", [ctx.group_labels.map((l) => this.in_lang(l)).join(" › ")])));
-		meta.push(esc(t("{0} rows", [frappe.format(this.current.counts.shown, { fieldtype: "Int" }, { inline: true })])));
 		const period = this.period_text();
-		let out = letterhead?.header ? `<div class="rv-page-lh">${letterhead.header}</div>` : "";
-		out += `<div class="rv-page-hd"><div class="rv-page-titles">${company && !letterhead?.header ? `<div class="co">${esc(company)}</div>` : ""}<div class="ti">${esc(title)}</div>${
+		const lh = letterhead?.header && (first || s.letterhead_all) ? `<div class="rv-page-lh">${letterhead.header}</div>` : "";
+		if (!first) {
+			const parts = [`<b>${esc(title)}</b>`, company ? esc(company) : "", period].filter(Boolean);
+			return `${lh}<div class="rv-page-cont">${parts.join('<span class="sep">·</span>')}</div>`;
+		}
+		const details = [];
+		if (s.printed_on) {
+			details.push(esc(t("Printed on {0}", [frappe.datetime.str_to_user(frappe.datetime.now_datetime())])));
+			if (frappe.session?.user_fullname) details.push(esc(t("Printed by {0}", [frappe.session.user_fullname])));
+		}
+		const facts = [];
+		if (ctx.group_labels?.length) facts.push(esc(t("Grouped by {0}", [ctx.group_labels.map((l) => this.in_lang(l)).join(" › ")])));
+		facts.push(esc(t("{0} rows", [frappe.format(this.current.counts.shown, { fieldtype: "Int" }, { inline: true })])));
+		let out = `${lh}<div class="rv-page-hd">${company && !letterhead?.header ? `<div class="co">${esc(company)}</div>` : ""}<div class="ti">${esc(title)}</div>${
 			period ? `<div class="pe">${period}</div>` : ""
-		}</div><div class="meta">${meta.join("<br>")}</div></div>`;
-		if (first && s.include_filters) {
+		}</div><div class="rv-page-meta"><span>${details.join('<span class="sep">·</span>')}</span><span>${facts.join('<span class="sep">·</span>')}</span></div>`;
+		if (s.include_filters) {
 			const text = this.filters_html();
 			if (text) out += `<div class="rv-page-filt"><b>${esc(t("Applied filters"))}:</b> ${text}</div>`;
 		}
@@ -618,19 +656,19 @@ export class PagesView {
 			for (let i = 0; i < cols.length; ) {
 				const d = cols[i];
 				if (!d.band) {
-					cells.push(`<th class="rv-pt-nb ${d.numeric ? "num" : ""}" rowspan="2">${esc(this.title_of(d))}</th>`);
+					cells.push(`<th class="rv-pt-nb ${d.numeric ? "num" : ""} be" rowspan="2">${esc(this.title_of(d))}</th>`);
 					i += 1;
 					continue;
 				}
 				let span = 1;
 				while (i + span < cols.length && cols[i + span].band === d.band) span += 1;
-				cells.push(`<th class="rv-pt-band" colspan="${span}">${esc(this.band_title(d.band))}</th>`);
+				cells.push(`<th class="rv-pt-band be" colspan="${span}">${esc(this.band_title(d.band))}</th>`);
 				i += span;
 			}
 			bands = `<tr>${cells.join("")}</tr>`;
 		}
 		const titles = cols
-			.map((d) => (m.levels === 2 && !d.band ? "" : `<th class="${d.numeric ? "num" : ""}">${esc(this.title_of(d))}</th>`))
+			.map((d) => (m.levels === 2 && !d.band ? "" : `<th class="${[d.numeric ? "num" : "", d.band_end || m.levels === 1 ? "be" : ""].filter(Boolean).join(" ")}">${esc(this.title_of(d))}</th>`))
 			.join("");
 		return `${colgroup}<thead>${bands}<tr>${titles}</tr></thead>`;
 	}
@@ -650,7 +688,7 @@ export class PagesView {
 			}
 			const value = rec.type === "spacer" ? null : rows.value_of(values, plan, rec.view_row ?? -1, d.column.key);
 			const out = rows.cell(rec, d, value);
-			const cls = [d.numeric ? "num" : "", d.side || "", out.sign].filter(Boolean).join(" ");
+			const cls = [d.numeric ? "num" : "", d.band_end ? "be" : "", out.sign].filter(Boolean).join(" ");
 			return `<td class="${cls}">${out.html}</td>`;
 		});
 		return `<tr class="${kind}">${cells.join("")}</tr>`;
@@ -662,7 +700,7 @@ export class PagesView {
 		const cells = cols.map((d, i) => {
 			if (i === 0) return `<th class="lc"><div class="rv-lc"><span class="rv-glabel">${rows.caption_of(shown).html}</span></div></th>`;
 			const out = rows.summary_cell(d, shown);
-			const cls2 = [d.numeric ? "num" : "", d.side || "", out.sign].filter(Boolean).join(" ");
+			const cls2 = [d.numeric ? "num" : "", d.band_end ? "be" : "", out.sign].filter(Boolean).join(" ");
 			return `<td class="${cls2}">${out.html}</td>`;
 		});
 		return `<tr class="${cls}">${cells.join("")}</tr>`;
@@ -676,9 +714,9 @@ export class PagesView {
 		if (!this.settings.include_total) return bottom;
 		const total = rows.total_row(cur, cur.counts);
 		const cells = cols.map((d, i) => {
-			if (i === 0) return `<th class="lc"><div class="rv-lc"><span class="rv-glabel">${esc(t("Grand Total"))}</span>${rows.fmt.count_html(total.count)}</div></th>`;
+			if (i === 0) return `<th class="lc"><div class="rv-lc"><span class="rv-glabel">${esc(t("Grand Total"))}</span></div></th>`;
 			const out = total.cell(d);
-			const cls = [d.numeric ? "num" : "", d.side || "", out.sign].filter(Boolean).join(" ");
+			const cls = [d.numeric ? "num" : "", d.band_end ? "be" : "", out.sign].filter(Boolean).join(" ");
 			return `<td class="${cls}">${out.html}</td>`;
 		});
 		return `${bottom}<tr class="total">${cells.join("")}</tr>`;
@@ -702,12 +740,7 @@ export class PagesView {
 		const cur = this.current;
 		const s = this.settings;
 		const cols = this.print_columns();
-		const font = PAGE_FONT[this.state.ui?.density === "compact" ? "compact" : "comfortable"];
-		const fit = fit_columns(
-			cols.map((d) => d.width),
-			box.inner_w,
-			font
-		);
+		const fit = fit_columns(this.fit_input(), box.inner_w, this.base_font());
 		this.fit = fit;
 		this.cols = cols;
 		this.root.style.setProperty("--pp-fs", `${fit.font.toFixed(2)}px`);
@@ -726,10 +759,15 @@ export class PagesView {
 		// row, the tail (closing rows, grand total, signatures) and the foot.
 		const probe_rows = report_rows.top.map((row) => this.report_row("opening", row, cols)).join("") + `<tr><th class="lc"><div class="rv-lc">x</div></th>${cols.slice(1).map(() => "<td>0</td>").join("")}</tr>`;
 		this.probe.innerHTML = this.page_shell(
+			1,
+			box,
+			dir,
+			`<header class="rv-page-top rv-page-top-next">${this.head_html(false, this.letterhead)}</header>`
+		) + this.page_shell(
 			0,
 			box,
 			dir,
-			`<header class="rv-page-top">${this.head_html(true, this.letterhead)}</header>
+			`<header class="rv-page-top rv-page-top-first">${this.head_html(true, this.letterhead)}</header>
 			<table class="rv-pt" style="width:${box.inner_w}px">${table_head}<tbody>${probe_rows}</tbody></table>
 			<div class="rv-page-tail"><table class="rv-pt" style="width:${box.inner_w}px">${table_head.replace(/<thead>.*<\/thead>/s, "")}<tbody>${this.total_rows_html(cols)}</tbody></table>${this.signatures_html()}</div>
 			<footer class="rv-page-foot">${this.foot_html(1, 1, this.letterhead)}</footer>`
@@ -738,15 +776,17 @@ export class PagesView {
 		if (token !== this.token) return;
 		const q = (sel) => this.probe.querySelector(sel);
 		const h = (el) => (el ? el.getBoundingClientRect().height : 0);
-		const head_h = h(q(".rv-page-top"));
-		const filt_h = h(q(".rv-page-filt"));
+		const head_h = h(q(".rv-page-top-first"));
+		const next_h = h(q(".rv-page-top-next"));
 		const thead_h = h(q(".rv-pt thead"));
 		const row_h = h(q(".rv-pt tbody tr:last-child")) || fit.font * 2;
 		const top_h = report_rows.top.length * row_h;
 		const tail_h = h(q(".rv-page-tail"));
 		const foot_h = h(q(".rv-page-foot"));
-		const body_h = box.inner_h - (head_h - filt_h) - thead_h - foot_h;
-		this.measure = { head_h, filt_h, thead_h, row_h, top_h, tail_h, foot_h, body_h };
+		// the body of a continuation page; the first page gives up the difference of its head
+		const body_h = box.inner_h - next_h - thead_h - foot_h;
+		const filt_h = Math.max(0, head_h - next_h);
+		this.measure = { head_h, next_h, filt_h, thead_h, row_h, top_h, tail_h, foot_h, body_h };
 		this.probe.replaceChildren();
 		if (body_h < row_h * 2) {
 			this.note(__("The letter head and the margins leave no room for rows on this paper."), true);

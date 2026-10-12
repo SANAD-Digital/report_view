@@ -45,7 +45,8 @@ class TestPdf(RVTestCase):
 		result = render_pdf(
 			_pages_html(
 				f'<img src="{external}"><img src="{api}"><img src="/private/files/x.png">'
-				f'<img src="http://127.0.0.1:8000{asset}"><img src="{asset}">'
+				f'<img src="http://127.0.0.1:8000/api/method/ping"><img src="https://other.example/files/x.png">'
+				f'<img src="https://other.example{asset}"><img src="{asset}">'
 			)
 		)
 		self.assertEqual(result.pages, 2)
@@ -53,9 +54,12 @@ class TestPdf(RVTestCase):
 		self.assertIn(external, blocked)
 		self.assertIn(api, blocked)
 		self.assertIn("/private/files/x.png", blocked)
-		self.assertIn("127.0.0.1:8000", blocked)
-		self.assertEqual(len(result.served), 1)
-		self.assertTrue(result.served[0].endswith(asset))
+		self.assertIn("127.0.0.1:8000/api/method/ping", blocked)
+		# another host's /files/ is not this site's
+		self.assertIn("other.example/files/x.png", blocked)
+		# /assets/ are the bench's own files: served from disk whatever host is named, never fetched
+		self.assertEqual(len(result.served), 2)
+		self.assertTrue(all(u.endswith(asset) for u in result.served))
 
 	def test_scripts_do_not_run(self):
 		script = (

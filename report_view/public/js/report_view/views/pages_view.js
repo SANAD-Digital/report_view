@@ -748,7 +748,10 @@ export class PagesView {
 		const headings = o.print_headings || [];
 		// a record of the site: a Link field (Frappe's search, with the user's permissions)
 		const link = (key, label) => `<div class="rv-field"><span>${esc(label)}</span><div class="rv-linkf" data-link="${key}" data-label="${esc(label)}"></div></div>`;
-		const foot_sum = !s.letter_head || !s.foot_height ? __("None", null, "Report View") : scope_label[s.foot_pages];
+		// the letter head is known once loaded: one without a footer says so
+		const no_footer = Boolean(s.letter_head && this.letterhead_name === s.letter_head && !this.letterhead?.footer);
+		this.panel_no_footer = no_footer;
+		const foot_sum = no_footer ? __("Not in this letter head") : !s.letter_head || !s.foot_height ? __("None", null, "Report View") : scope_label[s.foot_pages];
 		const num_sum = s.page_numbers ? pos_label[s.number_pos] : __("Hidden");
 		const pb_sum = s.pb_on ? `${s.pb_w} px · ${{ solid: __("Solid"), dashed: __("Dashed"), dotted: __("Dotted"), double: __("Double") }[s.pb_s]}` : __("None", null, "Report View");
 		const wm_sum = s.wm_type === "text" ? s.wm_text || __("Text", null, "Report View") : s.wm_type === "image" ? __("Image", null, "Report View") : __("None", null, "Report View");
@@ -814,7 +817,7 @@ export class PagesView {
 				__("Footer", null, "Report View"),
 				foot_sum,
 				s.letter_head
-					? `${scopes("foot_pages", FOOT_SCOPES)}
+					? `${no_footer ? `<p class="rv-zone-empty warn">${esc(__("The letter head «{0}» has no footer. Write one in its Footer field (Letter Head), or choose another letter head.", [s.letter_head]))}</p>` : ""}${scopes("foot_pages", FOOT_SCOPES)}
 					<div class="rv-print-row">${num("foot_height", __("Height", null, "Report View"), mm)}</div>
 					${seg("foot_align", __("Alignment"), align3)}
 					${box("foot_m", __("Footer margins"))}
@@ -941,36 +944,30 @@ export class PagesView {
 	}
 
 	/**
-	 * The Link fields of the panel: the records a user may choose (print formats of the
-	 * report, letter heads, print headings, signatures, languages) are searched by Frappe
-	 * (search_link: the user's permissions); empty is the standard choice.
+	 * The record fields of the panel (print format, letter head, print heading, signature,
+	 * language): Frappe's Autocomplete over the lists the server read with the user's
+	 * permissions (frappe.get_list, in get_print_options / get_doc_print_options). The list
+	 * opens at once and filters as one types, with no request; a value not in it is dropped,
+	 * and the server checks every choice again when it renders it. Empty is the standard choice.
 	 */
 	link_defs() {
 		const o = this.options || {};
-		const reports = o.reports || [this.ctx?.report_name];
+		const items = (names, label = (n) => n) => (names || []).map((n) => ({ value: n, label: label(n) }));
 		return {
-			template: this.doc_mode
-				? {
-						doctype: "Print Format",
-						placeholder: o.default_print_format || __("Standard"),
-						query: () => ({ filters: { doc_type: o.doctype, print_format_type: "Jinja", disabled: 0 } }),
-				  }
-				: {
-						doctype: "Print Format",
-						placeholder: __("Report View (standard)"),
-						query: () => ({ filters: { print_format_for: "Report", report: ["in", reports], print_format_type: ["in", ["JS", "Jinja"]], disabled: 0 } }),
-				  },
-			letter_head: { doctype: "Letter Head", placeholder: __("No letter head"), query: () => ({ filters: { disabled: 0 } }) },
-			heading: { doctype: "Print Heading", placeholder: __("No print heading") },
-			signature: {
-				doctype: "Print Signature",
-				placeholder: __("Report View (standard)"),
-				query: () =>
-					this.doc_mode
-						? { query: "report_view.api.document.search_doc_signatures", filters: { doctype: o.doctype, name: o.name } }
-						: { query: "report_view.api.search_print_signatures", filters: { report_name: this.ctx?.report_name } },
+			template: {
+				placeholder: this.doc_mode ? o.default_print_format || __("Standard") : __("Report View (standard)"),
+				items: items(o.print_formats),
 			},
-			lang: { doctype: "Language", placeholder: __("Session language ({0})", [o.lang || frappe.boot.lang]), query: () => ({ filters: { enabled: 1 } }) },
+			letter_head: { placeholder: __("No letter head"), items: items((o.letter_heads || []).map((lh) => lh.name)) },
+			heading: { placeholder: __("No print heading"), items: items(o.print_headings, (n) => __(n)) },
+			signature: {
+				placeholder: __("Report View (standard)"),
+				items: (o.print_signatures || []).map((x) => ({ value: x.name, label: __(x.name), description: __(x.content_type) })),
+			},
+			lang: {
+				placeholder: __("Session language ({0})", [o.lang || frappe.boot.lang]),
+				items: (o.languages || []).map((l) => ({ value: l.name, label: l.label, description: l.name })),
+			},
 		};
 	}
 
@@ -982,11 +979,10 @@ export class PagesView {
 			const def = defs[key];
 			const f = frappe.ui.form.make_control({
 				df: {
-					fieldtype: "Link",
+					fieldtype: "Autocomplete",
 					fieldname: `rv_print_${key}`,
-					options: def.doctype,
+					options: def.items,
 					placeholder: def.placeholder,
-					get_query: def.query,
 					onchange: () => {
 						const v = f.get_value() || "";
 						if (v !== (this.settings[key] || "")) this.update({ [key]: v });
@@ -1190,7 +1186,10 @@ export class PagesView {
 		if (token !== this.token || this.current !== cur) return;
 		this.lang_entry = lang_entry;
 		this.letterhead = letterhead;
+		this.letterhead_name = s.letter_head;
 		this.format = format;
+		// the footer section learns whether this letter head has a footer
+		if (this.panel_no_footer !== Boolean(s.letter_head && !letterhead?.footer) && !this.bd.contains(document.activeElement)) this.render_panel();
 		this.heading = heading;
 		this.signature = signature;
 		if (lang_entry && lang_entry.report === null && s.lang && s.lang !== frappe.boot.lang) {
@@ -1284,7 +1283,7 @@ export class PagesView {
 
 	async load_letterhead(name) {
 		if (!name) return null;
-		const key = `${name}|${this.ctx.company || ""}`;
+		const key = this.doc_mode ? `${name}|${this.ctx.report_name}` : `${name}|${this.ctx.company || ""}`;
 		if (!this.letterheads.has(key)) {
 			try {
 				const r = await this.host.pages_letterhead(name);
@@ -1446,6 +1445,12 @@ export class PagesView {
 			parts.push(`<span class="rv-page-filter"><span>${esc(label)}:</span> <b>${esc(text)}</b></span>`);
 		}
 		return parts.join(" · ");
+	}
+
+	/** The block margins of an element (a measured height leaves them out). */
+	outer_margins(el) {
+		const cs = getComputedStyle(el);
+		return (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
 	}
 
 	/** The page number as the settings write it, or "" when hidden. */
@@ -1838,32 +1843,69 @@ export class PagesView {
 		const pages = [];
 		let page = { units: [], used: 0 };
 		const room = () => (pages.length ? body_h : first_body_h);
+		// a break of the format takes effect at the next block of content: the signature
+		// after the format's last page stays on that page
+		let brk = false;
 		for (const u of units) {
 			if (u.brk) {
-				if (page.units.length) {
-					pages.push(page);
-					page = { units: [], used: 0 };
-				}
+				brk = true;
 				continue;
 			}
+			if (brk && !u.sig && !u.style && page.units.length) {
+				pages.push(page);
+				page = { units: [], used: 0 };
+			}
+			if (!u.style && !u.sig) brk = false;
 			if (u.style) {
 				this.custom_styles += u.node.outerHTML;
 				continue;
 			}
-			// a table's head is repeated on every page its rows reach
-			const extra = u.table && page.units[page.units.length - 1]?.table !== u.table ? u.table.head_h : 0;
-			if (page.units.length && page.used + extra + u.h > room()) {
+			// what the page holds with this block: from its first block to this one; a page
+			// that opens with a table's row repeats the table's head above it
+			const height = (first) => u.bottom - first.top + (first.table ? first.table.head_h : 0);
+			if (page.units.length && height(page.units[0]) > room()) {
 				pages.push(page);
 				page = { units: [], used: 0 };
 			}
-			page.used += (u.table && page.units[page.units.length - 1]?.table !== u.table ? u.table.head_h : 0) + u.h;
 			page.units.push(u);
+			page.used = height(page.units[0]);
 		}
 		if (page.units.length || !pages.length) pages.push(page);
 		this.custom_pages = pages;
 		this.pages = pages.map((p, i) => ({ start: 0, end: 0, first: i === 0, last: i === pages.length - 1 }));
+		await this.fit_custom_pages(token, box, dir);
+		if (token !== this.token) return;
 		this.probe.replaceChildren();
 		this.mount_pages(box, dir);
+	}
+
+	/**
+	 * The pages of a format as they will be drawn, checked one by one in the probe: a page
+	 * whose content reaches its foot gives its last block to the next page (the wrappers of a
+	 * format, its paddings and margins, can take more than the measured blocks).
+	 */
+	async fit_custom_pages(token, box, dir) {
+		const pages = this.custom_pages;
+		const sync = () => (this.pages = pages.map((p, i) => ({ start: 0, end: 0, first: i === 0, last: i === pages.length - 1 })));
+		for (let i = 0; i < pages.length && i < this.max_pages(); i++) {
+			for (let guard = 0; guard < 400; guard++) {
+				if (token !== this.token) return;
+				sync();
+				this.probe.innerHTML = this.page_shell(i, box, dir, this.custom_page_html(i));
+				if (guard === 0) await wait_images(this.probe);
+				const sheet = this.probe.firstElementChild;
+				const foot = sheet.querySelector(".rv-page-foot").getBoundingClientRect();
+				const page_r = sheet.getBoundingClientRect();
+				let bottom = 0;
+				for (const el of sheet.querySelectorAll(".rv-page-body *")) bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
+				const over = bottom > foot.top + 1 || foot.bottom > page_r.bottom + 1;
+				if (!over || pages[i].units.length <= 1) break;
+				// the last block (a table's row, a signature, a section) moves on
+				if (!pages[i + 1]) pages.push({ units: [], used: 0 });
+				pages[i + 1].units.unshift(pages[i].units.pop());
+			}
+		}
+		sync();
 	}
 
 	/**
@@ -1920,6 +1962,12 @@ export class PagesView {
 	// its header kept to repeat them), a block taller than a page by its children.
 	flow_units(container, body_h) {
 		const units = [];
+		// where a block stands in the flow, its top margin included: what a page holds is the
+		// distance from its first block to its last, with every margin and gap between them
+		const span = (el) => {
+			const r = el.getBoundingClientRect();
+			return { top: r.top - (parseFloat(getComputedStyle(el).marginTop) || 0), bottom: r.bottom };
+		};
 		// `path`: shallow copies of the elements between the flow and a block (a format styles
 		// its table through a wrapper such as .report-table: the pages rebuild it)
 		const walk = (el, path) => {
@@ -1937,6 +1985,11 @@ export class PagesView {
 					units.push({ brk: true, h: 0, table: null, path });
 					continue;
 				}
+				// the signature closes the content: it follows the last page of the format
+				if (child.classList?.contains("rv-page-sig")) {
+					units.push({ node: child.cloneNode(true), h: child.getBoundingClientRect().height + this.outer_margins(child), ...span(child), table: null, path, sig: true });
+					continue;
+				}
 				if (child.tagName === "TABLE") {
 					const head = child.tHead;
 					const table = {
@@ -1948,11 +2001,11 @@ export class PagesView {
 					};
 					for (const body of child.tBodies) {
 						const tbody = body.cloneNode(false);
-						for (const tr of body.rows) units.push({ node: tr.cloneNode(true), h: tr.getBoundingClientRect().height, table, tbody, path });
+						for (const tr of body.rows) units.push({ node: tr.cloneNode(true), h: tr.getBoundingClientRect().height, ...span(tr), table, tbody, path });
 					}
 					if (child.tFoot) {
 						const tbody = child.tFoot.cloneNode(false);
-						for (const tr of child.tFoot.rows) units.push({ node: tr.cloneNode(true), h: tr.getBoundingClientRect().height, table, tbody, path });
+						for (const tr of child.tFoot.rows) units.push({ node: tr.cloneNode(true), h: tr.getBoundingClientRect().height, ...span(tr), table, tbody, path });
 					}
 					continue;
 				}
@@ -1960,7 +2013,7 @@ export class PagesView {
 					walk(child, [...path, child.cloneNode(false)]);
 					continue;
 				}
-				units.push({ node: child.cloneNode(true), h: hh, table: null, path });
+				units.push({ node: child.cloneNode(true), h: hh, ...span(child), table: null, path });
 			}
 		};
 		walk(container, []);

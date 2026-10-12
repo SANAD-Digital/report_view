@@ -134,20 +134,6 @@ def render_doc_signature(doctype: str, name: str, signature: str) -> dict:
 	return printing.document_signature(signature, doc)
 
 
-@frappe.whitelist()
-def search_doc_signatures(doctype: str, txt: str, searchfield: str, start: int, page_len: int, filters: dict | str) -> list:
-	"""The Link search of the page's signature: enabled Print Signatures of type Document
-	for the document's doctype or for all; ``txt`` matches the name or its translation."""
-	values = parse_json_arg(filters or {}, "filters", dict)
-	guard_doc_print(values.get("doctype"), values.get("name"))
-	rows = [[s["name"], s["content_type"]] for s in printing.list_document_signatures(values["doctype"])]
-	needle = (txt or "").strip().lower()
-	if needle:
-		rows = [r for r in rows if needle in r[0].lower() or needle in _(r[0]).lower()]
-	first = frappe.utils.cint(start)
-	return rows[first : first + (frappe.utils.cint(page_len) or 20)]
-
-
 @frappe.whitelist(methods=["POST"])
 def get_doc_translations(doctype: str, name: str, lang: str, messages: list | str) -> dict:
 	"""Translations of the page's own words in ``lang`` (an enabled language)."""

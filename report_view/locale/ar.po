@@ -2261,3 +2261,9 @@ msgstr "الترويسة {0} غير موجودة"
 msgctxt "Report View"
 msgid "Open a document, then «Advanced Print»."
 msgstr "افتح مستنداً ثم اختر «الطباعة المتقدمة»."
+
+msgid "Not in this letter head"
+msgstr "غير موجود في هذه الترويسة"
+
+msgid "The letter head «{0}» has no footer. Write one in its Footer field (Letter Head), or choose another letter head."
+msgstr "الترويسة «{0}» ليس فيها تذييل. اكتبه في حقل التذييل في شاشة الترويسة، أو اختر ترويسة أخرى."

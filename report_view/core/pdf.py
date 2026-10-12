@@ -234,9 +234,14 @@ class _Agent:
 		if method != "GET" or resource_type == "Document":
 			return None
 		parts = urllib.parse.urlsplit(url)
-		if parts.scheme not in ("http", "https") or parts.netloc.lower() not in self.hosts:
+		if parts.scheme not in ("http", "https"):
 			return None
 		path = urllib.parse.unquote(parts.path)
+		# /assets/ are the bench's own built files, the same whatever host a stylesheet names
+		# (a format may load its font from another site of the bench): served from this
+		# bench's disk, never fetched. /files/ belong to this site only.
+		if not path.startswith("/assets/") and parts.netloc.lower() not in self.hosts:
+			return None
 		if path.startswith("/assets/"):
 			root = self.assets_root
 			target = os.path.abspath(os.path.join(root, path[len("/assets/") :]))

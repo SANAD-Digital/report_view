@@ -110,7 +110,9 @@ class TestApiPages(RVTestCase):
 			arabic = api.run("Trial Balance", TB_FILTERS, TB_JS_FILTERS)
 			frappe.local.lang = "en"
 			english = api.run("Trial Balance", TB_FILTERS, TB_JS_FILTERS)
-		labels = lambda r: [c["label"] if isinstance(c, dict) else str(c) for c in r["raw"]["columns"]]
+		def labels(r):
+			return [c["label"] if isinstance(c, dict) else str(c) for c in r["raw"]["columns"]]
+
 		self.assertEqual(len(labels(arabic)), len(labels(english)))
 		self.assertNotEqual(labels(arabic), labels(english))
 		self.assertEqual(len(arabic["raw"]["result"]), len(english["raw"]["result"]))
@@ -227,17 +229,6 @@ class TestPrintHeadingAndSignature(RVTestCase):
 		# for every report, for this report; not another report's, a disabled one or a document's
 		self.assertTrue({"RV Test Table", "RV Test HTML"} <= names)
 		self.assertFalse({"RV Test Other Report", "RV Test Disabled", "RV Test Document"} & names)
-
-	def test_the_signature_link_search_of_a_report(self):
-		with self.as_user("accountant"):
-			rows = api.search_print_signatures("Print Signature", "RV Test", "name", 0, 20, {"report_name": "Trial Balance"})
-			names = {r[0] for r in rows}
-			self.assertTrue({"RV Test Table", "RV Test HTML"} <= names)
-			self.assertFalse({"RV Test Other Report", "RV Test Disabled", "RV Test Document"} & names)
-			# a text narrows it
-			self.assertEqual({r[0] for r in api.search_print_signatures("Print Signature", "RV Test HTML", "name", 0, 20, '{"report_name": "Trial Balance"}')}, {"RV Test HTML"})
-		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
-			api.search_print_signatures("Print Signature", "", "name", 0, 20, {"report_name": "Trial Balance"})
 
 	def test_a_heading_is_rendered_with_the_filters(self):
 		from report_view.tests.utils import TB_FILTERS

@@ -79,7 +79,7 @@ class TestDocumentPrint(RVTestCase):
 			self.assertIn(f"<p>{self.je}</p>", s["html"])
 			with self.assertRaises(frappe.DoesNotExistError):
 				api.render_doc_signature("Journal Entry", self.je, "RV Other Doc Sig")
-			names = {r[0] for r in api.search_doc_signatures("Print Signature", "RV", "name", 0, 20, {"doctype": "Journal Entry", "name": self.je})}
+			names = {x["name"] for x in api.get_doc_print_options("Journal Entry", self.je)["print_signatures"]}
 			self.assertIn("RV Doc Sig", names)
 			self.assertNotIn("RV Other Doc Sig", names)
 			lh = frappe.db.get_value("Letter Head", {"disabled": 0}, "name")

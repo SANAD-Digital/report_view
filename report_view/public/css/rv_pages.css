@@ -376,7 +376,8 @@
 .rv-docprint .rv-pages{flex:1}
 .rv-page-flow .print-format-gutter{padding:0!important;margin:0!important;background:none!important}
 .rv-page-flow .print-format{width:auto!important;max-width:none!important;min-height:0!important;padding:0!important;margin:0!important;box-shadow:none!important;border:0!important;background:transparent!important}
-/* the sections of Frappe's standard format stand inside the page body (Bootstrap's -15px rows
-   reach into the padding of Frappe's own sheet, which the pages do not have) */
-.rv-page-flow .row.section-break{margin-inline:0}
+/* the rows of a format stand inside the page body: Bootstrap's negative margins reach into the
+   padding of Frappe's own sheet, which the pages do not have (rows inside a column keep them) */
+.rv-page-flow .row:not([class*="col-"] .row){margin-inline:0}
 .rv-print-acts .rv-print-go{width:auto;min-width:0}
+.rv-psec-bd .rv-zone-empty.warn{color:var(--warn);background:var(--warn-soft);border:1px solid var(--warn-line);border-radius:var(--r);padding:6px 8px}

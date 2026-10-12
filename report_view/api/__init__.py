@@ -385,37 +385,6 @@ def render_print_signature(report_name: str, name: str, filters: dict | str, fil
 	return printing.report_signature(name, names, printing.report_context(report, filters, filter_meta))
 
 
-@frappe.whitelist()
-def search_print_signatures(
-	doctype: str, txt: str, searchfield: str, start: int, page_len: int, filters: dict | str
-) -> list:
-	"""The Link search of the Pages view's signature (``get_query``, ADR-015): the enabled
-	Print Signatures of type Report for this report or for all, read with
-	``frappe.get_list`` (the user's permissions). ``filters.report_name`` is the report;
-	``txt`` matches the name or its translation (the names are shown translated)."""
-	report = guard_report(parse_json_arg(filters or {}, "filters", dict).get("report_name"))
-	guard_print(report)
-	report_name = parse_json_arg(filters, "filters", dict)["report_name"]
-	sig_filters, or_filters = printing.signature_filters(
-		"Report", list(dict.fromkeys([report_name, report.name])), "report"
-	)
-	rows = frappe.get_list(
-		"Print Signature",
-		filters=sig_filters,
-		or_filters=or_filters,
-		fields=["name", "content_type"],
-		order_by="name asc",
-		limit=0,
-		as_list=True,
-	)
-	# the names are shown translated (translated_doctype): a text matches either
-	needle = (txt or "").strip().lower()
-	if needle:
-		rows = [r for r in rows if needle in r[0].lower() or needle in _(r[0]).lower()]
-	first = frappe.utils.cint(start)
-	return rows[first : first + (frappe.utils.cint(page_len) or 20)]
-
-
 @frappe.whitelist(methods=["POST"])
 def get_translations(report_name: str, lang: str, messages: list | str) -> dict:
 	"""Translations of ``messages`` in ``lang`` (§2.9, ADR-014): the Pages view prints a

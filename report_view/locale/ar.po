@@ -2285,3 +2285,9 @@ msgstr "تعذّر تشغيل محرك PDF"
 
 msgid "The printed pages could not be read"
 msgstr "تعذّرت قراءة الصفحات المطبوعة"
+
+msgid "The footer, the page number and the signature are taller than the room under the content: make them smaller or show them on fewer pages."
+msgstr "التذييل ورقم الصفحة والتوقيع أطول من المساحة المتاحة تحت المحتوى: صغّرها أو اعرضها في صفحات أقل."
+
+msgid "With the signature on these pages there is no room left for the content: it prints on the last page only. Make the letter head, footer or signature smaller to repeat it."
+msgstr "مع التوقيع في هذه الصفحات لا تبقى مساحة للمحتوى، فيُطبع في الصفحة الأخيرة فقط. صغّر الترويسة أو التذييل أو التوقيع لتكراره."

@@ -97,6 +97,15 @@ const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", nam
 	check("long document: several pages", s.pages.length >= 2, `${s.pages.length} pages`);
 	const rows_of_doc = await page.evaluate((n) => frappe.xcall("frappe.client.get", { doctype: "Journal Entry", name: n }).then((d) => d.accounts.length), LONG);
 	check(`long document: ${rows_of_doc} rows, none lost or doubled`, total === rows_of_doc, `rows ${total}`);
+	// a signature on every page that leaves no room: it goes to the last page, never a page per row
+	{
+		const before = s.pages.length;
+		await set({ signatures: true, signature: "", sig_pages: "all", sig_m: { top: 200, bottom: 0, start: 0, end: 0 } });
+		const t = await state();
+		const total_t = t.pages.reduce((n, p) => n + p.rows, 0);
+		check("a signature with no room moves to the last page, rows stay together", t.pages.length <= before + 2 && total_t === rows_of_doc && t.pages.at(-1).sig && !t.pages[0].sig && /لا تبقى مساحة|no room/.test(t.note), `pages ${t.pages.length} (was ${before}), rows ${total_t}`);
+		await set({ signatures: false, sig_pages: "last", sig_m: { top: 10, bottom: 0, start: 0, end: 0 } });
+	}
 	check("long document: the table head on every page with rows", s.pages.filter((p) => p.rows).every((p) => p.thead));
 	check("long document: footer on every page, inside the page", s.pages.every((p) => p.lhf && p.foot_inside), JSON.stringify(s.pages.map((p) => [p.lhf, p.foot_inside])));
 	check("long document: no content over the footer", s.pages.every((p) => !p.overlap), JSON.stringify(s.pages.map((p) => p.overlap)));

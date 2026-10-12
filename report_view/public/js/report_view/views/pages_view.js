@@ -139,6 +139,8 @@ const NUMBER_POS = ["bottom-end", "bottom-center", "bottom-start", "top-end", "t
 const NUMBER_FORMATS = ["full", "short", "number", "dash"];
 // Settings drawn over the pages (the watermark, the border round the page): changed on
 // the pages already cut, without cutting them again.
+// the least share of a page left to the content before a repeated signature moves to the last page
+const MIN_ROOM = 0.25;
 const PAINT_KEYS = new Set(["pb_on", "pb_w", "pb_s", "pb_c", "pb_offset", "pb_radius", "pb_pages", "wm_type", "wm_text", "wm_image", "wm_size", "wm_scale", "wm_color", "wm_opacity", "wm_angle", "wm_pages"]);
 const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "number_caption", "pb_on", "heading_replace"];
 const PAGE_SCOPES = ["all", "first", "rest"];
@@ -1187,6 +1189,7 @@ export class PagesView {
 		if (this.observer) this.observer.disconnect();
 		this.queue = [];
 		this.note("");
+		this.sig_fallback = false;
 		const s = this.settings;
 		const steps = [];
 		if (s.lang && s.lang !== frappe.boot.lang && !this.lang_packs.has(s.lang)) steps.push(__("Running the report in the chosen language…"));
@@ -1250,6 +1253,7 @@ export class PagesView {
 			if (token === this.token) this.busy(null);
 		}
 		if (token !== this.token) return;
+		if (this.sig_fallback) this.note(__("With the signature on these pages there is no room left for the content: it prints on the last page only. Make the letter head, footer or signature smaller to repeat it."), true);
 		this.apply_zoom();
 		this.update_position();
 	}
@@ -1525,7 +1529,7 @@ export class PagesView {
 		// `measure`: the probe page takes the footer wherever it may print (the tallest foot)
 		const lhf = letterhead?.footer && s.foot_height && (measure || on_page(s.foot_pages, n, total)) ? `<div class="rv-page-lhf">${letterhead.footer}</div>` : "";
 		// a signature on pages other than the last only: above the footer
-		const sig = s.signatures && !this.sig_in_tail() && (measure || on_page(s.sig_pages, n, total)) ? this.signatures_html() : "";
+		const sig = s.signatures && !this.sig_in_tail() && (measure || on_page(this.sig_pages(), n, total)) ? this.signatures_html() : "";
 		return sig + (s.number_order === "before" ? `${band}${lhf}` : `${lhf}${band}`);
 	}
 
@@ -1635,7 +1639,23 @@ export class PagesView {
 
 	/** Whether the signature closes the content of the last page (else it is in the foot). */
 	sig_in_tail() {
-		return this.settings.signatures && this.settings.sig_pages === "last";
+		return this.settings.signatures && this.sig_pages() === "last";
+	}
+
+	/** The pages of the signature: as chosen, or the last only when repeating it left no room. */
+	sig_pages() {
+		return this.sig_fallback ? "last" : this.settings.sig_pages;
+	}
+
+	/**
+	 * A signature repeated in the foot of the pages that leaves less than MIN_ROOM of the page
+	 * to the content: it moves to the last page (and the panel says why), rather than a page
+	 * for every row with nothing else on it. True when the pages are to be laid out again.
+	 */
+	sig_leaves_no_room(body_h, box) {
+		if (this.sig_fallback || !this.settings.signatures || this.sig_in_tail() || body_h >= box.inner_h * MIN_ROOM) return false;
+		this.sig_fallback = true;
+		return true;
 	}
 
 	page_shell(i, box, dir, inner) {
@@ -1694,6 +1714,7 @@ export class PagesView {
 		const foot_h = h(q(".rv-page-foot"));
 		// the body of a continuation page; the first page gives up the difference of its head
 		const body_h = box.inner_h - next_h - thead_h - foot_h - SAFETY_PX;
+		if (this.sig_leaves_no_room(body_h, box)) return this.layout_standard(token, box, dir);
 		const filt_h = Math.max(0, head_h - next_h);
 		this.measure = { head_h, next_h, filt_h, thead_h, row_h, top_h, tail_h, foot_h, body_h };
 		this.probe.replaceChildren();
@@ -1867,6 +1888,7 @@ export class PagesView {
 		const foot_h = h(q(".rv-page-foot"));
 		const body_h = Math.max(40, box.inner_h - next_h - foot_h - SAFETY_PX);
 		const first_body_h = Math.max(40, box.inner_h - first_h - foot_h - SAFETY_PX);
+		if (this.sig_leaves_no_room(box.inner_h - next_h - foot_h - SAFETY_PX, box)) return this.layout_custom(token, box, dir);
 		const flow = q(".rv-page-flow");
 		if (flow.scrollWidth > box.inner_w + 1 || [...flow.querySelectorAll("td, th")].some((c) => c.getBoundingClientRect().width < 1)) {
 			this.note(__("The print format is wider than the page: try landscape or a larger paper."), true);
@@ -1908,6 +1930,7 @@ export class PagesView {
 		this.pages = pages.map((p, i) => ({ start: 0, end: 0, first: i === 0, last: i === pages.length - 1 }));
 		await this.fit_custom_pages(token, box, dir);
 		if (token !== this.token) return;
+		if (this.foot_overflow) this.note(__("The footer, the page number and the signature are taller than the room under the content: make them smaller or show them on fewer pages."), true);
 		this.probe.replaceChildren();
 		this.mount_pages(box, dir);
 	}
@@ -1924,7 +1947,10 @@ export class PagesView {
 		// page would make the browser restyle the whole window each time
 		this.probe.innerHTML = `${this.custom_styles}<div></div>`;
 		const holder = this.probe.lastElementChild;
+		this.foot_overflow = false;
 		for (let i = 0; i < pages.length && i < this.max_pages(); i++) {
+			const start = pages[i].units.slice();
+			let room = 0;
 			for (let guard = 0; guard < 400; guard++) {
 				if (token !== this.token) return;
 				sync();
@@ -1935,10 +1961,13 @@ export class PagesView {
 				const sheet = holder.firstElementChild;
 				const foot = sheet.querySelector(".rv-page-foot").getBoundingClientRect();
 				const page_r = sheet.getBoundingClientRect();
+				room = foot.top - sheet.querySelector(".rv-page-body").getBoundingClientRect().top;
+				// a foot (footer, number, signature) beyond the paper: the content cannot push it
+				// (the body clips), so moving rows would not help; the panel says so
+				if (foot.bottom > page_r.bottom + 1) this.foot_overflow = true;
 				let bottom = 0;
 				for (const el of sheet.querySelectorAll(".rv-page-body *")) bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
-				const over = bottom > foot.top + 1 || foot.bottom > page_r.bottom + 1;
-				if (!over || pages[i].units.length <= 1) break;
+				if (bottom <= foot.top + 1 || pages[i].units.length <= 1) break;
 				// the blocks that reach the foot (rows, a signature, a section) move on together;
 				// else (a wrapper's padding or margin) the last block alone
 				let from = pages[i].units.length - 1;
@@ -1950,6 +1979,15 @@ export class PagesView {
 				}
 				if (!pages[i + 1]) pages.push({ units: [], used: 0 });
 				pages[i + 1].units.unshift(...pages[i].units.splice(from));
+			}
+			// A page left with one short block although the packing gave it several: what
+			// overflowed was not its content (a measure gone wrong), and moving on would put one
+			// block on every page. The page keeps its blocks.
+			const kept = pages[i].units;
+			if (start.length > 1 && kept.length === 1 && (kept[0].h || 0) < room / 2) {
+				pages[i + 1].units.splice(0, start.length - 1);
+				if (!pages[i + 1].units.length) pages.splice(i + 1, 1);
+				pages[i].units = start;
 			}
 		}
 		sync();

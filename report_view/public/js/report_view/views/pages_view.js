@@ -596,15 +596,17 @@ export class PagesView {
 
 	async load_format(name) {
 		if (!name) return null;
-		if (!this.formats.has(name)) {
+		// a Jinja format is rendered with the criteria and the language: one per both
+		const key = `${name}|${this.settings.lang || ""}|${JSON.stringify(this.ctx.filters || {})}`;
+		if (!this.formats.has(key)) {
 			try {
-				this.formats.set(name, await this.host.pages_format(name));
+				this.formats.set(key, await this.host.pages_format(name, this.settings.lang || null));
 			} catch (e) {
 				this.note(__("The print format could not be loaded: {0}", [e.message || e]), true);
-				this.formats.set(name, null);
+				this.formats.set(key, null);
 			}
 		}
-		return this.formats.get(name);
+		return this.formats.get(key);
 	}
 
 	// ------------------------------------------------------------ the standard template
@@ -993,7 +995,9 @@ export class PagesView {
 		const { columns, data, report } = this.query_report_facade();
 		let html = "";
 		try {
-			html = frappe.render_template(`<style>${this.format.css || ""}</style>${this.format.html}`, {
+			// a Jinja format comes rendered by the server
+			if (this.format.type === "Jinja") html = `<style>${this.format.css || ""}</style>${this.format.html}`;
+			else html = frappe.render_template(`<style>${this.format.css || ""}</style>${this.format.html}`, {
 				title: this.t(ctx.report_name),
 				subtitle: this.settings.include_filters ? this.filters_html() : null,
 				filters: ctx.filters || {},

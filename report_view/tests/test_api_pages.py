@@ -19,10 +19,11 @@ class TestApiPages(RVTestCase):
 		self.assertTrue(out["default_letter_head"] is None or out["default_letter_head"] in names)
 		self.assertTrue(all(lg["name"] in get_all_languages() for lg in out["languages"]))
 		self.assertIn(out["lang"], get_all_languages())
-		# the query-report dialog lists JS formats of the report only
+		# the report's own formats, JS (rendered in the browser) or Jinja (on the server)
 		for name in out["print_formats"]:
 			doc = frappe.get_doc("Print Format", name)
-			self.assertEqual((doc.print_format_for, doc.print_format_type, doc.disabled), ("Report", "JS", 0))
+			self.assertEqual((doc.print_format_for, doc.disabled), ("Report", 0))
+			self.assertIn(doc.print_format_type, ("JS", "Jinja"))
 			self.assertEqual(doc.report, "Trial Balance")
 
 	def test_print_options_need_the_report_and_print(self):
@@ -96,3 +97,39 @@ class TestApiPages(RVTestCase):
 		self.assertEqual(len(labels(arabic)), len(labels(english)))
 		self.assertNotEqual(labels(arabic), labels(english))
 		self.assertEqual(len(arabic["raw"]["result"]), len(english["raw"]["result"]))
+
+
+class TestJinjaPrintFormat(RVTestCase):
+	def test_jinja_and_js_formats_of_the_report_are_offered(self):
+		with self.as_user("accountant"):
+			options = api.get_print_options("Trial Balance", COMPANY)
+		types = {n: frappe.db.get_value("Print Format", n, "print_format_type") for n in options["print_formats"]}
+		self.assertTrue(set(types.values()) <= {"JS", "Jinja"})
+		if "Jinja" not in types.values():
+			self.skipTest("no Jinja report print format for Trial Balance on this site")
+
+	def test_a_jinja_format_is_rendered_with_the_report_rows(self):
+		from report_view.tests.utils import TB_FILTERS, TB_JS_FILTERS
+
+		name = frappe.db.get_value(
+			"Print Format",
+			{"report": "Trial Balance", "print_format_type": "Jinja", "disabled": 0, "print_format_for": "Report"},
+			"name",
+		)
+		if not name:
+			self.skipTest("no Jinja report print format for Trial Balance on this site")
+		meta = [{"fieldname": "company", "label": "Company", "fieldtype": "Link"}]
+		with self.as_user("accountant"):
+			out = api.render_print_format("Trial Balance", name, TB_FILTERS, TB_JS_FILTERS, meta)
+			# a JS format is not rendered here
+			js = frappe.db.get_value("Print Format", {"report": "Trial Balance", "print_format_type": "JS"}, "name")
+			if js:
+				with self.assertRaises(RVInvalidInput):
+					api.render_print_format("Trial Balance", js, TB_FILTERS, TB_JS_FILTERS, meta)
+		self.assertEqual(out["type"], "Jinja")
+		self.assertIn("<table", out["html"])
+		# the criteria and the report's rows are in it
+		self.assertIn(TB_FILTERS["to_date"], out["html"])
+		self.assertIn("1000", out["html"])
+		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
+			api.render_print_format("Trial Balance", name, TB_FILTERS, TB_JS_FILTERS, meta)

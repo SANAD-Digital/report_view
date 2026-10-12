@@ -1569,3 +1569,12 @@ msgstr "قوالب Report View"
 
 msgid "Print formats of the report"
 msgstr "قوالب طباعة التقرير"
+
+msgid "Print Format {0} is not a Jinja template"
+msgstr "قالب الطباعة {0} ليس قالب Jinja"
+
+msgid "Invalid filter definitions"
+msgstr "تعريفات فلاتر غير صالحة"
+
+msgid "The report did not return rows to print"
+msgstr "لم يُرجع التقرير صفوفاً للطباعة"

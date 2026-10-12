@@ -118,6 +118,17 @@ export const api = {
 
 	get_print_format: (report_name, name) => message(call("report_view.api.get_print_format", { report_name, name })),
 
+	// A Jinja print format, rendered on the server with the report run again (`lang`: the
+	// language of the pages, read by Frappe from `_lang`).
+	render_print_format: (report_name, name, filters, js_filters, filter_meta, prepared_report_name = null, lang = null) =>
+		message(
+			call(
+				"report_view.api.render_print_format",
+				{ report_name, name, filters, js_filters, filter_meta, prepared_report_name, ...(lang ? { _lang: lang } : {}) },
+				{ type: "POST" }
+			)
+		),
+
 	get_translations: (report_name, lang, messages) =>
 		message(call("report_view.api.get_translations", { report_name, lang, messages }, { type: "POST" })),
 

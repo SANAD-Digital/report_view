@@ -238,13 +238,15 @@ def get_print_options(report_name: str, company: str | None = None) -> dict:
 
 
 def _print_format_filters(report_name: str, resolved_name: str) -> dict:
-	"""Report print formats of the query-report dialog (print_utils.js): JS, enabled, for
-	this report (a Custom Report resolves to its reference report)."""
+	"""Report print formats offered by the Pages view: enabled, for this report (a Custom
+	Report resolves to its reference report), JS (rendered in the browser with
+	query-report's context, as the query-report dialog does) or Jinja (rendered on the
+	server by ``render_print_format``)."""
 	names = list(dict.fromkeys([report_name, resolved_name]))
 	return {
 		"print_format_for": "Report",
 		"report": ["in", names],
-		"print_format_type": "JS",
+		"print_format_type": ["in", ["JS", "Jinja"]],
 		"disabled": 0,
 	}
 
@@ -272,7 +274,82 @@ def get_print_format(report_name: str, name: str) -> dict:
 			frappe.DoesNotExistError,
 		)
 	doc = frappe.get_doc("Print Format", name)
-	return {"name": doc.name, "html": doc.html or "", "css": doc.css or ""}
+	return {"name": doc.name, "type": doc.print_format_type, "html": doc.html or "", "css": doc.css or ""}
+
+
+MAX_FILTER_META = 200
+
+
+@frappe.whitelist(methods=["POST"])
+def render_print_format(
+	report_name: str,
+	name: str,
+	filters: dict | str,
+	js_filters: list | str | None = None,
+	filter_meta: list | str | None = None,
+	prepared_report_name: str | None = None,
+) -> dict:
+	"""A Jinja report print format rendered on the server (§2.8, ADR-014).
+
+	The report runs again through ``runner.run`` (``frappe.desk.query_report.run``: every
+	permission check of the report); the template gets the context the site's report
+	formats read: ``title``, ``filters`` (``{fieldname: {label, fieldtype, value}}``),
+	``columns`` (``[{fieldname, label, fieldtype, options, width, hidden}]``) and ``data``
+	(the report's rows as dicts, Frappe's total row included). The language is the
+	request's (``_lang``).
+	"""
+	report = guard_report(report_name)
+	guard_print(report)
+	doc_name = get_print_format(report_name, name)["name"]
+	doc = frappe.get_doc("Print Format", doc_name)
+	if doc.print_format_type != "Jinja":
+		frappe.throw(_("Print Format {0} is not a Jinja template").format(doc.name), RVInvalidInput)
+	meta = parse_json_arg(filter_meta or [], "filter_meta", list)
+	if len(meta) > MAX_FILTER_META or not all(isinstance(m, dict) for m in meta):
+		frappe.throw(_("Invalid filter definitions"), RVInvalidInput)
+	response = runner.run(report, report_name, filters, js_filters, prepared_report_name)
+	if response["status"] != "ok":
+		frappe.throw(_("The report did not return rows to print"), RVInvalidInput)
+	raw = response["raw"]
+	values = parse_json_arg(filters, "filters", dict)
+	columns = []
+	for col in raw.get("columns") or []:
+		c = normalize._parse_column(col)
+		columns.append(
+			frappe._dict(
+				fieldname=c.get("fieldname"),
+				label=_(c.get("label") or c.get("fieldname") or ""),
+				fieldtype=c.get("fieldtype") or "Data",
+				options=c.get("options"),
+				width=c.get("width"),
+				hidden=1 if c.get("hidden") and str(c.get("hidden")) not in ("0", "False", "false") else 0,
+			)
+		)
+	data = []
+	for row in raw.get("result") or []:
+		if isinstance(row, dict):
+			data.append(frappe._dict(row))
+		elif isinstance(row, list | tuple):
+			data.append(frappe._dict({c.fieldname: row[i] if i < len(row) else None for i, c in enumerate(columns)}))
+	by_name = {m.get("fieldname"): m for m in meta if isinstance(m.get("fieldname"), str)}
+	filter_objs = {}
+	for key, value in values.items():
+		m = by_name.get(key, {})
+		filter_objs[key] = frappe._dict(
+			label=str(m.get("label") or frappe.unscrub(key)), fieldtype=str(m.get("fieldtype") or "Data"), value=value
+		)
+	html = frappe.render_template(
+		doc.html or "",
+		{
+			"title": report.name,
+			"report_name": report.name,
+			"filters": filter_objs,
+			"columns": columns,
+			"data": data,
+			"doc": frappe._dict(values),
+		},
+	)
+	return {"name": doc.name, "type": "Jinja", "html": html, "css": doc.css or ""}
 
 
 @frappe.whitelist(methods=["POST"])

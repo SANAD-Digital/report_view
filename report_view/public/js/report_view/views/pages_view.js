@@ -36,6 +36,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	orientation: "portrait",
 	margins: "normal",
 	template: "",
+	// the look of Report View's own template (rv_pages.css .ps-<style>)
+	style: "classic",
 	letter_head: "",
 	lang: "",
 	include_filters: true,
@@ -54,6 +56,15 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	hidden: [],
 	zoom: "fit",
 });
+// Report View's own templates: one layout, several looks (rv_pages.css).
+export const PAGE_STYLES = [
+	{ id: "classic", label: () => __("Classic") },
+	{ id: "modern", label: () => __("Modern") },
+	{ id: "ledger", label: () => __("Accounting grid") },
+	{ id: "framed", label: () => __("Formal, framed") },
+	{ id: "compact", label: () => __("Compact", null, "Print template") },
+	{ id: "minimal", label: () => __("Ink saving") },
+];
 export const LH_HEIGHT = { min: 10, max: 70 };
 export const FOOT_HEIGHT = { min: 0, max: 40 };
 const NUMBER_POS = ["bottom-end", "bottom-center", "bottom-start", "top-end", "top-center", "top-start"];
@@ -124,6 +135,7 @@ function sanitize_settings(raw) {
 	const mm = (v, r) => (Number.isFinite(v) ? Math.max(r.min, Math.min(r.max, Math.round(v))) : null);
 	if (mm(raw.lh_height, LH_HEIGHT) !== null) out.lh_height = mm(raw.lh_height, LH_HEIGHT);
 	if (mm(raw.foot_height, FOOT_HEIGHT) !== null) out.foot_height = mm(raw.foot_height, FOOT_HEIGHT);
+	if (PAGE_STYLES.some((st) => st.id === raw.style)) out.style = raw.style;
 	if (NUMBER_POS.includes(raw.number_pos)) out.number_pos = raw.number_pos;
 	if (NUMBER_FORMATS.includes(raw.number_format)) out.number_format = raw.number_format;
 	if (Array.isArray(raw.hidden)) out.hidden = raw.hidden.filter((k) => typeof k === "string").slice(0, 500);
@@ -383,7 +395,10 @@ export class PagesView {
 				<h4>${esc(__("Template and letter head"))}</h4>
 				<div class="rv-print-fields">
 					<label class="rv-field"><span>${esc(__("Print template"))}</span>
-						<select class="rv-input" data-set="template">${option("", __("Report View (standard)"), !s.template)}${o.print_formats.map((n) => option(n, n, s.template === n)).join("")}</select></label>
+						<select class="rv-input" data-tpl>
+							<optgroup label="${esc(__("Report View templates"))}">${PAGE_STYLES.map((st) => option(`rv:${st.id}`, st.label(), !s.template && s.style === st.id)).join("")}</optgroup>
+							${o.print_formats.length ? `<optgroup label="${esc(__("Print formats of the report"))}">${o.print_formats.map((n) => option(n, n, s.template === n)).join("")}</optgroup>` : ""}
+						</select></label>
 					<label class="rv-field"><span>${esc(__("Letter Head", null, "Report View"))}</span>
 						<select class="rv-input" data-set="letter_head">${option("", __("No letter head"), !s.letter_head)}${o.letter_heads.map((lh) => option(lh.name, lh.name, s.letter_head === lh.name)).join("")}</select></label>
 					<label class="rv-field"><span>${esc(__("Language", null, "Report View"))}</span>
@@ -441,6 +456,11 @@ export class PagesView {
 			</div>`
 			}
 			<p class="rv-zone-empty">${esc(__("The pages show the table as it is: the same filters, grouping and folded groups."))}</p>`;
+		// one list for both: Report View's looks ("rv:<style>") and the report's print formats
+		this.bd.querySelector("select[data-tpl]").addEventListener("change", (e) => {
+			const v = e.target.value;
+			this.update(v.startsWith("rv:") ? { template: "", style: v.slice(3) } : { template: v });
+		});
 		for (const sel of this.bd.querySelectorAll("select[data-set]")) {
 			sel.addEventListener("change", () => this.update({ [sel.dataset.set]: sel.value }));
 		}
@@ -801,7 +821,8 @@ export class PagesView {
 	}
 
 	page_shell(i, box, dir, inner) {
-		return `<section class="rv-page" dir="${dir}" data-page="${i}" style="width:${box.w}px;height:${box.h}px;padding:${box.margin}px;--pp-m:${box.margin}px">${inner}</section>`;
+		const look = this.settings.template ? "ps-format" : `ps-${this.settings.style}`;
+		return `<section class="rv-page ${look}" dir="${dir}" data-page="${i}" style="width:${box.w}px;height:${box.h}px;padding:${box.margin}px;--pp-m:${box.margin}px">${inner}</section>`;
 	}
 
 	async layout_standard(token, box, dir) {

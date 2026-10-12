@@ -2473,3 +2473,32 @@ test("pages: the heights of the letter head and its footer and the place and for
 	expect([saved.lh_height, saved.foot_height, saved.number_pos, saved.number_format]).toEqual([60, 0, "bottom-center", "number"]);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
+
+test("pages: Report View's own templates (six looks) from the template list; a look is kept for the user", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=tb&lang=ar&rv=${PAGES}${pages_settings({ orientation: "landscape", signatures: true })}`);
+	await settle(page);
+	const options = await page.$$eval("select[data-tpl] option", (os) => os.map((o) => o.value));
+	expect(options.slice(0, 6)).toEqual(["rv:classic", "rv:modern", "rv:ledger", "rv:framed", "rv:compact", "rv:minimal"]);
+	const rows = {};
+	for (const look of ["classic", "modern", "ledger", "framed", "compact", "minimal"]) {
+		await page.selectOption("select[data-tpl]", `rv:${look}`);
+		await settle(page);
+		const st = await page.evaluate(() => ({
+			cls: document.querySelector('.rv-page[data-page="0"]').className,
+			row_h: window.rv_page.pages.measure.row_h,
+			pages: window.rv_page.pages.pages.length,
+		}));
+		expect(st.cls).toContain(`ps-${look}`);
+		rows[look] = st.row_h;
+		await shot3(page, `pages-tb-template-${look}-rtl`);
+	}
+	// the compact look holds more rows on a page
+	expect(rows.compact).toBeLessThan(rows.classic);
+	const saved = await page.evaluate(async () => {
+		await new Promise((r) => setTimeout(r, 900));
+		return frappe.model.user_settings.store["Report View:Trial Balance"].pages;
+	});
+	expect([saved.style, saved.template]).toEqual(["minimal", ""]);
+	expect(problems, "console errors/warnings").toEqual([]);
+});

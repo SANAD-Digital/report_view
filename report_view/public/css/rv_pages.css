@@ -132,6 +132,64 @@
 .rv-page-flow{flex:none;min-width:0;overflow:hidden}
 .rv-page-flow table{max-width:100%}
 
+/* ---------- the looks of Report View's template (.ps-<style> on .rv-page) ----------
+   classic: the base rules above. Every look keeps one line per row: the pages are cut on
+   the measured row, whatever its height. Colours: the paper tokens only. */
+
+/* modern: brand band for the titles, no vertical rules, an accent on the groups */
+.ps-modern .rv-page-hd{text-align:start;padding-bottom:3mm;border-bottom:2.5px solid var(--pp-brand)}
+.ps-modern .rv-page-hd .ti{color:var(--pp-brand);font-size:1.9em}
+.ps-modern .rv-page-meta{border-top:0}
+.ps-modern .rv-page-filt{border-inline-start-color:var(--pp-brand);background:var(--pp-brand-soft)}
+.ps-modern .rv-page-cont{border-bottom:2px solid var(--pp-brand)}
+.ps-modern .rv-pt thead th{background:var(--pp-brand);color:var(--pp-on-brand);border-top:0;border-bottom:0}
+.ps-modern .rv-pt thead th.rv-pt-band{background:var(--pp-brand-2);border-bottom:0}
+.ps-modern .rv-pt thead th.be,.ps-modern .rv-pt td.be{border-inline-end:0}
+.ps-modern .rv-pt tbody th,.ps-modern .rv-pt tbody td{border-bottom-color:var(--pp-brand-soft)}
+.ps-modern .rv-pt tr.group > *{background:var(--pp-brand-soft);color:var(--pp-brand)}
+/* the accent at the start edge of the label cell (logical: right in RTL, left in LTR) */
+.ps-modern .rv-pt tr.group > th{border-inline-start:3px solid var(--pp-brand)}
+.ps-modern .rv-pt tr.foot > *{border-top:1px solid var(--pp-brand-2)}
+.ps-modern .rv-pt tr.total > *{background:var(--pp-brand);color:var(--pp-on-brand);border:0}
+.ps-modern .rv-pt tr.total .rv-n{color:var(--pp-on-brand)}
+.ps-modern .rv-page-foot-line{border-top:2px solid var(--pp-brand)}
+
+/* ledger: an accountant's grid, every cell boxed, headings centred */
+.ps-ledger .rv-page-hd .ti{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:5px}
+.ps-ledger .rv-page-meta{border-top:3px double var(--pp-tx)}
+.ps-ledger .rv-pt{border:1px solid var(--pp-tx)}
+.ps-ledger .rv-pt th,.ps-ledger .rv-pt td{border:.6px solid var(--pp-line-2)}
+.ps-ledger .rv-pt thead th{text-align:center !important;background:var(--pp-soft);border-color:var(--pp-tx-3)}
+.ps-ledger .rv-pt tbody tr:nth-child(even) > *{background:transparent}
+.ps-ledger .rv-pt tr.group > *{background:var(--pp-soft)}
+.ps-ledger .rv-pt tr.total > *{border-top:1.5px solid var(--pp-tx);border-bottom:3px double var(--pp-tx)}
+
+/* framed: a rule around the page, the titles in a boxed band */
+.ps-framed{outline:1.2px solid var(--pp-tx);outline-offset:calc(var(--pp-m,12mm) * -0.55)}
+.ps-framed .rv-page-hd{border:1px solid var(--pp-tx);padding:2.5mm 4mm;margin-bottom:2mm;background:var(--pp-soft)}
+.ps-framed .rv-page-meta{border-top:0}
+.ps-framed .rv-page-sign div{border-top-width:1.5px}
+
+/* compact: more rows on a page, lighter rules */
+.ps-compact .rv-pt tbody th,.ps-compact .rv-pt tbody td{height:calc(var(--pp-fs,12px) * 1.7)}
+.ps-compact .rv-pt th,.ps-compact .rv-pt td{padding:0 .4em}
+.ps-compact .rv-pt thead th{padding-block:1mm}
+.ps-compact .rv-page-hd{padding:0 0 1.5mm}
+.ps-compact .rv-page-hd .ti{font-size:1.45em}
+.ps-compact .rv-pt tbody tr:nth-child(even) > *{background:transparent}
+
+/* minimal: no fills at all (ink saving), hairlines only */
+.ps-minimal .rv-pt thead th,.ps-minimal .rv-pt tr.group > *,.ps-minimal .rv-pt tr.opening > *,
+.ps-minimal .rv-pt tr.total > *,.ps-minimal .rv-pt tbody tr:nth-child(even) > *,.ps-minimal .rv-page-filt{background:transparent}
+.ps-minimal .rv-pt thead th{border-top:0;border-bottom:.8px solid var(--pp-tx)}
+.ps-minimal .rv-pt thead th.be,.ps-minimal .rv-pt td.be{border-inline-end:0}
+.ps-minimal .rv-pt tbody th,.ps-minimal .rv-pt tbody td{border-bottom:.4px solid var(--pp-line)}
+.ps-minimal .rv-pt tr.group > *{border-bottom-color:var(--pp-line-2)}
+.ps-minimal .rv-pt tr.total > *{border-top:.8px solid var(--pp-tx);border-bottom:.8px solid var(--pp-tx)}
+.ps-minimal .rv-page-meta{border-top:.6px solid var(--pp-line-2)}
+.ps-minimal .rv-page-filt{border-inline-start:0;padding-inline:0}
+.ps-minimal .rv-pt td.neg .rv-n{color:inherit}
+
 /* ---------- the sheets alone in the document while printing (pages_view.js print_css) ---------- */
 .rv-print-root{position:absolute;inset-inline-start:0;top:0}
 

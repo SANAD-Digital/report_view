@@ -1544,3 +1544,28 @@ msgstr "أعلى، في البداية"
 
 msgid "Page 1 of 3"
 msgstr "صفحة 1 من 3"
+
+msgid "Classic"
+msgstr "كلاسيكي"
+
+msgid "Modern"
+msgstr "حديث"
+
+msgid "Accounting grid"
+msgstr "شبكة محاسبية"
+
+msgid "Formal, framed"
+msgstr "رسمي بإطار"
+
+msgctxt "Print template"
+msgid "Compact"
+msgstr "مضغوط"
+
+msgid "Ink saving"
+msgstr "موفّر للحبر"
+
+msgid "Report View templates"
+msgstr "قوالب Report View"
+
+msgid "Print formats of the report"
+msgstr "قوالب طباعة التقرير"

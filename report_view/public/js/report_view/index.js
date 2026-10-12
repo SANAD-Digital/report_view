@@ -912,6 +912,9 @@ export class ReportViewPage {
 		if (pivot && this.opened === opened) await this.show_pivot(session);
 		if (pages && this.opened === opened) {
 			await this.pages.show({ report, opened, session, state: this.state, config: this.config, fmt: this.formatter });
+		} else if (this.meta?.perms?.can_print && this.opened === opened) {
+			// the pages' settings, options and letter head, ready before the tab is opened
+			this.pages.prefetch();
 		}
 		this.update_url(this.last_filters, this.state, default_state(this.config));
 	}
@@ -1078,8 +1081,9 @@ export class ReportViewPage {
 	}
 
 	/** A report print format: a JS template as it is, a Jinja one rendered by the server. */
-	async pages_format(name, lang = null) {
-		const format = await api.get_print_format(this.report_name, name);
+	async pages_format(name, lang = null, type = null) {
+		// a Jinja format known from the options is rendered at once (one request, not two)
+		const format = type === "Jinja" ? { type } : await api.get_print_format(this.report_name, name);
 		if (format.type !== "Jinja") return format;
 		const meta = (this.report_settings?.filters || []).map((df) => ({ fieldname: df.fieldname, label: __(df.label || ""), fieldtype: df.fieldtype }));
 		return api.render_print_format(this.report_name, name, this.last_filters, this.filters.js_filters(), meta, this.prepared_report_name, lang);

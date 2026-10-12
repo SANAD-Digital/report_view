@@ -1646,3 +1646,21 @@ msgstr "اللون"
 
 msgid "Show page numbers"
 msgstr "إظهار"
+
+msgid "Loading the print settings…"
+msgstr "جارٍ تحميل إعدادات الطباعة…"
+
+msgid "Running the report in the chosen language…"
+msgstr "جارٍ تشغيل التقرير باللغة المختارة…"
+
+msgid "Rendering the print format…"
+msgstr "جارٍ عرض قالب الطباعة…"
+
+msgid "Updating the pages…"
+msgstr "جارٍ تحديث الصفحات…"
+
+msgid "Preparing the pages…"
+msgstr "جارٍ تجهيز الصفحات…"
+
+msgid "Laying out the pages…"
+msgstr "جارٍ تقسيم الصفحات…"

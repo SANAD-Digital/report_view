@@ -13,7 +13,8 @@ class TestApiPages(RVTestCase):
 	def test_print_options_for_a_user_who_may_print(self):
 		with self.as_user("accountant"):
 			out = api.get_print_options("Trial Balance", COMPANY)
-		self.assertEqual(set(out), {"letter_heads", "default_letter_head", "print_formats", "languages", "lang"})
+		self.assertEqual(set(out), {"letter_heads", "default_letter_head", "print_formats", "print_format_types", "languages", "lang"})
+		self.assertEqual(set(out["print_format_types"]), set(out["print_formats"]))
 		self.assertTrue(all(set(lh) == {"name", "is_default"} for lh in out["letter_heads"]))
 		names = {lh["name"] for lh in out["letter_heads"]}
 		self.assertTrue(out["default_letter_head"] is None or out["default_letter_head"] in names)

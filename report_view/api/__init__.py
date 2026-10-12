@@ -221,7 +221,7 @@ def get_print_options(report_name: str, company: str | None = None) -> dict:
 	print_formats = frappe.get_list(
 		"Print Format",
 		filters=_print_format_filters(report_name, report.name),
-		fields=["name"],
+		fields=["name", "print_format_type"],
 		order_by="name asc",
 		limit=0,
 	)
@@ -232,6 +232,7 @@ def get_print_options(report_name: str, company: str | None = None) -> dict:
 		"letter_heads": [{"name": lh.name, "is_default": bool(lh.is_default)} for lh in letter_heads],
 		"default_letter_head": default_letter_head,
 		"print_formats": [pf.name for pf in print_formats],
+		"print_format_types": {pf.name: pf.print_format_type for pf in print_formats},
 		"languages": [{"name": lg.name, "label": lg.language_name or lg.name} for lg in languages],
 		"lang": frappe.local.lang,
 	}

@@ -228,6 +228,7 @@ export class PagesView {
 					<span class="sp"></span>
 					<span class="rv-print-pos"></span>
 				</div>
+				<div class="rv-print-busy" role="status" aria-live="polite" hidden><span class="rv-spin" aria-hidden="true"></span><span class="txt"></span></div>
 				<div class="rv-print-sheets" dir="${this.rtl ? "rtl" : "ltr"}"></div>
 				<div class="rv-print-probe" aria-hidden="true"></div>
 			</div>`;
@@ -240,11 +241,57 @@ export class PagesView {
 		this.note_el = el.querySelector(".rv-print-note");
 		this.pos_el = el.querySelector(".rv-print-pos");
 		this.zoom_lbl = el.querySelector(".rv-print-zoom-lbl");
+		this.busy_el = el.querySelector(".rv-print-busy");
 		el.querySelector('[data-action="print"]').addEventListener("click", () => this.print());
 		for (const b of el.querySelectorAll("[data-zoom]")) b.addEventListener("click", () => this.zoom(b.dataset.zoom));
 		this.stage.addEventListener("scroll", () => this.update_position(), { passive: true });
 		this.resize_observer = new ResizeObserver(() => this.apply_zoom());
 		this.resize_observer.observe(this.stage);
+	}
+
+	// ------------------------------------------------------------ loading
+
+	/**
+	 * Fetches, while the table is on screen, what the pages wait for: the user's settings,
+	 * the print options and the letter head. Once per report; opening the Pages tab then
+	 * finds them ready.
+	 */
+	prefetch() {
+		const ctx = this.host.pages_context();
+		if (this.prefetched === ctx.report_name) return;
+		this.prefetched = ctx.report_name;
+		const settings_p = this.host.pages_settings_load().catch(() => null);
+		const options_p = this.host.pages_options(ctx.company);
+		this.pending = { report: ctx.report_name, settings_p, options_p };
+		// the letter head the pages will show first (the saved one, else the company's)
+		Promise.all([settings_p, options_p])
+			.then(([saved, options]) => {
+				const name = saved?.letter_head ?? options?.default_letter_head;
+				if (name && options.letter_heads.some((lh) => lh.name === name)) {
+					this.ctx = ctx;
+					return this.load_letterhead(name);
+				}
+			})
+			.catch(() => {});
+		options_p.catch(() => {});
+	}
+
+	/** A line on the stage while the pages are prepared (null hides it). */
+	busy(text) {
+		this.busy_el.hidden = !text;
+		this.busy_el.querySelector(".txt").textContent = text || "";
+		this.el.classList.toggle("is-busy", Boolean(text));
+	}
+
+	// The panel and a page-sized sheet as grey bars until the first pages are there.
+	skeleton(panel = true) {
+		if (this.pages.length) return;
+		const bar = (w) => `<span class="rv-skel" style="width:${w}%"></span>`;
+		if (panel) this.bd.innerHTML = `<div class="rv-print-skel">${[70, 100, 100, 60, 100, 100, 40, 100, 80].map(bar).join("")}</div>`;
+		const box = page_box(this.settings);
+		const rows = Array.from({ length: 18 }, (_, i) => bar(i % 5 === 0 ? 60 : 100)).join("");
+		this.sheets.innerHTML = `<section class="rv-page rv-page-skel" style="width:${box.w}px;height:${box.h}px;padding:${box.margin}px">${bar(40)}${bar(25)}<div class="rv-page-skel-rows">${rows}</div></section>`;
+		this.apply_zoom_box(box);
 	}
 
 	// ------------------------------------------------------------ show / destroy
@@ -262,22 +309,27 @@ export class PagesView {
 		this.session = session;
 		this.current = opened;
 		this.ctx = this.host.pages_context();
-		if (this.settings_report !== this.ctx.report_name) {
-			const saved = await this.host.pages_settings_load();
-			this.settings = sanitize_settings(saved);
-			this.settings_report = this.ctx.report_name;
-			this.unsaved = !saved;
-			if (token !== this.token) return;
-		}
-		if (this.options_report !== this.ctx.report_name) {
+		const name = this.ctx.report_name;
+		const fresh = this.settings_report !== name || this.options_report !== name;
+		if (fresh) {
+			this.skeleton();
+			this.busy(__("Loading the print settings…"));
+			if (this.pending?.report !== name) this.prefetch();
+			const { settings_p, options_p } = this.pending;
+			let saved = null;
 			try {
-				this.options = await this.host.pages_options(this.ctx.company);
+				[saved, this.options] = await Promise.all([settings_p, options_p]);
 			} catch (e) {
-				this.options = { letter_heads: [], default_letter_head: null, print_formats: [], languages: [], lang: frappe.boot.lang };
+				this.options = { letter_heads: [], default_letter_head: null, print_formats: [], print_format_types: {}, languages: [], lang: frappe.boot.lang };
 				this.note(e.message || String(e), true);
 			}
 			if (token !== this.token) return;
-			this.options_report = this.ctx.report_name;
+			if (this.settings_report !== name) {
+				this.settings = sanitize_settings(saved);
+				this.unsaved = !saved;
+			}
+			this.settings_report = name;
+			this.options_report = name;
 			// Unknown choices of a saved setting fall back; the company's letter head is the
 			// first choice when none was made.
 			if (this.settings.letter_head && !this.options.letter_heads.some((lh) => lh.name === this.settings.letter_head)) this.settings.letter_head = "";
@@ -310,6 +362,7 @@ export class PagesView {
 
 	destroy() {
 		this.token += 1;
+		this.busy(null);
 		this.current = null;
 		this.clear_pages();
 		this.bd.replaceChildren();
@@ -598,9 +651,17 @@ export class PagesView {
 	async relayout(token) {
 		const cur = this.current;
 		if (!cur) return;
-		this.clear_pages();
+		// The pages on screen stay (dimmed) until the new ones are mounted: no blank stage.
+		if (this.observer) this.observer.disconnect();
+		this.queue = [];
 		this.note("");
 		const s = this.settings;
+		const steps = [];
+		if (s.lang && s.lang !== frappe.boot.lang && !this.lang_packs.has(s.lang)) steps.push(__("Running the report in the chosen language…"));
+		if (s.template) steps.push(__("Rendering the print format…"));
+		this.busy(steps.length ? steps.join(" · ") : this.pages.length ? __("Updating the pages…") : __("Preparing the pages…"));
+		// back on the tab: a page-sized sheet while the pages are prepared
+		this.skeleton(false);
 		// What the pages need before they are measured: the letter head, the pack of the
 		// language, the custom template.
 		let lang_entry = null;
@@ -635,10 +696,15 @@ export class PagesView {
 		this.root.style.setProperty("--pp-w", `${box.w}px`);
 		this.root.style.setProperty("--pp-h", `${box.h}px`);
 
-		if (format) {
-			await this.layout_custom(token, box, dir);
-		} else {
-			await this.layout_standard(token, box, dir);
+		this.busy(__("Laying out the pages…"));
+		try {
+			if (format) {
+				await this.layout_custom(token, box, dir);
+			} else {
+				await this.layout_standard(token, box, dir);
+			}
+		} finally {
+			if (token === this.token) this.busy(null);
 		}
 		if (token !== this.token) return;
 		this.apply_zoom();
@@ -678,7 +744,7 @@ export class PagesView {
 		const key = `${name}|${this.settings.lang || ""}|${JSON.stringify(this.ctx.filters || {})}`;
 		if (!this.formats.has(key)) {
 			try {
-				this.formats.set(key, await this.host.pages_format(name, this.settings.lang || null));
+				this.formats.set(key, await this.host.pages_format(name, this.settings.lang || null, this.options?.print_format_types?.[name]));
 			} catch (e) {
 				this.note(__("The print format could not be loaded: {0}", [e.message || e]), true);
 				this.formats.set(key, null);
@@ -972,6 +1038,10 @@ export class PagesView {
 	}
 
 	mount_pages(box, dir) {
+		if (this.observer) this.observer.disconnect();
+		this.filled.clear();
+		this.filling.clear();
+		this.queue = [];
 		const n = this.pages.length;
 		const num = (v) => frappe.format(v, { fieldtype: "Int" }, { inline: true });
 		this.sheets.innerHTML = this.pages.map((p, i) => this.page_shell(i, box, dir, `<span class="rv-page-ph">${esc(num(i + 1))}</span>`)).join("");
@@ -1310,6 +1380,13 @@ export class PagesView {
 			return Math.max(0.3, Math.min(1.25, w / (this.box?.w || 794)));
 		}
 		return z;
+	}
+
+	apply_zoom_box(box) {
+		const keep = this.box;
+		this.box = box;
+		this.apply_zoom();
+		this.box = keep || box;
 	}
 
 	apply_zoom() {

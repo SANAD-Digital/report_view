@@ -2418,3 +2418,58 @@ test("pages: only the pages near the viewport carry content; far ones give it ba
 	expect(await page.evaluate(() => window.rv_page.pages.pages.length)).toBe(0);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
+
+test("pages: the heights of the letter head and its footer and the place and format of the page number", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=gl&lang=ar&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await settle(page);
+	const measure = () =>
+		page.evaluate(() => {
+			const p = document.querySelector('.rv-page[data-page="0"]');
+			const img_h = (sel) => p.querySelector(sel)?.getBoundingClientRect().height || 0;
+			return {
+				lh: img_h(".rv-page-lh"),
+				lhf: img_h(".rv-page-lhf"),
+				body_h: window.rv_page.pages.measure.body_h,
+				pages: window.rv_page.pages.pages.length,
+				foot: p.querySelector(".rv-page-foot-line")?.textContent.replace(/\s+/g, " ").trim(),
+				top: p.querySelector(".rv-page-topnum")?.textContent.trim() || null,
+				center: p.querySelector(".rv-page-foot-line .ce")?.textContent.trim(),
+			};
+		});
+	const before = await measure();
+	// a taller letter head: the band grows, the page holds fewer rows
+	await page.locator('input[data-mm="lh_height"]').fill("60");
+	await settle(page);
+	// the footer hidden: no footer of the letter head
+	await page.locator('input[data-mm="foot_height"]').fill("0");
+	await settle(page);
+	const after = await measure();
+	expect(after.lhf).toBe(0);
+	expect(before.lhf).toBeGreaterThan(0);
+	expect(await page.locator('[data-out="foot_height"]').textContent()).toBe("مخفي");
+	expect(await page.locator('[data-out="lh_height"]').textContent()).toContain("60");
+	// the page number at the top, centred, as "1 / N"
+	await page.selectOption('select[data-set="number_pos"]', "top-center");
+	await settle(page);
+	await page.selectOption('select[data-set="number_format"]', "short");
+	await settle(page);
+	const top = await measure();
+	expect(top.top).toMatch(/^1 \/ \d+$/);
+	expect(top.foot).not.toMatch(/\d+ \/ \d+/);
+	await shot3(page, "pages-gl-heights-number-top-rtl");
+	// bottom centre, the number alone
+	await page.selectOption('select[data-set="number_pos"]', "bottom-center");
+	await settle(page);
+	await page.selectOption('select[data-set="number_format"]', "number");
+	await settle(page);
+	const bottom = await measure();
+	expect(bottom.top).toBeNull();
+	expect(bottom.center).toBe("1");
+	const saved = await page.evaluate(async () => {
+		await new Promise((r) => setTimeout(r, 900));
+		return frappe.model.user_settings.store["Report View:General Ledger"].pages;
+	});
+	expect([saved.lh_height, saved.foot_height, saved.number_pos, saved.number_format]).toEqual([60, 0, "bottom-center", "number"]);
+	expect(problems, "console errors/warnings").toEqual([]);
+});

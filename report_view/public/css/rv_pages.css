@@ -52,11 +52,12 @@
 /* letter head: its own design, kept to a band of the page (full on the first page; a
    slim line names the report on the others unless asked for every page) */
 .rv-page-lh,.rv-page-lhf{overflow:hidden;max-width:100%}
-.rv-page-lh{max-height:32mm;margin-bottom:3mm;border-bottom:.6px solid var(--pp-line);padding-bottom:2mm}
-.rv-page-lh img{max-width:100%;max-height:26mm;width:auto;height:auto;object-fit:contain}
-.rv-page-lh *{max-height:30mm}
-.rv-page-lhf{max-height:14mm;margin-bottom:1.5mm}
-.rv-page-lhf img{max-width:100%;max-height:11mm;width:auto;height:auto;object-fit:contain}
+/* heights chosen in the panel (--pp-lh-h, --pp-lhf-h, pages_view.js apply_heights) */
+.rv-page-lh{max-height:calc(var(--pp-lh-h,26mm) + 6mm);margin-bottom:3mm;border-bottom:.6px solid var(--pp-line);padding-bottom:2mm}
+.rv-page-lh img{max-width:100%;max-height:var(--pp-lh-h,26mm);width:auto;height:auto;object-fit:contain}
+.rv-page-lh *{max-height:calc(var(--pp-lh-h,26mm) + 4mm)}
+.rv-page-lhf{max-height:calc(var(--pp-lhf-h,11mm) + 3mm);margin-bottom:1.5mm}
+.rv-page-lhf img{max-width:100%;max-height:var(--pp-lhf-h,11mm);width:auto;height:auto;object-fit:contain}
 
 /* title block of the first page: centred, as a formal statement */
 .rv-page-hd{text-align:center;padding:1mm 0 2.5mm}
@@ -116,8 +117,17 @@
 .rv-page-sign div{border-top:1px solid var(--pp-tx);padding-top:1.5mm;font-weight:700;text-align:center}
 .rv-page-sign span{display:block;font-weight:400;color:var(--pp-tx-2);margin-top:4mm;white-space:nowrap;overflow:hidden;text-align:start}
 .rv-page-foot{margin-top:auto;padding-top:2mm;flex:none}
-.rv-page-foot-line{display:flex;justify-content:space-between;gap:12px;font-size:.82em;color:var(--pp-tx-3);border-top:.6px solid var(--pp-line-2);padding-top:1.2mm}
+.rv-page-foot-line{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;font-size:.82em;color:var(--pp-tx-3);border-top:.6px solid var(--pp-line-2);padding-top:1.2mm}
 .rv-page-foot-line > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-page-foot-line .ce{text-align:center}
+.rv-page-foot-line .en{text-align:end}
+/* a page number at the top stands in the top margin, outside what the pages measure */
+.rv-page-topnum{position:absolute;top:0;inset-inline:var(--pp-m,12mm);height:var(--pp-m,12mm);display:flex;align-items:center;font-size:.82em;color:var(--pp-tx-3)}
+.rv-page-topnum.center{justify-content:center}
+.rv-page-topnum.end{justify-content:flex-end}
+.rv-range-field > span{display:flex;justify-content:space-between;align-items:baseline}
+.rv-range-field b{font-weight:600;color:var(--tx-2)}
+.rv-range-field input[type=range]{width:100%;accent-color:var(--pri);margin:2px 0 0}
 /* a report print format flows as it came: its own styles, the page's font */
 .rv-page-flow{flex:none;min-width:0;overflow:hidden}
 .rv-page-flow table{max-width:100%}

@@ -1502,3 +1502,45 @@ msgstr "قالب الطباعة أعرض من الصفحة: جرّب الاتج�
 
 msgid "Letter head on every page"
 msgstr "الترويسة في كل الصفحات"
+
+msgid "Header, footer and numbering"
+msgstr "الترويسة والتذييل والترقيم"
+
+msgid "Letter head height"
+msgstr "ارتفاع الترويسة"
+
+msgid "Footer height"
+msgstr "ارتفاع التذييل"
+
+msgid "mm"
+msgstr "ملم"
+
+msgid "Hidden"
+msgstr "مخفي"
+
+msgid "Page number position"
+msgstr "مكان رقم الصفحة"
+
+msgid "Number format"
+msgstr "صيغة الترقيم"
+
+msgid "Bottom, at the end"
+msgstr "أسفل، في الطرف"
+
+msgid "Bottom, centred"
+msgstr "أسفل، في الوسط"
+
+msgid "Bottom, at the start"
+msgstr "أسفل، في البداية"
+
+msgid "Top, at the end"
+msgstr "أعلى، في الطرف"
+
+msgid "Top, centred"
+msgstr "أعلى، في الوسط"
+
+msgid "Top, at the start"
+msgstr "أعلى، في البداية"
+
+msgid "Page 1 of 3"
+msgstr "صفحة 1 من 3"

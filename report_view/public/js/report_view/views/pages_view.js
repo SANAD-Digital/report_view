@@ -46,13 +46,26 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	signatures: false,
 	page_numbers: true,
 	printed_on: true,
-	letterhead_all: false,
-	// heights in mm of the letter head band and of its footer (0 = no footer)
+	// the letter head: on every page or the first only, its height (mm), alignment and fit
+	lh_repeat: false,
 	lh_height: 26,
+	lh_align: "center",
+	lh_fit: "contain",
+	// the letter head's footer: on every page or the last only, its height (mm, 0 = none)
+	foot_repeat: true,
 	foot_height: 11,
-	// where the page number stands and how it reads
+	// the page number: where, how it reads, the height (mm) of its band
 	number_pos: "bottom-end",
 	number_format: "full",
+	number_band: 7,
+	// the three rules: under the letter head, above its footer, above the page number
+	// (width in px, 0 = none; colour as #rrggbb)
+	head_line_w: 0.6,
+	head_line_c: "#D9DFDB",
+	foot_line_w: 0,
+	foot_line_c: "#D9DFDB",
+	num_line_w: 0.6,
+	num_line_c: "#9AA39E",
 	hidden: [],
 	zoom: "fit",
 });
@@ -69,7 +82,12 @@ export const LH_HEIGHT = { min: 10, max: 70 };
 export const FOOT_HEIGHT = { min: 0, max: 40 };
 const NUMBER_POS = ["bottom-end", "bottom-center", "bottom-start", "top-end", "top-center", "top-start"];
 const NUMBER_FORMATS = ["full", "short", "number"];
-const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "letterhead_all"];
+const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "lh_repeat", "foot_repeat"];
+export const NUMBER_BAND = { min: 4, max: 30 };
+export const LINE_WIDTH = { min: 0, max: 4 };
+const LH_ALIGN = ["start", "center", "end"];
+const LH_FIT = ["contain", "wide"];
+const COLOR = /^#[0-9a-fA-F]{6}$/;
 
 // The page's own words, by msgid, for the translation pack of another language.
 const PAGE_MESSAGES = [
@@ -137,6 +155,16 @@ function sanitize_settings(raw) {
 	if (mm(raw.foot_height, FOOT_HEIGHT) !== null) out.foot_height = mm(raw.foot_height, FOOT_HEIGHT);
 	if (PAGE_STYLES.some((st) => st.id === raw.style)) out.style = raw.style;
 	if (NUMBER_POS.includes(raw.number_pos)) out.number_pos = raw.number_pos;
+	if (mm(raw.number_band, NUMBER_BAND) !== null) out.number_band = mm(raw.number_band, NUMBER_BAND);
+	if (LH_ALIGN.includes(raw.lh_align)) out.lh_align = raw.lh_align;
+	if (LH_FIT.includes(raw.lh_fit)) out.lh_fit = raw.lh_fit;
+	// the setting of the first version: the letter head on every page
+	if (typeof raw.letterhead_all === "boolean" && typeof raw.lh_repeat !== "boolean") out.lh_repeat = raw.letterhead_all;
+	for (const k of ["head_line", "foot_line", "num_line"]) {
+		const w = Number(raw[`${k}_w`]);
+		if (Number.isFinite(w)) out[`${k}_w`] = Math.max(LINE_WIDTH.min, Math.min(LINE_WIDTH.max, Math.round(w * 10) / 10));
+		if (typeof raw[`${k}_c`] === "string" && COLOR.test(raw[`${k}_c`])) out[`${k}_c`] = raw[`${k}_c`];
+	}
 	if (NUMBER_FORMATS.includes(raw.number_format)) out.number_format = raw.number_format;
 	if (Array.isArray(raw.hidden)) out.hidden = raw.hidden.filter((k) => typeof k === "string").slice(0, 500);
 	if (raw.zoom === "fit" || (Number.isFinite(raw.zoom) && raw.zoom >= 0.3 && raw.zoom <= 2)) out.zoom = raw.zoom;
@@ -375,6 +403,16 @@ export class PagesView {
 		const option = (value, label, on) => `<option value="${esc(value)}" ${on ? "selected" : ""}>${esc(label)}</option>`;
 		const columns = model ? [...model.pinned, ...model.data] : [];
 		const hidden = new Set(s.hidden);
+		const sw = (key, label) =>
+			`<label class="rv-print-sw"><span>${esc(label)}</span><button type="button" class="rv-switch${s[key] ? " on" : ""}" role="switch" aria-checked="${s[key]}" data-sw="${key}" aria-label="${esc(label)}"></button></label>`;
+		const range = (key, label, r, step, out) =>
+			`<label class="rv-field rv-range-field"><span>${esc(label)}<b class="rv-pnum" data-out="${key}">${esc(out)}</b></span><input type="range" data-mm="${key}" min="${r.min}" max="${r.max}" step="${step}" value="${s[key]}"></label>`;
+		const seg = (key, label, opts) =>
+			`<div class="rv-field"><span>${esc(label)}</span><div class="rv-seg rv-print-seg" role="group" aria-label="${esc(label)}">${opts
+				.map(([v, l]) => `<button type="button" data-seg="${key}" data-value="${v}" class="${s[key] === v ? "on" : ""}" aria-pressed="${s[key] === v}">${esc(l)}</button>`)
+				.join("")}</div></div>`;
+		const line = (key, label) =>
+			`<div class="rv-field rv-line-field"><span>${esc(label)}<b class="rv-pnum" data-out="${key}_w">${s[`${key}_w`] ? `${s[`${key}_w`]} px` : esc(__("None", null, "Report View"))}</b></span><div class="rv-line-ctl"><input type="range" data-mm="${key}_w" data-step-decimal="1" min="${LINE_WIDTH.min}" max="${LINE_WIDTH.max}" step="0.2" value="${s[`${key}_w`]}" aria-label="${esc(__("Thickness"))}"><input type="color" data-color="${key}_c" value="${s[`${key}_c`]}" aria-label="${esc(__("Colour"))}" title="${esc(__("Colour"))}"></div></div>`;
 		this.bd.innerHTML = `
 			<div>
 				<h4>${esc(__("Paper"))}</h4>
@@ -399,12 +437,8 @@ export class PagesView {
 							${option("", __("Report View (standard)"), !s.template)}
 							${o.print_formats.length ? `<optgroup label="${esc(__("Print formats of the report"))}">${o.print_formats.map((n) => option(n, n, s.template === n)).join("")}</optgroup>` : ""}
 						</select></label>
-					${
-						s.template
-							? ""
-							: `<label class="rv-field"><span>${esc(__("Print style"))}</span>
-						<select class="rv-input" data-set="style">${PAGE_STYLES.map((st) => option(st.id, st.label(), s.style === st.id)).join("")}</select></label>`
-					}
+					<label class="rv-field"><span>${esc(__("Print style"))}</span>
+						<select class="rv-input" data-set="style">${PAGE_STYLES.map((st) => option(st.id, st.label(), s.style === st.id)).join("")}</select></label>
 					<label class="rv-field"><span>${esc(__("Letter Head", null, "Report View"))}</span>
 						<select class="rv-input" data-set="letter_head">${option("", __("No letter head"), !s.letter_head)}${o.letter_heads.map((lh) => option(lh.name, lh.name, s.letter_head === lh.name)).join("")}</select></label>
 					<label class="rv-field"><span>${esc(__("Language", null, "Report View"))}</span>
@@ -413,25 +447,52 @@ export class PagesView {
 							.join("")}</select></label>
 				</div>
 			</div>
-			<div>
-				<h4>${esc(__("Header, footer and numbering"))}</h4>
-				<div class="rv-print-fields">
-					<label class="rv-field rv-range-field"><span>${esc(__("Letter head height"))}<b class="rv-pnum" data-out="lh_height">${s.lh_height} ${esc(__("mm"))}</b></span>
-						<input type="range" data-mm="lh_height" min="${LH_HEIGHT.min}" max="${LH_HEIGHT.max}" step="1" value="${s.lh_height}" ${s.letter_head ? "" : "disabled"}></label>
-					<label class="rv-field rv-range-field"><span>${esc(__("Footer height"))}<b class="rv-pnum" data-out="foot_height">${s.foot_height ? `${s.foot_height} ${esc(__("mm"))}` : esc(__("Hidden"))}</b></span>
-						<input type="range" data-mm="foot_height" min="${FOOT_HEIGHT.min}" max="${FOOT_HEIGHT.max}" step="1" value="${s.foot_height}" ${s.letter_head ? "" : "disabled"}></label>
+			<div class="rv-print-group">
+				<div class="rv-print-gh"><h4>${esc(__("Letter Head", null, "Report View"))}</h4>${s.letter_head ? sw("lh_repeat", __("Repeat on every page")) : ""}</div>
+				${
+					s.letter_head
+						? `<div class="rv-print-fields">
+					${range("lh_height", __("Height", null, "Report View"), LH_HEIGHT, 1, `${s.lh_height} ${__("mm")}`)}
+					${seg("lh_align", __("Alignment"), [["start", __("Start", null, "Report View")], ["center", __("Centre")], ["end", __("End", null, "Report View")]])}
+					${seg("lh_fit", __("Shape"), [["contain", __("As designed")], ["wide", __("Page width")]])}
+					${line("head_line", __("Rule under the letter head"))}
+				</div>`
+						: `<p class="rv-zone-empty">${esc(__("Choose a letter head above to set its size, place and pages."))}</p>`
+				}
+			</div>
+			<div class="rv-print-group">
+				<div class="rv-print-gh"><h4>${esc(__("Footer", null, "Report View"))}</h4>${s.letter_head ? sw("foot_repeat", __("Repeat on every page")) : ""}</div>
+				${
+					s.letter_head
+						? `<div class="rv-print-fields">
+					${range("foot_height", __("Height", null, "Report View"), FOOT_HEIGHT, 1, s.foot_height ? `${s.foot_height} ${__("mm")}` : __("Hidden"))}
+					${line("foot_line", __("Rule above the footer"))}
+					${s.foot_repeat ? "" : `<p class="rv-zone-empty">${esc(__("The footer prints on the last page only."))}</p>`}
+				</div>`
+						: ""
+				}
+			</div>
+			<div class="rv-print-group">
+				<div class="rv-print-gh"><h4>${esc(__("Page numbers"))}</h4>${sw("page_numbers", __("Show page numbers"))}</div>
+				${
+					s.page_numbers
+						? `<div class="rv-print-fields">
 					<div class="rv-print-row">
 						<label class="rv-field"><span>${esc(__("Page number position"))}</span>
-							<select class="rv-input" data-set="number_pos" ${s.page_numbers ? "" : "disabled"}>
+							<select class="rv-input" data-set="number_pos">
 								${option("bottom-end", __("Bottom, at the end"), s.number_pos === "bottom-end")}${option("bottom-center", __("Bottom, centred"), s.number_pos === "bottom-center")}${option("bottom-start", __("Bottom, at the start"), s.number_pos === "bottom-start")}
 								${option("top-end", __("Top, at the end"), s.number_pos === "top-end")}${option("top-center", __("Top, centred"), s.number_pos === "top-center")}${option("top-start", __("Top, at the start"), s.number_pos === "top-start")}
 							</select></label>
 						<label class="rv-field"><span>${esc(__("Number format"))}</span>
-							<select class="rv-input" data-set="number_format" ${s.page_numbers ? "" : "disabled"}>
+							<select class="rv-input" data-set="number_format">
 								${option("full", __("Page 1 of 3"), s.number_format === "full")}${option("short", "1 / 3", s.number_format === "short")}${option("number", "1", s.number_format === "number")}
 							</select></label>
 					</div>
-				</div>
+					${range("number_band", __("Height of the number band"), NUMBER_BAND, 1, `${s.number_band} ${__("mm")}`)}
+					${line("num_line", __("Rule above the page number"))}
+				</div>`
+						: ""
+				}
 			</div>
 			<div>
 				<h4>${esc(__("Content", null, "Report View"))}</h4>
@@ -440,9 +501,7 @@ export class PagesView {
 					${model?.hierarchical ? check("include_subtotals", __("Group subtotals")) : ""}
 					${check("include_total", __("Grand Total"))}
 					${check("signatures", __("Signature boxes"))}
-					${check("page_numbers", __("Page numbers"))}
 					${check("printed_on", __("Print date and user"))}
-					${s.letter_head ? check("letterhead_all", __("Letter head on every page")) : ""}
 				</div>
 			</div>
 			${
@@ -468,16 +527,28 @@ export class PagesView {
 		for (const b of this.bd.querySelectorAll("[data-orient]")) {
 			b.addEventListener("click", () => this.update({ orientation: b.dataset.orient }));
 		}
-		// heights: the band follows the slider at once, the pages are cut again when it stops
+		// sliders: the page follows at once, the pages are cut again when the slider stops
 		for (const r of this.bd.querySelectorAll("input[data-mm]")) {
 			const key = r.dataset.mm;
 			const out = this.bd.querySelector(`[data-out="${key}"]`);
+			const text = (v) => (key.endsWith("_w") ? (v ? `${v} px` : __("None", null, "Report View")) : key === "foot_height" && !v ? __("Hidden") : `${v} ${__("mm")}`);
 			r.addEventListener("input", () => {
 				const v = Number(r.value);
-				out.textContent = key === "foot_height" && !v ? __("Hidden") : `${v} ${__("mm")}`;
-				this.apply_heights({ ...this.settings, [key]: v });
+				out.textContent = text(v);
+				this.apply_vars({ ...this.settings, [key]: v });
 			});
 			r.addEventListener("change", () => this.update({ [key]: Number(r.value) }));
+		}
+		for (const c of this.bd.querySelectorAll("input[data-color]")) {
+			const key = c.dataset.color;
+			c.addEventListener("input", () => this.apply_vars({ ...this.settings, [key]: c.value }));
+			c.addEventListener("change", () => this.update({ [key]: c.value }));
+		}
+		for (const b of this.bd.querySelectorAll("[data-sw]")) {
+			b.addEventListener("click", () => this.update({ [b.dataset.sw]: !this.settings[b.dataset.sw] }));
+		}
+		for (const b of this.bd.querySelectorAll("[data-seg]")) {
+			b.addEventListener("click", () => this.update({ [b.dataset.seg]: b.dataset.value }));
 		}
 		for (const c of this.bd.querySelectorAll("input[data-set]")) {
 			c.addEventListener("change", () => this.update({ [c.dataset.set]: c.checked }));
@@ -560,7 +631,7 @@ export class PagesView {
 		const dir = this.lang_rtl() ? "rtl" : "ltr";
 		this.sheets.dir = dir;
 		this.sheets.lang = this.lang();
-		this.apply_heights(s);
+		this.apply_vars(s);
 		this.root.style.setProperty("--pp-w", `${box.w}px`);
 		this.root.style.setProperty("--pp-h", `${box.h}px`);
 
@@ -574,10 +645,16 @@ export class PagesView {
 		this.update_position();
 	}
 
-	/** Heights of the letter head band and its footer, as CSS variables of the pages. */
-	apply_heights(s) {
-		this.root.style.setProperty("--pp-lh-h", `${s.lh_height}mm`);
-		this.root.style.setProperty("--pp-lhf-h", `${s.foot_height}mm`);
+	/** The sizes, places and rules of the letter head, footer and number, as CSS variables of the pages. */
+	apply_vars(s) {
+		const set = (k, v) => this.root.style.setProperty(k, v);
+		set("--pp-lh-h", `${s.lh_height}mm`);
+		set("--pp-lhf-h", `${s.foot_height}mm`);
+		set("--pp-lh-align", { start: "flex-start", center: "center", end: "flex-end" }[s.lh_align] || "center");
+		set("--pp-nb-h", `${s.number_band}mm`);
+		for (const k of ["head_line", "foot_line", "num_line"]) {
+			set(`--pp-${k.replace("_", "-")}`, s[`${k}_w`] ? `${s[`${k}_w`]}px solid ${s[`${k}_c`]}` : "0 solid transparent");
+		}
 	}
 
 	async load_letterhead(name) {
@@ -650,14 +727,14 @@ export class PagesView {
 	 * period), a line of print details, the applied filters. The others: the letter head
 	 * only when asked for every page, else one slim line naming the report.
 	 */
-	head_html(first, letterhead) {
+	head_html(first, letterhead, n = 1, total = 1) {
 		const s = this.settings;
 		const t = (m, a) => this.t(m, a);
 		const ctx = this.ctx;
 		const company = ctx.company || "";
 		const title = t(ctx.report_name);
 		const period = this.period_text();
-		const lh = letterhead?.header && (first || s.letterhead_all) ? `<div class="rv-page-lh">${letterhead.header}</div>` : "";
+		const lh = this.top_number(n, total) + (letterhead?.header && (first || s.lh_repeat) ? `<div class="rv-page-lh fit-${s.lh_fit}">${letterhead.header}</div>` : "");
 		if (!first) {
 			const parts = [`<b>${esc(title)}</b>`, company ? esc(company) : "", period].filter(Boolean);
 			return `${lh}<div class="rv-page-cont">${parts.join('<span class="sep">·</span>')}</div>`;
@@ -733,10 +810,16 @@ export class PagesView {
 		if (number) slots[side] = number;
 		if (!slots.start) slots.start = name;
 		else slots.end = slots.end || name;
-		const line = `<div class="rv-page-foot-line"><span class="st">${slots.start}</span><span class="ce">${slots.center}</span><span class="en">${slots.end}</span></div>`;
-		const lhf = letterhead?.footer && s.foot_height ? `<div class="rv-page-lhf">${letterhead.footer}</div>` : "";
-		const top = where === "top" && s.page_numbers ? `<div class="rv-page-topnum ${side}">${this.number_html(n, total)}</div>` : "";
-		return `${top}${lhf}${line}`;
+		const line = `<div class="rv-page-foot-line${number ? " has-num" : ""}"><span class="st">${slots.start}</span><span class="ce">${slots.center}</span><span class="en">${slots.end}</span></div>`;
+		const lhf = letterhead?.footer && s.foot_height && (s.foot_repeat || n === total) ? `<div class="rv-page-lhf">${letterhead.footer}</div>` : "";
+		return `${lhf}${line}`;
+	}
+
+	/** The page number at the top: a band of its own above the head (or nothing). */
+	top_number(n, total) {
+		const s = this.settings;
+		const [where, side] = s.number_pos.split("-");
+		return where === "top" && s.page_numbers ? `<div class="rv-page-topnum ${side}">${this.number_html(n, total)}</div>` : "";
 	}
 
 	table_head(cols, widths, font) {
@@ -824,7 +907,7 @@ export class PagesView {
 	}
 
 	page_shell(i, box, dir, inner) {
-		const look = this.settings.template ? "ps-format" : `ps-${this.settings.style}`;
+		const look = `ps-${this.settings.style}${this.settings.template ? " ps-format" : ""}`;
 		return `<section class="rv-page ${look}" dir="${dir}" data-page="${i}" style="width:${box.w}px;height:${box.h}px;padding:${box.margin}px;--pp-m:${box.margin}px">${inner}</section>`;
 	}
 
@@ -979,7 +1062,7 @@ export class PagesView {
 		}
 		let tail = "";
 		if (page.last) tail = `<div class="rv-page-tail"><table class="rv-pt" style="width:${box.inner_w}px">${this.table_head_html.replace(/<thead>.*<\/thead>/s, "")}<tbody>${this.total_rows_html(cols)}</tbody></table>${this.signatures_html()}</div>`;
-		return `<header class="rv-page-top">${this.head_html(page.first, this.letterhead)}</header>
+		return `<header class="rv-page-top">${this.head_html(page.first, this.letterhead, i + 1, n)}</header>
 			<table class="rv-pt" style="width:${box.inner_w}px">${this.table_head_html}<tbody>${body}</tbody></table>${tail}
 			<footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
 	}
@@ -1162,10 +1245,10 @@ export class PagesView {
 	}
 
 	/** The head of a page of a report print format: the letter head, or a slim line. */
-	custom_head(first) {
+	custom_head(first, n = 1, total = 1) {
 		const lh = this.letterhead?.header;
-		if (lh && (first || this.settings.letterhead_all)) return `<div class="rv-page-lh">${lh}</div>`;
-		return first ? "" : this.head_html(false, this.letterhead);
+		if (lh && (first || this.settings.lh_repeat)) return `${this.top_number(n, total)}<div class="rv-page-lh fit-${this.settings.lh_fit}">${lh}</div>`;
+		return first ? this.top_number(n, total) : this.head_html(false, this.letterhead, n, total);
 	}
 
 	custom_page_html(i) {
@@ -1215,7 +1298,7 @@ export class PagesView {
 				parent.appendChild(u.node.cloneNode(true));
 			}
 		}
-		return `<header class="rv-page-top">${this.custom_head(i === 0)}</header>${this.custom_styles}${flow.outerHTML}<footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
+		return `<header class="rv-page-top">${this.custom_head(i === 0, i + 1, n)}</header>${this.custom_styles}${flow.outerHTML}<footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
 	}
 
 	// ------------------------------------------------------------ zoom and position

@@ -2504,3 +2504,81 @@ test("pages: the standard template's six print styles, in a list of their own; a
 	expect([saved.style, saved.template]).toEqual(["minimal", ""]);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
+
+test("pages: letter head and footer on every page or not, their alignment and shape, the number band and the three rules", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=gl&lang=ar&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await settle(page);
+	const state = () =>
+		page.evaluate(async () => {
+			const v = window.rv_page.pages;
+			await v.fill_all();
+			const pages = [...document.querySelectorAll(".rv-page")];
+			const css = (el, p) => (el ? getComputedStyle(el)[p] : null);
+			const p0 = pages[0];
+			return {
+				count: pages.length,
+				lh: pages.map((p) => Boolean(p.querySelector(".rv-page-lh"))),
+				lhf: pages.map((p) => Boolean(p.querySelector(".rv-page-lhf"))),
+				align: css(p0.querySelector(".rv-page-lh"), "alignItems"),
+				head_rule: css(p0.querySelector(".rv-page-lh"), "borderBottomWidth"),
+				num_rule: css(p0.querySelector(".rv-page-foot-line"), "borderTopWidth"),
+				num_color: css(p0.querySelector(".rv-page-foot-line"), "borderTopColor"),
+				band: p0.querySelector(".rv-page-foot-line")?.offsetHeight,
+				head_var: getComputedStyle(document.querySelector(".rv-pages").closest(".rv")).getPropertyValue("--pp-head-line").trim(),
+				num_var: getComputedStyle(document.querySelector(".rv-pages").closest(".rv")).getPropertyValue("--pp-num-line").trim(),
+				top_in_head: Boolean(p0.querySelector(".rv-page-top .rv-page-topnum")),
+			};
+		});
+	const before = await state();
+	expect(before.count).toBeGreaterThan(1);
+	// by default: the letter head on the first page only, its footer on every page
+	expect(before.lh).toEqual(before.lh.map((_, i) => i === 0));
+	expect(before.lhf.every(Boolean)).toBe(true);
+	// repeat the letter head, the footer on the last page only
+	await page.click('[data-sw="lh_repeat"]');
+	await settle(page);
+	await page.click('[data-sw="foot_repeat"]');
+	await settle(page);
+	let st = await state();
+	expect(st.lh.every(Boolean)).toBe(true);
+	expect(st.lhf).toEqual(st.lhf.map((_, i) => i === st.count - 1));
+	// alignment at the end, the letter head at page width
+	await page.click('[data-seg="lh_align"][data-value="end"]');
+	await settle(page);
+	expect((await state()).align).toBe("flex-end");
+	// at page width the letter head stretches across the page body
+	await page.click('[data-seg="lh_fit"][data-value="wide"]');
+	await settle(page);
+	expect((await state()).align).toBe("stretch");
+	// the rules: thicker, coloured
+	await page.locator('input[data-mm="head_line_w"]').fill("2");
+	await settle(page);
+	await page.locator('input[data-mm="num_line_w"]').fill("1.4");
+	await page.locator('input[data-color="num_line_c"]').evaluate((el) => {
+		el.value = "#2d5c93";
+		el.dispatchEvent(new Event("change", { bubbles: true }));
+	});
+	await settle(page);
+	// a taller number band
+	const band0 = (await state()).band;
+	await page.locator('input[data-mm="number_band"]').fill("15");
+	await settle(page);
+	st = await state();
+	// the rules as set (computed widths are scaled by the zoom of the stage)
+	expect(st.head_var).toBe("2px solid #D9DFDB");
+	expect(st.num_var).toBe("1.4px solid #2d5c93");
+	expect(parseFloat(st.head_rule)).toBeGreaterThan(1);
+	expect(st.num_color).toBe("rgb(45, 92, 147)");
+	expect(st.band).toBeGreaterThan(band0 + 20);
+	// the number at the top stands in the page head, measured with it
+	await page.selectOption('select[data-set="number_pos"]', "top-start");
+	await settle(page);
+	expect((await state()).top_in_head).toBe(true);
+	await shot3(page, "pages-gl-header-footer-rules-rtl");
+	// numbering off: its options go
+	await page.click('[data-sw="page_numbers"]');
+	await settle(page);
+	expect(await page.locator('select[data-set="number_pos"]').count()).toBe(0);
+	expect(problems, "console errors/warnings").toEqual([]);
+});

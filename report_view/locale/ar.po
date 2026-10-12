@@ -1581,3 +1581,68 @@ msgstr "لم يُرجع التقرير صفوفاً للطباعة"
 
 msgid "Print style"
 msgstr "أسلوب الطباعة"
+
+msgid "Repeat on every page"
+msgstr "تكرار في كل الصفحات"
+
+msgctxt "Report View"
+msgid "Height"
+msgstr "الارتفاع"
+
+msgid "Alignment"
+msgstr "المحاذاة"
+
+msgctxt "Report View"
+msgid "Start"
+msgstr "البداية"
+
+msgid "Centre"
+msgstr "الوسط"
+
+msgctxt "Report View"
+msgid "End"
+msgstr "النهاية"
+
+msgid "Shape"
+msgstr "الشكل"
+
+msgid "As designed"
+msgstr "كما صُمّمت"
+
+msgid "Page width"
+msgstr "بعرض الصفحة"
+
+msgid "Rule under the letter head"
+msgstr "الخط تحت الترويسة"
+
+msgid "Choose a letter head above to set its size, place and pages."
+msgstr "اختر ترويسة في الأعلى لتتحكم بحجمها ومكانها وصفحاتها."
+
+msgctxt "Report View"
+msgid "Footer"
+msgstr "التذييل"
+
+msgid "Rule above the footer"
+msgstr "الخط فوق التذييل"
+
+msgid "The footer prints on the last page only."
+msgstr "يُطبع التذييل في الصفحة الأخيرة فقط."
+
+msgid "Height of the number band"
+msgstr "ارتفاع شريط الترقيم"
+
+msgid "Rule above the page number"
+msgstr "الخط فوق الترقيم"
+
+msgctxt "Report View"
+msgid "None"
+msgstr "بلا"
+
+msgid "Thickness"
+msgstr "السُّمك"
+
+msgid "Colour"
+msgstr "اللون"
+
+msgid "Show page numbers"
+msgstr "إظهار"

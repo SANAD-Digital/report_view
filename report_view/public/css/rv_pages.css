@@ -38,7 +38,8 @@
 .rv-print-tools .sp{flex:1}
 .rv-print-tools .rv-zoom button{min-width:30px;justify-content:center;padding:0 8px}
 .rv-print-zoom-lbl,.rv-print-pos{font-variant-numeric:tabular-nums;white-space:nowrap}
-.rv-print-sheets{display:flex;flex-direction:column;align-items:center;gap:24px;padding:28px;zoom:var(--pp-zoom,1)}
+/* as wide as the widest page: a page zoomed wider than the stage scrolls, its sides are never cut */
+.rv-print-sheets{display:flex;flex-direction:column;align-items:center;gap:24px;padding:28px;zoom:var(--pp-zoom,1);width:max-content;min-width:100%;box-sizing:border-box}
 .rv-print-probe{position:absolute;top:0;inset-inline-start:0;visibility:hidden;pointer-events:none;z-index:-1;contain:layout}
 .rv-print-probe:empty{display:none}
 
@@ -53,10 +54,14 @@
    slim line names the report on the others unless asked for every page) */
 .rv-page-lh,.rv-page-lhf{overflow:hidden;max-width:100%}
 /* heights chosen in the panel (--pp-lh-h, --pp-lhf-h, pages_view.js apply_heights) */
-.rv-page-lh{max-height:calc(var(--pp-lh-h,26mm) + 6mm);margin-bottom:3mm;border-bottom:.6px solid var(--pp-line);padding-bottom:2mm}
+.rv-page-lh{max-height:calc(var(--pp-lh-h,26mm) + 6mm);margin-bottom:3mm;border-bottom:var(--pp-head-line,.6px solid var(--pp-line));padding-bottom:2mm;display:flex;flex-direction:column;align-items:var(--pp-lh-align,center)}
+.rv-page-lh > *{max-width:100%}
 .rv-page-lh img{max-width:100%;max-height:var(--pp-lh-h,26mm);width:auto;height:auto;object-fit:contain}
+/* "page width": the letter head spans the page body at the height chosen */
+.rv-page-lh.fit-wide{align-items:stretch}
+.rv-page-lh.fit-wide img{width:100%;height:var(--pp-lh-h,26mm);max-height:none;object-fit:fill}
 .rv-page-lh *{max-height:calc(var(--pp-lh-h,26mm) + 4mm)}
-.rv-page-lhf{max-height:calc(var(--pp-lhf-h,11mm) + 3mm);margin-bottom:1.5mm}
+.rv-page-lhf{max-height:calc(var(--pp-lhf-h,11mm) + 3mm);margin-bottom:1.5mm;border-top:var(--pp-foot-line,0 solid transparent);padding-top:1.2mm;display:flex;flex-direction:column;align-items:var(--pp-lh-align,center)}
 .rv-page-lhf img{max-width:100%;max-height:var(--pp-lhf-h,11mm);width:auto;height:auto;object-fit:contain}
 
 /* title block of the first page: centred, as a formal statement */
@@ -117,15 +122,17 @@
 .rv-page-sign div{border-top:1px solid var(--pp-tx);padding-top:1.5mm;font-weight:700;text-align:center}
 .rv-page-sign span{display:block;font-weight:400;color:var(--pp-tx-2);margin-top:4mm;white-space:nowrap;overflow:hidden;text-align:start}
 .rv-page-foot{margin-top:auto;padding-top:2mm;flex:none}
-.rv-page-foot-line{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;font-size:.82em;color:var(--pp-tx-3);border-top:.6px solid var(--pp-line-2);padding-top:1.2mm}
+/* the number band: its height and the rule above it are the user's */
+.rv-page-foot-line{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;font-size:.82em;color:var(--pp-tx-3);border-top:var(--pp-num-line,.6px solid var(--pp-line-2));min-height:var(--pp-nb-h,7mm)}
 .rv-page-foot-line > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rv-page-foot-line .ce{text-align:center}
 .rv-page-foot-line .en{text-align:end}
 /* a page number at the top stands in the top margin, outside what the pages measure */
-.rv-page-topnum{position:absolute;top:0;inset-inline:var(--pp-m,12mm);height:var(--pp-m,12mm);display:flex;align-items:center;font-size:.82em;color:var(--pp-tx-3)}
+.rv-page-topnum{display:flex;align-items:center;min-height:var(--pp-nb-h,7mm);font-size:.82em;color:var(--pp-tx-3);border-bottom:var(--pp-num-line,.6px solid var(--pp-line-2));margin-bottom:2mm}
 .rv-page-topnum.center{justify-content:center}
 .rv-page-topnum.end{justify-content:flex-end}
-.rv-range-field > span{display:flex;justify-content:space-between;align-items:baseline}
+.rv-range-field > span,.rv-line-field > span{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.rv-line-field b{font-weight:600;color:var(--tx-2)}
 .rv-range-field b{font-weight:600;color:var(--tx-2)}
 .rv-range-field input[type=range]{width:100%;accent-color:var(--pri);margin:2px 0 0}
 /* a report print format flows as it came: its own styles, the page's font */
@@ -148,16 +155,19 @@
 .ps-modern .rv-pt tbody th,.ps-modern .rv-pt tbody td{border-bottom-color:var(--pp-brand-soft)}
 .ps-modern .rv-pt tr.group > *{background:var(--pp-brand-soft);color:var(--pp-brand)}
 /* the accent at the start edge of the label cell (logical: right in RTL, left in LTR) */
-.ps-modern .rv-pt tr.group > th{border-inline-start:3px solid var(--pp-brand)}
+.ps-modern .rv-pt tr.group > th{position:relative}
+.ps-modern .rv-pt tr.group > th::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;background:var(--pp-brand)}
 .ps-modern .rv-pt tr.foot > *{border-top:1px solid var(--pp-brand-2)}
 .ps-modern .rv-pt tr.total > *{background:var(--pp-brand);color:var(--pp-on-brand);border:0}
 .ps-modern .rv-pt tr.total .rv-n{color:var(--pp-on-brand)}
-.ps-modern .rv-page-foot-line{border-top:2px solid var(--pp-brand)}
 
 /* ledger: an accountant's grid, every cell boxed, headings centred */
 .ps-ledger .rv-page-hd .ti{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:5px}
 .ps-ledger .rv-page-meta{border-top:3px double var(--pp-tx)}
-.ps-ledger .rv-pt{border:1px solid var(--pp-tx)}
+.ps-ledger .rv-pt{box-shadow:inset 0 0 0 1px var(--pp-tx)}
+/* the outer cells leave the frame to the table: no half rule past the page body */
+.ps-ledger .rv-pt tr > :first-child{border-inline-start:0}
+.ps-ledger .rv-pt tr > :last-child{border-inline-end:0}
 .ps-ledger .rv-pt th,.ps-ledger .rv-pt td{border:.6px solid var(--pp-line-2)}
 .ps-ledger .rv-pt thead th{text-align:center !important;background:var(--pp-soft);border-color:var(--pp-tx-3)}
 .ps-ledger .rv-pt tbody tr:nth-child(even) > *{background:transparent}
@@ -197,3 +207,14 @@
   .rv-pages{flex-direction:column}
   .rv-print-side{width:100%;max-height:45%;border-inline-end:0;border-bottom:1px solid var(--line-2)}
 }
+
+/* ---------- panel: groups with a switch, segmented choices, rule controls ---------- */
+.rv-print-group{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.rv-print-gh{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rv-print-gh h4{margin:0}
+.rv-print-sw{display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--tx-2);cursor:pointer}
+.rv-print-seg{display:flex;width:100%}
+.rv-print-seg button{flex:1;justify-content:center;padding:0 6px;font-size:var(--fs-xs)}
+.rv-line-ctl{display:flex;align-items:center;gap:8px}
+.rv-line-ctl input[type=range]{flex:1;min-width:0;accent-color:var(--pri)}
+.rv-line-ctl input[type=color]{width:30px;height:24px;padding:0 2px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);cursor:pointer;flex:none}

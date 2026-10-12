@@ -2474,15 +2474,17 @@ test("pages: the heights of the letter head and its footer and the place and for
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
-test("pages: Report View's own templates (six looks) from the template list; a look is kept for the user", async ({ page }) => {
+test("pages: the standard template's six print styles, in a list of their own; a style is kept for the user", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, `report=tb&lang=ar&rv=${PAGES}${pages_settings({ orientation: "landscape", signatures: true })}`);
 	await settle(page);
-	const options = await page.$$eval("select[data-tpl] option", (os) => os.map((o) => o.value));
-	expect(options.slice(0, 6)).toEqual(["rv:classic", "rv:modern", "rv:ledger", "rv:framed", "rv:compact", "rv:minimal"]);
+	// the template list: the standard one, then the report's print formats (none in the harness)
+	expect(await page.$$eval('select[data-set="template"] option', (os) => os.map((o) => o.value))).toEqual([""]);
+	const options = await page.$$eval('select[data-set="style"] option', (os) => os.map((o) => o.value));
+	expect(options).toEqual(["classic", "modern", "ledger", "framed", "compact", "minimal"]);
 	const rows = {};
 	for (const look of ["classic", "modern", "ledger", "framed", "compact", "minimal"]) {
-		await page.selectOption("select[data-tpl]", `rv:${look}`);
+		await page.selectOption('select[data-set="style"]', look);
 		await settle(page);
 		const st = await page.evaluate(() => ({
 			cls: document.querySelector('.rv-page[data-page="0"]').className,

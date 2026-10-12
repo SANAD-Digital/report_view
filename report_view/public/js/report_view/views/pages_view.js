@@ -56,7 +56,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	hidden: [],
 	zoom: "fit",
 });
-// Report View's own templates: one layout, several looks (rv_pages.css).
+// Print styles of Report View's standard template: one layout, several looks (rv_pages.css).
 export const PAGE_STYLES = [
 	{ id: "classic", label: () => __("Classic") },
 	{ id: "modern", label: () => __("Modern") },
@@ -395,10 +395,16 @@ export class PagesView {
 				<h4>${esc(__("Template and letter head"))}</h4>
 				<div class="rv-print-fields">
 					<label class="rv-field"><span>${esc(__("Print template"))}</span>
-						<select class="rv-input" data-tpl>
-							<optgroup label="${esc(__("Report View templates"))}">${PAGE_STYLES.map((st) => option(`rv:${st.id}`, st.label(), !s.template && s.style === st.id)).join("")}</optgroup>
+						<select class="rv-input" data-set="template">
+							${option("", __("Report View (standard)"), !s.template)}
 							${o.print_formats.length ? `<optgroup label="${esc(__("Print formats of the report"))}">${o.print_formats.map((n) => option(n, n, s.template === n)).join("")}</optgroup>` : ""}
 						</select></label>
+					${
+						s.template
+							? ""
+							: `<label class="rv-field"><span>${esc(__("Print style"))}</span>
+						<select class="rv-input" data-set="style">${PAGE_STYLES.map((st) => option(st.id, st.label(), s.style === st.id)).join("")}</select></label>`
+					}
 					<label class="rv-field"><span>${esc(__("Letter Head", null, "Report View"))}</span>
 						<select class="rv-input" data-set="letter_head">${option("", __("No letter head"), !s.letter_head)}${o.letter_heads.map((lh) => option(lh.name, lh.name, s.letter_head === lh.name)).join("")}</select></label>
 					<label class="rv-field"><span>${esc(__("Language", null, "Report View"))}</span>
@@ -456,11 +462,6 @@ export class PagesView {
 			</div>`
 			}
 			<p class="rv-zone-empty">${esc(__("The pages show the table as it is: the same filters, grouping and folded groups."))}</p>`;
-		// one list for both: Report View's looks ("rv:<style>") and the report's print formats
-		this.bd.querySelector("select[data-tpl]").addEventListener("change", (e) => {
-			const v = e.target.value;
-			this.update(v.startsWith("rv:") ? { template: "", style: v.slice(3) } : { template: v });
-		});
 		for (const sel of this.bd.querySelectorAll("select[data-set]")) {
 			sel.addEventListener("change", () => this.update({ [sel.dataset.set]: sel.value }));
 		}

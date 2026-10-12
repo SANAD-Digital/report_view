@@ -1578,3 +1578,6 @@ msgstr "تعريفات فلاتر غير صالحة"
 
 msgid "The report did not return rows to print"
 msgstr "لم يُرجع التقرير صفوفاً للطباعة"
+
+msgid "Print style"
+msgstr "أسلوب الطباعة"

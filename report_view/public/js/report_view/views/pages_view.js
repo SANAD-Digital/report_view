@@ -20,6 +20,8 @@ import { icons } from "../components/icons.js";
 import { esc } from "../util.js";
 
 export const PRINT_MAX_PAGES = 600;
+// Room kept under the rows of a page (px): what a page drawn at another zoom or font may add.
+const SAFETY_PX = 6;
 // Pages around the viewport that carry content, and how many filled pages are kept.
 const NEAR_PAGES = 2;
 const KEEP_FILLED = 16;
@@ -79,6 +81,15 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	num_line_w: 0.6,
 	num_line_c: "#9AA39E",
 	num_line_s: "solid",
+	// a border round the page: thickness (px), style, colour, distance from the paper's edge
+	// (mm), rounded corners (mm), on every page or the first
+	pb_on: false,
+	pb_w: 1.5,
+	pb_s: "solid",
+	pb_c: "#1B1F1D",
+	pb_offset: 6,
+	pb_radius: 0,
+	pb_pages: "all",
 	// watermark: none, a text or an image, on every page or the first
 	wm_type: "none",
 	wm_text: "",
@@ -107,7 +118,7 @@ export const BOX_MM = { min: 0, max: 60 };
 export const LINE_WIDTH = { min: 0, max: 6 };
 const NUMBER_POS = ["bottom-end", "bottom-center", "bottom-start", "top-end", "top-center", "top-start"];
 const NUMBER_FORMATS = ["full", "short", "number", "dash"];
-const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "lh_repeat", "foot_repeat", "number_caption"];
+const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "lh_repeat", "foot_repeat", "number_caption", "pb_on"];
 const ALIGN = ["start", "center", "end"];
 const LH_FIT = ["contain", "wide"];
 const LINE_STYLES = ["solid", "dashed", "dotted", "double"];
@@ -125,6 +136,9 @@ const NUMS = {
 	wm_scale: [5, 100, 1],
 	wm_opacity: [2, 80, 1],
 	wm_angle: [-90, 90, 1],
+	pb_w: [0.5, 12, 0.5],
+	pb_offset: [0, 40, 0.5],
+	pb_radius: [0, 20, 0.5],
 };
 const BOXES = ["page_m", "lh_m", "foot_m", "num_m"];
 const SIDES = ["top", "bottom", "start", "end"];
@@ -227,6 +241,9 @@ function sanitize_settings(raw) {
 		if (typeof raw[`${k}_c`] === "string" && COLOR.test(raw[`${k}_c`])) out[`${k}_c`] = raw[`${k}_c`];
 		if (LINE_STYLES.includes(raw[`${k}_s`])) out[`${k}_s`] = raw[`${k}_s`];
 	}
+	if (LINE_STYLES.includes(raw.pb_s)) out.pb_s = raw.pb_s;
+	if (typeof raw.pb_c === "string" && COLOR.test(raw.pb_c)) out.pb_c = raw.pb_c;
+	if (["all", "first"].includes(raw.pb_pages)) out.pb_pages = raw.pb_pages;
 	if (["none", "text", "image"].includes(raw.wm_type)) out.wm_type = raw.wm_type;
 	if (typeof raw.wm_text === "string") out.wm_text = raw.wm_text.slice(0, 120);
 	// an image of the site (a file URL) or of the web, never a script
@@ -598,6 +615,7 @@ export class PagesView {
 			foot: ic('<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 16h16"/>'),
 			num: ic('<path d="M5 9h14M5 15h14M10 4 8 20M16 4l-2 16"/>'),
 			wm: ic('<path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"/>'),
+			border: ic('<rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10" rx="1" stroke-dasharray="2 2"/>'),
 			content: ic('<path d="M4 6h16M4 12h16M4 18h10"/>'),
 			cols: ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/>'),
 		};
@@ -606,6 +624,7 @@ export class PagesView {
 		const lh_sum = s.letter_head ? `${s.letter_head} · ${s.lh_repeat ? __("Every page") : __("First page")}` : __("None", null, "Report View");
 		const foot_sum = !s.letter_head || !s.foot_height ? __("None", null, "Report View") : s.foot_repeat ? __("Every page") : __("Last page");
 		const num_sum = s.page_numbers ? pos_label[s.number_pos] : __("Hidden");
+		const pb_sum = s.pb_on ? `${s.pb_w} px · ${{ solid: __("Solid"), dashed: __("Dashed"), dotted: __("Dotted"), double: __("Double") }[s.pb_s]}` : __("None", null, "Report View");
 		const wm_sum = s.wm_type === "text" ? s.wm_text || __("Text", null, "Report View") : s.wm_type === "image" ? __("Image", null, "Report View") : __("None", null, "Report View");
 
 		this.bd.innerHTML = [
@@ -679,6 +698,27 @@ export class PagesView {
 					<div class="rv-print-row">${num("number_size", __("Font size"), "pt")}<div class="rv-field rv-sw-field">${sw("number_caption", __("Report name beside it"))}</div></div>
 					${box("num_m", __("Space around the number"))}
 					${rule("num_line", __("Rule of the number band"))}`
+						: ""
+				}`
+			),
+			section(
+				"border",
+				I.border,
+				__("Page border"),
+				pb_sum,
+				`${sw("pb_on", __("Border round the page"))}
+				${
+					s.pb_on
+						? `<div class="rv-print-row">${num("pb_w", __("Thickness"), "px")}<label class="rv-field"><span>${esc(__("Line style"))}</span><select class="rv-input" data-set="pb_s">${[
+								["solid", __("Solid")],
+								["dashed", __("Dashed")],
+								["dotted", __("Dotted")],
+								["double", __("Double")],
+						  ]
+								.map(([v, l]) => option(v, l, s.pb_s === v))
+								.join("")}</select></label></div>
+					<div class="rv-print-row">${num("pb_offset", __("From the edge of the paper"), mm)}${num("pb_radius", __("Rounded corners"), mm)}</div>
+					<div class="rv-print-row"><label class="rv-field"><span>${esc(__("Colour"))}</span><input type="color" class="rv-color-wide" data-color="pb_c" value="${s.pb_c}"></label>${seg("pb_pages", __("Pages", null, "Report View"), [["all", __("Every page")], ["first", __("First page")]])}</div>`
 						: ""
 				}`
 			),
@@ -950,11 +990,23 @@ export class PagesView {
 		set("--pp-wm-angle", `${s.wm_angle}deg`);
 		set("--pp-wm-w", `${s.wm_scale}%`);
 		// a watermark follows its settings on the pages already drawn
-		for (const el of this.sheets.querySelectorAll(".rv-page-wm")) el.outerHTML = this.watermark_html(Number(el.closest(".rv-page")?.dataset.page || 0));
+		for (const page of this.sheets.querySelectorAll(".rv-page[data-page]")) {
+			for (const el of page.querySelectorAll(":scope > .rv-page-wm, :scope > .rv-page-border")) el.remove();
+			page.insertAdjacentHTML("beforeend", this.watermark_html(Number(page.dataset.page)));
+		}
+		set("--pp-pb", `${s.pb_s === "double" ? Math.max(3, s.pb_w) : s.pb_w}px ${s.pb_s} ${s.pb_c}`);
+		set("--pp-pb-off", `${s.pb_offset}mm`);
+		set("--pp-pb-r", `${s.pb_radius}mm`);
 	}
 
 	/** The watermark of a page: a text or an image over the page, never in the way of a click. */
 	watermark_html(i) {
+		const s = this.settings;
+		const border = s.pb_on && (s.pb_pages === "all" || i === 0) ? '<div class="rv-page-border" aria-hidden="true"></div>' : "";
+		return border + this.mark_html(i);
+	}
+
+	mark_html(i) {
 		const s = this.settings;
 		if (s.wm_type === "none" || (s.wm_pages === "first" && i > 0)) return "";
 		if (s.wm_type === "text" && s.wm_text.trim()) return `<div class="rv-page-wm" aria-hidden="true"><span>${esc(s.wm_text)}</span></div>`;
@@ -1281,7 +1333,7 @@ export class PagesView {
 		const tail_h = h(q(".rv-page-tail"));
 		const foot_h = h(q(".rv-page-foot"));
 		// the body of a continuation page; the first page gives up the difference of its head
-		const body_h = box.inner_h - next_h - thead_h - foot_h;
+		const body_h = box.inner_h - next_h - thead_h - foot_h - SAFETY_PX;
 		const filt_h = Math.max(0, head_h - next_h);
 		this.measure = { head_h, next_h, filt_h, thead_h, row_h, top_h, tail_h, foot_h, body_h };
 		this.probe.replaceChildren();
@@ -1389,7 +1441,7 @@ export class PagesView {
 		let tail = "";
 		if (page.last) tail = `<div class="rv-page-tail"><table class="rv-pt" style="width:${box.inner_w}px">${this.table_head_html.replace(/<thead>.*<\/thead>/s, "")}<tbody>${this.total_rows_html(cols)}</tbody></table>${this.signatures_html()}</div>`;
 		return `<header class="rv-page-top">${this.head_html(page.first, this.letterhead, i + 1, n)}</header>
-			<table class="rv-pt" style="width:${box.inner_w}px">${this.table_head_html}<tbody>${body}</tbody></table>${tail}
+			<div class="rv-page-body"><table class="rv-pt" style="width:${box.inner_w}px">${this.table_head_html}<tbody>${body}</tbody></table>${tail}</div>
 			<footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
 	}
 
@@ -1444,8 +1496,8 @@ export class PagesView {
 		const first_h = h(q(".rv-page-top-first"));
 		const next_h = h(q(".rv-page-top-next"));
 		const foot_h = h(q(".rv-page-foot"));
-		const body_h = Math.max(40, box.inner_h - next_h - foot_h);
-		const first_body_h = Math.max(40, box.inner_h - first_h - foot_h);
+		const body_h = Math.max(40, box.inner_h - next_h - foot_h - SAFETY_PX);
+		const first_body_h = Math.max(40, box.inner_h - first_h - foot_h - SAFETY_PX);
 		const flow = q(".rv-page-flow");
 		if (flow.scrollWidth > box.inner_w + 1 || [...flow.querySelectorAll("td, th")].some((c) => c.getBoundingClientRect().width < 1)) {
 			this.note(__("The print format is wider than the page: try landscape or a larger paper."), true);
@@ -1624,7 +1676,7 @@ export class PagesView {
 				parent.appendChild(u.node.cloneNode(true));
 			}
 		}
-		return `<header class="rv-page-top">${this.custom_head(i === 0, i + 1, n)}</header>${this.custom_styles}${flow.outerHTML}<footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
+		return `<header class="rv-page-top">${this.custom_head(i === 0, i + 1, n)}</header>${this.custom_styles}<div class="rv-page-body">${flow.outerHTML}</div><footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
 	}
 
 	// ------------------------------------------------------------ zoom and position
@@ -1724,6 +1776,9 @@ export class PagesView {
 		}
 		const root = document.createElement("div");
 		root.className = `rv rv-print-root ${this.root.classList.contains("compact") ? "compact" : ""}`;
+		// the variables of the pages (rules, colours, heights, margins, watermark) live on the
+		// page's root: the sheets printed apart keep them
+		for (const name of this.root.style) if (name.startsWith("--")) root.style.setProperty(name, this.root.style.getPropertyValue(name));
 		root.dir = this.sheets.dir;
 		root.lang = this.sheets.lang;
 		const style = document.createElement("style");
@@ -1757,7 +1812,8 @@ html,body{width:${b.paper_w_mm}mm!important;min-width:0!important;height:auto!im
 body>*:not(.rv-print-root){display:none!important}
 .rv-print-root{display:block!important;position:static!important;background:transparent!important}
 .rv-print-root .rv-print-sheets{display:block!important;padding:0!important;gap:0!important;zoom:1!important}
-.rv-print-root .rv-page{box-shadow:none!important;margin:0!important;break-after:page;page-break-after:always;break-inside:avoid}
+.rv-print-root .rv-page{box-shadow:none!important;margin:0!important;break-after:page;page-break-after:always;break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.rv-print-root .rv-page *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .rv-print-root .rv-page:last-child{break-after:auto;page-break-after:auto}
 }`;
 	}

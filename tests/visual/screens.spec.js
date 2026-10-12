@@ -2190,7 +2190,7 @@ const pages_settings = (s) => `&pages=${encodeURIComponent(JSON.stringify(s))}`;
 const open_sections = (page) =>
 	page.evaluate(() => {
 		const v = window.rv_page.pages;
-		v.open_secs = new Set(["paper", "tpl", "head", "foot", "num", "wm", "content", "cols"]);
+		v.open_secs = new Set(["paper", "tpl", "head", "foot", "num", "border", "wm", "content", "cols"]);
 		v.render_panel();
 	});
 // a typed number, committed as the field is left
@@ -2370,11 +2370,21 @@ test("pages: another language runs the report again and turns the pages; the ses
 test("pages: print fills every page and leaves the sheets alone in the document with the paper's @page rule, then puts them back", async ({ page }) => {
 	const problems = watch_console(page);
 	// an explicit portrait: the general ledger would open in landscape by itself
-	await open(page, `report=gl&lang=ar&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await open(page, `report=gl&lang=ar&rv=${PAGES}${pages_settings({ orientation: "portrait", num_line_w: 2, num_line_c: "#2d5c93", wm_type: "text", wm_text: "سري", wm_color: "#1e5c45", pb_on: true, pb_c: "#8a2d3b" })}`);
 	await settle(page);
 	const prepared = await page.evaluate(async () => {
 		const v = window.rv_page.pages;
 		window.__restore = await v.prepare_print();
+		const printed = document.querySelector("body > .rv-print-root .rv-page");
+		const css = (sel, prop) => getComputedStyle(printed.querySelector(sel))[prop];
+		window.__printed = {
+			rule: css(".rv-page-foot-line", "borderTopColor"),
+			mark: css(".rv-page-wm span", "color"),
+			border: css(".rv-page-border", "borderTopColor"),
+			adjust: getComputedStyle(printed).printColorAdjust || getComputedStyle(printed).webkitPrintColorAdjust,
+			// the foot stays inside the page
+			foot_inside: printed.querySelector(".rv-page-foot").getBoundingClientRect().bottom <= printed.getBoundingClientRect().bottom + 0.5,
+		};
 		const root = document.querySelector("body > .rv-print-root");
 		return {
 			root: Boolean(root),
@@ -2392,6 +2402,12 @@ test("pages: print fills every page and leaves the sheets alone in the document 
 	expect(prepared.in_stage).toBe(false);
 	expect(prepared.button_disabled).toBe(true);
 	expect(prepared.css).toContain("@page{size:210mm 297mm;margin:0}");
+	// the printed sheets keep the colours of their rules, watermark and border
+	const printed = await page.evaluate(() => window.__printed);
+	expect(printed.rule).toBe("rgb(45, 92, 147)");
+	expect(printed.mark).toBe("rgb(30, 92, 69)");
+	expect(printed.border).toBe("rgb(138, 45, 59)");
+	expect(printed.foot_inside).toBe(true);
 	expect(prepared.css).toContain("body>*:not(.rv-print-root){display:none!important}");
 	await page.emulateMedia({ media: "print" });
 	await shot3(page, "pages-gl-print-media-rtl", true);

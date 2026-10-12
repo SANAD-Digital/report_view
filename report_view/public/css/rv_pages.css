@@ -273,3 +273,11 @@
 .rv-rule-ctl input[type=color],.rv-color-wide{width:100%;height:var(--ctl);padding:2px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);cursor:pointer}
 .rv-wm-img{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .rv-wm-img img{width:56px;height:40px;object-fit:contain;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2)}
+
+/* ---------- the body of a page: between head and foot, never pushing the foot off ---------- */
+.rv-page-body{flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.rv-page-body > *{flex:none}
+.rv-page-foot{margin-top:0}
+
+/* ---------- page border: its own rule round the page, at a distance from the paper's edge ---------- */
+.rv-page-border{position:absolute;inset:var(--pp-pb-off,6mm);border:var(--pp-pb,1.5px solid #1B1F1D);border-radius:var(--pp-pb-r,0);pointer-events:none;z-index:5}

@@ -1797,3 +1797,15 @@ msgstr "الصفحات"
 
 msgid "{0} hidden"
 msgstr "{0} مخفي"
+
+msgid "Page border"
+msgstr "حدود الصفحة"
+
+msgid "Border round the page"
+msgstr "حد حول الصفحة"
+
+msgid "From the edge of the paper"
+msgstr "البُعد عن حافة الورقة"
+
+msgid "Rounded corners"
+msgstr "استدارة الزوايا"

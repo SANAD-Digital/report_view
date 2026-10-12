@@ -137,6 +137,9 @@ export const BOX_MM = { min: 0, max: 60 };
 export const LINE_WIDTH = { min: 0, max: 6 };
 const NUMBER_POS = ["bottom-end", "bottom-center", "bottom-start", "top-end", "top-center", "top-start"];
 const NUMBER_FORMATS = ["full", "short", "number", "dash"];
+// Settings drawn over the pages (the watermark, the border round the page): changed on
+// the pages already cut, without cutting them again.
+const PAINT_KEYS = new Set(["pb_on", "pb_w", "pb_s", "pb_c", "pb_offset", "pb_radius", "pb_pages", "wm_type", "wm_text", "wm_image", "wm_size", "wm_scale", "wm_color", "wm_opacity", "wm_angle", "wm_pages"]);
 const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "number_caption", "pb_on", "heading_replace"];
 const PAGE_SCOPES = ["all", "first", "rest"];
 const FOOT_SCOPES = ["all", "first", "rest", "last"];
@@ -586,8 +589,15 @@ export class PagesView {
 	 *   a value is typed); wait: cut the pages again after this many ms of quiet
 	 */
 	update(patch, { panel = true, wait = 0 } = {}) {
+		const changed = Object.keys(patch).filter((k) => JSON.stringify(this.settings[k]) !== JSON.stringify(patch[k]));
 		Object.assign(this.settings, patch);
 		this.unsaved = false;
+		if (changed.length && changed.every((k) => PAINT_KEYS.has(k)) && this.pages.length && !this.el.classList.contains("is-busy")) {
+			this.host.pages_settings_save({ ...this.settings });
+			if (panel) this.render_panel();
+			this.apply_vars(this.settings);
+			return;
+		}
 		if (!panel) {
 			this.host.pages_settings_save({ ...this.settings });
 			this.apply_vars(this.settings);
@@ -1031,6 +1041,8 @@ export class PagesView {
 			position: "fixed",
 			left: `${r.left}px`,
 			width: `${r.width}px`,
+			// Frappe gives the list min-width:100%, which, fixed, is the whole window
+			minWidth: "0",
 			right: "auto",
 			top: up ? "auto" : `${r.bottom + 4}px`,
 			bottom: up ? `${window.innerHeight - r.top + 4}px` : "auto",
@@ -1904,22 +1916,34 @@ export class PagesView {
 	async fit_custom_pages(token, box, dir) {
 		const pages = this.custom_pages;
 		const sync = () => (this.pages = pages.map((p, i) => ({ start: 0, end: 0, first: i === 0, last: i === pages.length - 1 })));
+		// the format's styles once, beside the page measured: a <style> put in again for every
+		// page would make the browser restyle the whole window each time
+		this.probe.innerHTML = `${this.custom_styles}<div></div>`;
+		const holder = this.probe.lastElementChild;
 		for (let i = 0; i < pages.length && i < this.max_pages(); i++) {
 			for (let guard = 0; guard < 400; guard++) {
 				if (token !== this.token) return;
 				sync();
-				this.probe.innerHTML = this.page_shell(i, box, dir, this.custom_page_html(i));
-				if (guard === 0) await wait_images(this.probe);
-				const sheet = this.probe.firstElementChild;
+				holder.innerHTML = this.page_shell(i, box, dir, this.custom_page_html(i, true));
+				if (guard === 0) await wait_images(holder);
+				const sheet = holder.firstElementChild;
 				const foot = sheet.querySelector(".rv-page-foot").getBoundingClientRect();
 				const page_r = sheet.getBoundingClientRect();
 				let bottom = 0;
 				for (const el of sheet.querySelectorAll(".rv-page-body *")) bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
 				const over = bottom > foot.top + 1 || foot.bottom > page_r.bottom + 1;
 				if (!over || pages[i].units.length <= 1) break;
-				// the last block (a table's row, a signature, a section) moves on
+				// the blocks that reach the foot (rows, a signature, a section) move on together;
+				// else (a wrapper's padding or margin) the last block alone
+				let from = pages[i].units.length - 1;
+				for (const el of sheet.querySelectorAll("[data-rv-unit]")) {
+					if (el.getBoundingClientRect().bottom > foot.top + 1) {
+						from = Math.max(1, Math.min(from, Number(el.dataset.rvUnit)));
+						break;
+					}
+				}
 				if (!pages[i + 1]) pages.push({ units: [], used: 0 });
-				pages[i + 1].units.unshift(pages[i].units.pop());
+				pages[i + 1].units.unshift(...pages[i].units.splice(from));
 			}
 		}
 		sync();
@@ -2045,7 +2069,8 @@ export class PagesView {
 		return first ? this.top_number(n, total) + heading : this.head_html(false, null, n, total);
 	}
 
-	custom_page_html(i) {
+	/** @param {boolean} [mark] measuring: each block carries its place (data-rv-unit); the styles are already in the probe */
+	custom_page_html(i, mark = false) {
 		const page = this.custom_pages[i];
 		const n = this.pages.length;
 		const flow = document.createElement("div");
@@ -2068,7 +2093,9 @@ export class PagesView {
 			}
 			return parent;
 		};
-		for (const u of page.units) {
+		for (const [k, u] of page.units.entries()) {
+			const node = u.node.cloneNode(true);
+			if (mark && node.nodeType === 1) node.setAttribute("data-rv-unit", k);
 			const before = stack.length;
 			const parent = parent_for(u.path);
 			if (stack.length !== before || (table && table.parentNode !== parent)) table = null;
@@ -2086,13 +2113,13 @@ export class PagesView {
 					tbody_src = u.tbody;
 					table.appendChild(tbody);
 				}
-				tbody.appendChild(u.node.cloneNode(true));
+				tbody.appendChild(node);
 			} else {
 				table = null;
-				parent.appendChild(u.node.cloneNode(true));
+				parent.appendChild(node);
 			}
 		}
-		return `<header class="rv-page-top">${this.custom_head(i === 0, i + 1, n)}</header>${this.custom_styles}<div class="rv-page-body">${flow.outerHTML}</div><footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
+		return `<header class="rv-page-top">${this.custom_head(i === 0, i + 1, n)}</header>${mark ? "" : this.custom_styles}<div class="rv-page-body">${flow.outerHTML}</div><footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
 	}
 
 	// ------------------------------------------------------------ zoom and position

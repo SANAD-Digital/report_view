@@ -2,7 +2,7 @@
 // Frappe's print page, paper, formats, letter heads and footers, a long document split
 // over pages (rows, head repeated, nothing over the footer), numbers, headings,
 // signatures, border, watermark, language, zoom, the record fields, print and PDF.
-// RV_PW=… RV_SHORT_DOC=<a Journal Entry> RV_LONG_DOC=<one of 80+ rows> node tests/site/doc_print.cjs
+// RV_PW=… RV_SHORT_DOC=<a Journal Entry> RV_LONG_DOC=<one of 80+ rows, e.g. ACC-JV-2026-00016 (300)> node tests/site/doc_print.cjs
 // Every part of the document print page, on the site, as rv_accountant.
 const fs = require("node:fs");
 const { chromium } = require("playwright");
@@ -95,7 +95,8 @@ const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", nam
 	await set({ letter_head: "SND Accounting 2", foot_pages: "all", lh_pages: "first" }); s = await state();
 	const total = s.pages.reduce((n, p) => n + p.rows, 0);
 	check("long document: several pages", s.pages.length >= 2, `${s.pages.length} pages`);
-	check("long document: 80 rows, none lost or doubled", total === 80, `rows ${total}`);
+	const rows_of_doc = await page.evaluate((n) => frappe.xcall("frappe.client.get", { doctype: "Journal Entry", name: n }).then((d) => d.accounts.length), LONG);
+	check(`long document: ${rows_of_doc} rows, none lost or doubled`, total === rows_of_doc, `rows ${total}`);
 	check("long document: the table head on every page with rows", s.pages.filter((p) => p.rows).every((p) => p.thead));
 	check("long document: footer on every page, inside the page", s.pages.every((p) => p.lhf && p.foot_inside), JSON.stringify(s.pages.map((p) => [p.lhf, p.foot_inside])));
 	check("long document: no content over the footer", s.pages.every((p) => !p.overlap), JSON.stringify(s.pages.map((p) => p.overlap)));

@@ -52,13 +52,14 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	page_numbers: true,
 	printed_on: true,
 	// the letter head: on every page or the first only, height (mm), alignment, fit, margins
-	lh_repeat: false,
+	// on which pages: "all", "first", "rest" (all but the first), and for the footer "last"
+	lh_pages: "first",
 	lh_height: 26,
 	lh_align: "center",
 	lh_fit: "contain",
 	lh_m: BOX(0, 3, 0, 0),
 	// the letter head's footer: on every page or the last only, height (mm, 0 = none)
-	foot_repeat: true,
+	foot_pages: "all",
 	foot_height: 11,
 	foot_align: "center",
 	foot_m: BOX(1.5, 1.5, 0, 0),
@@ -118,7 +119,17 @@ export const BOX_MM = { min: 0, max: 60 };
 export const LINE_WIDTH = { min: 0, max: 6 };
 const NUMBER_POS = ["bottom-end", "bottom-center", "bottom-start", "top-end", "top-center", "top-start"];
 const NUMBER_FORMATS = ["full", "short", "number", "dash"];
-const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "lh_repeat", "foot_repeat", "number_caption", "pb_on"];
+const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "number_caption", "pb_on"];
+const PAGE_SCOPES = ["all", "first", "rest"];
+const FOOT_SCOPES = ["all", "first", "rest", "last"];
+
+/** Whether a part set to `scope` prints on page `n` of `total`. */
+export function on_page(scope, n, total) {
+	if (scope === "first") return n === 1;
+	if (scope === "rest") return n > 1;
+	if (scope === "last") return n === total;
+	return true;
+}
 const ALIGN = ["start", "center", "end"];
 const LH_FIT = ["contain", "wide"];
 const LINE_STYLES = ["solid", "dashed", "dotted", "double"];
@@ -225,7 +236,13 @@ function sanitize_settings(raw) {
 	for (const k of ["template", "letter_head", "lang"]) if (typeof raw[k] === "string") out[k] = raw[k];
 	for (const k of BOOL_KEYS) if (typeof raw[k] === "boolean") out[k] = raw[k];
 	// the setting of the first version: the letter head on every page
-	if (typeof raw.letterhead_all === "boolean" && typeof raw.lh_repeat !== "boolean") out.lh_repeat = raw.letterhead_all;
+	// the switches of earlier versions: the letter head on every page, the footer on every page
+	const was = (v) => (typeof v === "boolean" ? v : null);
+	const lh_all = was(raw.lh_repeat) ?? was(raw.letterhead_all);
+	if (lh_all !== null) out.lh_pages = lh_all ? "all" : "first";
+	if (was(raw.foot_repeat) !== null) out.foot_pages = raw.foot_repeat ? "all" : "last";
+	if (PAGE_SCOPES.includes(raw.lh_pages)) out.lh_pages = raw.lh_pages;
+	if (FOOT_SCOPES.includes(raw.foot_pages)) out.foot_pages = raw.foot_pages;
 	for (const [k, r] of Object.entries(NUMS)) {
 		const v = clamp(raw[k], r);
 		if (v !== null) out[k] = v;
@@ -243,13 +260,13 @@ function sanitize_settings(raw) {
 	}
 	if (LINE_STYLES.includes(raw.pb_s)) out.pb_s = raw.pb_s;
 	if (typeof raw.pb_c === "string" && COLOR.test(raw.pb_c)) out.pb_c = raw.pb_c;
-	if (["all", "first"].includes(raw.pb_pages)) out.pb_pages = raw.pb_pages;
+	if (PAGE_SCOPES.includes(raw.pb_pages)) out.pb_pages = raw.pb_pages;
 	if (["none", "text", "image"].includes(raw.wm_type)) out.wm_type = raw.wm_type;
 	if (typeof raw.wm_text === "string") out.wm_text = raw.wm_text.slice(0, 120);
 	// an image of the site (a file URL) or of the web, never a script
 	if (typeof raw.wm_image === "string" && /^(\/|https?:\/\/)/.test(raw.wm_image)) out.wm_image = raw.wm_image.slice(0, 500);
 	if (typeof raw.wm_color === "string" && COLOR.test(raw.wm_color)) out.wm_color = raw.wm_color;
-	if (["all", "first"].includes(raw.wm_pages)) out.wm_pages = raw.wm_pages;
+	if (PAGE_SCOPES.includes(raw.wm_pages)) out.wm_pages = raw.wm_pages;
 	if (Array.isArray(raw.hidden)) out.hidden = raw.hidden.filter((k) => typeof k === "string").slice(0, 500);
 	if (raw.zoom === "fit" || (Number.isFinite(raw.zoom) && raw.zoom >= 0.3 && raw.zoom <= 2)) out.zoom = raw.zoom;
 	return out;
@@ -621,8 +638,10 @@ export class PagesView {
 		};
 		const paper_sum = `${s.size} · ${s.orientation === "landscape" ? __("Landscape", null, "Report View") : __("Portrait", null, "Report View")} · ${[pm.top, pm.end, pm.bottom, pm.start].join("/")} ${mm}`;
 		const tpl_sum = [s.template || PAGE_STYLES.find((x) => x.id === s.style)?.label(), s.lang ? o.languages.find((l) => l.name === s.lang)?.label : ""].filter(Boolean).join(" · ");
-		const lh_sum = s.letter_head ? `${s.letter_head} · ${s.lh_repeat ? __("Every page") : __("First page")}` : __("None", null, "Report View");
-		const foot_sum = !s.letter_head || !s.foot_height ? __("None", null, "Report View") : s.foot_repeat ? __("Every page") : __("Last page");
+		const scope_label = { all: __("Every page"), first: __("First page"), rest: __("All but the first"), last: __("Last page") };
+		const scopes = (key, list) => seg(key, __("Apply to"), list.map((v) => [v, scope_label[v]]));
+		const lh_sum = s.letter_head ? `${s.letter_head} · ${scope_label[s.lh_pages]}` : __("None", null, "Report View");
+		const foot_sum = !s.letter_head || !s.foot_height ? __("None", null, "Report View") : scope_label[s.foot_pages];
 		const num_sum = s.page_numbers ? pos_label[s.number_pos] : __("Hidden");
 		const pb_sum = s.pb_on ? `${s.pb_w} px · ${{ solid: __("Solid"), dashed: __("Dashed"), dotted: __("Dotted"), double: __("Double") }[s.pb_s]}` : __("None", null, "Report View");
 		const wm_sum = s.wm_type === "text" ? s.wm_text || __("Text", null, "Report View") : s.wm_type === "image" ? __("Image", null, "Report View") : __("None", null, "Report View");
@@ -663,7 +682,7 @@ export class PagesView {
 				__("Letter Head", null, "Report View"),
 				lh_sum,
 				s.letter_head
-					? `${sw("lh_repeat", __("Repeat on every page"))}
+					? `${scopes("lh_pages", PAGE_SCOPES)}
 					<div class="rv-print-row">${num("lh_height", __("Height", null, "Report View"), mm)}${seg("lh_fit", __("Shape"), [["contain", __("As designed")], ["wide", __("Page width")]])}</div>
 					${seg("lh_align", __("Alignment"), align3)}
 					${box("lh_m", __("Letter head margins"))}
@@ -676,8 +695,7 @@ export class PagesView {
 				__("Footer", null, "Report View"),
 				foot_sum,
 				s.letter_head
-					? `${sw("foot_repeat", __("Repeat on every page"))}
-					${s.foot_repeat ? "" : `<p class="rv-zone-empty">${esc(__("The footer prints on the last page only."))}</p>`}
+					? `${scopes("foot_pages", FOOT_SCOPES)}
 					<div class="rv-print-row">${num("foot_height", __("Height", null, "Report View"), mm)}</div>
 					${seg("foot_align", __("Alignment"), align3)}
 					${box("foot_m", __("Footer margins"))}
@@ -718,7 +736,8 @@ export class PagesView {
 								.map(([v, l]) => option(v, l, s.pb_s === v))
 								.join("")}</select></label></div>
 					<div class="rv-print-row">${num("pb_offset", __("From the edge of the paper"), mm)}${num("pb_radius", __("Rounded corners"), mm)}</div>
-					<div class="rv-print-row"><label class="rv-field"><span>${esc(__("Colour"))}</span><input type="color" class="rv-color-wide" data-color="pb_c" value="${s.pb_c}"></label>${seg("pb_pages", __("Pages", null, "Report View"), [["all", __("Every page")], ["first", __("First page")]])}</div>`
+					<div class="rv-print-row"><label class="rv-field"><span>${esc(__("Colour"))}</span><input type="color" class="rv-color-wide" data-color="pb_c" value="${s.pb_c}"></label></div>
+					${scopes("pb_pages", PAGE_SCOPES)}`
 						: ""
 				}`
 			),
@@ -746,7 +765,7 @@ export class PagesView {
 				${
 					s.wm_type !== "none"
 						? `<div class="rv-print-row">${num("wm_opacity", __("Opacity"), "%")}${num("wm_angle", __("Angle"), "°")}</div>
-						${seg("wm_pages", __("Pages", null, "Report View"), [["all", __("Every page")], ["first", __("First page")]])}`
+						${scopes("wm_pages", PAGE_SCOPES)}`
 						: ""
 				}`
 			),
@@ -1002,13 +1021,14 @@ export class PagesView {
 	/** The watermark of a page: a text or an image over the page, never in the way of a click. */
 	watermark_html(i) {
 		const s = this.settings;
-		const border = s.pb_on && (s.pb_pages === "all" || i === 0) ? '<div class="rv-page-border" aria-hidden="true"></div>' : "";
+		const total = this.pages.length || 1;
+		const border = s.pb_on && on_page(s.pb_pages, i + 1, total) ? '<div class="rv-page-border" aria-hidden="true"></div>' : "";
 		return border + this.mark_html(i);
 	}
 
 	mark_html(i) {
 		const s = this.settings;
-		if (s.wm_type === "none" || (s.wm_pages === "first" && i > 0)) return "";
+		if (s.wm_type === "none" || !on_page(s.wm_pages, i + 1, this.pages.length || 1)) return "";
 		if (s.wm_type === "text" && s.wm_text.trim()) return `<div class="rv-page-wm" aria-hidden="true"><span>${esc(s.wm_text)}</span></div>`;
 		if (s.wm_type === "image" && s.wm_image) return `<div class="rv-page-wm" aria-hidden="true"><img src="${esc(s.wm_image)}" alt=""></div>`;
 		return "";
@@ -1091,7 +1111,7 @@ export class PagesView {
 		const company = ctx.company || "";
 		const title = t(ctx.report_name);
 		const period = this.period_text();
-		const lh = this.top_number(n, total) + (letterhead?.header && (first || s.lh_repeat) ? `<div class="rv-page-lh fit-${s.lh_fit}">${letterhead.header}</div>` : "");
+		const lh = this.top_number(n, total) + (letterhead?.header && on_page(s.lh_pages, n, total) ? `<div class="rv-page-lh fit-${s.lh_fit}">${letterhead.header}</div>` : "");
 		if (!first) {
 			const parts = [`<b>${esc(title)}</b>`, company ? esc(company) : "", period].filter(Boolean);
 			return `${lh}<div class="rv-page-cont">${parts.join('<span class="sep">·</span>')}</div>`;
@@ -1169,7 +1189,7 @@ export class PagesView {
 	 * (the number under the footer, or above it). The footer prints on every page or the
 	 * last; the band carries the number and, beside it, the report's name.
 	 */
-	foot_html(n, total, letterhead) {
+	foot_html(n, total, letterhead, measure = false) {
 		const s = this.settings;
 		const ctx = this.ctx;
 		const t = (m, a) => this.t(m, a);
@@ -1183,7 +1203,8 @@ export class PagesView {
 			else if (!slots.end) slots.end = name;
 		}
 		const band = number || name ? `<div class="rv-page-foot-line${number ? " has-num" : ""}"><span class="st">${slots.start}</span><span class="ce">${slots.center}</span><span class="en">${slots.end}</span></div>` : "";
-		const lhf = letterhead?.footer && s.foot_height && (s.foot_repeat || n === total) ? `<div class="rv-page-lhf">${letterhead.footer}</div>` : "";
+		// `measure`: the probe page takes the footer wherever it may print (the tallest foot)
+		const lhf = letterhead?.footer && s.foot_height && (measure || on_page(s.foot_pages, n, total)) ? `<div class="rv-page-lhf">${letterhead.footer}</div>` : "";
 		return s.number_order === "before" ? `${band}${lhf}` : `${lhf}${band}`;
 	}
 
@@ -1311,7 +1332,7 @@ export class PagesView {
 			1,
 			box,
 			dir,
-			`<header class="rv-page-top rv-page-top-next">${this.head_html(false, this.letterhead)}</header>`
+			`<header class="rv-page-top rv-page-top-next">${this.head_html(false, this.letterhead, 2, 3)}</header>`
 		) + this.page_shell(
 			0,
 			box,
@@ -1319,7 +1340,7 @@ export class PagesView {
 			`<header class="rv-page-top rv-page-top-first">${this.head_html(true, this.letterhead)}</header>
 			<table class="rv-pt" style="width:${box.inner_w}px">${table_head}<tbody>${probe_rows}</tbody></table>
 			<div class="rv-page-tail"><table class="rv-pt" style="width:${box.inner_w}px">${table_head.replace(/<thead>.*<\/thead>/s, "")}<tbody>${this.total_rows_html(cols)}</tbody></table>${this.signatures_html()}</div>
-			<footer class="rv-page-foot">${this.foot_html(1, 1, this.letterhead)}</footer>`
+			<footer class="rv-page-foot">${this.foot_html(1, 1, this.letterhead, true)}</footer>`
 		);
 		await wait_images(this.probe);
 		if (token !== this.token) return;
@@ -1482,12 +1503,12 @@ export class PagesView {
 		// The pages carry the letter head as the standard template does: in full on the first
 		// page, a slim line naming the report on the others (or the letter head on every page).
 		this.probe.innerHTML =
-			this.page_shell(1, box, dir, `<header class="rv-page-top rv-page-top-next">${this.custom_head(false)}</header>`) +
+			this.page_shell(1, box, dir, `<header class="rv-page-top rv-page-top-next">${this.custom_head(false, 2, 3)}</header>`) +
 			this.page_shell(
 				0,
 				box,
 				dir,
-				`<header class="rv-page-top rv-page-top-first">${this.custom_head(true)}</header><div class="rv-page-flow">${html}</div><footer class="rv-page-foot">${this.foot_html(1, 1, this.letterhead)}</footer>`
+				`<header class="rv-page-top rv-page-top-first">${this.custom_head(true)}</header><div class="rv-page-flow">${html}</div><footer class="rv-page-foot">${this.foot_html(1, 1, this.letterhead, true)}</footer>`
 			);
 		await wait_images(this.probe);
 		if (token !== this.token) return;
@@ -1625,8 +1646,8 @@ export class PagesView {
 	/** The head of a page of a report print format: the letter head, or a slim line. */
 	custom_head(first, n = 1, total = 1) {
 		const lh = this.letterhead?.header;
-		if (lh && (first || this.settings.lh_repeat)) return `${this.top_number(n, total)}<div class="rv-page-lh fit-${this.settings.lh_fit}">${lh}</div>`;
-		return first ? this.top_number(n, total) : this.head_html(false, this.letterhead, n, total);
+		if (lh && on_page(this.settings.lh_pages, n, total)) return `${this.top_number(n, total)}<div class="rv-page-lh fit-${this.settings.lh_fit}">${lh}</div>`;
+		return first ? this.top_number(n, total) : this.head_html(false, null, n, total);
 	}
 
 	custom_page_html(i) {

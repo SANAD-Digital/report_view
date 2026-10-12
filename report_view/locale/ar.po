@@ -1809,3 +1809,9 @@ msgstr "البُعد عن حافة الورقة"
 
 msgid "Rounded corners"
 msgstr "استدارة الزوايا"
+
+msgid "All but the first"
+msgstr "الكل ما عدا الأولى"
+
+msgid "Apply to"
+msgstr "تطبيق على"

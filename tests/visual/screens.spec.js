@@ -2533,14 +2533,22 @@ test("pages: page setup as in a word processor: four margins typed, letter head 
 	// letter head margins and on every page; the footer on the last page only
 	await type_num(page, 'input[data-box="lh_m"][data-side="bottom"]', 8);
 	expect((await state()).lh_mb).toBe("0mm 8mm");
-	await page.click('[data-sw="lh_repeat"]');
+	await page.click('[data-seg="lh_pages"][data-value="all"]');
 	await settle(page);
-	await page.click('[data-sw="foot_repeat"]');
+	await page.click('[data-seg="foot_pages"][data-value="last"]');
 	await settle(page);
 	st = await state();
 	expect(st.lh.every(Boolean)).toBe(true);
 	expect(st.lhf).toEqual(st.lhf.map((_, i) => i === st.count - 1));
-	await page.click('[data-sw="foot_repeat"]');
+	// as in Word: all but the first page
+	await page.click('[data-seg="lh_pages"][data-value="rest"]');
+	await settle(page);
+	await page.click('[data-seg="foot_pages"][data-value="rest"]');
+	await settle(page);
+	st = await state();
+	expect(st.lh).toEqual(st.lh.map((_, i) => i > 0));
+	expect(st.lhf).toEqual(st.lhf.map((_, i) => i > 0));
+	await page.click('[data-seg="foot_pages"][data-value="all"]');
 	await settle(page);
 	// the number band above the footer, its own rule; a dashed rule under the letter head
 	await page.click('[data-seg="number_order"][data-value="before"]');
@@ -2604,6 +2612,14 @@ test("pages: a watermark, text or image, on every page or the first, light and t
 	m = await marks();
 	expect(Number(m[0].opacity)).toBeCloseTo(0.25, 2);
 	expect(m.slice(1).every((x) => x === null)).toBe(true);
+	// all but the first page
+	await page.click('[data-seg="wm_pages"][data-value="rest"]');
+	await settle(page);
+	m = await marks();
+	expect(m[0]).toBeNull();
+	expect(m.slice(1).every((x) => x && x.text === "سري")).toBe(true);
+	await page.click('[data-seg="wm_pages"][data-value="first"]');
+	await settle(page);
 	await shot3(page, "pages-gl-watermark-text-rtl");
 	// an image (an address of the site's files)
 	await page.click('[data-seg="wm_type"][data-value="image"]');

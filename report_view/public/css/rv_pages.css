@@ -175,11 +175,6 @@
 .ps-ledger .rv-pt tr.group > *{background:var(--pp-soft)}
 .ps-ledger .rv-pt tr.total > *{border-top:1.5px solid var(--pp-tx);border-bottom:3px double var(--pp-tx)}
 
-/* framed: a rule around the page, the titles in a boxed band */
-.ps-framed{outline:1.2px solid var(--pp-tx);outline-offset:calc(var(--pp-m,12mm) * -0.55)}
-.ps-framed .rv-page-hd{border:1px solid var(--pp-tx);padding:2.5mm 4mm;margin-bottom:2mm;background:var(--pp-soft)}
-.ps-framed .rv-page-meta{border-top:0}
-.ps-framed .rv-page-sign div{border-top-width:1.5px}
 
 /* compact: more rows on a page, lighter rules */
 .ps-compact .rv-pt tbody th,.ps-compact .rv-pt tbody td{height:calc(var(--pp-fs,12px) * 1.7)}

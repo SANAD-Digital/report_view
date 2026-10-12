@@ -48,7 +48,7 @@ export function page_box({ size = "A4", orientation = "portrait", margins = "nor
 		w,
 		h,
 		pad,
-		// the smallest margin (the frame of a framed page stands inside it)
+		// the smallest margin of the four
 		margin: Math.min(pad.top, pad.bottom, pad.start, pad.end),
 		inner_w: w - pad.start - pad.end,
 		inner_h: h - pad.top - pad.bottom,

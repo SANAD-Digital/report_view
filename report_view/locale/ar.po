@@ -1554,8 +1554,6 @@ msgstr "حديث"
 msgid "Accounting grid"
 msgstr "شبكة محاسبية"
 
-msgid "Formal, framed"
-msgstr "رسمي بإطار"
 
 msgctxt "Print template"
 msgid "Compact"

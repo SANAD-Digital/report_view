@@ -109,7 +109,6 @@ export const PAGE_STYLES = [
 	{ id: "classic", label: () => __("Classic") },
 	{ id: "modern", label: () => __("Modern") },
 	{ id: "ledger", label: () => __("Accounting grid") },
-	{ id: "framed", label: () => __("Formal, framed") },
 	{ id: "compact", label: () => __("Compact", null, "Print template") },
 	{ id: "minimal", label: () => __("Ink saving") },
 ];

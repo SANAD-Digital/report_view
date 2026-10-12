@@ -2450,7 +2450,7 @@ test("pages: only the pages near the viewport carry content; far ones give it ba
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
-test("pages: the standard template's six print styles, in a list of their own; a style is kept for the user", async ({ page }) => {
+test("pages: the standard template's five print styles, in a list of their own; a style is kept for the user", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, `report=tb&lang=ar&rv=${PAGES}${pages_settings({ orientation: "landscape", signatures: true })}`);
 	await settle(page);
@@ -2458,9 +2458,9 @@ test("pages: the standard template's six print styles, in a list of their own; a
 	// the template list: the standard one, then the report's print formats (none in the harness)
 	expect(await page.$$eval('select[data-set="template"] option', (os) => os.map((o) => o.value))).toEqual([""]);
 	const options = await page.$$eval('select[data-set="style"] option', (os) => os.map((o) => o.value));
-	expect(options).toEqual(["classic", "modern", "ledger", "framed", "compact", "minimal"]);
+	expect(options).toEqual(["classic", "modern", "ledger", "compact", "minimal"]);
 	const rows = {};
-	for (const look of ["classic", "modern", "ledger", "framed", "compact", "minimal"]) {
+	for (const look of ["classic", "modern", "ledger", "compact", "minimal"]) {
 		await page.selectOption('select[data-set="style"]', look);
 		await settle(page);
 		const st = await page.evaluate(() => ({

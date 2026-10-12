@@ -311,11 +311,15 @@ export class PagesView {
 		const el = this.el;
 		el.innerHTML = `
 			<aside class="rv-print-side" aria-label="${esc(__("Print settings"))}">
-				<div class="rv-panel-hd"><strong>${esc(__("Print pages"))}</strong><span class="sp"></span><span class="rv-print-count"></span></div>
+				<div class="rv-print-hd">
+					<div class="rv-print-hd-t"><strong>${esc(__("Print setup"))}</strong><span class="rv-print-count"></span></div>
+					<button type="button" class="rv-btn sm ghost" data-action="reset" title="${esc(__("Back to the default settings"))}">${icons.reset()}<span>${esc(__("Reset", null, "Report View"))}</span></button>
+				</div>
 				<div class="bd"></div>
 				<div class="rv-print-ft">
-					<button type="button" class="rv-btn primary" data-action="print">${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
 					<span class="rv-print-note"></span>
+					<button type="button" class="rv-btn primary rv-print-go" data-action="print">${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
+					<small class="rv-print-tip">${esc(__("To keep a PDF file, choose «Save as PDF» in the print dialog."))}</small>
 				</div>
 			</aside>
 			<div class="rv-print-stage" tabindex="0">
@@ -344,6 +348,7 @@ export class PagesView {
 		this.zoom_lbl = el.querySelector(".rv-print-zoom-lbl");
 		this.busy_el = el.querySelector(".rv-print-busy");
 		el.querySelector('[data-action="print"]').addEventListener("click", () => this.print());
+		el.querySelector('[data-action="reset"]').addEventListener("click", () => this.reset());
 		for (const b of el.querySelectorAll("[data-zoom]")) b.addEventListener("click", () => this.zoom(b.dataset.zoom));
 		this.stage.addEventListener("scroll", () => this.update_position(), { passive: true });
 		this.resize_observer = new ResizeObserver(() => this.apply_zoom());
@@ -562,6 +567,16 @@ export class PagesView {
 		return Array.isArray(own) && own.length ? own.map(String) : [__("Accountant"), __("Finance Manager"), __("General Manager")];
 	}
 
+	/** Back to the default settings of the pages (the zoom and the columns shown stay). */
+	reset() {
+		const keep = { zoom: this.settings.zoom };
+		const fresh = sanitize_settings(null);
+		if (this.options?.default_letter_head) fresh.letter_head = this.options.default_letter_head;
+		this.settings = { ...fresh, ...keep };
+		this.update({});
+		frappe.show_alert?.({ message: __("Print settings are back to their defaults"), indicator: "green" });
+	}
+
 	/**
 	 * The settings panel: sections that fold (paper, template, letter head, footer, page
 	 * numbers, watermark, content, columns), each with a line that sums it up. Numbers are
@@ -589,13 +604,15 @@ export class PagesView {
 		};
 		const select = (key, label, opts) =>
 			`<label class="rv-field"><span>${esc(label)}</span><select class="rv-input" data-set="${key}">${opts.map(([v, l]) => option(v, l, String(s[key]) === String(v))).join("")}</select></label>`;
+		// the little page between the four fields draws them: wider margins, a smaller body
+		const box_preview = (b) => SIDES.map((side) => `--m-${side}:${Math.min(38, Number(b[side]) * 1.6)}%`).join(";");
 		// four margins as Word draws them: top and bottom, the two sides, a page between
 		const box = (key, label) => {
 			const v = s[key];
 			const field = (side, title) =>
 				`<label class="rv-box4-${side}" title="${esc(title)}"><input type="number" class="rv-input" data-box="${key}" data-side="${side}" min="${BOX_MM.min}" max="${BOX_MM.max}" step="0.5" value="${v[side]}" aria-label="${esc(`${label}: ${title}`)}"></label>`;
 			return `<div class="rv-field"><span>${esc(label)} <i class="rv-unit">(${esc(mm)})</i><button type="button" class="rv-link" data-box-all="${key}" title="${esc(__("Use the top value on every side"))}">${esc(__("Same on all sides"))}</button></span>
-				<div class="rv-box4">${field("top", __("Top", null, "Report View"))}${field("start", __("Start", null, "Report View"))}<span class="rv-box4-page" aria-hidden="true"></span>${field("end", __("End", null, "Report View"))}${field("bottom", __("Bottom", null, "Report View"))}</div></div>`;
+				<div class="rv-box4" data-preview="${key}">${field("top", __("Top", null, "Report View"))}${field("start", __("Start", null, "Report View"))}<span class="rv-box4-page" aria-hidden="true" style="${box_preview(v)}"><i></i></span>${field("end", __("End", null, "Report View"))}${field("bottom", __("Bottom", null, "Report View"))}</div></div>`;
 		};
 		const rule = (key, label) =>
 			`<div class="rv-field rv-rule-field"><span>${esc(label)}</span><div class="rv-rule-ctl">
@@ -610,7 +627,7 @@ export class PagesView {
 					.join("")}</select>
 				<input type="color" data-color="${key}_c" value="${s[`${key}_c`]}" aria-label="${esc(__("Colour"))}" title="${esc(__("Colour"))}"></div></div>`;
 		const section = (id, icon, title, summary, body, extra = "") =>
-			`<details class="rv-psec" data-sec="${id}" ${this.open_secs.has(id) ? "open" : ""}><summary><span class="ic">${icon}</span><span class="tt">${esc(title)}</span><span class="sm">${esc(summary)}</span>${extra}</summary><div class="rv-psec-bd">${body}</div></details>`;
+			`<details class="rv-psec" data-sec="${id}" ${this.open_secs.has(id) ? "open" : ""}><summary><span class="ic">${icon}</span><span class="tx"><span class="tt">${esc(title)}</span>${summary ? `<span class="sm">${esc(summary)}</span>` : ""}</span>${extra}</summary><div class="rv-psec-bd">${body}</div></details>`;
 		const align3 = [["start", __("Start", null, "Report View")], ["center", __("Centre")], ["end", __("End", null, "Report View")]];
 		const pm = s.page_m;
 		const columns = model ? [...model.pinned, ...model.data] : [];
@@ -639,7 +656,8 @@ export class PagesView {
 		const paper_sum = `${s.size} · ${s.orientation === "landscape" ? __("Landscape", null, "Report View") : __("Portrait", null, "Report View")} · ${[pm.top, pm.end, pm.bottom, pm.start].join("/")} ${mm}`;
 		const tpl_sum = [s.template || PAGE_STYLES.find((x) => x.id === s.style)?.label(), s.lang ? o.languages.find((l) => l.name === s.lang)?.label : ""].filter(Boolean).join(" · ");
 		const scope_label = { all: __("Every page"), first: __("First page"), rest: __("All but the first"), last: __("Last page") };
-		const scopes = (key, list) => seg(key, __("Apply to"), list.map((v) => [v, scope_label[v]]));
+		// four choices do not fit one line: two by two
+		const scopes = (key, list) => seg(key, __("Apply to"), list.map((v) => [v, scope_label[v]])).replace("rv-print-seg", `rv-print-seg${list.length > 3 ? " grid2" : ""}`);
 		const lh_sum = s.letter_head ? `${s.letter_head} · ${scope_label[s.lh_pages]}` : __("None", null, "Report View");
 		const foot_sum = !s.letter_head || !s.foot_height ? __("None", null, "Report View") : scope_label[s.foot_pages];
 		const num_sum = s.page_numbers ? pos_label[s.number_pos] : __("Hidden");
@@ -652,10 +670,10 @@ export class PagesView {
 				I.paper,
 				__("Paper and margins"),
 				paper_sum,
-				`<div class="rv-print-row">${select("size", __("Paper size"), Object.keys(PAGE_SIZES).map((k) => [k, k]))}
-					<div class="rv-field"><span>${esc(__("Orientation"))}</span><div class="rv-orient sm" role="group">
-						<button type="button" data-orient="portrait" class="${s.orientation === "portrait" ? "on" : ""}" aria-pressed="${s.orientation === "portrait"}" title="${esc(__("Portrait", null, "Report View"))}"><i style="width:12px;height:16px"></i>${esc(__("Portrait", null, "Report View"))}</button>
-						<button type="button" data-orient="landscape" class="${s.orientation === "landscape" ? "on" : ""}" aria-pressed="${s.orientation === "landscape"}" title="${esc(__("Landscape", null, "Report View"))}"><i style="width:16px;height:12px"></i>${esc(__("Landscape", null, "Report View"))}</button>
+				`<div class="rv-print-row rv-paper-row">${select("size", __("Paper size"), Object.keys(PAGE_SIZES).map((k) => [k, k]))}
+					<div class="rv-field"><span>${esc(__("Orientation"))}</span><div class="rv-seg rv-print-seg rv-orient-seg" role="group" aria-label="${esc(__("Orientation"))}">
+						<button type="button" data-orient="portrait" class="${s.orientation === "portrait" ? "on" : ""}" aria-pressed="${s.orientation === "portrait"}" title="${esc(__("Portrait", null, "Report View"))}"><i class="pg p"></i><span>${esc(__("Portrait", null, "Report View"))}</span></button>
+						<button type="button" data-orient="landscape" class="${s.orientation === "landscape" ? "on" : ""}" aria-pressed="${s.orientation === "landscape"}" title="${esc(__("Landscape", null, "Report View"))}"><i class="pg l"></i><span>${esc(__("Landscape", null, "Report View"))}</span></button>
 					</div></div></div>
 				${seg("margins", __("Margins"), [["narrow", __("Narrow")], ["normal", __("Normal", null, "Report View")], ["wide", __("Wide")], ["custom", __("Custom", null, "Report View")]])}
 				${box("page_m", __("Page margins"))}`
@@ -846,6 +864,8 @@ export class PagesView {
 				const v = clamp(i.value, [BOX_MM.min, BOX_MM.max, 0.5]);
 				if (v === null || i.value === "") return;
 				typed({ [key]: { ...this.settings[key], [i.dataset.side]: v }, ...(key === "page_m" ? { margins: "custom" } : {}) });
+				const page = bd.querySelector(`[data-preview="${key}"] .rv-box4-page`);
+				if (page) page.style.setProperty(`--m-${i.dataset.side}`, `${Math.min(38, v * 1.6)}%`);
 			});
 			i.addEventListener("change", () => {
 				const v = clamp(i.value, [BOX_MM.min, BOX_MM.max, 0.5]) ?? this.settings[key][i.dataset.side];

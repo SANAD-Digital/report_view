@@ -281,3 +281,76 @@
 
 /* ---------- page border: its own rule round the page, at a distance from the paper's edge ---------- */
 .rv-page-border{position:absolute;inset:var(--pp-pb-off,6mm);border:var(--pp-pb,1.5px solid #1B1F1D);border-radius:var(--pp-pb-r,0);pointer-events:none;z-index:5}
+
+/* ==========================================================================
+   The settings panel, polished: one scale of controls (28px), quiet labels,
+   folding sections with an icon tile and their summary on a line of their own
+   ========================================================================== */
+.rv-print-side{width:320px;background:var(--surface-2)}
+.rv.compact .rv-print-side{width:300px}
+.rv-print-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;height:48px;padding:0 10px 0 14px;border-bottom:1px solid var(--line);background:var(--surface);flex:none}
+.rv[dir=rtl] .rv-print-hd{padding:0 14px 0 10px}
+.rv-print-hd-t{display:flex;align-items:center;gap:8px;min-width:0}
+.rv-print-hd-t strong{font-size:var(--fs);font-weight:600;color:var(--tx)}
+.rv-print-hd .rv-print-count{font-size:11px;font-weight:600;color:var(--pri-tx);background:var(--pri-soft);border-radius:999px;padding:1px 8px;line-height:18px}
+.rv-print-hd .rv-print-count:empty{display:none}
+.rv-print-hd .rv-btn{gap:5px;color:var(--tx-3)}
+.rv-print-side .bd{padding:10px;gap:8px}
+
+.rv-psec{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);overflow:hidden;transition:box-shadow .15s,border-color .15s}
+.rv-psec[open]{border-color:var(--line-2);box-shadow:0 1px 2px rgba(17,24,20,.04),0 4px 14px rgba(17,24,20,.05)}
+.rv-psec > summary{gap:10px;min-height:52px;padding:8px 12px;border-radius:0}
+.rv-psec[open] > summary{border-bottom:1px solid var(--line);background:linear-gradient(var(--surface),var(--surface-2))}
+.rv-psec > summary .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--pri-soft);color:var(--pri-tx)}
+.rv-psec > summary .tx{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.rv-psec > summary .tt{font-size:var(--fs-sm);font-weight:600;line-height:1.3}
+.rv-psec > summary .sm{margin:0;font-size:11.5px;line-height:1.35;color:var(--tx-3);text-align:start;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv-psec-bd{gap:12px;padding:12px}
+.rv-psec-bd .rv-field{gap:5px}
+.rv-psec-bd .rv-field > span{font-size:11.5px;color:var(--tx-3);font-weight:500;letter-spacing:.01em}
+.rv-psec-bd .rv-print-row{gap:10px;margin:0}
+/* one control height inside the panel */
+.rv-psec-bd .rv-input{height:var(--ctl-sm);font-size:var(--fs-xs);border-radius:var(--r-sm);padding:0 8px}
+.rv-psec-bd select.rv-input{padding-inline-end:22px}
+.rv-psec-bd .rv-print-seg{padding:2px;border-radius:var(--r-sm)}
+.rv-psec-bd .rv-print-seg button{height:calc(var(--ctl-sm) - 4px);font-size:var(--fs-xs);border-radius:4px;padding:0 6px}
+.rv-psec-bd .rv-num i{inset-inline-end:7px;font-size:10.5px}
+.rv-psec-bd .rv-num input{padding-inline-end:26px}
+.rv-psec-bd .rv-print-sw{justify-content:space-between;width:100%;font-size:var(--fs-sm);color:var(--tx-2)}
+.rv-psec-bd .rv-switch{width:30px;height:18px}
+.rv-psec-bd .rv-switch::after{width:14px;height:14px}
+.rv-psec-bd .rv-switch.on::after{inset-inline-start:14px}
+.rv-psec-bd .rv-setlist{border:1px solid var(--line);border-radius:var(--r-sm);padding:2px}
+.rv-psec-bd .rv-setitem{min-height:28px;font-size:var(--fs-xs)}
+.rv-psec-bd .rv-zone-empty{margin:0;line-height:1.5}
+
+/* paper: the size and the orientation side by side */
+.rv-paper-row{grid-template-columns:84px 1fr}
+.rv-orient-seg button{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.rv-orient-seg .pg{display:block;border:1.4px solid currentColor;border-radius:1.5px;flex:none}
+.rv-orient-seg .pg.p{width:9px;height:12px}
+.rv-orient-seg .pg.l{width:12px;height:9px}
+
+/* four margins: compact fields round a little page that shows them */
+.rv-box4{grid-template-columns:1fr 92px 1fr;gap:6px 8px}
+.rv-box4 input.rv-input{height:var(--ctl-sm);text-align:center}
+.rv-box4-top input,.rv-box4-bottom input{width:100%}
+.rv-box4-page{position:relative;height:58px;border:1px solid var(--line-3);border-radius:3px;background:var(--surface);box-shadow:0 1px 3px rgba(17,24,20,.08)}
+.rv-box4-page i{position:absolute;top:var(--m-top,12%);bottom:var(--m-bottom,12%);inset-inline-start:var(--m-start,12%);inset-inline-end:var(--m-end,12%);border:1px dashed var(--pri);border-radius:1px;background:repeating-linear-gradient(0deg,var(--pri-soft) 0 3px,transparent 3px 6px);transition:inset .15s,top .15s,bottom .15s}
+.rv-psec-bd .rv-field > span .rv-link{font-size:11px;font-weight:500}
+
+/* rules: thickness, style, colour on one line */
+.rv-rule-ctl{grid-template-columns:72px 1fr 32px}
+.rv-rule-ctl input[type=color],.rv-color-wide{height:var(--ctl-sm);border-radius:var(--r-sm)}
+
+/* the foot of the panel: the print button, the PDF tip, a note when there is one */
+.rv-print-ft{flex-direction:column;align-items:stretch;gap:6px;padding:10px 12px 12px;background:var(--surface);border-top:1px solid var(--line)}
+.rv-print-go{width:100%;height:var(--ctl);font-size:var(--fs-sm);font-weight:600}
+.rv-print-tip{font-size:11px;color:var(--tx-3);text-align:center;line-height:1.4}
+.rv-print-ft .rv-print-note{order:-1;background:var(--warn-soft);border:1px solid var(--warn-line);border-radius:var(--r-sm);padding:6px 8px}
+.rv-print-ft .rv-print-note:not(.warn){background:var(--surface-2);border-color:var(--line)}
+
+.rv-psec-bd .rv-print-seg.grid2{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+/* the fold mark points down, up when open, in both directions (physical sides on purpose) */
+.rv-psec > summary::after{border:0;border-right:1.6px solid var(--tx-3);border-bottom:1.6px solid var(--tx-3);transform:translateY(-2px) rotate(45deg)}
+.rv-psec[open] > summary::after{transform:translateY(2px) rotate(-135deg)}

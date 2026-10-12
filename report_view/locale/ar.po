@@ -1815,3 +1815,19 @@ msgstr "الكل ما عدا الأولى"
 
 msgid "Apply to"
 msgstr "تطبيق على"
+
+msgid "Print setup"
+msgstr "إعداد الطباعة"
+
+msgid "Back to the default settings"
+msgstr "العودة إلى الإعدادات الافتراضية"
+
+msgctxt "Report View"
+msgid "Reset"
+msgstr "استعادة الافتراضي"
+
+msgid "To keep a PDF file, choose «Save as PDF» in the print dialog."
+msgstr "لحفظ ملف PDF اختر «حفظ بتنسيق PDF» في نافذة الطباعة."
+
+msgid "Print settings are back to their defaults"
+msgstr "عادت إعدادات الطباعة إلى الافتراضي"

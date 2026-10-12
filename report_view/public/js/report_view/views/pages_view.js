@@ -231,6 +231,10 @@ async function pdf_body(args, html) {
 	return form;
 }
 
+// A turn of the browser between two pieces of long work: the window stays responsive, a
+// newer change of the settings can take over.
+const breathe = () => new Promise((r) => setTimeout(r, 0));
+
 function wait_images(el, timeout = 2500) {
 	const imgs = [...el.querySelectorAll("img")].filter((img) => !img.complete);
 	if (!imgs.length) return Promise.resolve();
@@ -1926,6 +1930,8 @@ export class PagesView {
 				sync();
 				holder.innerHTML = this.page_shell(i, box, dir, this.custom_page_html(i, true));
 				if (guard === 0) await wait_images(holder);
+				await breathe();
+				if (token !== this.token) return;
 				const sheet = holder.firstElementChild;
 				const foot = sheet.querySelector(".rv-page-foot").getBoundingClientRect();
 				const page_r = sheet.getBoundingClientRect();

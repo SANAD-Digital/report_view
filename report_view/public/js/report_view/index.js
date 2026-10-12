@@ -124,10 +124,10 @@ export class ReportViewPage {
 			<div class="rv-shell">
 				<section class="rv-server" aria-label="${esc(__("Report criteria"))}">
 					<div class="rv-filters"></div>
-					<div class="rv-toolbar-slot"></div>
 				</section>
 				<div class="rv-message"></div>
 				<div class="rv-summary-slot"></div>
+				<div class="rv-toolbar-slot"></div>
 				<div class="rv-charts-slot"></div>
 				<div class="rv-gridwrap"><div class="rv-body"><div class="rv-grid"></div><div class="rv-grid rv-pivotgrid"></div><div class="rv-pages"></div></div></div>
 			</div>`;
@@ -1077,8 +1077,12 @@ export class ReportViewPage {
 		return api.render_letterhead(name, { ...ctx.filters, company: ctx.filters.company || ctx.company });
 	}
 
-	pages_format(name) {
-		return api.get_print_format(this.report_name, name);
+	/** A report print format: a JS template as it is, a Jinja one rendered by the server. */
+	async pages_format(name, lang = null) {
+		const format = await api.get_print_format(this.report_name, name);
+		if (format.type !== "Jinja") return format;
+		const meta = (this.report_settings?.filters || []).map((df) => ({ fieldname: df.fieldname, label: __(df.label || ""), fieldtype: df.fieldtype }));
+		return api.render_print_format(this.report_name, name, this.last_filters, this.filters.js_filters(), meta, this.prepared_report_name, lang);
 	}
 
 	pages_translations(lang, messages) {

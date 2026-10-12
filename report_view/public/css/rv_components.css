@@ -67,7 +67,8 @@
 .rv-server{display:flex;flex-wrap:wrap;align-items:center;gap:var(--gap) 10px;padding:6px 8px;border-radius:var(--r-lg);background:var(--surface-2);border:1px solid var(--line)}
 .rv-filters{display:flex;align-items:center;flex:0 1 auto;min-width:0}
 .rv-criteria-main{display:flex;flex-wrap:wrap;align-items:center;gap:var(--gap);min-width:0}
-.rv-toolbar{display:flex;align-items:center;gap:10px;flex:1 1 360px;min-width:0}
+/* the view switcher, then the search: a row of its own between the summary and the grid (main.png) */
+.rv-toolbar{display:flex;align-items:center;gap:10px;min-width:0;flex:none}
 
 /* ---------- summary cards (trial balance): one line each, the report keeps the screen ---------- */
 .rv-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--gap)}

@@ -2193,6 +2193,12 @@ const open_sections = (page) =>
 		v.open_secs = new Set(["paper", "tpl", "head", "heading", "foot", "num", "border", "wm", "content", "cols"]);
 		v.render_panel();
 	});
+// a Link field of the panel (a Frappe control): typed, committed as the field is left
+const pick_link = async (page, key, value) => {
+	await page.locator(`[data-link="${key}"] input`).fill(value);
+	await page.locator(`[data-link="${key}"] input`).press("Tab");
+	await settle(page);
+};
 // a typed number, committed as the field is left
 const type_num = async (page, sel, value) => {
 	await page.locator(sel).fill(String(value));
@@ -2350,7 +2356,7 @@ test("pages: another language runs the report again and turns the pages; the ses
 	const arabic = await pages_state(page);
 	expect(arabic.dir).toBe("rtl");
 	expect(arabic.footer).toContain("صفحة");
-	await page.selectOption('select[data-set="lang"]', "en");
+	await pick_link(page, "lang", "en");
 	await settle(page);
 	const english = await pages_state(page);
 	expect(english.dir).toBe("ltr");
@@ -2359,7 +2365,7 @@ test("pages: another language runs the report again and turns the pages; the ses
 	// the fixture's columns are wider than a portrait page: that note may stand, no failure may
 	expect(english.note).not.toMatch(/could not|تعذّر/);
 	await shot3(page, "pages-tb-english-from-arabic-session");
-	await page.selectOption('select[data-set="lang"]', "");
+	await pick_link(page, "lang", "");
 	await settle(page);
 	const back = await pages_state(page);
 	expect(back.dir).toBe("rtl");
@@ -2455,8 +2461,10 @@ test("pages: the standard template's five print styles, in a list of their own; 
 	await open(page, `report=tb&lang=ar&rv=${PAGES}${pages_settings({ orientation: "landscape", signatures: true })}`);
 	await settle(page);
 	await open_sections(page);
-	// the template list: the standard one, then the report's print formats (none in the harness)
-	expect(await page.$$eval('select[data-set="template"] option', (os) => os.map((o) => o.value))).toEqual([""]);
+	// the template is a Link field (Frappe's search with the user's permissions); empty is the standard one
+	const tpl = page.locator('[data-link="template"] input');
+	expect(await tpl.inputValue()).toBe("");
+	expect(await tpl.getAttribute("placeholder")).toBeTruthy();
 	const options = await page.$$eval('select[data-set="style"] option', (os) => os.map((o) => o.value));
 	expect(options).toEqual(["classic", "modern", "ledger", "compact", "minimal"]);
 	const rows = {};
@@ -2652,7 +2660,7 @@ test("pages: a print heading rendered with the filters, on its pages, instead of
 			}));
 		});
 	expect((await heads()).every((h) => h.heading === null)).toBe(true);
-	await page.selectOption('select[data-set="heading"]', "Statement heading");
+	await pick_link(page, "heading", "Statement heading");
 	await settle(page);
 	let h = await heads();
 	expect(h.length).toBeGreaterThan(1);
@@ -2680,7 +2688,7 @@ test("pages: a print heading rendered with the filters, on its pages, instead of
 	// a print signature replaces the standard boxes on the last page
 	await page.locator('input[data-set="signatures"]').check();
 	await settle(page);
-	await page.selectOption('select[data-set="signature"]', "Finance approvals");
+	await pick_link(page, "signature", "Finance approvals");
 	await settle(page);
 	const sig = await page.evaluate(async () => {
 		await window.rv_page.pages.fill_all();

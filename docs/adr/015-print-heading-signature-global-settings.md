@@ -29,3 +29,9 @@
 - بيئة Jinja في Frappe لا تسمح بـ `str.format` (`UNSAFE_ATTRIBUTES`): القيم تُدخل في النص المترجم بـ `|replace("{0}", …)`، ومتاح `frappe.get_fullname` لا `frappe.utils.get_fullname`. أصناف CSS في القوالب ببادئة `rvs-` لأن الأسماء الشائعة (`.row`) تخص تنسيقات Desk.
 - ثلاثة DocTypes جديدة: `Print Signature`، `Print Signature Item` (جدول)، `Report View Global Settings` (Single). تُثبَّت بـ `bench migrate` أو `reload-doc`.
 - `core/settings.get_row_limit` يقرأ `max_rows` من الإعدادات العامة؛ `PRINT_MAX_PAGES` يبقى قيمة احتياطية في المتصفح.
+
+## تعديل (2026-10-12): حقول Link في اللوحة
+- قالب الطباعة والترويسة ورأس الطباعة والتوقيع واللغة صارت حقول Link (`frappe.ui.form.make_control`) بدل قوائم ثابتة: البحث عبر `search_link` بصلاحيات المستخدم وقيود الشركة، مع فلاتر: قوالب التقرير (`print_format_for = Report`، `report` ضمن `get_print_options.reports`، JS أو Jinja، غير معطّلة)، الترويسات غير المعطّلة، اللغات المفعّلة.
+- التوقيع بدالة بحث خاصة `api.search_print_signatures` (شرط «لهذا التقرير أو للكل» لا يُكتب بفلاتر Link)، تبدأ بـ `guard_report` و `guard_print` وتقرأ بـ `frappe.get_list`. `Print Signature` صار `translated_doctype`: الاسم يظهر مترجماً، والبحث يطابق الاسم أو ترجمته.
+- الفارغ هو الاختيار القياسي (قالب Report View، بلا ترويسة، بلا رأس، الخانات القياسية، لغة الجلسة).
+- قوالب التقرير (Print Format) صارت تُختم بالتوقيع كالقالب القياسي.

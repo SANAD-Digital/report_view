@@ -694,7 +694,8 @@ export class PagesView {
 		const lh_sum = s.letter_head ? `${s.letter_head} · ${scope_label[s.lh_pages]}` : __("None", null, "Report View");
 		const hdg_sum = s.heading ? `${__(s.heading)} · ${scope_label[s.heading_pages]}` : __("None", null, "Report View");
 		const headings = o.print_headings || [];
-		const sigs = o.print_signatures || [];
+		// a record of the site: a Link field (Frappe's search, with the user's permissions)
+		const link = (key, label) => `<div class="rv-field"><span>${esc(label)}</span><div class="rv-linkf" data-link="${key}" data-label="${esc(label)}"></div></div>`;
 		const foot_sum = !s.letter_head || !s.foot_height ? __("None", null, "Report View") : scope_label[s.foot_pages];
 		const num_sum = s.page_numbers ? pos_label[s.number_pos] : __("Hidden");
 		const pb_sum = s.pb_on ? `${s.pb_w} px · ${{ solid: __("Solid"), dashed: __("Dashed"), dotted: __("Dotted"), double: __("Double") }[s.pb_s]}` : __("None", null, "Report View");
@@ -719,19 +720,11 @@ export class PagesView {
 				I.tpl,
 				__("Template and language"),
 				tpl_sum,
-				`<label class="rv-field"><span>${esc(__("Print template"))}</span><select class="rv-input" data-set="template">${option("", __("Report View (standard)"), !s.template)}${
-					o.print_formats.length ? `<optgroup label="${esc(__("Print formats of the report"))}">${o.print_formats.map((n) => option(n, n, s.template === n)).join("")}</optgroup>` : ""
-				}</select></label>
+				`${link("template", __("Print template"))}
 				${select("style", __("Print style"), PAGE_STYLES.map((st) => [st.id, st.label()]))}
-				<label class="rv-field"><span>${esc(__("Letter Head", null, "Report View"))}</span><select class="rv-input" data-set="letter_head">${option("", __("No letter head"), !s.letter_head)}${o.letter_heads
-					.map((lh) => option(lh.name, lh.name, s.letter_head === lh.name))
-					.join("")}</select></label>
-				<label class="rv-field"><span>${esc(__("Print Heading", null, "Report View"))}</span><select class="rv-input" data-set="heading">${option("", __("No print heading"), !s.heading)}${headings
-					.map((n) => option(n, __(n), s.heading === n))
-					.join("")}</select></label>
-				<label class="rv-field"><span>${esc(__("Language", null, "Report View"))}</span><select class="rv-input" data-set="lang">${option("", __("Session language ({0})", [o.lang || frappe.boot.lang]), !s.lang)}${o.languages
-					.map((l) => option(l.name, l.label, s.lang === l.name))
-					.join("")}</select></label>`
+				${link("letter_head", __("Letter Head", null, "Report View"))}
+				${link("heading", __("Print Heading", null, "Report View"))}
+				${link("lang", __("Language", null, "Report View"))}`
 			),
 			section(
 				"head",
@@ -854,9 +847,7 @@ export class PagesView {
 				)}${check("signatures", __("Signature boxes"))}${check("printed_on", __("Print date and user"))}</div>
 				${
 					s.signatures
-						? `<label class="rv-field"><span>${esc(__("Signature", null, "Report View"))}</span><select class="rv-input" data-set="signature">${option("", __("Report View (standard)"), !s.signature)}${
-								sigs.length ? `<optgroup label="${esc(__("Print Signature"))}">${sigs.map((x) => option(x.name, __(x.name), s.signature === x.name)).join("")}</optgroup>` : ""
-						  }</select></label>`
+						? link("signature", __("Signature", null, "Report View"))
 						: ""
 				}`
 			),
@@ -880,8 +871,63 @@ export class PagesView {
 		this.bind_panel();
 	}
 
+	/**
+	 * The Link fields of the panel: the records a user may choose (print formats of the
+	 * report, letter heads, print headings, signatures, languages) are searched by Frappe
+	 * (search_link: the user's permissions); empty is the standard choice.
+	 */
+	link_defs() {
+		const o = this.options || {};
+		const reports = o.reports || [this.ctx?.report_name];
+		return {
+			template: {
+				doctype: "Print Format",
+				placeholder: __("Report View (standard)"),
+				query: () => ({ filters: { print_format_for: "Report", report: ["in", reports], print_format_type: ["in", ["JS", "Jinja"]], disabled: 0 } }),
+			},
+			letter_head: { doctype: "Letter Head", placeholder: __("No letter head"), query: () => ({ filters: { disabled: 0 } }) },
+			heading: { doctype: "Print Heading", placeholder: __("No print heading") },
+			signature: {
+				doctype: "Print Signature",
+				placeholder: __("Report View (standard)"),
+				query: () => ({ query: "report_view.api.search_print_signatures", filters: { report_name: this.ctx?.report_name } }),
+			},
+			lang: { doctype: "Language", placeholder: __("Session language ({0})", [o.lang || frappe.boot.lang]), query: () => ({ filters: { enabled: 1 } }) },
+		};
+	}
+
+	mount_links() {
+		if (!frappe.ui?.form?.make_control) return;
+		const defs = this.link_defs();
+		for (const el of this.bd.querySelectorAll("[data-link]")) {
+			const key = el.dataset.link;
+			const def = defs[key];
+			const f = frappe.ui.form.make_control({
+				df: {
+					fieldtype: "Link",
+					fieldname: `rv_print_${key}`,
+					options: def.doctype,
+					placeholder: def.placeholder,
+					get_query: def.query,
+					onchange: () => {
+						const v = f.get_value() || "";
+						if (v !== (this.settings[key] || "")) this.update({ [key]: v });
+					},
+				},
+				parent: el,
+				only_input: true,
+			});
+			f.refresh();
+			if (!f.$input) f.make_input();
+			f.$input.attr("aria-label", el.dataset.label);
+			f.$input.attr("placeholder", def.placeholder);
+			f.set_input(this.settings[key] || "");
+		}
+	}
+
 	bind_panel() {
 		const bd = this.bd;
+		this.mount_links();
 		for (const d of bd.querySelectorAll("details[data-sec]")) {
 			d.addEventListener("toggle", () => (d.open ? this.open_secs.add(d.dataset.sec) : this.open_secs.delete(d.dataset.sec)));
 		}
@@ -1627,6 +1673,9 @@ export class PagesView {
 		// The format's own @page rules (paper and margins of a whole-document print) would
 		// fight the pages' paper: the pages are the paper here.
 		html = strip_scripts(html).replace(/@page\s*\{[^}]*\}/g, "");
+		// the signature closes the format's flow, as it closes the standard template
+		const sign = this.signatures_html();
+		if (sign) html += `<div class="rv-page-tail rv-page-tail-format">${sign}</div>`;
 		// Flow the HTML at the width of the page body and measure its blocks.
 		this.custom_styles = "";
 		// The pages carry the letter head as the standard template does: in full on the first

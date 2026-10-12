@@ -2208,13 +2208,23 @@ export class PagesView {
 	}
 
 	/**
-	 * A self-contained HTML document of the printed sheets: every style of the page (the
-	 * pages' own and the format's), the images as data: URIs (the server's engine reaches
-	 * the site's public assets only), the base of the site for the fonts.
+	 * The HTML document of the printed sheets for the server's engine (ADR-016). What the
+	 * engine reads from the site's public files itself (/assets, /files: from disk) goes as a
+	 * link, in the order of the page: the stylesheets, the public images, the fonts. Only
+	 * what it may not read is inlined: the page's own <style> blocks and private images (as
+	 * data: URIs, once each). The attributes of <html> and <body> go as they are.
 	 */
 	async print_document(root) {
-		const css = [];
+		const PUBLIC = /^\/(assets|files)\//;
+		const head = [];
 		for (const sheet of document.styleSheets) {
+			const node = sheet.ownerNode;
+			const href = sheet.href ? new URL(sheet.href) : null;
+			if (href && href.origin === location.origin && PUBLIC.test(href.pathname) && node?.tagName === "LINK") {
+				const media = node.getAttribute("media");
+				head.push(`<link rel="stylesheet" href="${esc(href.pathname + href.search)}"${media ? ` media="${esc(media)}"` : ""}>`);
+				continue;
+			}
 			let rules;
 			try {
 				rules = sheet.cssRules;
@@ -2226,7 +2236,8 @@ export class PagesView {
 			let text = "";
 			for (const rule of rules) text += rule.cssText + "\n";
 			// url() of a stylesheet resolve against its own address
-			css.push(text.replace(/url\((['"]?)(?!data:|https?:|\/)([^'")]+)\1\)/g, (m, q, u) => `url(${q}${new URL(u, base).pathname}${q})`));
+			text = text.replace(/url\((['"]?)(?!data:|https?:|\/)([^'")]+)\1\)/g, (m, q, u) => `url(${q}${new URL(u, base).pathname}${q})`);
+			head.push(`<style>${text.replace(/<\/style/gi, "<\\/style")}</style>`);
 		}
 		const clone = root.cloneNode(true);
 		const cache = new Map();
@@ -2234,28 +2245,42 @@ export class PagesView {
 			if (!src || src.startsWith("data:")) return src;
 			const url = new URL(src, location.href);
 			if (url.origin !== location.origin) return src;
+			if (PUBLIC.test(url.pathname)) return url.pathname + url.search;
 			if (!cache.has(url.href)) {
 				cache.set(
 					url.href,
 					fetch(url.href, { credentials: "same-origin" })
 						.then((r) => (r.ok ? r.blob() : Promise.reject()))
-						.then((b) => new Promise((resolve) => {
-							const fr = new FileReader();
-							fr.onload = () => resolve(fr.result);
-							fr.onerror = () => resolve(src);
-							fr.readAsDataURL(b);
-						}))
+						.then(
+							(b) =>
+								new Promise((resolve) => {
+									const fr = new FileReader();
+									fr.onload = () => resolve(fr.result);
+									fr.onerror = () => resolve(src);
+									fr.readAsDataURL(b);
+								})
+						)
 						.catch(() => src)
 				);
 			}
 			return cache.get(url.href);
 		};
-		await Promise.all([...clone.querySelectorAll("img")].map(async (img) => img.setAttribute("src", await inline(img.getAttribute("src")))));
+		// a private image repeated on every page (a letter head) is inlined once, as a CSS
+		// variable the pages' images read
+		const images = [...clone.querySelectorAll("img")];
+		const sources = await Promise.all(images.map((img) => inline(img.getAttribute("src"))));
+		const ids = new Map();
+		images.forEach((img, i) => {
+			const src = sources[i];
+			if (!src?.startsWith("data:")) return img.setAttribute("src", src || "");
+			if (!ids.has(src)) ids.set(src, `--rv-img-${ids.size}`);
+			img.setAttribute("src", "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==");
+			img.style.setProperty("content", `var(${ids.get(src)})`);
+		});
+		if (ids.size) head.push(`<style>:root{${[...ids].map(([src, id]) => `${id}:url("${src}")`).join(";")}}</style>`);
 		for (const el of clone.querySelectorAll("script")) el.remove();
-		// the attributes of <html> and <body> as they are: an app may set the fonts or the
-		// theme there (an inline variable, a class), and the print reads them
 		const attrs = (el) => [...el.attributes].map((x) => `${x.name}="${esc(x.value)}"`).join(" ");
-		return `<!doctype html><html ${attrs(document.documentElement)}><head><meta charset="utf-8"><base href="${esc(location.origin)}/"><title>${esc(this.ctx.report_name)}</title><style>${css.join("\n").replace(/<\/style/gi, "<\\/style")}</style></head><body ${attrs(document.body)}>${clone.outerHTML}</body></html>`;
+		return `<!doctype html><html ${attrs(document.documentElement)}><head><meta charset="utf-8"><base href="${esc(location.origin)}/"><title>${esc(this.ctx.report_name)}</title>${head.join("")}</head><body ${attrs(document.body)}>${clone.outerHTML}</body></html>`;
 	}
 
 	print_css() {

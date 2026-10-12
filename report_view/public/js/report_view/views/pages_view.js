@@ -141,6 +141,8 @@ const NUMBER_FORMATS = ["full", "short", "number", "dash"];
 // the pages already cut, without cutting them again.
 // the least share of a page left to the content before a repeated signature moves to the last page
 const MIN_ROOM = 0.25;
+// pages of a format drawn at once in the probe to be checked
+const FIT_RUN = 30;
 const PAINT_KEYS = new Set(["pb_on", "pb_w", "pb_s", "pb_c", "pb_offset", "pb_radius", "pb_pages", "wm_type", "wm_text", "wm_image", "wm_size", "wm_scale", "wm_color", "wm_opacity", "wm_angle", "wm_pages"]);
 const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "number_caption", "pb_on", "heading_replace"];
 const PAGE_SCOPES = ["all", "first", "rest"];
@@ -1837,7 +1839,8 @@ export class PagesView {
 	 * whole report as one flow with query-report's context; the flow is cut into pages by
 	 * measuring its blocks (a table by its rows, its header repeated).
 	 */
-	async layout_custom(token, box, dir) {
+	async layout_custom(token, box, dir, remeasure = false) {
+		if (remeasure) this.flow_cache = null;
 		const ctx = this.ctx;
 		let html = "";
 		try {
@@ -1867,8 +1870,12 @@ export class PagesView {
 		html = strip_scripts(html).replace(/@page\s*\{[^}]*\}/g, "");
 		// the signature closes the format's flow, as it closes the standard template
 		if (this.sig_in_tail()) html += this.signatures_html();
-		// Flow the HTML at the width of the page body and measure its blocks.
+		// Flow the HTML at the width of the page body and measure its blocks: once for a format,
+		// width, language and look. A change of the head, the foot, the signature in the foot or
+		// the margins above and below keeps the blocks measured, only the room changes.
 		this.custom_styles = "";
+		const flow_key = `${box.inner_w}|${dir}|${this.settings.style}|${html}`;
+		const known = this.flow_cache?.key === flow_key ? this.flow_cache : null;
 		// The pages carry the letter head as the standard template does: in full on the first
 		// page, a slim line naming the report on the others (or the letter head on every page).
 		this.probe.innerHTML =
@@ -1877,7 +1884,7 @@ export class PagesView {
 				0,
 				box,
 				dir,
-				`<header class="rv-page-top rv-page-top-first">${this.custom_head(true)}</header><div class="rv-page-flow">${html}</div><footer class="rv-page-foot">${this.foot_html(1, 1, this.letterhead, true)}</footer>`
+				`<header class="rv-page-top rv-page-top-first">${this.custom_head(true)}</header><div class="rv-page-flow">${known ? "" : html}</div><footer class="rv-page-foot">${this.foot_html(1, 1, this.letterhead, true)}</footer>`
 			);
 		await wait_images(this.probe);
 		if (token !== this.token) return;
@@ -1889,43 +1896,22 @@ export class PagesView {
 		const body_h = Math.max(40, box.inner_h - next_h - foot_h - SAFETY_PX);
 		const first_body_h = Math.max(40, box.inner_h - first_h - foot_h - SAFETY_PX);
 		if (this.sig_leaves_no_room(box.inner_h - next_h - foot_h - SAFETY_PX, box)) return this.layout_custom(token, box, dir);
-		const flow = q(".rv-page-flow");
-		if (flow.scrollWidth > box.inner_w + 1 || [...flow.querySelectorAll("td, th")].some((c) => c.getBoundingClientRect().width < 1)) {
-			this.note(__("The print format is wider than the page: try landscape or a larger paper."), true);
+		let units;
+		let wide;
+		// blocks measured before stand, unless one taller than the new room was kept whole
+		if (known && !known.units.some((u) => u.h > body_h && u.node?.children?.length)) {
+			({ units, wide } = known);
+		} else {
+			if (known) return this.layout_custom(token, box, dir, true);
+			const flow = q(".rv-page-flow");
+			wide = flow.scrollWidth > box.inner_w + 1 || [...flow.querySelectorAll("td, th")].some((c) => c.getBoundingClientRect().width < 1);
+			units = this.flow_units(flow, body_h);
+			this.flow_cache = { key: flow_key, units, wide };
 		}
-		const units = this.flow_units(flow, body_h);
-		// Pack the units into pages.
-		const pages = [];
-		let page = { units: [], used: 0 };
-		const room = () => (pages.length ? body_h : first_body_h);
-		// a break of the format takes effect at the next block of content: the signature
-		// after the format's last page stays on that page
-		let brk = false;
-		for (const u of units) {
-			if (u.brk) {
-				brk = true;
-				continue;
-			}
-			if (brk && !u.sig && !u.style && page.units.length) {
-				pages.push(page);
-				page = { units: [], used: 0 };
-			}
-			if (!u.style && !u.sig) brk = false;
-			if (u.style) {
-				this.custom_styles += u.node.outerHTML;
-				continue;
-			}
-			// what the page holds with this block: from its first block to this one; a page
-			// that opens with a table's row repeats the table's head above it
-			const height = (first) => u.bottom - first.top + (first.table ? first.table.head_h : 0);
-			if (page.units.length && height(page.units[0]) > room()) {
-				pages.push(page);
-				page = { units: [], used: 0 };
-			}
-			page.units.push(u);
-			page.used = height(page.units[0]);
-		}
-		if (page.units.length || !pages.length) pages.push(page);
+		if (wide) this.note(__("The print format is wider than the page: try landscape or a larger paper."), true);
+		this.custom_styles = units.filter((u) => u.style).map((u) => u.node.outerHTML).join("");
+		this.custom_room = body_h;
+		const pages = this.pack_units(units.filter((u) => !u.style), first_body_h, body_h);
 		this.custom_pages = pages;
 		this.pages = pages.map((p, i) => ({ start: 0, end: 0, first: i === 0, last: i === pages.length - 1 }));
 		await this.fit_custom_pages(token, box, dir);
@@ -1936,61 +1922,142 @@ export class PagesView {
 	}
 
 	/**
-	 * The pages of a format as they will be drawn, checked one by one in the probe: a page
-	 * whose content reaches its foot gives its last block to the next page (the wrappers of a
-	 * format, its paddings and margins, can take more than the measured blocks).
+	 * The blocks of a format packed into pages by their measured places: a page holds from
+	 * its first block to its last (a page opening with a table's row repeats the table's
+	 * head). A break of the format starts a page (`forced`) at the next block of content: the
+	 * signature after the format's last page stays on that page.
+	 */
+	pack_units(units, first_room, room) {
+		const pages = [];
+		let page = { units: [], used: 0 };
+		const cap = () => (pages.length ? room : first_room);
+		let brk = false;
+		for (const u of units) {
+			if (u.brk) {
+				brk = true;
+				continue;
+			}
+			if (brk && !u.sig && page.units.length) {
+				pages.push(page);
+				page = { units: [], used: 0, forced: true };
+			}
+			if (!u.sig) brk = false;
+			const height = (first) => u.bottom - first.top + (first.table ? first.table.head_h : 0);
+			if (page.units.length && height(page.units[0]) > cap()) {
+				pages.push(page);
+				page = { units: [], used: 0 };
+			}
+			page.units.push(u);
+			page.used = height(page.units[0]);
+		}
+		if (page.units.length || !pages.length) pages.push(page);
+		return pages;
+	}
+
+	/**
+	 * The pages of a format as they will be drawn, checked in the probe: a run of pages is
+	 * drawn at once and the first page whose content reaches its foot is put right alone (its
+	 * last blocks move on: the wrappers of a format, its paddings and margins, can take more
+	 * than the measured blocks). What that page gave up tells how much the packing over-counts:
+	 * the rest of its run is packed again with that much less room, so it is right at once.
 	 */
 	async fit_custom_pages(token, box, dir) {
 		const pages = this.custom_pages;
 		const sync = () => (this.pages = pages.map((p, i) => ({ start: 0, end: 0, first: i === 0, last: i === pages.length - 1 })));
-		// the format's styles once, beside the page measured: a <style> put in again for every
+		// the format's styles once, beside the pages measured: a <style> put in again for every
 		// page would make the browser restyle the whole window each time
 		this.probe.innerHTML = `${this.custom_styles}<div></div>`;
 		const holder = this.probe.lastElementChild;
 		this.foot_overflow = false;
-		for (let i = 0; i < pages.length && i < this.max_pages(); i++) {
-			const start = pages[i].units.slice();
-			let room = 0;
-			for (let guard = 0; guard < 400; guard++) {
-				if (token !== this.token) return;
-				sync();
-				holder.innerHTML = this.page_shell(i, box, dir, this.custom_page_html(i, true));
-				if (guard === 0) await wait_images(holder);
-				await breathe();
-				if (token !== this.token) return;
-				const sheet = holder.firstElementChild;
-				const foot = sheet.querySelector(".rv-page-foot").getBoundingClientRect();
-				const page_r = sheet.getBoundingClientRect();
-				room = foot.top - sheet.querySelector(".rv-page-body").getBoundingClientRect().top;
-				// a foot (footer, number, signature) beyond the paper: the content cannot push it
-				// (the body clips), so moving rows would not help; the panel says so
-				if (foot.bottom > page_r.bottom + 1) this.foot_overflow = true;
-				let bottom = 0;
-				for (const el of sheet.querySelectorAll(".rv-page-body *")) bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
-				if (bottom <= foot.top + 1 || pages[i].units.length <= 1) break;
-				// the blocks that reach the foot (rows, a signature, a section) move on together;
-				// else (a wrapper's padding or margin) the last block alone
-				let from = pages[i].units.length - 1;
-				for (const el of sheet.querySelectorAll("[data-rv-unit]")) {
-					if (el.getBoundingClientRect().bottom > foot.top + 1) {
-						from = Math.max(1, Math.min(from, Number(el.dataset.rvUnit)));
-						break;
-					}
+		const measure = (sheet) => {
+			const foot = sheet.querySelector(".rv-page-foot").getBoundingClientRect();
+			// a foot (footer, number, signature) beyond the paper: the content cannot push it
+			// (the body clips), so moving rows would not help; the panel says so
+			if (foot.bottom > sheet.getBoundingClientRect().bottom + 1) this.foot_overflow = true;
+			let bottom = 0;
+			for (const el of sheet.querySelectorAll(".rv-page-body *")) bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
+			return { foot, over: bottom > foot.top + 1, room: foot.top - sheet.querySelector(".rv-page-body").getBoundingClientRect().top };
+		};
+		const limit = () => Math.min(pages.length, this.max_pages());
+		let images = true;
+		let from = 0;
+		while (from < limit()) {
+			if (token !== this.token) return;
+			sync();
+			const upto = Math.min(limit(), from + FIT_RUN);
+			let html = "";
+			for (let i = from; i < upto; i++) html += this.page_shell(i, box, dir, this.custom_page_html(i, true));
+			holder.innerHTML = html;
+			if (images) await wait_images(holder);
+			images = false;
+			await breathe();
+			if (token !== this.token) return;
+			let bad = -1;
+			for (const [k, sheet] of [...holder.children].entries()) {
+				if (measure(sheet).over && pages[from + k].units.length > 1) {
+					bad = from + k;
+					break;
 				}
-				if (!pages[i + 1]) pages.push({ units: [], used: 0 });
-				pages[i + 1].units.unshift(...pages[i].units.splice(from));
 			}
-			// A page left with one short block although the packing gave it several: what
-			// overflowed was not its content (a measure gone wrong), and moving on would put one
-			// block on every page. The page keeps its blocks.
-			const kept = pages[i].units;
-			if (start.length > 1 && kept.length === 1 && (kept[0].h || 0) < room / 2) {
-				pages[i + 1].units.splice(0, start.length - 1);
-				if (!pages[i + 1].units.length) pages.splice(i + 1, 1);
-				pages[i].units = start;
+			if (bad < 0) {
+				from = upto;
+				continue;
 			}
+			const moved = await this.fit_page(token, bad, box, dir, holder, measure);
+			if (moved === null) return;
+			// the rest of the run (to the next break of the format) packed with less room
+			if (moved.length) {
+				const cut = moved.at(-1).bottom - moved[0].top;
+				let end = bad + 1;
+				while (end < pages.length && !pages[end].forced) end += 1;
+				const rest = pages.slice(bad + 1, end).flatMap((p) => p.units);
+				const room = Math.max(40, this.custom_room - cut);
+				const packed = this.pack_units(rest, room, room);
+				if (pages[bad + 1]?.forced) packed[0].forced = true;
+				pages.splice(bad + 1, end - bad - 1, ...packed);
+			}
+			from = bad + 1;
 		}
 		sync();
+	}
+
+	/** One page put right in the probe; the blocks it gave up, or null when superseded. */
+	async fit_page(token, i, box, dir, holder, measure) {
+		const pages = this.custom_pages;
+		const start = pages[i].units.slice();
+		let room = 0;
+		for (let guard = 0; guard < 400; guard++) {
+			this.pages = pages.map((p, k) => ({ start: 0, end: 0, first: k === 0, last: k === pages.length - 1 }));
+			holder.innerHTML = this.page_shell(i, box, dir, this.custom_page_html(i, true));
+			await breathe();
+			if (token !== this.token) return null;
+			const sheet = holder.firstElementChild;
+			const m = measure(sheet);
+			room = m.room;
+			if (!m.over || pages[i].units.length <= 1) break;
+			// the blocks that reach the foot (rows, a signature, a section) move on together;
+			// else (a wrapper's padding or margin) the last block alone
+			let from = pages[i].units.length - 1;
+			for (const el of sheet.querySelectorAll("[data-rv-unit]")) {
+				if (el.getBoundingClientRect().bottom > m.foot.top + 1) {
+					from = Math.max(1, Math.min(from, Number(el.dataset.rvUnit)));
+					break;
+				}
+			}
+			if (!pages[i + 1] || pages[i + 1].forced) pages.splice(i + 1, 0, { units: [], used: 0 });
+			pages[i + 1].units.unshift(...pages[i].units.splice(from));
+		}
+		// A page left with one short block although the packing gave it several: what
+		// overflowed was not its content (a measure gone wrong), and moving on would put one
+		// block on every page. The page keeps its blocks.
+		const kept = pages[i].units;
+		if (start.length > 1 && kept.length === 1 && (kept[0].h || 0) < room / 2) {
+			pages[i + 1].units.splice(0, start.length - 1);
+			if (!pages[i + 1].units.length) pages.splice(i + 1, 1);
+			pages[i].units = start;
+			return [];
+		}
+		return start.slice(kept.length);
 	}
 
 	/**

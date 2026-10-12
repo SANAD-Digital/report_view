@@ -2770,3 +2770,26 @@ test("pages: the site's standard print settings are where a new user starts and 
 	expect(await st()).toEqual(want);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
+
+test("pages: a long report prints every sheet with its content (far pages are not emptied while printing); the PDF sends only the styles in use", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=gl&lang=ar&rows=2500&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await settle(page);
+	const out = await page.evaluate(async () => {
+		const v = window.rv_page.pages;
+		const restore = await v.prepare_print();
+		// what the stage's observer would do with sheets that left it
+		v.trim_filled();
+		await new Promise((r) => setTimeout(r, 300));
+		const sheets = [...document.querySelectorAll("body > .rv-print-root .rv-page")];
+		const empty = sheets.filter((s) => s.querySelector(".rv-page-ph") || !s.querySelector(".rv-pt tbody tr")).length;
+		const html = await v.print_document(v.print_root);
+		restore();
+		return { pages: sheets.length, empty, html_kb: Math.round(html.length / 1024), css_kb: Math.round((html.match(/<head>[\s\S]*?<\/head>/) || [""])[0].length / 1024), keeps_page_rules: /\.rv-page\b/.test(html) };
+	});
+	expect(out.pages).toBeGreaterThan(16);
+	expect(out.empty).toBe(0);
+	expect(out.keeps_page_rules).toBe(true);
+	expect(out.css_kb).toBeLessThan(400);
+	expect(problems, "console errors/warnings").toEqual([]);
+});

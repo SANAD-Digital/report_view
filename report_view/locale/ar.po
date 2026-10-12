@@ -2267,3 +2267,21 @@ msgstr "غير موجود في هذه الترويسة"
 
 msgid "The letter head «{0}» has no footer. Write one in its Footer field (Letter Head), or choose another letter head."
 msgstr "الترويسة «{0}» ليس فيها تذييل. اكتبه في حقل التذييل في شاشة الترويسة، أو اختر ترويسة أخرى."
+
+msgid "Making the PDF: {0} of {1} pages…"
+msgstr "جارٍ إنشاء ملف PDF: {0} من {1} صفحة…"
+
+msgid "The PDF is not ready yet"
+msgstr "ملف PDF لم يجهز بعد"
+
+msgid "Invalid PDF job"
+msgstr "مهمة PDF غير صالحة"
+
+msgid "PDF job {0} not found"
+msgstr "مهمة PDF {0} غير موجودة"
+
+msgid "The PDF engine could not start"
+msgstr "تعذّر تشغيل محرك PDF"
+
+msgid "The printed pages could not be read"
+msgstr "تعذّرت قراءة الصفحات المطبوعة"

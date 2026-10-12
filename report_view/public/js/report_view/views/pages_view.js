@@ -212,6 +212,22 @@ function strip_scripts(html) {
 	return tpl.innerHTML;
 }
 
+/**
+ * The body of a PDF request (ADR-016): the pages gzipped as a file (``html_gz``), about a
+ * tenth of their size; as a plain field where the browser cannot compress.
+ */
+async function pdf_body(args, html) {
+	const form = new FormData();
+	for (const [k, v] of Object.entries(args)) if (v != null) form.append(k, v);
+	if (typeof CompressionStream === "undefined") {
+		form.append("html", html);
+		return form;
+	}
+	const gz = await new Response(new Blob([html]).stream().pipeThrough(new CompressionStream("gzip"))).blob();
+	form.append("html_gz", gz, "pages.html.gz");
+	return form;
+}
+
 function wait_images(el, timeout = 2500) {
 	const imgs = [...el.querySelectorAll("img")].filter((img) => !img.complete);
 	if (!imgs.length) return Promise.resolve();
@@ -1719,7 +1735,8 @@ export class PagesView {
 
 	// Far pages give their content back, so a long report keeps a bounded DOM.
 	trim_filled() {
-		if (this.filled.size <= KEEP_FILLED) return;
+		// never while printing: the sheets leave the stage, and every one of them must print
+		if (this.printing || this.filled.size <= KEEP_FILLED) return;
 		const top = this.stage.scrollTop;
 		const h = this.box.h + PAGE_GAP;
 		const z = this.zoom_value();
@@ -2173,6 +2190,9 @@ export class PagesView {
 			button.disabled = false;
 			throw e;
 		}
+		// the sheets leave the stage: its observer would take them for far pages and empty them
+		if (this.observer) this.observer.disconnect();
+		await this.fill_all();
 		const root = document.createElement("div");
 		root.className = `rv rv-print-root ${this.root.classList.contains("compact") ? "compact" : ""}`;
 		// the variables of the pages (rules, colours, heights, margins, watermark) live on the
@@ -2226,38 +2246,62 @@ export class PagesView {
 		}
 		const title = `${this.ctx.report_name}`.replace(/[\\/:*?"<>|]+/g, "-").slice(0, 120);
 		try {
-			const body = new URLSearchParams({ ...target.args, html, title });
 			const r = await fetch(`/api/method/${target.method}`, {
 				method: "POST",
 				headers: { "X-Frappe-CSRF-Token": frappe.csrf_token, Accept: "application/pdf, application/json" },
-				body,
+				body: await pdf_body({ ...target.args, title }, html),
 			});
-			const type = r.headers.get("Content-Type") || "";
-			if (!r.ok || !type.includes("pdf")) {
-				let message = __("The PDF could not be made");
-				try {
-					const j = await r.json();
-					const msgs = j._server_messages ? JSON.parse(j._server_messages).map((m) => JSON.parse(m).message) : [];
-					message = msgs.join("<br>") || j.exception || message;
-				} catch {
-					// not JSON: keep the general message
-				}
-				frappe.msgprint({ title: __("PDF"), message, indicator: "red" });
-				return;
-			}
-			const blob = await r.blob();
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `${title}.pdf`;
-			document.body.appendChild(a);
-			a.click();
-			a.remove();
-			setTimeout(() => URL.revokeObjectURL(url), 30000);
+			if ((r.headers.get("Content-Type") || "").includes("pdf") && r.ok) return this.save_pdf(await r.blob(), title);
+			const j = await r.json().catch(() => ({}));
+			// many pages: a background job prints them; its progress, then the file
+			if (r.ok && j.message?.job) return await this.wait_pdf_job(j.message.job, j.message.total, title);
+			this.pdf_error(j);
+		} catch (e) {
+			this.pdf_error({ exception: e.message || String(e) });
 		} finally {
 			button.disabled = false;
 			this.busy(null);
 		}
+	}
+
+	/** Follows a PDF job of the server (ADR-016) until its file is ready, then downloads it. */
+	async wait_pdf_job(job, total, title) {
+		const num = (v) => frappe.format(v, { fieldtype: "Int" }, { inline: true });
+		this.busy(__("Making the PDF: {0} of {1} pages…", [num(0), num(total)]));
+		for (;;) {
+			await new Promise((r) => setTimeout(r, 1000));
+			const st = await frappe.xcall("report_view.api.pdf.pages_pdf_status", { job });
+			if (st.state === "failed") return this.pdf_error({ exception: st.error });
+			if (st.state === "done") break;
+			this.busy(__("Making the PDF: {0} of {1} pages…", [num(st.done || 0), num(st.total || total)]));
+		}
+		const r = await fetch(`/api/method/report_view.api.pdf.pages_pdf_download?${new URLSearchParams({ job })}`, {
+			headers: { "X-Frappe-CSRF-Token": frappe.csrf_token },
+		});
+		if (!r.ok) return this.pdf_error(await r.json().catch(() => ({})));
+		this.save_pdf(await r.blob(), title);
+	}
+
+	save_pdf(blob, title) {
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = `${title}.pdf`;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		setTimeout(() => URL.revokeObjectURL(url), 30000);
+	}
+
+	pdf_error(j) {
+		let message = __("The PDF could not be made");
+		try {
+			const msgs = j?._server_messages ? JSON.parse(j._server_messages).map((m) => JSON.parse(m).message) : [];
+			message = msgs.join("<br>") || j?.exception || message;
+		} catch {
+			// keep the general message
+		}
+		frappe.msgprint({ title: __("PDF"), message, indicator: "red" });
 	}
 
 	/**
@@ -2269,15 +2313,9 @@ export class PagesView {
 	 */
 	async print_document(root) {
 		const PUBLIC = /^\/(assets|files)\//;
+		const used = this.css_in_use(root);
 		const head = [];
 		for (const sheet of document.styleSheets) {
-			const node = sheet.ownerNode;
-			const href = sheet.href ? new URL(sheet.href) : null;
-			if (href && href.origin === location.origin && PUBLIC.test(href.pathname) && node?.tagName === "LINK") {
-				const media = node.getAttribute("media");
-				head.push(`<link rel="stylesheet" href="${esc(href.pathname + href.search)}"${media ? ` media="${esc(media)}"` : ""}>`);
-				continue;
-			}
 			let rules;
 			try {
 				rules = sheet.cssRules;
@@ -2286,11 +2324,11 @@ export class PagesView {
 			}
 			if (!rules) continue;
 			const base = sheet.href || location.href;
-			let text = "";
-			for (const rule of rules) text += rule.cssText + "\n";
+			const text = used(rules);
+			if (!text) continue;
 			// url() of a stylesheet resolve against its own address
-			text = text.replace(/url\((['"]?)(?!data:|https?:|\/)([^'")]+)\1\)/g, (m, q, u) => `url(${q}${new URL(u, base).pathname}${q})`);
-			head.push(`<style>${text.replace(/<\/style/gi, "<\\/style")}</style>`);
+			const fixed = text.replace(/url\((['"]?)(?!data:|https?:|\/)([^'")]+)\1\)/g, (m, q, u) => `url(${q}${new URL(u, base).pathname}${q})`);
+			head.push(`<style>${fixed.replace(/<\/style/gi, "<\\/style")}</style>`);
 		}
 		const clone = root.cloneNode(true);
 		const cache = new Map();
@@ -2334,6 +2372,59 @@ export class PagesView {
 		for (const el of clone.querySelectorAll("script")) el.remove();
 		const attrs = (el) => [...el.attributes].map((x) => `${x.name}="${esc(x.value)}"`).join(" ");
 		return `<!doctype html><html ${attrs(document.documentElement)}><head><meta charset="utf-8"><base href="${esc(location.origin)}/"><title>${esc(this.ctx.report_name)}</title>${head.join("")}</head><body ${attrs(document.body)}>${clone.outerHTML}</body></html>`;
+	}
+
+	/**
+	 * The style rules the printed sheets use, as CSS text: a rule is kept when its selector
+	 * matches an element of a sample of the sheets (the first, the last and some between),
+	 * <html> or <body>; @font-face and anything that cannot be tested are kept, @media and
+	 * the like keep what they hold that is used. Desk carries some twelve thousand rules the
+	 * pages never use: sent with them, they slow the server's engine down.
+	 * @returns {(rules: CSSRuleList) => string}
+	 */
+	css_in_use(root) {
+		const sheets = [...root.querySelectorAll(".rv-page")];
+		const pick = new Set([0, 1, sheets.length - 1]);
+		for (let k = 1; k < 6; k++) pick.add(Math.floor((sheets.length * k) / 6));
+		const sample = document.createElement("div");
+		sample.className = root.className;
+		for (const i of pick) if (sheets[i]) sample.appendChild(sheets[i].cloneNode(true));
+		const wrap = document.createElement("div");
+		wrap.className = "rv-print-sheets";
+		wrap.append(...sample.childNodes);
+		sample.appendChild(wrap);
+		const html = document.documentElement;
+		const body = document.body;
+		// what never matches in a static page, and pseudo-elements (their element is tested)
+		const PSEUDO = /::?(before|after|first-letter|first-line|marker|placeholder|selection|backdrop|file-selector-button|-webkit-[\w-]+|-moz-[\w-]+|-ms-[\w-]+)(\([^)]*\))?/gi;
+		const DYNAMIC = /:(hover|focus|focus-visible|focus-within|active|visited|target)\b/i;
+		const matches = (selector) => {
+			if (DYNAMIC.test(selector)) return false;
+			const sel = selector.replace(PSEUDO, "").trim() || "*";
+			try {
+				return Boolean(html.matches(sel) || body.matches(sel) || sample.matches(sel) || sample.querySelector(sel));
+			} catch {
+				// a selector the browser cannot test here: kept
+				return true;
+			}
+		};
+		const keep = (rules) => {
+			let out = "";
+			for (const rule of rules) {
+				if (rule instanceof CSSStyleRule) {
+					if (rule.selectorText.split(",").some((part) => matches(part))) out += rule.cssText + "\n";
+				} else if (rule instanceof CSSMediaRule || (window.CSSSupportsRule && rule instanceof CSSSupportsRule) || (window.CSSContainerRule && rule instanceof CSSContainerRule) || (window.CSSLayerBlockRule && rule instanceof CSSLayerBlockRule)) {
+					const inner = keep(rule.cssRules);
+					if (inner) out += `${rule.cssText.slice(0, rule.cssText.indexOf("{"))}{\n${inner}}\n`;
+				} else if (window.CSSKeyframesRule && rule instanceof CSSKeyframesRule) {
+					// animations do not print
+				} else {
+					out += rule.cssText + "\n";
+				}
+			}
+			return out;
+		};
+		return keep;
 	}
 
 	print_css() {

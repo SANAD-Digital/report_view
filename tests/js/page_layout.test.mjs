@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { page_box, fit_columns, paginate, MM, MIN_FONT_SCALE } from "../../report_view/public/js/report_view/engine/page_layout.js";
+import { page_box, fit_columns, paginate, preset_margins, MM, MIN_FONT_SCALE } from "../../report_view/public/js/report_view/engine/page_layout.js";
 
 test("page box: A4 portrait and landscape in CSS px, margins inside", () => {
 	const p = page_box({ size: "A4", orientation: "portrait", margins: "normal" });
@@ -21,6 +21,16 @@ test("page box: A4 portrait and landscape in CSS px, margins inside", () => {
 	assert.equal(u.size, "A4");
 	assert.equal(u.orientation, "portrait");
 	assert.equal(u.margin, p.margin);
+});
+
+test("page box: four margins of their own, in mm; the presets give the same on every side", () => {
+	const p = page_box({ size: "A4", orientation: "portrait", page_m: { top: 20, bottom: 10, start: 15, end: 5 } });
+	assert.equal(p.pad.top, Math.round(20 * MM));
+	assert.equal(p.inner_h, p.h - Math.round(20 * MM) - Math.round(10 * MM));
+	assert.equal(p.inner_w, p.w - Math.round(15 * MM) - Math.round(5 * MM));
+	assert.equal(p.margin, Math.round(5 * MM));
+	assert.deepEqual(preset_margins("wide"), { top: 18, bottom: 18, start: 18, end: 18 });
+	assert.equal(page_box({ margins: "narrow" }).pad.start, Math.round(8 * MM));
 });
 
 test("fit columns: brought to the print font, narrower columns fill the page", () => {

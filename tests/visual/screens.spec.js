@@ -2186,6 +2186,19 @@ fs.mkdirSync(OUT3, { recursive: true });
 const shot3 = (page, name, full = false) => page.screenshot({ path: path.join(OUT3, `${name}.png`), fullPage: full });
 const PAGES = rv({ mode: "pages" });
 const pages_settings = (s) => `&pages=${encodeURIComponent(JSON.stringify(s))}`;
+// the panel's sections fold: a test opens them all
+const open_sections = (page) =>
+	page.evaluate(() => {
+		const v = window.rv_page.pages;
+		v.open_secs = new Set(["paper", "tpl", "head", "foot", "num", "wm", "content", "cols"]);
+		v.render_panel();
+	});
+// a typed number, committed as the field is left
+const type_num = async (page, sel, value) => {
+	await page.locator(sel).fill(String(value));
+	await page.locator(sel).press("Tab");
+	await settle(page);
+};
 
 const pages_state = (page) =>
 	page.evaluate(() => {
@@ -2284,6 +2297,7 @@ test("pages: paper, orientation, margins, content and columns change the pages; 
 	const problems = watch_console(page);
 	// the trial balance is too wide for a portrait page: without a saved choice it opens in landscape
 	await open(page, `report=tb&lang=en&rv=${PAGES}`);
+	await open_sections(page);
 	expect((await pages_state(page)).box.w).toBeGreaterThan((await pages_state(page)).box.h);
 	await page.click('.rv-orient [data-orient="portrait"]');
 	await settle(page);
@@ -2299,7 +2313,7 @@ test("pages: paper, orientation, margins, content and columns change the pages; 
 	await settle(page);
 	const a3 = await pages_state(page);
 	expect(a3.box.w).toBeGreaterThan(landscape.box.w);
-	await page.selectOption('select[data-set="margins"]', "wide");
+	await page.click('[data-seg="margins"][data-value="wide"]');
 	await settle(page);
 	const wide = await pages_state(page);
 	expect(wide.box.inner_w).toBeLessThan(a3.box.inner_w);
@@ -2332,6 +2346,7 @@ test("pages: another language runs the report again and turns the pages; the ses
 	const problems = watch_console(page);
 	await open(page, `report=tb&lang=ar&rv=${PAGES}`);
 	await settle(page);
+	await open_sections(page);
 	const arabic = await pages_state(page);
 	expect(arabic.dir).toBe("rtl");
 	expect(arabic.footer).toContain("صفحة");
@@ -2419,65 +2434,11 @@ test("pages: only the pages near the viewport carry content; far ones give it ba
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
-test("pages: the heights of the letter head and its footer and the place and format of the page number", async ({ page }) => {
-	const problems = watch_console(page);
-	await open(page, `report=gl&lang=ar&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
-	await settle(page);
-	const measure = () =>
-		page.evaluate(() => {
-			const p = document.querySelector('.rv-page[data-page="0"]');
-			const img_h = (sel) => p.querySelector(sel)?.getBoundingClientRect().height || 0;
-			return {
-				lh: img_h(".rv-page-lh"),
-				lhf: img_h(".rv-page-lhf"),
-				body_h: window.rv_page.pages.measure.body_h,
-				pages: window.rv_page.pages.pages.length,
-				foot: p.querySelector(".rv-page-foot-line")?.textContent.replace(/\s+/g, " ").trim(),
-				top: p.querySelector(".rv-page-topnum")?.textContent.trim() || null,
-				center: p.querySelector(".rv-page-foot-line .ce")?.textContent.trim(),
-			};
-		});
-	const before = await measure();
-	// a taller letter head: the band grows, the page holds fewer rows
-	await page.locator('input[data-mm="lh_height"]').fill("60");
-	await settle(page);
-	// the footer hidden: no footer of the letter head
-	await page.locator('input[data-mm="foot_height"]').fill("0");
-	await settle(page);
-	const after = await measure();
-	expect(after.lhf).toBe(0);
-	expect(before.lhf).toBeGreaterThan(0);
-	expect(await page.locator('[data-out="foot_height"]').textContent()).toBe("مخفي");
-	expect(await page.locator('[data-out="lh_height"]').textContent()).toContain("60");
-	// the page number at the top, centred, as "1 / N"
-	await page.selectOption('select[data-set="number_pos"]', "top-center");
-	await settle(page);
-	await page.selectOption('select[data-set="number_format"]', "short");
-	await settle(page);
-	const top = await measure();
-	expect(top.top).toMatch(/^1 \/ \d+$/);
-	expect(top.foot).not.toMatch(/\d+ \/ \d+/);
-	await shot3(page, "pages-gl-heights-number-top-rtl");
-	// bottom centre, the number alone
-	await page.selectOption('select[data-set="number_pos"]', "bottom-center");
-	await settle(page);
-	await page.selectOption('select[data-set="number_format"]', "number");
-	await settle(page);
-	const bottom = await measure();
-	expect(bottom.top).toBeNull();
-	expect(bottom.center).toBe("1");
-	const saved = await page.evaluate(async () => {
-		await new Promise((r) => setTimeout(r, 900));
-		return frappe.model.user_settings.store["Report View:General Ledger"].pages;
-	});
-	expect([saved.lh_height, saved.foot_height, saved.number_pos, saved.number_format]).toEqual([60, 0, "bottom-center", "number"]);
-	expect(problems, "console errors/warnings").toEqual([]);
-});
-
 test("pages: the standard template's six print styles, in a list of their own; a style is kept for the user", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, `report=tb&lang=ar&rv=${PAGES}${pages_settings({ orientation: "landscape", signatures: true })}`);
 	await settle(page);
+	await open_sections(page);
 	// the template list: the standard one, then the report's print formats (none in the harness)
 	expect(await page.$$eval('select[data-set="template"] option', (os) => os.map((o) => o.value))).toEqual([""]);
 	const options = await page.$$eval('select[data-set="style"] option', (os) => os.map((o) => o.value));
@@ -2505,80 +2466,141 @@ test("pages: the standard template's six print styles, in a list of their own; a
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
-test("pages: letter head and footer on every page or not, their alignment and shape, the number band and the three rules", async ({ page }) => {
+test("pages: page setup as in a word processor: four margins typed, letter head and footer on their pages, the number band under or above the footer, rules", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, `report=gl&lang=ar&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
 	await settle(page);
+	await open_sections(page);
 	const state = () =>
 		page.evaluate(async () => {
 			const v = window.rv_page.pages;
 			await v.fill_all();
-			const pages = [...document.querySelectorAll(".rv-page")];
-			const css = (el, p) => (el ? getComputedStyle(el)[p] : null);
+			const pages = [...document.querySelectorAll(".rv-print-sheets .rv-page")];
 			const p0 = pages[0];
+			const css = (el, prop) => (el ? getComputedStyle(el)[prop] : null);
+			const root = document.querySelector(".rv-pages").closest(".rv");
+			const foot = p0.querySelector(".rv-page-foot");
 			return {
 				count: pages.length,
+				box: v.box,
 				lh: pages.map((p) => Boolean(p.querySelector(".rv-page-lh"))),
 				lhf: pages.map((p) => Boolean(p.querySelector(".rv-page-lhf"))),
+				foot_order: foot ? [...foot.children].map((c) => c.className.split(" ")[0]) : [],
 				align: css(p0.querySelector(".rv-page-lh"), "alignItems"),
-				head_rule: css(p0.querySelector(".rv-page-lh"), "borderBottomWidth"),
-				num_rule: css(p0.querySelector(".rv-page-foot-line"), "borderTopWidth"),
-				num_color: css(p0.querySelector(".rv-page-foot-line"), "borderTopColor"),
-				band: p0.querySelector(".rv-page-foot-line")?.offsetHeight,
-				head_var: getComputedStyle(document.querySelector(".rv-pages").closest(".rv")).getPropertyValue("--pp-head-line").trim(),
-				num_var: getComputedStyle(document.querySelector(".rv-pages").closest(".rv")).getPropertyValue("--pp-num-line").trim(),
+				head_var: getComputedStyle(root).getPropertyValue("--pp-head-line").trim(),
+				num_var: getComputedStyle(root).getPropertyValue("--pp-num-line").trim(),
+				lh_mb: getComputedStyle(root).getPropertyValue("--pp-lh-mb").trim(),
+				number: (p0.querySelector(".rv-page-foot-line .rv-pnum") || p0.querySelector(".rv-page-topnum .rv-pnum"))?.textContent.trim(),
+				name_beside: Boolean(p0.querySelector(".rv-page-foot-line .nm")),
 				top_in_head: Boolean(p0.querySelector(".rv-page-top .rv-page-topnum")),
+				pad: p0.style.paddingBlock + " | " + p0.style.paddingInline,
 			};
 		});
 	const before = await state();
 	expect(before.count).toBeGreaterThan(1);
-	// by default: the letter head on the first page only, its footer on every page
+	// default: the letter head on the first page, its footer on every page, the number under it
 	expect(before.lh).toEqual(before.lh.map((_, i) => i === 0));
 	expect(before.lhf.every(Boolean)).toBe(true);
-	// repeat the letter head, the footer on the last page only
+	expect(before.foot_order).toEqual(["rv-page-lhf", "rv-page-foot-line"]);
+	// page margins typed on each side: "custom", the body narrows by them
+	await type_num(page, 'input[data-box="page_m"][data-side="start"]', 25);
+	await type_num(page, 'input[data-box="page_m"][data-side="top"]', 20);
+	let st = await state();
+	expect(st.box.inner_w).toBeLessThan(before.box.inner_w);
+	expect(st.box.pad.top).toBeGreaterThan(before.box.pad.top);
+	expect(await page.locator('[data-seg="margins"][data-value="custom"]').getAttribute("aria-pressed")).toBe("true");
+	// "same on all sides" takes the top value
+	await page.click('[data-box-all="page_m"]');
+	await settle(page);
+	st = await state();
+	expect(st.box.pad.start).toBe(st.box.pad.top);
+	// letter head margins and on every page; the footer on the last page only
+	await type_num(page, 'input[data-box="lh_m"][data-side="bottom"]', 8);
+	expect((await state()).lh_mb).toBe("0mm 8mm");
 	await page.click('[data-sw="lh_repeat"]');
 	await settle(page);
 	await page.click('[data-sw="foot_repeat"]');
 	await settle(page);
-	let st = await state();
+	st = await state();
 	expect(st.lh.every(Boolean)).toBe(true);
 	expect(st.lhf).toEqual(st.lhf.map((_, i) => i === st.count - 1));
-	// alignment at the end, the letter head at page width
-	await page.click('[data-seg="lh_align"][data-value="end"]');
+	await page.click('[data-sw="foot_repeat"]');
 	await settle(page);
-	expect((await state()).align).toBe("flex-end");
-	// at page width the letter head stretches across the page body
-	await page.click('[data-seg="lh_fit"][data-value="wide"]');
+	// the number band above the footer, its own rule; a dashed rule under the letter head
+	await page.click('[data-seg="number_order"][data-value="before"]');
 	await settle(page);
-	expect((await state()).align).toBe("stretch");
-	// the rules: thicker, coloured
-	await page.locator('input[data-mm="head_line_w"]').fill("2");
+	expect((await state()).foot_order).toEqual(["rv-page-foot-line", "rv-page-lhf"]);
+	await type_num(page, 'input[data-num="head_line_w"]', 2);
+	await page.selectOption('select[data-set="head_line_s"]', "dashed");
 	await settle(page);
-	await page.locator('input[data-mm="num_line_w"]').fill("1.4");
 	await page.locator('input[data-color="num_line_c"]').evaluate((el) => {
 		el.value = "#2d5c93";
 		el.dispatchEvent(new Event("change", { bubbles: true }));
 	});
 	await settle(page);
-	// a taller number band
-	const band0 = (await state()).band;
-	await page.locator('input[data-mm="number_band"]').fill("15");
+	st = await state();
+	expect(st.head_var).toBe("2px dashed #D9DFDB");
+	expect(st.num_var).toBe("0.6px solid #2d5c93");
+	// numbering from 5, "— n —", without the report's name
+	await type_num(page, 'input[data-num="number_start"]', 5);
+	await page.selectOption('select[data-set="number_format"]', "dash");
+	await settle(page);
+	await page.click('[data-sw="number_caption"]');
 	await settle(page);
 	st = await state();
-	// the rules as set (computed widths are scaled by the zoom of the stage)
-	expect(st.head_var).toBe("2px solid #D9DFDB");
-	expect(st.num_var).toBe("1.4px solid #2d5c93");
-	expect(parseFloat(st.head_rule)).toBeGreaterThan(1);
-	expect(st.num_color).toBe("rgb(45, 92, 147)");
-	expect(st.band).toBeGreaterThan(band0 + 20);
-	// the number at the top stands in the page head, measured with it
+	expect(st.number).toBe("— 5 —");
+	expect(st.name_beside).toBe(false);
+	// at the top, in the page head
 	await page.selectOption('select[data-set="number_pos"]', "top-start");
 	await settle(page);
 	expect((await state()).top_in_head).toBe(true);
-	await shot3(page, "pages-gl-header-footer-rules-rtl");
-	// numbering off: its options go
-	await page.click('[data-sw="page_numbers"]');
-	await settle(page);
-	expect(await page.locator('select[data-set="number_pos"]').count()).toBe(0);
+	await shot3(page, "pages-gl-page-setup-rtl");
 	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: a watermark, text or image, on every page or the first, light and turned; it follows its settings", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=gl&lang=ar&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await settle(page);
+	await open_sections(page);
+	const marks = () =>
+		page.evaluate(async () => {
+			await window.rv_page.pages.fill_all();
+			return [...document.querySelectorAll(".rv-print-sheets .rv-page")].map((p) => {
+				const wm = p.querySelector(".rv-page-wm");
+				const el = wm?.firstElementChild;
+				return wm ? { tag: el.tagName, text: el.textContent, opacity: getComputedStyle(el).opacity, transform: getComputedStyle(el).transform } : null;
+			});
+		});
+	expect((await marks()).every((m) => m === null)).toBe(true);
+	await page.click('[data-seg="wm_type"][data-value="text"]');
+	await settle(page);
+	await page.locator('input[data-text="wm_text"]').fill("سري");
+	await page.waitForTimeout(500);
+	await settle(page);
+	let m = await marks();
+	expect(m.every((x) => x && x.tag === "SPAN" && x.text === "سري")).toBe(true);
+	expect(Number(m[0].opacity)).toBeCloseTo(0.1, 2);
+	expect(m[0].transform).not.toBe("none");
+	await type_num(page, 'input[data-num="wm_opacity"]', 25);
+	await page.click('[data-seg="wm_pages"][data-value="first"]');
+	await settle(page);
+	m = await marks();
+	expect(Number(m[0].opacity)).toBeCloseTo(0.25, 2);
+	expect(m.slice(1).every((x) => x === null)).toBe(true);
+	await shot3(page, "pages-gl-watermark-text-rtl");
+	// an image (an address of the site's files)
+	await page.click('[data-seg="wm_type"][data-value="image"]');
+	await settle(page);
+	await page.locator('input[data-text="wm_image"]').fill("/assets/frappe/images/frappe-framework-logo.svg");
+	await page.waitForTimeout(500);
+	await settle(page);
+	m = await marks();
+	expect(m[0].tag).toBe("IMG");
+	// an address that is not one stays out
+	await page.locator('input[data-text="wm_image"]').fill("javascript:alert(1)");
+	await page.waitForTimeout(500);
+	const saved = await page.evaluate(() => window.rv_page.pages.settings.wm_image);
+	expect(saved).toBe("/assets/frappe/images/frappe-framework-logo.svg");
+	expect(problems.filter((x) => !/frappe-framework-logo/.test(x)), "console errors/warnings").toEqual([]);
 });

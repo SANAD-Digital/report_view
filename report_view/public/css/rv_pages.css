@@ -54,14 +54,15 @@
    slim line names the report on the others unless asked for every page) */
 .rv-page-lh,.rv-page-lhf{overflow:hidden;max-width:100%}
 /* heights chosen in the panel (--pp-lh-h, --pp-lhf-h, pages_view.js apply_heights) */
-.rv-page-lh{max-height:calc(var(--pp-lh-h,26mm) + 6mm);margin-bottom:3mm;border-bottom:var(--pp-head-line,.6px solid var(--pp-line));padding-bottom:2mm;display:flex;flex-direction:column;align-items:var(--pp-lh-align,center)}
+/* margins of the letter head, its footer and the number band: the user's (--pp-*-mb / -mi) */
+.rv-page-lh{max-height:calc(var(--pp-lh-h,26mm) + 6mm);margin-block:var(--pp-lh-mb,0 3mm);margin-inline:var(--pp-lh-mi,0);border-bottom:var(--pp-head-line,.6px solid var(--pp-line));padding-bottom:1.5mm;display:flex;flex-direction:column;align-items:var(--pp-lh-align,center)}
 .rv-page-lh > *{max-width:100%}
 .rv-page-lh img{max-width:100%;max-height:var(--pp-lh-h,26mm);width:auto;height:auto;object-fit:contain}
 /* "page width": the letter head spans the page body at the height chosen */
 .rv-page-lh.fit-wide{align-items:stretch}
 .rv-page-lh.fit-wide img{width:100%;height:var(--pp-lh-h,26mm);max-height:none;object-fit:fill}
 .rv-page-lh *{max-height:calc(var(--pp-lh-h,26mm) + 4mm)}
-.rv-page-lhf{max-height:calc(var(--pp-lhf-h,11mm) + 3mm);margin-bottom:1.5mm;border-top:var(--pp-foot-line,0 solid transparent);padding-top:1.2mm;display:flex;flex-direction:column;align-items:var(--pp-lh-align,center)}
+.rv-page-lhf{max-height:calc(var(--pp-lhf-h,11mm) + 3mm);margin-block:var(--pp-foot-mb,1.5mm);margin-inline:var(--pp-foot-mi,0);border-top:var(--pp-foot-line,0 solid transparent);padding-top:1.2mm;display:flex;flex-direction:column;align-items:var(--pp-lhf-align,center)}
 .rv-page-lhf img{max-width:100%;max-height:var(--pp-lhf-h,11mm);width:auto;height:auto;object-fit:contain}
 
 /* title block of the first page: centred, as a formal statement */
@@ -121,14 +122,14 @@
 .rv-page-sign{display:grid;grid-template-columns:repeat(3,1fr);gap:10mm;margin-top:12mm}
 .rv-page-sign div{border-top:1px solid var(--pp-tx);padding-top:1.5mm;font-weight:700;text-align:center}
 .rv-page-sign span{display:block;font-weight:400;color:var(--pp-tx-2);margin-top:4mm;white-space:nowrap;overflow:hidden;text-align:start}
-.rv-page-foot{margin-top:auto;padding-top:2mm;flex:none}
+.rv-page-foot{margin-top:auto;padding-top:1mm;flex:none}
 /* the number band: its height and the rule above it are the user's */
-.rv-page-foot-line{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;font-size:.82em;color:var(--pp-tx-3);border-top:var(--pp-num-line,.6px solid var(--pp-line-2));min-height:var(--pp-nb-h,7mm)}
+.rv-page-foot-line{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;font-size:var(--pp-num-fs,8pt);line-height:1.3;color:var(--pp-tx-3);border-top:var(--pp-num-line,.6px solid var(--pp-line-2));padding-block:var(--pp-num-mb,1.5mm 0);padding-inline:var(--pp-num-mi,0)}
 .rv-page-foot-line > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rv-page-foot-line .ce{text-align:center}
 .rv-page-foot-line .en{text-align:end}
 /* a page number at the top stands in the top margin, outside what the pages measure */
-.rv-page-topnum{display:flex;align-items:center;min-height:var(--pp-nb-h,7mm);font-size:.82em;color:var(--pp-tx-3);border-bottom:var(--pp-num-line,.6px solid var(--pp-line-2));margin-bottom:2mm}
+.rv-page-topnum{display:flex;align-items:center;font-size:var(--pp-num-fs,8pt);line-height:1.3;color:var(--pp-tx-3);border-bottom:var(--pp-num-line,.6px solid var(--pp-line-2));padding-block:var(--pp-num-mb,1.5mm 0);padding-inline:var(--pp-num-mi,0);margin-bottom:2mm}
 .rv-page-topnum.center{justify-content:center}
 .rv-page-topnum.end{justify-content:flex-end}
 .rv-range-field > span,.rv-line-field > span{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
@@ -232,3 +233,43 @@
 .rv-page-skel .rv-skel{background:linear-gradient(90deg,var(--pp-soft) 0%,var(--pp-line) 50%,var(--pp-soft) 100%);background-size:200% 100%}
 .rv-page-skel-rows{display:flex;flex-direction:column;gap:9px;margin-top:8mm}
 @media (prefers-reduced-motion:reduce){.rv-spin{animation-duration:2.4s}}
+
+/* ---------- watermark: over the page, light, never in the way of a click ---------- */
+.rv-page-wm{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:6;overflow:hidden}
+.rv-page-wm span{font-size:var(--pp-wm-size,72pt);font-weight:800;color:var(--pp-wm-color);opacity:var(--pp-wm-op,.1);transform:rotate(var(--pp-wm-angle,-30deg));white-space:nowrap;letter-spacing:.04em;line-height:1}
+.rv-page-wm img{width:var(--pp-wm-w,50%);height:auto;opacity:var(--pp-wm-op,.1);transform:rotate(var(--pp-wm-angle,-30deg))}
+
+/* ---------- panel: folding sections, as a word processor's page setup ---------- */
+.rv-print-side .bd{gap:6px}
+.rv-psec{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);flex:none}
+.rv-psec[open]{border-color:var(--line-2);box-shadow:var(--sh-1)}
+.rv-psec > summary{display:flex;align-items:center;gap:8px;min-height:calc(var(--ctl) + 4px);padding:0 10px;cursor:pointer;list-style:none;border-radius:var(--r);user-select:none}
+.rv-psec > summary::-webkit-details-marker{display:none}
+.rv-psec > summary:hover{background:var(--hover)}
+.rv-psec > summary:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
+.rv-psec > summary .ic{display:inline-flex;color:var(--pri-tx);flex:none}
+.rv-psec > summary .tt{font-size:var(--fs-sm);font-weight:600;color:var(--tx);white-space:nowrap}
+.rv-psec > summary .sm{margin-inline-start:auto;font-size:var(--fs-xs);color:var(--tx-3);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:end}
+.rv-psec > summary::after{content:"";width:7px;height:7px;flex:none;border-inline-end:1.6px solid var(--tx-3);border-bottom:1.6px solid var(--tx-3);transform:rotate(45deg);margin-inline-start:4px;transition:transform .15s}
+.rv-psec[open] > summary::after{transform:rotate(-135deg)}
+.rv-psec-bd{display:flex;flex-direction:column;gap:10px;padding:4px 10px 12px}
+.rv-psec-bd .rv-field > span{font-size:var(--fs-xs);color:var(--tx-3);font-weight:500;display:flex;align-items:center;gap:6px}
+.rv-psec-bd .rv-field > span .rv-link{margin-inline-start:auto;font-size:var(--fs-xs)}
+.rv-unit{font-style:normal;color:var(--tx-4)}
+.rv-orient.sm button{flex-direction:row;padding:0 8px;height:var(--ctl);gap:6px}
+.rv-num{display:flex;align-items:center;position:relative}
+.rv-num input{width:100%;padding-inline-end:30px;font-variant-numeric:tabular-nums}
+.rv-num i{position:absolute;inset-inline-end:8px;font-style:normal;font-size:var(--fs-xs);color:var(--tx-4);pointer-events:none}
+.rv-sw-field{justify-content:flex-end}
+/* four margins around a little page: top, the two sides, bottom */
+.rv-box4{display:grid;grid-template-columns:1fr 1.1fr 1fr;grid-template-rows:auto auto auto;gap:6px;align-items:center}
+.rv-box4 input{width:100%;text-align:center;padding:0 4px;font-variant-numeric:tabular-nums}
+.rv-box4-top{grid-column:2;grid-row:1}
+.rv-box4-start{grid-column:1;grid-row:2}
+.rv-box4-page{grid-column:2;grid-row:2;height:42px;border:1.5px solid var(--line-3);border-radius:3px;background:linear-gradient(var(--surface-3),var(--surface-3)) center/62% 58% no-repeat,var(--surface)}
+.rv-box4-end{grid-column:3;grid-row:2}
+.rv-box4-bottom{grid-column:2;grid-row:3}
+.rv-rule-ctl{display:grid;grid-template-columns:76px 1fr 34px;gap:6px;align-items:center}
+.rv-rule-ctl input[type=color],.rv-color-wide{width:100%;height:var(--ctl);padding:2px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);cursor:pointer}
+.rv-wm-img{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.rv-wm-img img{width:56px;height:40px;object-fit:contain;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2)}

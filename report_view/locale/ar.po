@@ -1664,3 +1664,136 @@ msgstr "جارٍ تجهيز الصفحات…"
 
 msgid "Laying out the pages…"
 msgstr "جارٍ تقسيم الصفحات…"
+
+msgid "Paper and margins"
+msgstr "الورق والهوامش"
+
+msgid "Template and language"
+msgstr "القالب واللغة"
+
+msgid "Narrow"
+msgstr "ضيقة"
+
+msgctxt "Report View"
+msgid "Normal"
+msgstr "عادية"
+
+msgid "Wide"
+msgstr "واسعة"
+
+msgctxt "Report View"
+msgid "Custom"
+msgstr "مخصصة"
+
+msgid "Page margins"
+msgstr "هوامش الصفحة"
+
+msgid "Use the top value on every side"
+msgstr "استعمال قيمة الأعلى لكل الجهات"
+
+msgid "Same on all sides"
+msgstr "الكل متساوٍ"
+
+msgctxt "Report View"
+msgid "Top"
+msgstr "أعلى"
+
+msgctxt "Report View"
+msgid "Bottom"
+msgstr "أسفل"
+
+msgid "Line style"
+msgstr "نمط الخط"
+
+msgid "Solid"
+msgstr "متصل"
+
+msgid "Dashed"
+msgstr "متقطع"
+
+msgid "Dotted"
+msgstr "منقّط"
+
+msgid "Double"
+msgstr "مزدوج"
+
+msgid "Every page"
+msgstr "كل الصفحات"
+
+msgid "First page"
+msgstr "الأولى فقط"
+
+msgid "Last page"
+msgstr "الأخيرة فقط"
+
+msgctxt "Report View"
+msgid "Text"
+msgstr "نص"
+
+msgctxt "Report View"
+msgid "Image"
+msgstr "صورة"
+
+msgid "Choose a letter head in «Template and language» to set its size, place and pages."
+msgstr "اختر ترويسة في «القالب واللغة» لتتحكم بحجمها ومكانها وصفحاتها."
+
+msgid "Letter head margins"
+msgstr "هوامش الترويسة"
+
+msgid "Footer margins"
+msgstr "هوامش التذييل"
+
+msgid "Against the footer"
+msgstr "مكانه من التذييل"
+
+msgid "Under the footer"
+msgstr "تحت التذييل"
+
+msgid "Above the footer"
+msgstr "فوق التذييل"
+
+msgid "Start at"
+msgstr "يبدأ من"
+
+msgid "Font size"
+msgstr "حجم الخط"
+
+msgid "Report name beside it"
+msgstr "اسم التقرير بجانبه"
+
+msgid "Space around the number"
+msgstr "المسافة حول الرقم"
+
+msgid "Rule of the number band"
+msgstr "خط شريط الترقيم"
+
+msgid "Watermark"
+msgstr "العلامة المائية"
+
+msgid "e.g. DRAFT, CONFIDENTIAL"
+msgstr "مثلاً: مسودة، سري"
+
+msgid "No image yet"
+msgstr "لا صورة بعد"
+
+msgid "Choose an image"
+msgstr "اختيار صورة"
+
+msgid "Image address"
+msgstr "رابط الصورة"
+
+msgid "Width of the page"
+msgstr "من عرض الصفحة"
+
+msgid "Opacity"
+msgstr "الشفافية"
+
+msgid "Angle"
+msgstr "الزاوية"
+
+msgctxt "Report View"
+msgid "Pages"
+msgstr "الصفحات"
+
+msgid "{0} hidden"
+msgstr "{0} مخفي"

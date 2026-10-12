@@ -22,24 +22,36 @@ export const SCREEN_FONT = 13;
 /** A text column gives up to this share of its width before every column shrinks. */
 export const TEXT_SHRINK = 0.45;
 
+/** The page margins of a preset, the same on the four sides (mm). */
+export function preset_margins(name) {
+	const v = MARGINS[name] ?? MARGINS.normal;
+	return { top: v, bottom: v, start: v, end: v };
+}
+
 /**
  * The box of a page in CSS px.
- * @param {{size?: string, orientation?: "portrait"|"landscape", margins?: string}} o
+ * @param {{size?: string, orientation?: "portrait"|"landscape", margins?: string,
+ *   page_m?: {top: number, bottom: number, start: number, end: number}}} o `page_m`: the
+ *   four margins in mm (they win over the `margins` preset)
  */
-export function page_box({ size = "A4", orientation = "portrait", margins = "normal" } = {}) {
+export function page_box({ size = "A4", orientation = "portrait", margins = "normal", page_m = null } = {}) {
 	const paper = PAGE_SIZES[size] || PAGE_SIZES.A4;
 	const landscape = orientation === "landscape";
 	const w = Math.round((landscape ? paper.h : paper.w) * MM);
 	const h = Math.round((landscape ? paper.w : paper.h) * MM);
-	const margin = Math.round((MARGINS[margins] ?? MARGINS.normal) * MM);
+	const m = page_m || preset_margins(margins);
+	const px = (v) => Math.round((Number(v) || 0) * MM);
+	const pad = { top: px(m.top), bottom: px(m.bottom), start: px(m.start), end: px(m.end) };
 	return {
 		size: PAGE_SIZES[size] ? size : "A4",
 		orientation: landscape ? "landscape" : "portrait",
 		w,
 		h,
-		margin,
-		inner_w: w - 2 * margin,
-		inner_h: h - 2 * margin,
+		pad,
+		// the smallest margin (the frame of a framed page stands inside it)
+		margin: Math.min(pad.top, pad.bottom, pad.start, pad.end),
+		inner_w: w - pad.start - pad.end,
+		inner_h: h - pad.top - pad.bottom,
 		// what the @page rule prints: the paper as chosen
 		paper_w_mm: landscape ? paper.h : paper.w,
 		paper_h_mm: landscape ? paper.w : paper.h,

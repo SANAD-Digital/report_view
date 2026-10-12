@@ -15,7 +15,7 @@
 
 import { GridRows } from "./grid_rows.js";
 import { build_layout } from "../engine/row_layout.js";
-import { page_box, fit_columns, paginate, PAGE_SIZES, MARGINS, PAGE_FONT, SCREEN_FONT } from "../engine/page_layout.js";
+import { page_box, fit_columns, paginate, preset_margins, PAGE_SIZES, MARGINS, PAGE_FONT, SCREEN_FONT } from "../engine/page_layout.js";
 import { icons } from "../components/icons.js";
 import { esc } from "../util.js";
 
@@ -31,10 +31,13 @@ const STAGE_PAD = 28;
 const PERIOD_KEYS = new Set(["from_date", "to_date", "fiscal_year", "report_date", "date", "posting_date", "as_on_date", "period_start_date", "period_end_date"]);
 const RTL_LANGS = new Set(["ar", "he", "fa", "ps", "ur"]);
 
+const BOX = (top, bottom, start, end) => Object.freeze({ top, bottom, start, end });
 export const DEFAULT_SETTINGS = Object.freeze({
 	size: "A4",
 	orientation: "portrait",
+	// a preset of the page margins, or "custom" once the four are typed (page_m, mm)
 	margins: "normal",
+	page_m: BOX(12, 12, 12, 12),
 	template: "",
 	// the look of Report View's own template (rv_pages.css .ps-<style>)
 	style: "classic",
@@ -46,26 +49,46 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	signatures: false,
 	page_numbers: true,
 	printed_on: true,
-	// the letter head: on every page or the first only, its height (mm), alignment and fit
+	// the letter head: on every page or the first only, height (mm), alignment, fit, margins
 	lh_repeat: false,
 	lh_height: 26,
 	lh_align: "center",
 	lh_fit: "contain",
-	// the letter head's footer: on every page or the last only, its height (mm, 0 = none)
+	lh_m: BOX(0, 3, 0, 0),
+	// the letter head's footer: on every page or the last only, height (mm, 0 = none)
 	foot_repeat: true,
 	foot_height: 11,
-	// the page number: where, how it reads, the height (mm) of its band
+	foot_align: "center",
+	foot_m: BOX(1.5, 1.5, 0, 0),
+	// the page number: place, order against the footer, format, first number, size,
+	// the report's name beside it, the space around it
 	number_pos: "bottom-end",
+	number_order: "after",
 	number_format: "full",
-	number_band: 7,
-	// the three rules: under the letter head, above its footer, above the page number
-	// (width in px, 0 = none; colour as #rrggbb)
+	number_start: 1,
+	number_size: 8,
+	number_caption: true,
+	num_m: BOX(1.5, 0, 0, 0),
+	// the three rules: under the letter head, above the footer, above (or under) the number
 	head_line_w: 0.6,
 	head_line_c: "#D9DFDB",
+	head_line_s: "solid",
 	foot_line_w: 0,
 	foot_line_c: "#D9DFDB",
+	foot_line_s: "solid",
 	num_line_w: 0.6,
 	num_line_c: "#9AA39E",
+	num_line_s: "solid",
+	// watermark: none, a text or an image, on every page or the first
+	wm_type: "none",
+	wm_text: "",
+	wm_image: "",
+	wm_size: 72,
+	wm_scale: 50,
+	wm_color: "#8A2D3B",
+	wm_opacity: 10,
+	wm_angle: -30,
+	wm_pages: "all",
 	hidden: [],
 	zoom: "fit",
 });
@@ -78,16 +101,33 @@ export const PAGE_STYLES = [
 	{ id: "compact", label: () => __("Compact", null, "Print template") },
 	{ id: "minimal", label: () => __("Ink saving") },
 ];
-export const LH_HEIGHT = { min: 10, max: 70 };
-export const FOOT_HEIGHT = { min: 0, max: 40 };
+export const LH_HEIGHT = { min: 5, max: 90 };
+export const FOOT_HEIGHT = { min: 0, max: 60 };
+export const BOX_MM = { min: 0, max: 60 };
+export const LINE_WIDTH = { min: 0, max: 6 };
 const NUMBER_POS = ["bottom-end", "bottom-center", "bottom-start", "top-end", "top-center", "top-start"];
-const NUMBER_FORMATS = ["full", "short", "number"];
-const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "lh_repeat", "foot_repeat"];
-export const NUMBER_BAND = { min: 4, max: 30 };
-export const LINE_WIDTH = { min: 0, max: 4 };
-const LH_ALIGN = ["start", "center", "end"];
+const NUMBER_FORMATS = ["full", "short", "number", "dash"];
+const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "lh_repeat", "foot_repeat", "number_caption"];
+const ALIGN = ["start", "center", "end"];
 const LH_FIT = ["contain", "wide"];
+const LINE_STYLES = ["solid", "dashed", "dotted", "double"];
 const COLOR = /^#[0-9a-fA-F]{6}$/;
+// number settings: [min, max, step]
+const NUMS = {
+	lh_height: [LH_HEIGHT.min, LH_HEIGHT.max, 1],
+	foot_height: [FOOT_HEIGHT.min, FOOT_HEIGHT.max, 1],
+	number_start: [1, 9999, 1],
+	number_size: [6, 16, 0.5],
+	head_line_w: [0, 6, 0.2],
+	foot_line_w: [0, 6, 0.2],
+	num_line_w: [0, 6, 0.2],
+	wm_size: [12, 240, 1],
+	wm_scale: [5, 100, 1],
+	wm_opacity: [2, 80, 1],
+	wm_angle: [-90, 90, 1],
+};
+const BOXES = ["page_m", "lh_m", "foot_m", "num_m"];
+const SIDES = ["top", "bottom", "start", "end"];
 
 // The page's own words, by msgid, for the translation pack of another language.
 const PAGE_MESSAGES = [
@@ -142,30 +182,57 @@ function wait_images(el, timeout = 2500) {
 	);
 }
 
+const clamp = (v, [min, max, step]) => {
+	const n = Number(v);
+	if (!Number.isFinite(n)) return null;
+	const q = Math.round(Math.max(min, Math.min(max, n)) / step) * step;
+	return Math.round(q * 100) / 100;
+};
+
+function sanitize_box(raw, fallback) {
+	if (!raw || typeof raw !== "object") return { ...fallback };
+	const out = {};
+	for (const side of SIDES) out[side] = clamp(raw[side], [BOX_MM.min, BOX_MM.max, 0.5]) ?? fallback[side];
+	return out;
+}
+
 function sanitize_settings(raw) {
 	const out = { ...DEFAULT_SETTINGS, hidden: [] };
+	for (const k of BOXES) out[k] = { ...DEFAULT_SETTINGS[k] };
 	if (!raw || typeof raw !== "object") return out;
 	if (PAGE_SIZES[raw.size]) out.size = raw.size;
 	if (raw.orientation === "landscape" || raw.orientation === "portrait") out.orientation = raw.orientation;
-	if (MARGINS[raw.margins] !== undefined) out.margins = raw.margins;
+	if (MARGINS[raw.margins] !== undefined) {
+		out.margins = raw.margins;
+		out.page_m = preset_margins(raw.margins);
+	}
+	for (const k of BOXES) if (raw[k]) out[k] = sanitize_box(raw[k], out[k]);
+	if (raw.margins === "custom" && raw.page_m) out.margins = "custom";
 	for (const k of ["template", "letter_head", "lang"]) if (typeof raw[k] === "string") out[k] = raw[k];
 	for (const k of BOOL_KEYS) if (typeof raw[k] === "boolean") out[k] = raw[k];
-	const mm = (v, r) => (Number.isFinite(v) ? Math.max(r.min, Math.min(r.max, Math.round(v))) : null);
-	if (mm(raw.lh_height, LH_HEIGHT) !== null) out.lh_height = mm(raw.lh_height, LH_HEIGHT);
-	if (mm(raw.foot_height, FOOT_HEIGHT) !== null) out.foot_height = mm(raw.foot_height, FOOT_HEIGHT);
-	if (PAGE_STYLES.some((st) => st.id === raw.style)) out.style = raw.style;
-	if (NUMBER_POS.includes(raw.number_pos)) out.number_pos = raw.number_pos;
-	if (mm(raw.number_band, NUMBER_BAND) !== null) out.number_band = mm(raw.number_band, NUMBER_BAND);
-	if (LH_ALIGN.includes(raw.lh_align)) out.lh_align = raw.lh_align;
-	if (LH_FIT.includes(raw.lh_fit)) out.lh_fit = raw.lh_fit;
 	// the setting of the first version: the letter head on every page
 	if (typeof raw.letterhead_all === "boolean" && typeof raw.lh_repeat !== "boolean") out.lh_repeat = raw.letterhead_all;
-	for (const k of ["head_line", "foot_line", "num_line"]) {
-		const w = Number(raw[`${k}_w`]);
-		if (Number.isFinite(w)) out[`${k}_w`] = Math.max(LINE_WIDTH.min, Math.min(LINE_WIDTH.max, Math.round(w * 10) / 10));
-		if (typeof raw[`${k}_c`] === "string" && COLOR.test(raw[`${k}_c`])) out[`${k}_c`] = raw[`${k}_c`];
+	for (const [k, r] of Object.entries(NUMS)) {
+		const v = clamp(raw[k], r);
+		if (v !== null) out[k] = v;
 	}
+	if (PAGE_STYLES.some((st) => st.id === raw.style)) out.style = raw.style;
+	if (NUMBER_POS.includes(raw.number_pos)) out.number_pos = raw.number_pos;
+	if (["after", "before"].includes(raw.number_order)) out.number_order = raw.number_order;
 	if (NUMBER_FORMATS.includes(raw.number_format)) out.number_format = raw.number_format;
+	if (ALIGN.includes(raw.lh_align)) out.lh_align = raw.lh_align;
+	if (ALIGN.includes(raw.foot_align)) out.foot_align = raw.foot_align;
+	if (LH_FIT.includes(raw.lh_fit)) out.lh_fit = raw.lh_fit;
+	for (const k of ["head_line", "foot_line", "num_line"]) {
+		if (typeof raw[`${k}_c`] === "string" && COLOR.test(raw[`${k}_c`])) out[`${k}_c`] = raw[`${k}_c`];
+		if (LINE_STYLES.includes(raw[`${k}_s`])) out[`${k}_s`] = raw[`${k}_s`];
+	}
+	if (["none", "text", "image"].includes(raw.wm_type)) out.wm_type = raw.wm_type;
+	if (typeof raw.wm_text === "string") out.wm_text = raw.wm_text.slice(0, 120);
+	// an image of the site (a file URL) or of the web, never a script
+	if (typeof raw.wm_image === "string" && /^(\/|https?:\/\/)/.test(raw.wm_image)) out.wm_image = raw.wm_image.slice(0, 500);
+	if (typeof raw.wm_color === "string" && COLOR.test(raw.wm_color)) out.wm_color = raw.wm_color;
+	if (["all", "first"].includes(raw.wm_pages)) out.wm_pages = raw.wm_pages;
 	if (Array.isArray(raw.hidden)) out.hidden = raw.hidden.filter((k) => typeof k === "string").slice(0, 500);
 	if (raw.zoom === "fit" || (Number.isFinite(raw.zoom) && raw.zoom >= 0.3 && raw.zoom <= 2)) out.zoom = raw.zoom;
 	return out;
@@ -290,7 +357,7 @@ export class PagesView {
 		if (panel) this.bd.innerHTML = `<div class="rv-print-skel">${[70, 100, 100, 60, 100, 100, 40, 100, 80].map(bar).join("")}</div>`;
 		const box = page_box(this.settings);
 		const rows = Array.from({ length: 18 }, (_, i) => bar(i % 5 === 0 ? 60 : 100)).join("");
-		this.sheets.innerHTML = `<section class="rv-page rv-page-skel" style="width:${box.w}px;height:${box.h}px;padding:${box.margin}px">${bar(40)}${bar(25)}<div class="rv-page-skel-rows">${rows}</div></section>`;
+		this.sheets.innerHTML = `<section class="rv-page rv-page-skel" style="width:${box.w}px;height:${box.h}px;padding-block:${box.pad.top}px ${box.pad.bottom}px;padding-inline:${box.pad.start}px ${box.pad.end}px">${bar(40)}${bar(25)}<div class="rv-page-skel-rows">${rows}</div></section>`;
 		this.apply_zoom_box(box);
 	}
 
@@ -347,7 +414,7 @@ export class PagesView {
 		// No choice made yet for this report: a table too wide for a portrait page at the
 		// smallest font opens in landscape, as Frappe prints reports by default.
 		if (this.unsaved && !this.settings.template) {
-			const portrait = page_box({ size: this.settings.size, orientation: "portrait", margins: this.settings.margins });
+			const portrait = page_box({ size: this.settings.size, orientation: "portrait", page_m: this.settings.page_m });
 			// Portrait when the columns fit without shrinking and the label keeps most of its
 			// width; else landscape.
 			const input = this.fit_input();
@@ -388,9 +455,23 @@ export class PagesView {
 
 	// ------------------------------------------------------------ settings
 
-	update(patch) {
+	/**
+	 * @param {object} patch new values of the settings
+	 * @param {{panel?: boolean, wait?: number}} [opts] panel: build the panel again (not while
+	 *   a value is typed); wait: cut the pages again after this many ms of quiet
+	 */
+	update(patch, { panel = true, wait = 0 } = {}) {
 		Object.assign(this.settings, patch);
 		this.unsaved = false;
+		if (!panel) {
+			this.host.pages_settings_save({ ...this.settings });
+			this.apply_vars(this.settings);
+			clearTimeout(this._typed);
+			this._typed = setTimeout(() => {
+				if (this.current) this.ready = this.relayout(++this.token);
+			}, wait);
+			return;
+		}
 		this.host.pages_settings_save({ ...this.settings });
 		this.render_panel();
 		if (this.current) this.ready = this.relayout(++this.token);
@@ -447,166 +528,239 @@ export class PagesView {
 		return Array.isArray(own) && own.length ? own.map(String) : [__("Accountant"), __("Finance Manager"), __("General Manager")];
 	}
 
+	/**
+	 * The settings panel: sections that fold (paper, template, letter head, footer, page
+	 * numbers, watermark, content, columns), each with a line that sums it up. Numbers are
+	 * typed or stepped (mm, px, pt); the page follows a change at once.
+	 */
 	render_panel() {
 		const s = this.settings;
 		const o = this.options || { letter_heads: [], print_formats: [], languages: [] };
 		const model = this.rows.model;
+		const scroll = this.bd.scrollTop;
+		if (!this.open_secs) this.open_secs = new Set(["paper"]);
+		const mm = __("mm");
+		const option = (value, label, on) => `<option value="${esc(value)}" ${on ? "selected" : ""}>${esc(label)}</option>`;
 		const check = (key, label) =>
 			`<label class="rv-setitem"><span class="rv-check"><input type="checkbox" data-set="${key}" ${s[key] ? "checked" : ""}><span>${esc(label)}</span></span></label>`;
-		const option = (value, label, on) => `<option value="${esc(value)}" ${on ? "selected" : ""}>${esc(label)}</option>`;
-		const columns = model ? [...model.pinned, ...model.data] : [];
-		const hidden = new Set(s.hidden);
 		const sw = (key, label) =>
 			`<label class="rv-print-sw"><span>${esc(label)}</span><button type="button" class="rv-switch${s[key] ? " on" : ""}" role="switch" aria-checked="${s[key]}" data-sw="${key}" aria-label="${esc(label)}"></button></label>`;
-		const range = (key, label, r, step, out) =>
-			`<label class="rv-field rv-range-field"><span>${esc(label)}<b class="rv-pnum" data-out="${key}">${esc(out)}</b></span><input type="range" data-mm="${key}" min="${r.min}" max="${r.max}" step="${step}" value="${s[key]}"></label>`;
 		const seg = (key, label, opts) =>
 			`<div class="rv-field"><span>${esc(label)}</span><div class="rv-seg rv-print-seg" role="group" aria-label="${esc(label)}">${opts
 				.map(([v, l]) => `<button type="button" data-seg="${key}" data-value="${v}" class="${s[key] === v ? "on" : ""}" aria-pressed="${s[key] === v}">${esc(l)}</button>`)
 				.join("")}</div></div>`;
-		const line = (key, label) =>
-			`<div class="rv-field rv-line-field"><span>${esc(label)}<b class="rv-pnum" data-out="${key}_w">${s[`${key}_w`] ? `${s[`${key}_w`]} px` : esc(__("None", null, "Report View"))}</b></span><div class="rv-line-ctl"><input type="range" data-mm="${key}_w" data-step-decimal="1" min="${LINE_WIDTH.min}" max="${LINE_WIDTH.max}" step="0.2" value="${s[`${key}_w`]}" aria-label="${esc(__("Thickness"))}"><input type="color" data-color="${key}_c" value="${s[`${key}_c`]}" aria-label="${esc(__("Colour"))}" title="${esc(__("Colour"))}"></div></div>`;
-		this.bd.innerHTML = `
-			<div>
-				<h4>${esc(__("Paper"))}</h4>
-				<div class="rv-print-row">
-					<select class="rv-input" data-set="size" aria-label="${esc(__("Paper size"))}">${Object.keys(PAGE_SIZES)
-						.map((k) => option(k, k, s.size === k))
-						.join("")}</select>
-					<select class="rv-input" data-set="margins" aria-label="${esc(__("Margins"))}">
-						${option("narrow", __("Narrow margins"), s.margins === "narrow")}${option("normal", __("Normal margins"), s.margins === "normal")}${option("wide", __("Wide margins"), s.margins === "wide")}
-					</select>
-				</div>
-				<div class="rv-orient" role="group" aria-label="${esc(__("Orientation"))}">
-					<button type="button" data-orient="portrait" class="${s.orientation === "portrait" ? "on" : ""}" aria-pressed="${s.orientation === "portrait"}"><i style="width:22px;height:30px"></i>${esc(__("Portrait", null, "Report View"))}</button>
-					<button type="button" data-orient="landscape" class="${s.orientation === "landscape" ? "on" : ""}" aria-pressed="${s.orientation === "landscape"}"><i style="width:30px;height:22px"></i>${esc(__("Landscape", null, "Report View"))}</button>
-				</div>
-			</div>
-			<div>
-				<h4>${esc(__("Template and letter head"))}</h4>
-				<div class="rv-print-fields">
-					<label class="rv-field"><span>${esc(__("Print template"))}</span>
-						<select class="rv-input" data-set="template">
-							${option("", __("Report View (standard)"), !s.template)}
-							${o.print_formats.length ? `<optgroup label="${esc(__("Print formats of the report"))}">${o.print_formats.map((n) => option(n, n, s.template === n)).join("")}</optgroup>` : ""}
-						</select></label>
-					<label class="rv-field"><span>${esc(__("Print style"))}</span>
-						<select class="rv-input" data-set="style">${PAGE_STYLES.map((st) => option(st.id, st.label(), s.style === st.id)).join("")}</select></label>
-					<label class="rv-field"><span>${esc(__("Letter Head", null, "Report View"))}</span>
-						<select class="rv-input" data-set="letter_head">${option("", __("No letter head"), !s.letter_head)}${o.letter_heads.map((lh) => option(lh.name, lh.name, s.letter_head === lh.name)).join("")}</select></label>
-					<label class="rv-field"><span>${esc(__("Language", null, "Report View"))}</span>
-						<select class="rv-input" data-set="lang">${option("", __("Session language ({0})", [o.lang || frappe.boot.lang]), !s.lang)}${o.languages
-							.map((l) => option(l.name, l.label, s.lang === l.name))
-							.join("")}</select></label>
-				</div>
-			</div>
-			<div class="rv-print-group">
-				<div class="rv-print-gh"><h4>${esc(__("Letter Head", null, "Report View"))}</h4>${s.letter_head ? sw("lh_repeat", __("Repeat on every page")) : ""}</div>
-				${
-					s.letter_head
-						? `<div class="rv-print-fields">
-					${range("lh_height", __("Height", null, "Report View"), LH_HEIGHT, 1, `${s.lh_height} ${__("mm")}`)}
-					${seg("lh_align", __("Alignment"), [["start", __("Start", null, "Report View")], ["center", __("Centre")], ["end", __("End", null, "Report View")]])}
-					${seg("lh_fit", __("Shape"), [["contain", __("As designed")], ["wide", __("Page width")]])}
-					${line("head_line", __("Rule under the letter head"))}
-				</div>`
-						: `<p class="rv-zone-empty">${esc(__("Choose a letter head above to set its size, place and pages."))}</p>`
-				}
-			</div>
-			<div class="rv-print-group">
-				<div class="rv-print-gh"><h4>${esc(__("Footer", null, "Report View"))}</h4>${s.letter_head ? sw("foot_repeat", __("Repeat on every page")) : ""}</div>
-				${
-					s.letter_head
-						? `<div class="rv-print-fields">
-					${range("foot_height", __("Height", null, "Report View"), FOOT_HEIGHT, 1, s.foot_height ? `${s.foot_height} ${__("mm")}` : __("Hidden"))}
-					${line("foot_line", __("Rule above the footer"))}
+		const num = (key, label, unit) => {
+			const [min, max, step] = NUMS[key];
+			return `<label class="rv-field rv-num-field"><span>${esc(label)}</span><span class="rv-num"><input type="number" class="rv-input" data-num="${key}" min="${min}" max="${max}" step="${step}" value="${s[key]}"><i>${esc(unit)}</i></span></label>`;
+		};
+		const select = (key, label, opts) =>
+			`<label class="rv-field"><span>${esc(label)}</span><select class="rv-input" data-set="${key}">${opts.map(([v, l]) => option(v, l, String(s[key]) === String(v))).join("")}</select></label>`;
+		// four margins as Word draws them: top and bottom, the two sides, a page between
+		const box = (key, label) => {
+			const v = s[key];
+			const field = (side, title) =>
+				`<label class="rv-box4-${side}" title="${esc(title)}"><input type="number" class="rv-input" data-box="${key}" data-side="${side}" min="${BOX_MM.min}" max="${BOX_MM.max}" step="0.5" value="${v[side]}" aria-label="${esc(`${label}: ${title}`)}"></label>`;
+			return `<div class="rv-field"><span>${esc(label)} <i class="rv-unit">(${esc(mm)})</i><button type="button" class="rv-link" data-box-all="${key}" title="${esc(__("Use the top value on every side"))}">${esc(__("Same on all sides"))}</button></span>
+				<div class="rv-box4">${field("top", __("Top", null, "Report View"))}${field("start", __("Start", null, "Report View"))}<span class="rv-box4-page" aria-hidden="true"></span>${field("end", __("End", null, "Report View"))}${field("bottom", __("Bottom", null, "Report View"))}</div></div>`;
+		};
+		const rule = (key, label) =>
+			`<div class="rv-field rv-rule-field"><span>${esc(label)}</span><div class="rv-rule-ctl">
+				<span class="rv-num"><input type="number" class="rv-input" data-num="${key}_w" min="0" max="6" step="0.2" value="${s[`${key}_w`]}" aria-label="${esc(__("Thickness"))}"><i>px</i></span>
+				<select class="rv-input" data-set="${key}_s" aria-label="${esc(__("Line style"))}">${[
+					["solid", __("Solid")],
+					["dashed", __("Dashed")],
+					["dotted", __("Dotted")],
+					["double", __("Double")],
+				]
+					.map(([v, l]) => option(v, l, s[`${key}_s`] === v))
+					.join("")}</select>
+				<input type="color" data-color="${key}_c" value="${s[`${key}_c`]}" aria-label="${esc(__("Colour"))}" title="${esc(__("Colour"))}"></div></div>`;
+		const section = (id, icon, title, summary, body, extra = "") =>
+			`<details class="rv-psec" data-sec="${id}" ${this.open_secs.has(id) ? "open" : ""}><summary><span class="ic">${icon}</span><span class="tt">${esc(title)}</span><span class="sm">${esc(summary)}</span>${extra}</summary><div class="rv-psec-bd">${body}</div></details>`;
+		const align3 = [["start", __("Start", null, "Report View")], ["center", __("Centre")], ["end", __("End", null, "Report View")]];
+		const pm = s.page_m;
+		const columns = model ? [...model.pinned, ...model.data] : [];
+		const hidden = new Set(s.hidden);
+		const no_lh = `<p class="rv-zone-empty">${esc(__("Choose a letter head in «Template and language» to set its size, place and pages."))}</p>`;
+		const pos_label = {
+			"bottom-end": __("Bottom, at the end"),
+			"bottom-center": __("Bottom, centred"),
+			"bottom-start": __("Bottom, at the start"),
+			"top-end": __("Top, at the end"),
+			"top-center": __("Top, centred"),
+			"top-start": __("Top, at the start"),
+		};
+		const ic = (d) => `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+		const I = {
+			paper: ic('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>'),
+			tpl: ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/>'),
+			head: ic('<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 8h16"/>'),
+			foot: ic('<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 16h16"/>'),
+			num: ic('<path d="M5 9h14M5 15h14M10 4 8 20M16 4l-2 16"/>'),
+			wm: ic('<path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"/>'),
+			content: ic('<path d="M4 6h16M4 12h16M4 18h10"/>'),
+			cols: ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/>'),
+		};
+		const paper_sum = `${s.size} · ${s.orientation === "landscape" ? __("Landscape", null, "Report View") : __("Portrait", null, "Report View")} · ${[pm.top, pm.end, pm.bottom, pm.start].join("/")} ${mm}`;
+		const tpl_sum = [s.template || PAGE_STYLES.find((x) => x.id === s.style)?.label(), s.lang ? o.languages.find((l) => l.name === s.lang)?.label : ""].filter(Boolean).join(" · ");
+		const lh_sum = s.letter_head ? `${s.letter_head} · ${s.lh_repeat ? __("Every page") : __("First page")}` : __("None", null, "Report View");
+		const foot_sum = !s.letter_head || !s.foot_height ? __("None", null, "Report View") : s.foot_repeat ? __("Every page") : __("Last page");
+		const num_sum = s.page_numbers ? pos_label[s.number_pos] : __("Hidden");
+		const wm_sum = s.wm_type === "text" ? s.wm_text || __("Text", null, "Report View") : s.wm_type === "image" ? __("Image", null, "Report View") : __("None", null, "Report View");
+
+		this.bd.innerHTML = [
+			section(
+				"paper",
+				I.paper,
+				__("Paper and margins"),
+				paper_sum,
+				`<div class="rv-print-row">${select("size", __("Paper size"), Object.keys(PAGE_SIZES).map((k) => [k, k]))}
+					<div class="rv-field"><span>${esc(__("Orientation"))}</span><div class="rv-orient sm" role="group">
+						<button type="button" data-orient="portrait" class="${s.orientation === "portrait" ? "on" : ""}" aria-pressed="${s.orientation === "portrait"}" title="${esc(__("Portrait", null, "Report View"))}"><i style="width:12px;height:16px"></i>${esc(__("Portrait", null, "Report View"))}</button>
+						<button type="button" data-orient="landscape" class="${s.orientation === "landscape" ? "on" : ""}" aria-pressed="${s.orientation === "landscape"}" title="${esc(__("Landscape", null, "Report View"))}"><i style="width:16px;height:12px"></i>${esc(__("Landscape", null, "Report View"))}</button>
+					</div></div></div>
+				${seg("margins", __("Margins"), [["narrow", __("Narrow")], ["normal", __("Normal", null, "Report View")], ["wide", __("Wide")], ["custom", __("Custom", null, "Report View")]])}
+				${box("page_m", __("Page margins"))}`
+			),
+			section(
+				"tpl",
+				I.tpl,
+				__("Template and language"),
+				tpl_sum,
+				`<label class="rv-field"><span>${esc(__("Print template"))}</span><select class="rv-input" data-set="template">${option("", __("Report View (standard)"), !s.template)}${
+					o.print_formats.length ? `<optgroup label="${esc(__("Print formats of the report"))}">${o.print_formats.map((n) => option(n, n, s.template === n)).join("")}</optgroup>` : ""
+				}</select></label>
+				${select("style", __("Print style"), PAGE_STYLES.map((st) => [st.id, st.label()]))}
+				<label class="rv-field"><span>${esc(__("Letter Head", null, "Report View"))}</span><select class="rv-input" data-set="letter_head">${option("", __("No letter head"), !s.letter_head)}${o.letter_heads
+					.map((lh) => option(lh.name, lh.name, s.letter_head === lh.name))
+					.join("")}</select></label>
+				<label class="rv-field"><span>${esc(__("Language", null, "Report View"))}</span><select class="rv-input" data-set="lang">${option("", __("Session language ({0})", [o.lang || frappe.boot.lang]), !s.lang)}${o.languages
+					.map((l) => option(l.name, l.label, s.lang === l.name))
+					.join("")}</select></label>`
+			),
+			section(
+				"head",
+				I.head,
+				__("Letter Head", null, "Report View"),
+				lh_sum,
+				s.letter_head
+					? `${sw("lh_repeat", __("Repeat on every page"))}
+					<div class="rv-print-row">${num("lh_height", __("Height", null, "Report View"), mm)}${seg("lh_fit", __("Shape"), [["contain", __("As designed")], ["wide", __("Page width")]])}</div>
+					${seg("lh_align", __("Alignment"), align3)}
+					${box("lh_m", __("Letter head margins"))}
+					${rule("head_line", __("Rule under the letter head"))}`
+					: no_lh
+			),
+			section(
+				"foot",
+				I.foot,
+				__("Footer", null, "Report View"),
+				foot_sum,
+				s.letter_head
+					? `${sw("foot_repeat", __("Repeat on every page"))}
 					${s.foot_repeat ? "" : `<p class="rv-zone-empty">${esc(__("The footer prints on the last page only."))}</p>`}
-				</div>`
-						: ""
-				}
-			</div>
-			<div class="rv-print-group">
-				<div class="rv-print-gh"><h4>${esc(__("Page numbers"))}</h4>${sw("page_numbers", __("Show page numbers"))}</div>
+					<div class="rv-print-row">${num("foot_height", __("Height", null, "Report View"), mm)}</div>
+					${seg("foot_align", __("Alignment"), align3)}
+					${box("foot_m", __("Footer margins"))}
+					${rule("foot_line", __("Rule above the footer"))}`
+					: no_lh
+			),
+			section(
+				"num",
+				I.num,
+				__("Page numbers"),
+				num_sum,
+				`${sw("page_numbers", __("Show page numbers"))}
 				${
 					s.page_numbers
-						? `<div class="rv-print-fields">
-					<div class="rv-print-row">
-						<label class="rv-field"><span>${esc(__("Page number position"))}</span>
-							<select class="rv-input" data-set="number_pos">
-								${option("bottom-end", __("Bottom, at the end"), s.number_pos === "bottom-end")}${option("bottom-center", __("Bottom, centred"), s.number_pos === "bottom-center")}${option("bottom-start", __("Bottom, at the start"), s.number_pos === "bottom-start")}
-								${option("top-end", __("Top, at the end"), s.number_pos === "top-end")}${option("top-center", __("Top, centred"), s.number_pos === "top-center")}${option("top-start", __("Top, at the start"), s.number_pos === "top-start")}
-							</select></label>
-						<label class="rv-field"><span>${esc(__("Number format"))}</span>
-							<select class="rv-input" data-set="number_format">
-								${option("full", __("Page 1 of 3"), s.number_format === "full")}${option("short", "1 / 3", s.number_format === "short")}${option("number", "1", s.number_format === "number")}
-							</select></label>
-					</div>
-					${range("number_band", __("Height of the number band"), NUMBER_BAND, 1, `${s.number_band} ${__("mm")}`)}
-					${line("num_line", __("Rule above the page number"))}
-				</div>`
+						? `${select("number_pos", __("Page number position"), Object.entries(pos_label))}
+					${s.number_pos.startsWith("bottom") ? seg("number_order", __("Against the footer"), [["after", __("Under the footer")], ["before", __("Above the footer")]]) : ""}
+					<div class="rv-print-row">${select("number_format", __("Number format"), [["full", __("Page 1 of 3")], ["short", "1 / 3"], ["dash", "— 1 —"], ["number", "1"]])}${num("number_start", __("Start at"), "")}</div>
+					<div class="rv-print-row">${num("number_size", __("Font size"), "pt")}<div class="rv-field rv-sw-field">${sw("number_caption", __("Report name beside it"))}</div></div>
+					${box("num_m", __("Space around the number"))}
+					${rule("num_line", __("Rule of the number band"))}`
+						: ""
+				}`
+			),
+			section(
+				"wm",
+				I.wm,
+				__("Watermark"),
+				wm_sum,
+				`${seg("wm_type", __("Watermark"), [["none", __("None", null, "Report View")], ["text", __("Text", null, "Report View")], ["image", __("Image", null, "Report View")]])}
+				${
+					s.wm_type === "text"
+						? `<label class="rv-field"><span>${esc(__("Text", null, "Report View"))}</span><input type="text" class="rv-input" data-text="wm_text" maxlength="120" value="${esc(s.wm_text)}" placeholder="${esc(__("e.g. DRAFT, CONFIDENTIAL"))}"></label>
+						<div class="rv-print-row">${num("wm_size", __("Font size"), "pt")}<label class="rv-field"><span>${esc(__("Colour"))}</span><input type="color" class="rv-color-wide" data-color="wm_color" value="${s.wm_color}"></label></div>`
 						: ""
 				}
-			</div>
-			<div>
-				<h4>${esc(__("Content", null, "Report View"))}</h4>
-				<div class="rv-setlist tall">
-					${check("include_filters", __("Applied filters"))}
-					${model?.hierarchical ? check("include_subtotals", __("Group subtotals")) : ""}
-					${check("include_total", __("Grand Total"))}
-					${check("signatures", __("Signature boxes"))}
-					${check("printed_on", __("Print date and user"))}
-				</div>
-			</div>
-			${
-				s.template
-					? ""
-					: `<div>
-				<h4>${esc(__("Printed columns"))}</h4>
-				<div class="rv-setlist tall">
-					<label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked disabled><span>${esc(model?.label_title || "")}</span></span></label>
-					${columns
-						.map(
-							(d) =>
-								`<label class="rv-setitem"><span class="rv-check"><input type="checkbox" data-col="${esc(d.column.key)}" ${hidden.has(d.column.key) ? "" : "checked"}><span>${esc(d.title)}</span></span></label>`
-						)
-						.join("")}
-				</div>
-			</div>`
-			}
-			<p class="rv-zone-empty">${esc(__("The pages show the table as it is: the same filters, grouping and folded groups."))}</p>`;
-		for (const sel of this.bd.querySelectorAll("select[data-set]")) {
+				${
+					s.wm_type === "image"
+						? `<div class="rv-field"><span>${esc(__("Image", null, "Report View"))}</span><div class="rv-wm-img">${
+								s.wm_image ? `<img src="${esc(s.wm_image)}" alt="">` : `<span class="rv-zone-empty">${esc(__("No image yet"))}</span>`
+						  }<button type="button" class="rv-btn sm" data-action="wm-upload">${esc(__("Choose an image"))}</button></div>
+						<input type="text" class="rv-input" data-text="wm_image" value="${esc(s.wm_image)}" placeholder="/files/logo.png" aria-label="${esc(__("Image address"))}"></div>
+						${num("wm_scale", __("Width of the page"), "%")}`
+						: ""
+				}
+				${
+					s.wm_type !== "none"
+						? `<div class="rv-print-row">${num("wm_opacity", __("Opacity"), "%")}${num("wm_angle", __("Angle"), "°")}</div>
+						${seg("wm_pages", __("Pages", null, "Report View"), [["all", __("Every page")], ["first", __("First page")]])}`
+						: ""
+				}`
+			),
+			section(
+				"content",
+				I.content,
+				__("Content", null, "Report View"),
+				"",
+				`<div class="rv-setlist tall">${check("include_filters", __("Applied filters"))}${model?.hierarchical ? check("include_subtotals", __("Group subtotals")) : ""}${check(
+					"include_total",
+					__("Grand Total")
+				)}${check("signatures", __("Signature boxes"))}${check("printed_on", __("Print date and user"))}</div>`
+			),
+			s.template
+				? ""
+				: section(
+						"cols",
+						I.cols,
+						__("Printed columns"),
+						hidden.size ? __("{0} hidden", [hidden.size]) : "",
+						`<div class="rv-setlist tall"><label class="rv-setitem"><span class="rv-check"><input type="checkbox" checked disabled><span>${esc(model?.label_title || "")}</span></span></label>${columns
+							.map(
+								(d) =>
+									`<label class="rv-setitem"><span class="rv-check"><input type="checkbox" data-col="${esc(d.column.key)}" ${hidden.has(d.column.key) ? "" : "checked"}><span>${esc(d.title)}</span></span></label>`
+							)
+							.join("")}</div>`
+				  ),
+			`<p class="rv-zone-empty">${esc(__("The pages show the table as it is: the same filters, grouping and folded groups."))}</p>`,
+		].join("");
+		this.bd.scrollTop = scroll;
+		this.bind_panel();
+	}
+
+	bind_panel() {
+		const bd = this.bd;
+		for (const d of bd.querySelectorAll("details[data-sec]")) {
+			d.addEventListener("toggle", () => (d.open ? this.open_secs.add(d.dataset.sec) : this.open_secs.delete(d.dataset.sec)));
+		}
+		for (const sel of bd.querySelectorAll("select[data-set]")) {
 			sel.addEventListener("change", () => this.update({ [sel.dataset.set]: sel.value }));
 		}
-		for (const b of this.bd.querySelectorAll("[data-orient]")) {
-			b.addEventListener("click", () => this.update({ orientation: b.dataset.orient }));
-		}
-		// sliders: the page follows at once, the pages are cut again when the slider stops
-		for (const r of this.bd.querySelectorAll("input[data-mm]")) {
-			const key = r.dataset.mm;
-			const out = this.bd.querySelector(`[data-out="${key}"]`);
-			const text = (v) => (key.endsWith("_w") ? (v ? `${v} px` : __("None", null, "Report View")) : key === "foot_height" && !v ? __("Hidden") : `${v} ${__("mm")}`);
-			r.addEventListener("input", () => {
-				const v = Number(r.value);
-				out.textContent = text(v);
-				this.apply_vars({ ...this.settings, [key]: v });
+		for (const b of bd.querySelectorAll("[data-orient]")) b.addEventListener("click", () => this.update({ orientation: b.dataset.orient }));
+		for (const b of bd.querySelectorAll("[data-sw]")) b.addEventListener("click", () => this.update({ [b.dataset.sw]: !this.settings[b.dataset.sw] }));
+		for (const b of bd.querySelectorAll("[data-seg]")) {
+			b.addEventListener("click", () => {
+				const key = b.dataset.seg;
+				const value = b.dataset.value;
+				// a margin preset writes the four page margins
+				if (key === "margins" && value !== "custom") this.update({ margins: value, page_m: preset_margins(value) });
+				else this.update({ [key]: value });
 			});
-			r.addEventListener("change", () => this.update({ [key]: Number(r.value) }));
 		}
-		for (const c of this.bd.querySelectorAll("input[data-color]")) {
-			const key = c.dataset.color;
-			c.addEventListener("input", () => this.apply_vars({ ...this.settings, [key]: c.value }));
-			c.addEventListener("change", () => this.update({ [key]: c.value }));
-		}
-		for (const b of this.bd.querySelectorAll("[data-sw]")) {
-			b.addEventListener("click", () => this.update({ [b.dataset.sw]: !this.settings[b.dataset.sw] }));
-		}
-		for (const b of this.bd.querySelectorAll("[data-seg]")) {
-			b.addEventListener("click", () => this.update({ [b.dataset.seg]: b.dataset.value }));
-		}
-		for (const c of this.bd.querySelectorAll("input[data-set]")) {
-			c.addEventListener("change", () => this.update({ [c.dataset.set]: c.checked }));
-		}
-		for (const c of this.bd.querySelectorAll("input[data-col]")) {
+		for (const c of bd.querySelectorAll("input[data-set]")) c.addEventListener("change", () => this.update({ [c.dataset.set]: c.checked }));
+		for (const c of bd.querySelectorAll("input[data-col]")) {
 			c.addEventListener("change", () => {
 				const key = c.dataset.col;
 				const next = this.settings.hidden.filter((k) => k !== key);
@@ -614,6 +768,64 @@ export class PagesView {
 				this.update({ hidden: next });
 			});
 		}
+		// typed values: the page follows while typing (no new panel, the focus stays)
+		const typed = (patch) => this.update(patch, { panel: false, wait: 350 });
+		for (const i of bd.querySelectorAll("input[data-num]")) {
+			i.addEventListener("input", () => {
+				const v = clamp(i.value, NUMS[i.dataset.num]);
+				if (v !== null && i.value !== "") typed({ [i.dataset.num]: v });
+			});
+			i.addEventListener("change", () => {
+				const v = clamp(i.value, NUMS[i.dataset.num]) ?? this.settings[i.dataset.num];
+				i.value = v;
+				this.update({ [i.dataset.num]: v });
+			});
+		}
+		for (const i of bd.querySelectorAll("input[data-box]")) {
+			const key = i.dataset.box;
+			i.addEventListener("input", () => {
+				const v = clamp(i.value, [BOX_MM.min, BOX_MM.max, 0.5]);
+				if (v === null || i.value === "") return;
+				typed({ [key]: { ...this.settings[key], [i.dataset.side]: v }, ...(key === "page_m" ? { margins: "custom" } : {}) });
+			});
+			i.addEventListener("change", () => {
+				const v = clamp(i.value, [BOX_MM.min, BOX_MM.max, 0.5]) ?? this.settings[key][i.dataset.side];
+				i.value = v;
+				this.update({ [key]: { ...this.settings[key], [i.dataset.side]: v }, ...(key === "page_m" ? { margins: "custom" } : {}) });
+			});
+		}
+		for (const b of bd.querySelectorAll("[data-box-all]")) {
+			b.addEventListener("click", () => {
+				const key = b.dataset.boxAll;
+				const v = this.settings[key].top;
+				this.update({ [key]: { top: v, bottom: v, start: v, end: v }, ...(key === "page_m" ? { margins: "custom" } : {}) });
+			});
+		}
+		for (const i of bd.querySelectorAll("input[data-text]")) {
+			i.addEventListener("input", () => {
+				const key = i.dataset.text;
+				if (key === "wm_image" && i.value && !/^(\/|https?:\/\/)/.test(i.value)) return;
+				typed({ [key]: i.value });
+			});
+		}
+		for (const c of bd.querySelectorAll("input[data-color]")) {
+			const key = c.dataset.color;
+			c.addEventListener("input", () => this.apply_vars({ ...this.settings, [key]: c.value }));
+			c.addEventListener("change", () => this.update({ [key]: c.value }));
+		}
+		bd.querySelector('[data-action="wm-upload"]')?.addEventListener("click", () => this.pick_watermark());
+	}
+
+	// An image for the watermark: Frappe's file uploader (an image of the site's files).
+	pick_watermark() {
+		if (!frappe.ui?.FileUploader) return;
+		new frappe.ui.FileUploader({
+			allow_multiple: false,
+			restrictions: { allowed_file_types: ["image/*"] },
+			on_success: (file) => {
+				if (file?.file_url) this.update({ wm_image: file.file_url });
+			},
+		});
 	}
 
 	// ------------------------------------------------------------ layout
@@ -714,13 +926,40 @@ export class PagesView {
 	/** The sizes, places and rules of the letter head, footer and number, as CSS variables of the pages. */
 	apply_vars(s) {
 		const set = (k, v) => this.root.style.setProperty(k, v);
+		const block = (b) => `${b.top}mm ${b.bottom}mm`;
+		const inline = (b) => `${b.start}mm ${b.end}mm`;
+		const flex = { start: "flex-start", center: "center", end: "flex-end" };
 		set("--pp-lh-h", `${s.lh_height}mm`);
 		set("--pp-lhf-h", `${s.foot_height}mm`);
-		set("--pp-lh-align", { start: "flex-start", center: "center", end: "flex-end" }[s.lh_align] || "center");
-		set("--pp-nb-h", `${s.number_band}mm`);
-		for (const k of ["head_line", "foot_line", "num_line"]) {
-			set(`--pp-${k.replace("_", "-")}`, s[`${k}_w`] ? `${s[`${k}_w`]}px solid ${s[`${k}_c`]}` : "0 solid transparent");
+		set("--pp-lh-align", flex[s.lh_align] || "center");
+		set("--pp-lhf-align", flex[s.foot_align] || "center");
+		for (const k of ["lh", "foot", "num"]) {
+			set(`--pp-${k}-mb`, block(s[`${k}_m`]));
+			set(`--pp-${k}-mi`, inline(s[`${k}_m`]));
 		}
+		set("--pp-num-fs", `${s.number_size}pt`);
+		for (const k of ["head_line", "foot_line", "num_line"]) {
+			const w = s[`${k}_w`];
+			// a double rule needs three pixels to show its two lines
+			const width = s[`${k}_s`] === "double" ? Math.max(3, w) : w;
+			set(`--pp-${k.replace("_", "-")}`, w ? `${width}px ${s[`${k}_s`]} ${s[`${k}_c`]}` : "0 solid transparent");
+		}
+		set("--pp-wm-color", s.wm_color);
+		set("--pp-wm-size", `${s.wm_size}pt`);
+		set("--pp-wm-op", String(s.wm_opacity / 100));
+		set("--pp-wm-angle", `${s.wm_angle}deg`);
+		set("--pp-wm-w", `${s.wm_scale}%`);
+		// a watermark follows its settings on the pages already drawn
+		for (const el of this.sheets.querySelectorAll(".rv-page-wm")) el.outerHTML = this.watermark_html(Number(el.closest(".rv-page")?.dataset.page || 0));
+	}
+
+	/** The watermark of a page: a text or an image over the page, never in the way of a click. */
+	watermark_html(i) {
+		const s = this.settings;
+		if (s.wm_type === "none" || (s.wm_pages === "first" && i > 0)) return "";
+		if (s.wm_type === "text" && s.wm_text.trim()) return `<div class="rv-page-wm" aria-hidden="true"><span>${esc(s.wm_text)}</span></div>`;
+		if (s.wm_type === "image" && s.wm_image) return `<div class="rv-page-wm" aria-hidden="true"><img src="${esc(s.wm_image)}" alt=""></div>`;
+		return "";
 	}
 
 	async load_letterhead(name) {
@@ -860,25 +1099,40 @@ export class PagesView {
 		const s = this.settings;
 		if (!s.page_numbers) return "";
 		const num = (v) => frappe.format(v, { fieldtype: "Int" }, { inline: true });
-		const text = s.number_format === "number" ? num(n) : s.number_format === "short" ? `${num(n)} / ${num(total)}` : this.t("Page {0} of {1}", [num(n), num(total)]);
+		const at = n + s.number_start - 1;
+		const last = total + s.number_start - 1;
+		const text =
+			s.number_format === "number"
+				? num(at)
+				: s.number_format === "short"
+				? `${num(at)} / ${num(last)}`
+				: s.number_format === "dash"
+				? `— ${num(at)} —`
+				: this.t("Page {0} of {1}", [num(at), num(last)]);
 		return `<span class="rv-pnum">${esc(text)}</span>`;
 	}
 
+	/**
+	 * The foot of a page: the letter head's footer and the number band, in the order chosen
+	 * (the number under the footer, or above it). The footer prints on every page or the
+	 * last; the band carries the number and, beside it, the report's name.
+	 */
 	foot_html(n, total, letterhead) {
 		const s = this.settings;
 		const ctx = this.ctx;
 		const t = (m, a) => this.t(m, a);
-		const name = `<span class="nm">${[esc(t(ctx.report_name)), ctx.company ? esc(ctx.company) : ""].filter(Boolean).join(" · ")}</span>`;
 		const [where, side] = s.number_pos.split("-");
 		const number = where === "bottom" ? this.number_html(n, total) : "";
-		// three slots: the report's name at the start unless the number takes it
+		const name = s.number_caption ? `<span class="nm">${[esc(t(ctx.report_name)), ctx.company ? esc(ctx.company) : ""].filter(Boolean).join(" · ")}</span>` : "";
 		const slots = { start: "", center: "", end: "" };
 		if (number) slots[side] = number;
-		if (!slots.start) slots.start = name;
-		else slots.end = slots.end || name;
-		const line = `<div class="rv-page-foot-line${number ? " has-num" : ""}"><span class="st">${slots.start}</span><span class="ce">${slots.center}</span><span class="en">${slots.end}</span></div>`;
+		if (name) {
+			if (!slots.start) slots.start = name;
+			else if (!slots.end) slots.end = name;
+		}
+		const band = number || name ? `<div class="rv-page-foot-line${number ? " has-num" : ""}"><span class="st">${slots.start}</span><span class="ce">${slots.center}</span><span class="en">${slots.end}</span></div>` : "";
 		const lhf = letterhead?.footer && s.foot_height && (s.foot_repeat || n === total) ? `<div class="rv-page-lhf">${letterhead.footer}</div>` : "";
-		return `${lhf}${line}`;
+		return s.number_order === "before" ? `${band}${lhf}` : `${lhf}${band}`;
 	}
 
 	/** The page number at the top: a band of its own above the head (or nothing). */
@@ -974,7 +1228,8 @@ export class PagesView {
 
 	page_shell(i, box, dir, inner) {
 		const look = `ps-${this.settings.style}${this.settings.template ? " ps-format" : ""}`;
-		return `<section class="rv-page ${look}" dir="${dir}" data-page="${i}" style="width:${box.w}px;height:${box.h}px;padding:${box.margin}px;--pp-m:${box.margin}px">${inner}</section>`;
+		const p = box.pad;
+		return `<section class="rv-page ${look}" dir="${dir}" data-page="${i}" style="width:${box.w}px;height:${box.h}px;padding-block:${p.top}px ${p.bottom}px;padding-inline:${p.start}px ${p.end}px;--pp-m:${box.margin}px">${inner}${this.watermark_html(i)}</section>`;
 	}
 
 	async layout_standard(token, box, dir) {
@@ -1092,7 +1347,7 @@ export class PagesView {
 		const far = [...this.filled.keys()].filter((i) => Math.abs(i - at) > NEAR_PAGES + 2).sort((a, b) => Math.abs(b - at) - Math.abs(a - at));
 		for (const i of far.slice(0, this.filled.size - KEEP_FILLED)) {
 			const el = this.sheets.children[i];
-			if (el) el.innerHTML = `<span class="rv-page-ph">${esc(frappe.format(i + 1, { fieldtype: "Int" }, { inline: true }))}</span>`;
+			if (el) el.innerHTML = `<span class="rv-page-ph">${esc(frappe.format(i + 1, { fieldtype: "Int" }, { inline: true }))}</span>${this.watermark_html(i)}`;
 			this.filled.delete(i);
 		}
 	}
@@ -1116,7 +1371,8 @@ export class PagesView {
 			html = this.standard_page_html(i, page, plan, recs, values);
 		}
 		if (token !== this.token) return;
-		el.innerHTML = html;
+		// the watermark goes with the content of the page
+		el.innerHTML = html + this.watermark_html(i);
 		this.filled.set(i, true);
 	}
 

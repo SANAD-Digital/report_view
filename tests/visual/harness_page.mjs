@@ -160,8 +160,26 @@ async function main() {
 				letter_heads: [{ name: "SND Accounting", is_default: true }, { name: "Company Letterhead", is_default: false }],
 				default_letter_head: "SND Accounting",
 				print_formats: [],
+				print_headings: ["Statement heading"],
+				print_signatures: [{ name: "Finance approvals", content_type: "Table" }],
 				languages: [{ name: "ar", label: "العربية" }, { name: "en", label: "English" }],
 				lang: frappe.boot.lang,
+				defaults: window.RV_PRINT_DEFAULTS || {},
+				limits: { print_max_pages: 600 },
+			};
+		}
+		// ADR-015: a heading and a signature as the server renders them (the filters inside)
+		if (method === "report_view.api.render_print_heading") {
+			const company = args.filters?.company || "";
+			return { name: args.name, title: `Statement of ${company}`, html: `Prepared for the board<br>${company}` };
+		}
+		if (method === "report_view.api.render_print_signature") {
+			const box = (t, p) => `<div class="rv-sig"><div class="rv-sig-t">${t}</div><div class="rv-sig-ln"><span>Name:</span>${p ? `<b>${p}</b>` : "<i></i>"}</div><div class="rv-sig-ln"><span>Signature:</span><i></i></div></div>`;
+			return {
+				name: args.name,
+				type: "Table",
+				html: `<div class="rv-sig-row" style="grid-template-columns:repeat(2,minmax(0,1fr))">${box("Prepared by", "Sara Ali")}${box("Approved by", "")}</div>`,
+				css: ".rv-signature{.rv-sig-t{color:#8A2D3B}}",
 			};
 		}
 		if (method === "report_view.api.get_print_format") throw new Error("harness: no print formats");

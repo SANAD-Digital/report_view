@@ -13,7 +13,22 @@ class TestApiPages(RVTestCase):
 	def test_print_options_for_a_user_who_may_print(self):
 		with self.as_user("accountant"):
 			out = api.get_print_options("Trial Balance", COMPANY)
-		self.assertEqual(set(out), {"letter_heads", "default_letter_head", "print_formats", "print_format_types", "languages", "lang"})
+		self.assertEqual(
+			set(out),
+			{
+				"letter_heads",
+				"default_letter_head",
+				"print_formats",
+				"print_format_types",
+				"print_headings",
+				"print_signatures",
+				"languages",
+				"lang",
+				"defaults",
+				"limits",
+			},
+		)
+		self.assertGreater(out["limits"]["print_max_pages"], 0)
 		self.assertEqual(set(out["print_format_types"]), set(out["print_formats"]))
 		self.assertTrue(all(set(lh) == {"name", "is_default"} for lh in out["letter_heads"]))
 		names = {lh["name"] for lh in out["letter_heads"]}
@@ -134,3 +149,178 @@ class TestJinjaPrintFormat(RVTestCase):
 		self.assertIn("1000", out["html"])
 		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
 			api.render_print_format("Trial Balance", name, TB_FILTERS, TB_JS_FILTERS, meta)
+
+
+class TestPrintHeadingAndSignature(RVTestCase):
+	"""ADR-015: a Print Heading and a Print Signature rendered with the report's filters,
+	behind the report and print permissions; the site's standard settings."""
+
+	@classmethod
+	def setUpClass(cls) -> None:
+		super().setUpClass()
+		cls.heading = frappe.get_doc(
+			{
+				"doctype": "Print Heading",
+				"print_heading": "RV Test Heading {{ doc.company }}",
+				"description": "Period {{ doc.from_date }} to {{ doc.to_date }}\n{{ filters.company.label }}: {{ filters.company.value }}",
+			}
+		).insert(ignore_if_duplicate=True)
+		cls.sig_table = frappe.get_doc(
+			{
+				"doctype": "Print Signature",
+				"signature_name": "RV Test Table",
+				"signature_for": "Report",
+				"content_type": "Table",
+				"css": ".rv-sig-t{color:red}</style><script>x</script>",
+				"signatories": [
+					{"label": "Prepared by", "person_name": "<b>Sara</b>", "show_date": 1},
+					{"label": "Approved by"},
+				],
+			}
+		).insert()
+		cls.sig_html = frappe.get_doc(
+			{
+				"doctype": "Print Signature",
+				"signature_name": "RV Test HTML",
+				"signature_for": "Report",
+				"report": "Trial Balance",
+				"content_type": "HTML",
+				"html": "<p class='who'>{{ printed_by }} · {{ doc.company }} · {{ title }}</p>",
+			}
+		).insert()
+		cls.sig_other = frappe.get_doc(
+			{
+				"doctype": "Print Signature",
+				"signature_name": "RV Test Other Report",
+				"signature_for": "Report",
+				"report": "General Ledger",
+				"content_type": "HTML",
+				"html": "<p>gl</p>",
+			}
+		).insert()
+		cls.sig_off = frappe.get_doc(
+			{
+				"doctype": "Print Signature",
+				"signature_name": "RV Test Disabled",
+				"disabled": 1,
+				"content_type": "HTML",
+				"html": "<p>off</p>",
+			}
+		).insert()
+		cls.sig_doc = frappe.get_doc(
+			{
+				"doctype": "Print Signature",
+				"signature_name": "RV Test Document",
+				"signature_for": "Document",
+				"reference_doctype": "Company",
+				"content_type": "HTML",
+				"html": "<p>{{ doc.name }}</p>",
+			}
+		).insert()
+
+	def test_options_list_the_headings_and_the_signatures_of_the_report(self):
+		with self.as_user("accountant"):
+			out = api.get_print_options("Trial Balance", COMPANY)
+		self.assertIn(self.heading.name, out["print_headings"])
+		names = {s["name"] for s in out["print_signatures"]}
+		# for every report, for this report; not another report's, a disabled one or a document's
+		self.assertTrue({"RV Test Table", "RV Test HTML"} <= names)
+		self.assertFalse({"RV Test Other Report", "RV Test Disabled", "RV Test Document"} & names)
+
+	def test_a_heading_is_rendered_with_the_filters(self):
+		from report_view.tests.utils import TB_FILTERS
+
+		meta = [{"fieldname": "company", "label": "Company", "fieldtype": "Link"}]
+		with self.as_user("accountant"):
+			out = api.render_print_heading("Trial Balance", self.heading.name, TB_FILTERS, meta)
+		self.assertEqual(out["title"], f"RV Test Heading {TB_FILTERS['company']}")
+		# a plain text keeps its lines
+		self.assertIn(f"Period {TB_FILTERS['from_date']} to {TB_FILTERS['to_date']}<br>", out["html"])
+		self.assertIn(f"Company: {TB_FILTERS['company']}", out["html"])
+		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
+			api.render_print_heading("Trial Balance", self.heading.name, TB_FILTERS, meta)
+		with self.as_user("accountant"), self.assertRaises(frappe.DoesNotExistError):
+			api.render_print_heading("Trial Balance", "No Such Heading", TB_FILTERS, meta)
+
+	def test_a_table_signature_escapes_its_values_and_scopes_its_css(self):
+		from report_view.tests.utils import TB_FILTERS
+
+		with self.as_user("accountant"):
+			out = api.render_print_signature("Trial Balance", "RV Test Table", TB_FILTERS)
+		self.assertEqual(out["type"], "Table")
+		self.assertEqual(out["html"].count('class="rv-sig"'), 2)
+		self.assertIn("&lt;b&gt;Sara&lt;/b&gt;", out["html"])
+		self.assertIn("repeat(2,", out["html"])
+		# nested in .rv-signature, and it cannot close its <style>
+		self.assertTrue(out["css"].startswith(".rv-signature{"))
+		self.assertNotIn("</style", out["css"].lower())
+
+	def test_an_html_signature_reads_the_report_context(self):
+		from report_view.tests.utils import TB_FILTERS
+
+		with self.as_user("accountant"):
+			out = api.render_print_signature("Trial Balance", "RV Test HTML", TB_FILTERS)
+			self.assertIn(TB_FILTERS["company"], out["html"])
+			self.assertIn(frappe.utils.get_fullname(), out["html"])
+			# another report's signature, a disabled one, a document's: not for this report
+			for name in ("RV Test Other Report", "RV Test Disabled", "RV Test Document"):
+				with self.assertRaises(frappe.DoesNotExistError):
+					api.render_print_signature("Trial Balance", name, TB_FILTERS)
+		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
+			api.render_print_signature("Trial Balance", "RV Test HTML", TB_FILTERS)
+
+	def test_a_document_signature_in_a_print_format(self):
+		from report_view.core.printing import report_view_signature
+
+		company = frappe.get_doc("Company", COMPANY)
+		html = report_view_signature("RV Test Document", company)
+		self.assertIn(f"<p>{COMPANY}</p>", html)
+		self.assertIn('class="rv-signature"', html)
+		# not a document of its type, or a report's signature: nothing
+		self.assertEqual(report_view_signature("RV Test Document", frappe.get_doc("Currency", "USD")), "")
+		self.assertEqual(report_view_signature("RV Test HTML", company), "")
+
+	def test_signature_validation(self):
+		with self.assertRaises(frappe.ValidationError):
+			frappe.get_doc({"doctype": "Print Signature", "signature_name": "RV Test Empty", "content_type": "Table"}).insert()
+		with self.assertRaises(frappe.ValidationError):
+			frappe.get_doc(
+				{"doctype": "Print Signature", "signature_name": "RV Test Bad", "content_type": "HTML", "html": "{% if %}"}
+			).insert()
+
+	def test_the_site_standard_settings_and_limits(self):
+		from report_view.core.settings import get_print_max_pages, get_row_limit, print_defaults
+
+		gs = frappe.get_doc("Report View Global Settings")
+		gs.update(
+			{
+				"max_rows": 1234,
+				"print_max_pages": 77,
+				"paper_size": "A3",
+				"orientation": "Landscape page",
+				"margins": "Custom",
+				"margin_top": 20,
+				"print_style": "Accounting grid",
+				"print_heading": self.heading.name,
+				"heading_pages": "Every page",
+				"page_numbers": 0,
+				"number_format": "1 / 3",
+			}
+		)
+		gs.save()
+		system = frappe.utils.cint(frappe.db.get_single_value("System Settings", "max_report_rows"))
+		self.assertEqual(get_row_limit(), min(1234, system) if system > 0 else 1234)
+		self.assertEqual(get_print_max_pages(), 77)
+		d = print_defaults()
+		self.assertEqual(
+			(d["size"], d["orientation"], d["margins"], d["page_m"]["top"], d["style"], d["heading_pages"], d["page_numbers"], d["number_format"]),
+			("A3", "landscape", "custom", 20, "ledger", "all", False, "short"),
+		)
+		with self.as_user("accountant"):
+			out = api.get_print_options("Trial Balance", COMPANY)
+		self.assertEqual(out["defaults"]["heading"], self.heading.name)
+		self.assertEqual(out["limits"]["print_max_pages"], 77)
+		# the hard caps
+		gs.max_rows = 10**7
+		with self.assertRaises(frappe.ValidationError):
+			gs.save()

@@ -8,7 +8,8 @@
 // (window.print: the browser's dialog, paper or PDF).
 // Only the pages near the viewport carry content (IntersectionObserver); the rest are empty
 // boxes of the right size, so a report of a hundred thousand rows stays smooth. Printing
-// fills them all first (up to PRINT_MAX_PAGES).
+// fills them all first (up to PRINT_MAX_PAGES, or the site's limit in Report View Global
+// Settings).
 // Another language: the report runs again on the server with `_lang` (its column labels and
 // captions come translated), the page's own words come from api.get_translations; the rows
 // and their order stay those of the view.
@@ -44,6 +45,19 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	// the look of Report View's own template (rv_pages.css .ps-<style>)
 	style: "classic",
 	letter_head: "",
+	// a Print Heading (rendered by the server with the report and its filters): on which
+	// pages, instead of the report's title or above it, alignment, size, margins, a rule
+	heading: "",
+	heading_pages: "first",
+	heading_replace: false,
+	heading_align: "center",
+	heading_size: 13,
+	heading_m: BOX(0, 2, 0, 0),
+	heading_line_w: 0,
+	heading_line_c: "#D9DFDB",
+	heading_line_s: "solid",
+	// a Print Signature of the report ("": Report View's standard boxes)
+	signature: "",
 	lang: "",
 	include_filters: true,
 	include_subtotals: true,
@@ -118,7 +132,7 @@ export const BOX_MM = { min: 0, max: 60 };
 export const LINE_WIDTH = { min: 0, max: 6 };
 const NUMBER_POS = ["bottom-end", "bottom-center", "bottom-start", "top-end", "top-center", "top-start"];
 const NUMBER_FORMATS = ["full", "short", "number", "dash"];
-const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "number_caption", "pb_on"];
+const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "number_caption", "pb_on", "heading_replace"];
 const PAGE_SCOPES = ["all", "first", "rest"];
 const FOOT_SCOPES = ["all", "first", "rest", "last"];
 
@@ -139,6 +153,8 @@ const NUMS = {
 	foot_height: [FOOT_HEIGHT.min, FOOT_HEIGHT.max, 1],
 	number_start: [1, 9999, 1],
 	number_size: [6, 16, 0.5],
+	heading_size: [8, 28, 0.5],
+	heading_line_w: [0, 6, 0.2],
 	head_line_w: [0, 6, 0.2],
 	foot_line_w: [0, 6, 0.2],
 	num_line_w: [0, 6, 0.2],
@@ -150,7 +166,7 @@ const NUMS = {
 	pb_offset: [0, 40, 0.5],
 	pb_radius: [0, 20, 0.5],
 };
-const BOXES = ["page_m", "lh_m", "foot_m", "num_m"];
+const BOXES = ["page_m", "lh_m", "heading_m", "foot_m", "num_m"];
 const SIDES = ["top", "bottom", "start", "end"];
 
 // The page's own words, by msgid, for the translation pack of another language.
@@ -220,9 +236,13 @@ function sanitize_box(raw, fallback) {
 	return out;
 }
 
-function sanitize_settings(raw) {
-	const out = { ...DEFAULT_SETTINGS, hidden: [] };
-	for (const k of BOXES) out[k] = { ...DEFAULT_SETTINGS[k] };
+/**
+ * Settings from what was saved (or sent by the server), every value checked; a value
+ * missing or wrong takes `base`'s (the site's standard settings, else DEFAULT_SETTINGS).
+ */
+export function sanitize_settings(raw, base = DEFAULT_SETTINGS) {
+	const out = { ...base, hidden: [...(base.hidden || [])] };
+	for (const k of BOXES) out[k] = { ...base[k] };
 	if (!raw || typeof raw !== "object") return out;
 	if (PAGE_SIZES[raw.size]) out.size = raw.size;
 	if (raw.orientation === "landscape" || raw.orientation === "portrait") out.orientation = raw.orientation;
@@ -232,7 +252,7 @@ function sanitize_settings(raw) {
 	}
 	for (const k of BOXES) if (raw[k]) out[k] = sanitize_box(raw[k], out[k]);
 	if (raw.margins === "custom" && raw.page_m) out.margins = "custom";
-	for (const k of ["template", "letter_head", "lang"]) if (typeof raw[k] === "string") out[k] = raw[k];
+	for (const k of ["template", "letter_head", "lang", "heading", "signature"]) if (typeof raw[k] === "string") out[k] = raw[k];
 	for (const k of BOOL_KEYS) if (typeof raw[k] === "boolean") out[k] = raw[k];
 	// the setting of the first version: the letter head on every page
 	// the switches of earlier versions: the letter head on every page, the footer on every page
@@ -242,6 +262,8 @@ function sanitize_settings(raw) {
 	if (was(raw.foot_repeat) !== null) out.foot_pages = raw.foot_repeat ? "all" : "last";
 	if (PAGE_SCOPES.includes(raw.lh_pages)) out.lh_pages = raw.lh_pages;
 	if (FOOT_SCOPES.includes(raw.foot_pages)) out.foot_pages = raw.foot_pages;
+	if (PAGE_SCOPES.includes(raw.heading_pages)) out.heading_pages = raw.heading_pages;
+	if (ALIGN.includes(raw.heading_align)) out.heading_align = raw.heading_align;
 	for (const [k, r] of Object.entries(NUMS)) {
 		const v = clamp(raw[k], r);
 		if (v !== null) out[k] = v;
@@ -253,7 +275,7 @@ function sanitize_settings(raw) {
 	if (ALIGN.includes(raw.lh_align)) out.lh_align = raw.lh_align;
 	if (ALIGN.includes(raw.foot_align)) out.foot_align = raw.foot_align;
 	if (LH_FIT.includes(raw.lh_fit)) out.lh_fit = raw.lh_fit;
-	for (const k of ["head_line", "foot_line", "num_line"]) {
+	for (const k of ["head_line", "heading_line", "foot_line", "num_line"]) {
 		if (typeof raw[`${k}_c`] === "string" && COLOR.test(raw[`${k}_c`])) out[`${k}_c`] = raw[`${k}_c`];
 		if (LINE_STYLES.includes(raw[`${k}_s`])) out[`${k}_s`] = raw[`${k}_s`];
 	}
@@ -278,7 +300,7 @@ export class PagesView {
 	 * @param {HTMLElement} o.root the .rv element
 	 * @param {boolean} o.rtl direction of the page (the session's)
 	 * @param {object} o.host the page: pages_options(company), pages_letterhead(name),
-	 *   pages_format(name), pages_translations(lang, messages), pages_run_lang(lang),
+	 *   pages_format(name), pages_part(kind, name, lang), pages_translations(lang, messages), pages_run_lang(lang),
 	 *   pages_settings_load(), pages_settings_save(settings), pages_context()
 	 */
 	constructor({ parent, root, rtl, host }) {
@@ -293,6 +315,8 @@ export class PagesView {
 		this.lang_packs = new Map();
 		this.letterheads = new Map();
 		this.formats = new Map();
+		this.parts = new Map();
+		this.base = DEFAULT_SETTINGS;
 		this.token = 0;
 		this.pages = [];
 		this.filled = new Map();
@@ -425,12 +449,14 @@ export class PagesView {
 			try {
 				[saved, this.options] = await Promise.all([settings_p, options_p]);
 			} catch (e) {
-				this.options = { letter_heads: [], default_letter_head: null, print_formats: [], print_format_types: {}, languages: [], lang: frappe.boot.lang };
+				this.options = { letter_heads: [], default_letter_head: null, print_formats: [], print_format_types: {}, print_headings: [], print_signatures: [], languages: [], lang: frappe.boot.lang };
 				this.note(e.message || String(e), true);
 			}
 			if (token !== this.token) return;
+			// the site's standard settings (Report View Global Settings) under the user's own
+			this.base = sanitize_settings(this.options.defaults || null);
 			if (this.settings_report !== name) {
-				this.settings = sanitize_settings(saved);
+				this.settings = sanitize_settings(saved, this.base);
 				this.unsaved = !saved;
 			}
 			this.settings_report = name;
@@ -440,6 +466,8 @@ export class PagesView {
 			if (this.settings.letter_head && !this.options.letter_heads.some((lh) => lh.name === this.settings.letter_head)) this.settings.letter_head = "";
 			if (this.settings.template && !this.options.print_formats.includes(this.settings.template)) this.settings.template = "";
 			if (this.settings.lang && !this.options.languages.some((l) => l.name === this.settings.lang)) this.settings.lang = "";
+			if (this.settings.heading && !(this.options.print_headings || []).includes(this.settings.heading)) this.settings.heading = "";
+			if (this.settings.signature && !(this.options.print_signatures || []).some((x) => x.name === this.settings.signature)) this.settings.signature = "";
 			if (!this.settings.letter_head && this.options.default_letter_head && this.settings.letter_head !== null) {
 				this.settings.letter_head = this.options.default_letter_head;
 			}
@@ -451,7 +479,7 @@ export class PagesView {
 		this.rows.set({ report, state, config, post: opened.post, fmt, session, width: 1200 });
 		// No choice made yet for this report: a table too wide for a portrait page at the
 		// smallest font opens in landscape, as Frappe prints reports by default.
-		if (this.unsaved && !this.settings.template) {
+		if (this.unsaved && !this.settings.template && !this.options?.defaults?.orientation) {
 			const portrait = page_box({ size: this.settings.size, orientation: "portrait", page_m: this.settings.page_m });
 			// Portrait when the columns fit without shrinking and the label keeps most of its
 			// width; else landscape.
@@ -515,6 +543,11 @@ export class PagesView {
 		if (this.current) this.ready = this.relayout(++this.token);
 	}
 
+	/** Pages printed at once: the site's limit (Report View Global Settings), else 600. */
+	max_pages() {
+		return Number(this.options?.limits?.print_max_pages) || PRINT_MAX_PAGES;
+	}
+
 	lang() {
 		return this.settings.lang || this.options?.lang || frappe.boot.lang;
 	}
@@ -569,7 +602,7 @@ export class PagesView {
 	/** Back to the default settings of the pages (the zoom and the columns shown stay). */
 	reset() {
 		const keep = { zoom: this.settings.zoom };
-		const fresh = sanitize_settings(null);
+		const fresh = sanitize_settings(null, this.base);
 		if (this.options?.default_letter_head) fresh.letter_head = this.options.default_letter_head;
 		this.settings = { ...fresh, ...keep };
 		this.update({});
@@ -645,6 +678,7 @@ export class PagesView {
 			paper: ic('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>'),
 			tpl: ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/>'),
 			head: ic('<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 8h16"/>'),
+			heading: ic('<path d="M6 4v16M18 4v16M6 12h12"/>'),
 			foot: ic('<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 16h16"/>'),
 			num: ic('<path d="M5 9h14M5 15h14M10 4 8 20M16 4l-2 16"/>'),
 			wm: ic('<path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"/>'),
@@ -658,6 +692,9 @@ export class PagesView {
 		// four choices do not fit one line: two by two
 		const scopes = (key, list) => seg(key, __("Apply to"), list.map((v) => [v, scope_label[v]])).replace("rv-print-seg", `rv-print-seg${list.length > 3 ? " grid2" : ""}`);
 		const lh_sum = s.letter_head ? `${s.letter_head} · ${scope_label[s.lh_pages]}` : __("None", null, "Report View");
+		const hdg_sum = s.heading ? `${s.heading} · ${scope_label[s.heading_pages]}` : __("None", null, "Report View");
+		const headings = o.print_headings || [];
+		const sigs = o.print_signatures || [];
 		const foot_sum = !s.letter_head || !s.foot_height ? __("None", null, "Report View") : scope_label[s.foot_pages];
 		const num_sum = s.page_numbers ? pos_label[s.number_pos] : __("Hidden");
 		const pb_sum = s.pb_on ? `${s.pb_w} px · ${{ solid: __("Solid"), dashed: __("Dashed"), dotted: __("Dotted"), double: __("Double") }[s.pb_s]}` : __("None", null, "Report View");
@@ -689,6 +726,9 @@ export class PagesView {
 				<label class="rv-field"><span>${esc(__("Letter Head", null, "Report View"))}</span><select class="rv-input" data-set="letter_head">${option("", __("No letter head"), !s.letter_head)}${o.letter_heads
 					.map((lh) => option(lh.name, lh.name, s.letter_head === lh.name))
 					.join("")}</select></label>
+				<label class="rv-field"><span>${esc(__("Print Heading", null, "Report View"))}</span><select class="rv-input" data-set="heading">${option("", __("No print heading"), !s.heading)}${headings
+					.map((n) => option(n, n, s.heading === n))
+					.join("")}</select></label>
 				<label class="rv-field"><span>${esc(__("Language", null, "Report View"))}</span><select class="rv-input" data-set="lang">${option("", __("Session language ({0})", [o.lang || frappe.boot.lang]), !s.lang)}${o.languages
 					.map((l) => option(l.name, l.label, s.lang === l.name))
 					.join("")}</select></label>`
@@ -705,6 +745,23 @@ export class PagesView {
 					${box("lh_m", __("Letter head margins"))}
 					${rule("head_line", __("Rule under the letter head"))}`
 					: no_lh
+			),
+			section(
+				"heading",
+				I.heading,
+				__("Print Heading", null, "Report View"),
+				hdg_sum,
+				s.heading
+					? `${scopes("heading_pages", PAGE_SCOPES)}
+					${sw("heading_replace", __("Instead of the report title"))}
+					<div class="rv-print-row">${num("heading_size", __("Font size"), "pt")}</div>
+					${seg("heading_align", __("Alignment"), align3)}
+					${box("heading_m", __("Heading margins"))}
+					${rule("heading_line", __("Rule under the heading"))}
+					<p class="rv-zone-empty">${esc(__("The heading is rendered with the report's name and its filters (Jinja: {{ title }}, {{ filters.company.value }}, {{ doc.from_date }})."))}</p>`
+					: `<p class="rv-zone-empty">${esc(
+							headings.length ? __("Choose a print heading in «Template and language» to set its pages, size and place.") : __("No print heading yet: add one in Print Heading.")
+					  )}</p>`
 			),
 			section(
 				"foot",
@@ -790,11 +847,18 @@ export class PagesView {
 				"content",
 				I.content,
 				__("Content", null, "Report View"),
-				"",
+				s.signatures ? s.signature || __("Signature boxes") : "",
 				`<div class="rv-setlist tall">${check("include_filters", __("Applied filters"))}${model?.hierarchical ? check("include_subtotals", __("Group subtotals")) : ""}${check(
 					"include_total",
 					__("Grand Total")
-				)}${check("signatures", __("Signature boxes"))}${check("printed_on", __("Print date and user"))}</div>`
+				)}${check("signatures", __("Signature boxes"))}${check("printed_on", __("Print date and user"))}</div>
+				${
+					s.signatures
+						? `<label class="rv-field"><span>${esc(__("Signature", null, "Report View"))}</span><select class="rv-input" data-set="signature">${option("", __("Report View (standard)"), !s.signature)}${
+								sigs.length ? `<optgroup label="${esc(__("Print Signature"))}">${sigs.map((x) => option(x.name, x.name, s.signature === x.name)).join("")}</optgroup>` : ""
+						  }</select></label>`
+						: ""
+				}`
 			),
 			s.template
 				? ""
@@ -957,14 +1021,18 @@ export class PagesView {
 		let lang_entry = null;
 		let letterhead = null;
 		let format = null;
+		let heading = null;
+		let signature = null;
 		try {
-			[lang_entry, letterhead, format] = await Promise.all([
+			[lang_entry, letterhead, format, heading, signature] = await Promise.all([
 				this.load_lang(s.lang).catch((e) => {
 					this.note(__("The language could not be loaded: {0}", [e.message || e]), true);
 					return null;
 				}),
 				this.load_letterhead(s.letter_head),
 				this.load_format(s.template),
+				this.load_part("heading", s.heading),
+				this.load_part("signature", s.signatures ? s.signature : ""),
 			]);
 		} catch (e) {
 			this.note(e.message || String(e), true);
@@ -973,6 +1041,8 @@ export class PagesView {
 		this.lang_entry = lang_entry;
 		this.letterhead = letterhead;
 		this.format = format;
+		this.heading = heading;
+		this.signature = signature;
 		if (lang_entry && lang_entry.report === null && s.lang && s.lang !== frappe.boot.lang) {
 			this.note(__("The report could not run in the chosen language; labels stay in the session language."), true);
 		}
@@ -1016,7 +1086,11 @@ export class PagesView {
 			set(`--pp-${k}-mi`, inline(s[`${k}_m`]));
 		}
 		set("--pp-num-fs", `${s.number_size}pt`);
-		for (const k of ["head_line", "foot_line", "num_line"]) {
+		set("--pp-hdg-fs", `${s.heading_size}pt`);
+		set("--pp-hdg-align", s.heading_align);
+		set("--pp-hdg-mb", block(s.heading_m));
+		set("--pp-hdg-mi", inline(s.heading_m));
+		for (const k of ["head_line", "heading_line", "foot_line", "num_line"]) {
 			const w = s[`${k}_w`];
 			// a double rule needs three pixels to show its two lines
 			const width = s[`${k}_s`] === "double" ? Math.max(3, w) : w;
@@ -1066,6 +1140,27 @@ export class PagesView {
 			}
 		}
 		return this.letterheads.get(key);
+	}
+
+	/**
+	 * A print heading or a print signature, rendered by the server with the report, its
+	 * criteria and the language of the pages: one per all three.
+	 * @param {"heading"|"signature"} kind
+	 */
+	async load_part(kind, name) {
+		if (!name) return null;
+		const key = `${kind}|${name}|${this.settings.lang || ""}|${JSON.stringify(this.ctx.filters || {})}`;
+		if (!this.parts.has(key)) {
+			try {
+				const r = await this.host.pages_part(kind, name, this.settings.lang || null);
+				this.parts.set(key, r ? { ...r, html: strip_scripts(r.html) } : null);
+			} catch (e) {
+				const msg = kind === "heading" ? __("The print heading could not be loaded: {0}", [e.message || e]) : __("The signature could not be loaded: {0}", [e.message || e]);
+				this.note(msg, true);
+				this.parts.set(key, null);
+			}
+		}
+		return this.parts.get(key);
 	}
 
 	async load_format(name) {
@@ -1131,9 +1226,13 @@ export class PagesView {
 		const title = t(ctx.report_name);
 		const period = this.period_text();
 		const lh = this.top_number(n, total) + (letterhead?.header && on_page(s.lh_pages, n, total) ? `<div class="rv-page-lh fit-${s.lh_fit}">${letterhead.header}</div>` : "");
+		// the print heading under the letter head; "instead of the title" drops the title
+		// block of the first page and the slim line of the others
+		const heading = this.heading_html(n, total);
+		const replace = heading && s.heading_replace;
 		if (!first) {
 			const parts = [`<b>${esc(title)}</b>`, company ? esc(company) : "", period].filter(Boolean);
-			return `${lh}<div class="rv-page-cont">${parts.join('<span class="sep">·</span>')}</div>`;
+			return `${lh}${heading}${replace ? "" : `<div class="rv-page-cont">${parts.join('<span class="sep">·</span>')}</div>`}`;
 		}
 		const details = [];
 		if (s.printed_on) {
@@ -1143,14 +1242,22 @@ export class PagesView {
 		const facts = [];
 		if (ctx.group_labels?.length) facts.push(esc(t("Grouped by {0}", [ctx.group_labels.map((l) => this.in_lang(l)).join(" › ")])));
 		facts.push(esc(t("{0} rows", [frappe.format(this.current.counts.shown, { fieldtype: "Int" }, { inline: true })])));
-		let out = `${lh}<div class="rv-page-hd">${company && !letterhead?.header ? `<div class="co">${esc(company)}</div>` : ""}<div class="ti">${esc(title)}</div>${
-			period ? `<div class="pe">${period}</div>` : ""
-		}</div><div class="rv-page-meta"><span>${details.join('<span class="sep">·</span>')}</span><span>${facts.join('<span class="sep">·</span>')}</span></div>`;
+		const title_block = replace
+			? ""
+			: `<div class="rv-page-hd">${company && !letterhead?.header ? `<div class="co">${esc(company)}</div>` : ""}<div class="ti">${esc(title)}</div>${period ? `<div class="pe">${period}</div>` : ""}</div>`;
+		let out = `${lh}${heading}${title_block}<div class="rv-page-meta"><span>${details.join('<span class="sep">·</span>')}</span><span>${facts.join('<span class="sep">·</span>')}</span></div>`;
 		if (s.include_filters) {
 			const text = this.filters_html();
 			if (text) out += `<div class="rv-page-filt"><b>${esc(t("Applied filters"))}:</b> ${text}</div>`;
 		}
 		return out;
+	}
+
+	/** The print heading of page `n`, or "" (none chosen, or not on this page). */
+	heading_html(n, total) {
+		const h = this.heading;
+		if (!h || !this.settings.heading || !on_page(this.settings.heading_pages, n, total)) return "";
+		return `<div class="rv-page-heading">${h.title ? `<div class="ht">${esc(h.title)}</div>` : ""}${h.html ? `<div class="hd">${h.html}</div>` : ""}</div>`;
 	}
 
 	period_text() {
@@ -1311,6 +1418,9 @@ export class PagesView {
 
 	signatures_html() {
 		if (!this.settings.signatures) return "";
+		// a Print Signature: its HTML, its CSS nested in .rv-signature (rendered by the server)
+		const own = this.settings.signature && this.signature;
+		if (own) return `<div class="rv-signature">${own.css ? `<style>${own.css.replace(/<\/style/gi, "")}</style>` : ""}${own.html}</div>`;
 		const t = (m, a) => this.t(m, a);
 		const dots = "................................";
 		return `<div class="rv-page-sign">${this.signature_labels()
@@ -1393,7 +1503,7 @@ export class PagesView {
 		const num = (v) => frappe.format(v, { fieldtype: "Int" }, { inline: true });
 		this.sheets.innerHTML = this.pages.map((p, i) => this.page_shell(i, box, dir, `<span class="rv-page-ph">${esc(num(i + 1))}</span>`)).join("");
 		this.count_el.textContent = __("{0} pages", [num(n)]);
-		this.el.classList.toggle("many", n > PRINT_MAX_PAGES);
+		this.el.classList.toggle("many", n > this.max_pages());
 		this.observer = new IntersectionObserver((entries) => this.on_intersect(entries), {
 			root: this.stage,
 			rootMargin: `${Math.round(box.h * NEAR_PAGES)}px 0px`,
@@ -1665,8 +1775,9 @@ export class PagesView {
 	/** The head of a page of a report print format: the letter head, or a slim line. */
 	custom_head(first, n = 1, total = 1) {
 		const lh = this.letterhead?.header;
-		if (lh && on_page(this.settings.lh_pages, n, total)) return `${this.top_number(n, total)}<div class="rv-page-lh fit-${this.settings.lh_fit}">${lh}</div>`;
-		return first ? this.top_number(n, total) : this.head_html(false, null, n, total);
+		const heading = this.heading_html(n, total);
+		if (lh && on_page(this.settings.lh_pages, n, total)) return `${this.top_number(n, total)}<div class="rv-page-lh fit-${this.settings.lh_fit}">${lh}</div>${heading}`;
+		return first ? this.top_number(n, total) + heading : this.head_html(false, null, n, total);
 	}
 
 	custom_page_html(i) {
@@ -1779,10 +1890,10 @@ export class PagesView {
 	/** Prints the pages: every page is filled, the sheets stand alone in the document, the browser's dialog opens. */
 	async print() {
 		if (!this.pages.length || this.printing) return;
-		if (this.pages.length > PRINT_MAX_PAGES) {
+		if (this.pages.length > this.max_pages()) {
 			frappe.msgprint({
 				title: __("Too many pages to print"),
-				message: esc(__("{0} pages are more than the browser prints at once ({1}). Narrow the filters, fold groups or export to Excel.", [this.pages.length, PRINT_MAX_PAGES])),
+				message: esc(__("{0} pages are more than the browser prints at once ({1}). Narrow the filters, fold groups or export to Excel.", [this.pages.length, this.max_pages()])),
 				indicator: "orange",
 			});
 			return;

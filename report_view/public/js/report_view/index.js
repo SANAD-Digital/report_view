@@ -1089,6 +1089,13 @@ export class ReportViewPage {
 		return api.render_print_format(this.report_name, name, this.last_filters, this.filters.js_filters(), meta, this.prepared_report_name, lang);
 	}
 
+	/** A print heading or signature (ADR-015), rendered by the server with the filters on screen. */
+	pages_part(kind, name, lang = null) {
+		const meta = (this.report_settings?.filters || []).map((df) => ({ fieldname: df.fieldname, label: __(df.label || ""), fieldtype: df.fieldtype }));
+		const render = kind === "heading" ? api.render_print_heading : api.render_print_signature;
+		return render(this.report_name, name, this.last_filters, meta, lang);
+	}
+
 	pages_translations(lang, messages) {
 		return api.get_translations(this.report_name, lang, messages);
 	}

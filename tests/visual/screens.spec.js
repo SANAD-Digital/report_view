@@ -2190,7 +2190,7 @@ const pages_settings = (s) => `&pages=${encodeURIComponent(JSON.stringify(s))}`;
 const open_sections = (page) =>
 	page.evaluate(() => {
 		const v = window.rv_page.pages;
-		v.open_secs = new Set(["paper", "tpl", "head", "foot", "num", "border", "wm", "content", "cols"]);
+		v.open_secs = new Set(["paper", "tpl", "head", "heading", "foot", "num", "border", "wm", "content", "cols"]);
 		v.render_panel();
 	});
 // a typed number, committed as the field is left
@@ -2635,4 +2635,99 @@ test("pages: a watermark, text or image, on every page or the first, light and t
 	const saved = await page.evaluate(() => window.rv_page.pages.settings.wm_image);
 	expect(saved).toBe("/assets/frappe/images/frappe-framework-logo.svg");
 	expect(problems.filter((x) => !/frappe-framework-logo/.test(x)), "console errors/warnings").toEqual([]);
+});
+
+test("pages: a print heading rendered with the filters, on its pages, instead of the title or above it; a print signature of the site; the site's standard settings", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=gl&lang=ar&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await settle(page);
+	await open_sections(page);
+	const heads = () =>
+		page.evaluate(async () => {
+			await window.rv_page.pages.fill_all();
+			return [...document.querySelectorAll(".rv-print-sheets .rv-page")].map((p) => ({
+				heading: p.querySelector(".rv-page-heading .ht")?.textContent || null,
+				title: Boolean(p.querySelector(".rv-page-hd")),
+				cont: Boolean(p.querySelector(".rv-page-cont")),
+			}));
+		});
+	expect((await heads()).every((h) => h.heading === null)).toBe(true);
+	await page.selectOption('select[data-set="heading"]', "Statement heading");
+	await settle(page);
+	let h = await heads();
+	expect(h.length).toBeGreaterThan(1);
+	// the server's rendering, with the company of the filters
+	expect(h[0].heading).toMatch(/^Statement of /);
+	expect(h[0].title).toBe(true);
+	expect(h.slice(1).every((x) => x.heading === null && x.cont)).toBe(true);
+	// every page, instead of the report's title
+	await page.click('[data-seg="heading_pages"][data-value="all"]');
+	await settle(page);
+	await page.click('[data-sw="heading_replace"]');
+	await settle(page);
+	h = await heads();
+	expect(h.every((x) => x.heading && !x.title && !x.cont)).toBe(true);
+	// alignment, size and the rule under it are variables of the pages
+	await page.click('[data-seg="heading_align"][data-value="start"]');
+	await type_num(page, 'input[data-num="heading_size"]', 18);
+	await settle(page);
+	const style = await page.evaluate(() => {
+		const ht = document.querySelector('.rv-page[data-page="0"] .rv-page-heading');
+		return { align: getComputedStyle(ht).textAlign, size: getComputedStyle(ht.querySelector(".ht")).fontSize };
+	});
+	expect(["start", "right"]).toContain(style.align);
+	expect(parseFloat(style.size)).toBeCloseTo(24, 0);
+	// a print signature replaces the standard boxes on the last page
+	await page.locator('input[data-set="signatures"]').check();
+	await settle(page);
+	await page.selectOption('select[data-set="signature"]', "Finance approvals");
+	await settle(page);
+	const sig = await page.evaluate(async () => {
+		await window.rv_page.pages.fill_all();
+		const pages = [...document.querySelectorAll(".rv-print-sheets .rv-page")];
+		const last = pages[pages.length - 1];
+		const t = last.querySelector(".rv-signature .rv-sig-t");
+		return {
+			boxes: last.querySelectorAll(".rv-signature .rv-sig").length,
+			standard: document.querySelectorAll(".rv-page .rv-page-sign").length,
+			elsewhere: pages.slice(0, -1).some((p) => p.querySelector(".rv-signature")),
+			color: t && getComputedStyle(t).color,
+			// the CSS of the signature reaches the signature only
+			title_color: getComputedStyle(document.querySelector(".rv-page .rv-page-heading .ht")).color,
+		};
+	});
+	expect(sig.boxes).toBe(2);
+	expect(sig.standard).toBe(0);
+	expect(sig.elsewhere).toBe(false);
+	expect(sig.color).toBe("rgb(138, 45, 59)");
+	expect(sig.title_color).not.toBe("rgb(138, 45, 59)");
+	await shot3(page, "pages-gl-heading-signature-rtl");
+	const saved = await page.evaluate(() => {
+		const s = window.rv_page.pages.settings;
+		return [s.heading, s.heading_pages, s.heading_replace, s.signature];
+	});
+	expect(saved).toEqual(["Statement heading", "all", true, "Finance approvals"]);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: the site's standard print settings are where a new user starts and where Reset returns", async ({ page }) => {
+	const problems = watch_console(page);
+	await page.addInitScript(() => {
+		window.RV_PRINT_DEFAULTS = { size: "A3", orientation: "portrait", style: "ledger", heading: "Statement heading", heading_pages: "all", page_numbers: false, number_format: "nonsense" };
+	});
+	await open(page, `report=tb&lang=en&rv=${PAGES}`);
+	await settle(page);
+	const st = () => page.evaluate(() => {
+		const s = window.rv_page.pages.settings;
+		return { size: s.size, orientation: s.orientation, style: s.style, heading: s.heading, heading_pages: s.heading_pages, page_numbers: s.page_numbers, number_format: s.number_format };
+	});
+	const want = { size: "A3", orientation: "portrait", style: "ledger", heading: "Statement heading", heading_pages: "all", page_numbers: false, number_format: "full" };
+	expect(await st()).toEqual(want);
+	await page.click('[data-seg="margins"][data-value="wide"]').catch(() => {});
+	await page.selectOption('select[data-set="size"]', "A4");
+	await settle(page);
+	await page.click('.rv-print-hd [data-action="reset"]');
+	await settle(page);
+	expect(await st()).toEqual(want);
+	expect(problems, "console errors/warnings").toEqual([]);
 });

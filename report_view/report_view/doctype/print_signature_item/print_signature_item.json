@@ -1,0 +1,54 @@
+{
+ "actions": [],
+ "creation": "2026-10-12 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "label",
+  "person_name",
+  "designation",
+  "show_date"
+ ],
+ "fields": [
+  {
+   "fieldname": "label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Box title",
+   "description": "Above the box, e.g. Prepared by, Reviewed by, Approved by",
+   "reqd": 1
+  },
+  {
+   "fieldname": "person_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Person",
+   "description": "Empty: a line to write the name by hand"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Job title"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_date",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Date line"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-12 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Report View",
+ "name": "Print Signature Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

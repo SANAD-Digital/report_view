@@ -219,6 +219,9 @@ guard_report_quiet(report_name) -> Report | None
 | `get_print_options(report_name, company=None)` | GET | `guard_report` ثم `guard_print`؛ الترويسات بـ `frappe.get_list("Letter Head", disabled=0)` إن كان للمستخدم قراءتها (وإلا لا شيء، كما في boot)؛ الترويسة الافتراضية من `Company.default_letter_head` (بصلاحية الشركة) ثم `is_default`؛ قوالب التقرير بـ `frappe.get_list("Print Format", print_format_for=Report, report in [report_name, الاسم المحلول], print_format_type=JS, disabled=0)`؛ اللغات المفعّلة | `{letter_heads: [{name, is_default}], default_letter_head, print_formats: [name], languages: [{name, label}], lang}` |
 | `get_print_format(report_name, name)` | GET | `guard_report` ثم `guard_print`، ثم وجود القالب بالفلاتر نفسها (`DoesNotExistError`)، ثم `frappe.get_doc` لقراءة `html` و`css` كما تقرؤها `frappe.www.printview` لمن يملك طباعة المستند | `{name, html, css}` |
 
+### 2.8أ رأس الطباعة والتوقيع: `render_print_heading`، `render_print_signature` (ADR-015)
+POST. `(report_name, name, filters, filter_meta?)`. الفحوص: `guard_report` ثم `guard_print`، ثم `frappe.get_list` على `Print Heading` / `Print Signature` (مفعّل، نوع Report، لهذا التقرير أو للكل). المخرجات: `{name, title, html}` للرأس و `{name, type, html, css}` للتوقيع (`css` مضمَّن في `.rv-signature`). `get_print_options` يعيد أيضاً `print_headings` و `print_signatures` و `defaults` (الإعدادات القياسية من `Report View Global Settings`) و `limits.print_max_pages`.
+
 ### 2.9 الترجمة: `get_translations(report_name, lang, messages)` (ADR-014)
 
 POST. `guard_report` أولاً. `lang` من `frappe.translate.get_all_languages()` وإلا `RVInvalidInput`؛ `messages` قائمة نصوص (حد 2,000). المخرجات: `{msgid: ترجمة}` لما له ترجمة في `get_all_translations(lang)` (المفاتيح ذات السياق كما يخزّنها Frappe: `"<msgid>:<context>"`). الاستعمال: كلمات الصفحة وتسميات السجل والفلاتر حين تُطبع الصفحات بلغة غير لغة الجلسة؛ تسميات التقرير نفسه تأتي من `api.run` بمعامل `_lang` (Frappe يقرأه قبل الطلب).
@@ -550,6 +553,8 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 ### 5.2 DocTypes الإعدادات
 
 **`Report View Global Settings` (Single)** — كتابة: System Manager، Report View Manager؛ قراءة: الدور `Desk User`.
+
+> بُني في 2026-10-12 (ADR-015) بالحقول `max_rows` و `print_max_pages` وقسم «إعدادات الطباعة القياسية» فقط؛ بقية الحقول أدناه لم تُبنَ بعد.
 
 | الحقل | النوع | الافتراضي |
 |---|---|---|

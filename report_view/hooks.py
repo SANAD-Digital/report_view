@@ -78,6 +78,9 @@ app_include_js = ["report_view_entry.bundle.js"]
 # ----------
 
 # add methods and filters to jinja environment
+# A Print Signature of type Document in a document's print format (ADR-015):
+# {{ report_view_signature("Name", doc) }}
+jinja = {"methods": ["report_view.core.printing.report_view_signature"]}
 # jinja = {
 # 	"methods": "report_view.utils.jinja_methods",
 # 	"filters": "report_view.utils.jinja_filters"

@@ -10,7 +10,7 @@ import frappe
 from frappe import _
 from frappe.desk import query_report
 
-from report_view.core import engine, normalize, runner
+from report_view.core import engine, normalize, printing, runner
 from report_view.core.errors import RVEnrichNotAllowed, RVInvalidInput, RVLimitExceeded
 from report_view.core.export import model as export_model_mod
 from report_view.core.export import xlsx
@@ -23,7 +23,7 @@ from report_view.core.guard import (
 	guard_report_quiet,
 )
 from report_view.core.inputs import parse_json_arg
-from report_view.core.settings import get_row_limit, load_settings
+from report_view.core.settings import get_print_max_pages, get_row_limit, load_settings, print_defaults
 
 MAX_ENRICH_NAMES = 5000
 MAX_TRANSLATION_MESSAGES = 2000
@@ -192,13 +192,16 @@ def export_xlsx(report_name: str, export_model: dict | str) -> Any:
 def get_print_options(report_name: str, company: str | None = None) -> dict:
 	"""What the Pages view offers to a user who may print the report (§2.8, ADR-014): the
 	letter heads, the report's own print formats (JS, as the query-report dialog lists
-	them), the languages the site enables, and the default letter head of ``company``.
+	them), the print headings and signatures (ADR-015), the languages the site enables, the
+	default letter head (the site's standard one, else ``company``'s), and the site's
+	standard print settings and limits (``Report View Global Settings``).
 
 	Every list is read with ``frappe.get_list``: a user who may not read letter heads gets
 	none, as on the query-report page.
 	"""
 	report = guard_report(report_name)
 	guard_print(report)
+	defaults = print_defaults()
 	letter_heads: list[dict] = []
 	default_letter_head = None
 	if frappe.has_permission("Letter Head"):
@@ -216,8 +219,20 @@ def get_print_options(report_name: str, company: str | None = None) -> dict:
 			default_letter_head = rows[0].default_letter_head if rows else None
 		if not default_letter_head:
 			default_letter_head = next((lh.name for lh in letter_heads if lh.is_default), None)
+		# the site's standard letter head comes before the company's
+		if defaults.get("letter_head") in {lh.name for lh in letter_heads}:
+			default_letter_head = defaults["letter_head"]
 		if default_letter_head not in {lh.name for lh in letter_heads}:
 			default_letter_head = None
+	defaults.pop("letter_head", None)
+	headings = []
+	if frappe.has_permission("Print Heading"):
+		headings = frappe.get_list("Print Heading", fields=["name"], order_by="name asc", limit=0)
+	signatures = printing.list_signatures(list(dict.fromkeys([report_name, report.name])))
+	if defaults.get("heading") not in {h.name for h in headings}:
+		defaults["heading"] = ""
+	if defaults.get("signature") not in {sg["name"] for sg in signatures}:
+		defaults["signature"] = ""
 	print_formats = frappe.get_list(
 		"Print Format",
 		filters=_print_format_filters(report_name, report.name),
@@ -233,8 +248,12 @@ def get_print_options(report_name: str, company: str | None = None) -> dict:
 		"default_letter_head": default_letter_head,
 		"print_formats": [pf.name for pf in print_formats],
 		"print_format_types": {pf.name: pf.print_format_type for pf in print_formats},
+		"print_headings": [h.name for h in headings],
+		"print_signatures": signatures,
 		"languages": [{"name": lg.name, "label": lg.language_name or lg.name} for lg in languages],
 		"lang": frappe.local.lang,
+		"defaults": defaults,
+		"limits": {"print_max_pages": get_print_max_pages()},
 	}
 
 
@@ -278,9 +297,6 @@ def get_print_format(report_name: str, name: str) -> dict:
 	return {"name": doc.name, "type": doc.print_format_type, "html": doc.html or "", "css": doc.css or ""}
 
 
-MAX_FILTER_META = 200
-
-
 @frappe.whitelist(methods=["POST"])
 def render_print_format(
 	report_name: str,
@@ -305,14 +321,11 @@ def render_print_format(
 	doc = frappe.get_doc("Print Format", doc_name)
 	if doc.print_format_type != "Jinja":
 		frappe.throw(_("Print Format {0} is not a Jinja template").format(doc.name), RVInvalidInput)
-	meta = parse_json_arg(filter_meta or [], "filter_meta", list)
-	if len(meta) > MAX_FILTER_META or not all(isinstance(m, dict) for m in meta):
-		frappe.throw(_("Invalid filter definitions"), RVInvalidInput)
+	filter_objs, values = printing.filter_objects(filters, filter_meta)
 	response = runner.run(report, report_name, filters, js_filters, prepared_report_name)
 	if response["status"] != "ok":
 		frappe.throw(_("The report did not return rows to print"), RVInvalidInput)
 	raw = response["raw"]
-	values = parse_json_arg(filters, "filters", dict)
 	columns = []
 	for col in raw.get("columns") or []:
 		c = normalize._parse_column(col)
@@ -332,13 +345,6 @@ def render_print_format(
 			data.append(frappe._dict(row))
 		elif isinstance(row, list | tuple):
 			data.append(frappe._dict({c.fieldname: row[i] if i < len(row) else None for i, c in enumerate(columns)}))
-	by_name = {m.get("fieldname"): m for m in meta if isinstance(m.get("fieldname"), str)}
-	filter_objs = {}
-	for key, value in values.items():
-		m = by_name.get(key, {})
-		filter_objs[key] = frappe._dict(
-			label=str(m.get("label") or frappe.unscrub(key)), fieldtype=str(m.get("fieldtype") or "Data"), value=value
-		)
 	html = frappe.render_template(
 		doc.html or "",
 		{
@@ -351,6 +357,31 @@ def render_print_format(
 		},
 	)
 	return {"name": doc.name, "type": "Jinja", "html": html, "css": doc.css or ""}
+
+
+@frappe.whitelist(methods=["POST"])
+def render_print_heading(report_name: str, name: str, filters: dict | str, filter_meta: list | str | None = None) -> dict:
+	"""A ``Print Heading`` of the Pages view (ADR-015): its title and description rendered
+	as Jinja with the report's name and the filters on screen (``printing.report_context``),
+	in the request's language (``_lang``). The report does not run again."""
+	report = guard_report(report_name)
+	guard_print(report)
+	if not isinstance(name, str) or not name.strip():
+		frappe.throw(_("Print heading name is required"), RVInvalidInput)
+	return printing.render_heading(name, printing.report_context(report, filters, filter_meta))
+
+
+@frappe.whitelist(methods=["POST"])
+def render_print_signature(report_name: str, name: str, filters: dict | str, filter_meta: list | str | None = None) -> dict:
+	"""A ``Print Signature`` of type Report (ADR-015), for this report or for all: its
+	table of signatories or its HTML/Jinja, with the report's context; its CSS nested in
+	``.rv-signature``."""
+	report = guard_report(report_name)
+	guard_print(report)
+	if not isinstance(name, str) or not name.strip():
+		frappe.throw(_("Print signature name is required"), RVInvalidInput)
+	names = list(dict.fromkeys([report_name, report.name]))
+	return printing.report_signature(name, names, printing.report_context(report, filters, filter_meta))
 
 
 @frappe.whitelist(methods=["POST"])

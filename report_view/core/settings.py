@@ -1,8 +1,8 @@
 """Server-side report settings (docs/architecture.md §5.3).
 
-Only the shipped ``report_view/defaults/<scrub(report)>.json`` is read so far; the
-``Report View Settings`` / ``Report View Global Settings`` DocTypes (§5.2) are not built
-yet, so the global defaults below apply.
+Per report, only the shipped ``report_view/defaults/<scrub(report)>.json`` is read so far
+(the ``Report View Settings`` DocType of §5.2 is not built yet). The site's limits and its
+standard print settings come from the ``Report View Global Settings`` single (ADR-015).
 """
 
 import json
@@ -12,6 +12,10 @@ import re
 import frappe
 
 DEFAULT_MAX_ROWS = 50000
+HARD_MAX_ROWS = 200000
+DEFAULT_PRINT_MAX_PAGES = 600
+HARD_PRINT_MAX_PAGES = 2000
+GLOBAL_SETTINGS = "Report View Global Settings"
 _DEFAULTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "defaults")
 _FIELDNAME_RE = re.compile(r"^[A-Za-z0-9_]+$")
 
@@ -85,10 +89,85 @@ def load_settings(report_name: str) -> dict:
 	return settings
 
 
+def global_settings():
+	"""The values of the ``Report View Global Settings`` single, or None on a site without
+	it. A field never saved takes the default of its definition. Read as configuration (as
+	Frappe reads System Settings): its values are no user data."""
+	try:
+		doc = frappe.get_cached_doc(GLOBAL_SETTINGS)
+	except frappe.DoesNotExistError:
+		return None
+	# never saved: Frappe fills a new single from the session's defaults (a user's letter
+	# head...); the site's settings are the definition's defaults only
+	values = frappe._dict(doc.as_dict()) if doc.modified else frappe._dict()
+	for df in doc.meta.fields:
+		if values.get(df.fieldname) is None and df.default is not None:
+			values[df.fieldname] = frappe.utils.cast(df.fieldtype, df.default)
+	return values
+
+
 def get_row_limit() -> int:
-	"""ADR-009: min(Global Settings.max_rows (default 50,000), System Settings.max_report_rows)."""
-	limit = DEFAULT_MAX_ROWS
+	"""ADR-009: min(Global Settings.max_rows (default 50,000, at most 200,000),
+	System Settings.max_report_rows)."""
+	gs = global_settings()
+	limit = min(frappe.utils.cint(gs and gs.max_rows) or DEFAULT_MAX_ROWS, HARD_MAX_ROWS)
 	system_max = frappe.utils.cint(frappe.db.get_single_value("System Settings", "max_report_rows"))
 	if system_max > 0:
 		limit = min(limit, system_max)
 	return limit
+
+
+def get_print_max_pages() -> int:
+	gs = global_settings()
+	return min(frappe.utils.cint(gs and gs.print_max_pages) or DEFAULT_PRINT_MAX_PAGES, HARD_PRINT_MAX_PAGES)
+
+
+# The labels of the single's Select fields, as the Pages view keys them.
+_PAGES = {"Every page": "all", "First page": "first", "All but the first": "rest", "Last page": "last"}
+_STYLES = {"Classic": "classic", "Modern": "modern", "Accounting grid": "ledger", "Compact": "compact", "Ink saving": "minimal"}
+_NUMBER_POS = {
+	"Bottom, at the end": "bottom-end",
+	"Bottom, centred": "bottom-center",
+	"Bottom, at the start": "bottom-start",
+	"Top, at the end": "top-end",
+	"Top, centred": "top-center",
+	"Top, at the start": "top-start",
+}
+_NUMBER_FORMAT = {"Page 1 of 3": "full", "1 / 3": "short", "— 1 —": "dash", "1": "number"}
+
+
+def print_defaults() -> dict:
+	"""The standard print settings of the site, keyed as the Pages view's settings
+	(views/pages_view.js DEFAULT_SETTINGS); the browser validates them as it validates a
+	user's saved settings. Empty on a site without the single."""
+	gs = global_settings()
+	if not gs:
+		return {}
+	out = {
+		"size": gs.paper_size or "A4",
+		"margins": (gs.margins or "Normal").lower(),
+		"style": _STYLES.get(gs.print_style, "classic"),
+		"letter_head": gs.letter_head or "",
+		"heading": gs.print_heading or "",
+		"signature": gs.print_signature or "",
+		"signatures": bool(gs.show_signatures),
+		"lh_pages": _PAGES.get(gs.letter_head_pages, "first"),
+		"heading_pages": _PAGES.get(gs.heading_pages, "first"),
+		"foot_pages": _PAGES.get(gs.footer_pages, "all"),
+		"page_numbers": bool(gs.page_numbers),
+		"number_pos": _NUMBER_POS.get(gs.number_position, "bottom-end"),
+		"number_format": _NUMBER_FORMAT.get(gs.number_format, "full"),
+		"include_filters": bool(gs.include_filters),
+		"include_total": bool(gs.include_total),
+		"printed_on": bool(gs.printed_on),
+	}
+	orientation = {"Portrait page": "portrait", "Landscape page": "landscape"}.get(gs.orientation)
+	if orientation:
+		out["orientation"] = orientation
+	if gs.letter_head_height:
+		out["lh_height"] = gs.letter_head_height
+	if gs.footer_height is not None:
+		out["foot_height"] = gs.footer_height
+	if out["margins"] == "custom":
+		out["page_m"] = {side: gs.get(f"margin_{side}") or 0 for side in ("top", "bottom", "start", "end")}
+	return out

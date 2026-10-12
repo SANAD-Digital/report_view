@@ -1,0 +1,157 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:signature_name",
+ "creation": "2026-10-12 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "signature_name",
+  "disabled",
+  "column_break_main",
+  "signature_for",
+  "report",
+  "reference_doctype",
+  "content_section",
+  "content_type",
+  "signatories",
+  "html",
+  "style_section",
+  "css",
+  "help_section",
+  "jinja_help"
+ ],
+ "fields": [
+  {
+   "fieldname": "signature_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Report",
+   "fieldname": "signature_for",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Type",
+   "options": "Report\nDocument",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.signature_for==='Report'",
+   "description": "Empty: offered for every report",
+   "fieldname": "report",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Report",
+   "options": "Report"
+  },
+  {
+   "depends_on": "eval:doc.signature_for==='Document'",
+   "description": "Empty: usable in the print format of any document",
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Document Type",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "content_section",
+   "fieldtype": "Section Break",
+   "label": "Content"
+  },
+  {
+   "default": "Table",
+   "fieldname": "content_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Content Type",
+   "options": "Table\nHTML",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.content_type==='Table'",
+   "description": "One box per row, side by side, in this order",
+   "fieldname": "signatories",
+   "fieldtype": "Table",
+   "label": "Signatories",
+   "mandatory_depends_on": "eval:doc.content_type==='Table'",
+   "options": "Print Signature Item"
+  },
+  {
+   "depends_on": "eval:doc.content_type==='HTML'",
+   "fieldname": "html",
+   "fieldtype": "Code",
+   "label": "HTML",
+   "mandatory_depends_on": "eval:doc.content_type==='HTML'",
+   "options": "Jinja"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "style_section",
+   "fieldtype": "Section Break",
+   "label": "Style"
+  },
+  {
+   "description": "Applies inside the signature only: write rules such as table { … } or .box { … }",
+   "fieldname": "css",
+   "fieldtype": "Code",
+   "label": "CSS",
+   "options": "CSS"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "help_section",
+   "fieldtype": "Section Break",
+   "label": "Help: HTML and Jinja"
+  },
+  {
+   "fieldname": "jinja_help",
+   "fieldtype": "HTML",
+   "label": "Help"
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-12 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Report View",
+ "name": "Print Signature",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Desk User"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "signature_name"
+}

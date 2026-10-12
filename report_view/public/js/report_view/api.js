@@ -129,6 +129,13 @@ export const api = {
 			)
 		),
 
+	// A Print Heading / Print Signature (ADR-015) rendered with the report and its filters.
+	render_print_heading: (report_name, name, filters, filter_meta, lang = null) =>
+		message(call("report_view.api.render_print_heading", { report_name, name, filters, filter_meta, ...(lang ? { _lang: lang } : {}) }, { type: "POST" })),
+
+	render_print_signature: (report_name, name, filters, filter_meta, lang = null) =>
+		message(call("report_view.api.render_print_signature", { report_name, name, filters, filter_meta, ...(lang ? { _lang: lang } : {}) }, { type: "POST" })),
+
 	get_translations: (report_name, lang, messages) =>
 		message(call("report_view.api.get_translations", { report_name, lang, messages }, { type: "POST" })),
 

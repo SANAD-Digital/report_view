@@ -1,0 +1,25 @@
+{#- The signatories of a Print Signature of type Table: one box each, side by side. The
+    Pages view styles .rv-sig in rv_pages.css; a document's print format gets the rules
+    below (standalone). -#}
+{%- if standalone %}
+<style>
+.rv-sig-row{display:grid;gap:10mm;margin-top:10mm}
+.rv-sig{border-top:1px solid #1b1f1d;padding-top:1.5mm;text-align:center;break-inside:avoid}
+.rv-sig-t{font-weight:700}
+.rv-sig-ln{display:flex;gap:4px;margin-top:4mm;text-align:start;color:#4d5651;white-space:nowrap;overflow:hidden}
+.rv-sig-ln b{font-weight:600;color:#1b1f1d}
+.rv-sig-ln i{flex:1;border-bottom:1px dotted #9aa39e;min-width:20mm}
+.rv-sig-ds{color:#4d5651;margin-top:1mm}
+</style>
+{%- endif %}
+<div class="rv-sig-row" style="grid-template-columns:repeat({{ [signatories|length, 1]|max }},minmax(0,1fr))">
+{%- for s in signatories %}
+	<div class="rv-sig">
+		<div class="rv-sig-t">{{ _(s.label)|e }}</div>
+		{%- if s.designation %}<div class="rv-sig-ds">{{ _(s.designation)|e }}</div>{% endif %}
+		<div class="rv-sig-ln"><span>{{ _("Name", context="Report View") }}:</span>{% if s.person_name %}<b>{{ s.person_name|e }}</b>{% else %}<i></i>{% endif %}</div>
+		<div class="rv-sig-ln"><span>{{ _("Signature", context="Report View") }}:</span><i></i></div>
+		{%- if s.show_date %}<div class="rv-sig-ln"><span>{{ _("Date") }}:</span><i></i></div>{% endif %}
+	</div>
+{%- endfor %}
+</div>

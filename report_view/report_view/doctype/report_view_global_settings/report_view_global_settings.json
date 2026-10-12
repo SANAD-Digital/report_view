@@ -1,0 +1,297 @@
+{
+ "actions": [],
+ "creation": "2026-10-12 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "limits_tab_section",
+  "max_rows",
+  "column_break_limits",
+  "print_max_pages",
+  "print_defaults_section",
+  "paper_size",
+  "orientation",
+  "margins",
+  "column_break_paper",
+  "margin_top",
+  "margin_bottom",
+  "margin_start",
+  "margin_end",
+  "template_section",
+  "print_style",
+  "letter_head",
+  "column_break_tpl",
+  "print_heading",
+  "print_signature",
+  "show_signatures",
+  "parts_section",
+  "letter_head_pages",
+  "letter_head_height",
+  "heading_pages",
+  "column_break_parts",
+  "footer_pages",
+  "footer_height",
+  "numbers_section",
+  "page_numbers",
+  "number_position",
+  "number_format",
+  "column_break_content",
+  "include_filters",
+  "include_total",
+  "printed_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "limits_tab_section",
+   "fieldtype": "Section Break",
+   "label": "Limits",
+   "description": "The fixed limits of Report View. The hard caps in the code still apply."
+  },
+  {
+   "fieldname": "max_rows",
+   "fieldtype": "Int",
+   "label": "Maximum rows of a report",
+   "default": "50000",
+   "non_negative": 1,
+   "description": "Rows a report may return to Report View. Capped by System Settings › Max Report Rows and by 200,000."
+  },
+  {
+   "fieldname": "column_break_limits",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "print_max_pages",
+   "fieldtype": "Int",
+   "label": "Maximum pages printed at once",
+   "default": "600",
+   "non_negative": 1,
+   "description": "Above it the Pages view asks to narrow the filters. At most 2,000."
+  },
+  {
+   "fieldname": "print_defaults_section",
+   "fieldtype": "Section Break",
+   "label": "Standard print settings",
+   "description": "What a user who has not changed the print setup starts with, and what «Reset» returns to. A user's own choices stay theirs."
+  },
+  {
+   "fieldname": "paper_size",
+   "fieldtype": "Select",
+   "label": "Paper size",
+   "options": "A4\nA3\nLetter\nLegal",
+   "default": "A4"
+  },
+  {
+   "fieldname": "orientation",
+   "fieldtype": "Select",
+   "label": "Orientation",
+   "options": "Auto\nPortrait page\nLandscape page",
+   "default": "Auto",
+   "description": "Auto: landscape when the columns do not fit a portrait page"
+  },
+  {
+   "fieldname": "margins",
+   "fieldtype": "Select",
+   "label": "Margins",
+   "options": "Narrow\nNormal\nWide\nCustom",
+   "default": "Normal"
+  },
+  {
+   "fieldname": "column_break_paper",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "margin_top",
+   "fieldtype": "Float",
+   "label": "Top margin (mm)",
+   "default": "12",
+   "depends_on": "eval:doc.margins==='Custom'",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "margin_bottom",
+   "fieldtype": "Float",
+   "label": "Bottom margin (mm)",
+   "default": "12",
+   "depends_on": "eval:doc.margins==='Custom'",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "margin_start",
+   "fieldtype": "Float",
+   "label": "Start margin (mm)",
+   "default": "12",
+   "depends_on": "eval:doc.margins==='Custom'",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "margin_end",
+   "fieldtype": "Float",
+   "label": "End margin (mm)",
+   "default": "12",
+   "depends_on": "eval:doc.margins==='Custom'",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "template_section",
+   "fieldtype": "Section Break",
+   "label": "Template"
+  },
+  {
+   "fieldname": "print_style",
+   "fieldtype": "Select",
+   "label": "Print style",
+   "options": "Classic\nModern\nAccounting grid\nCompact\nInk saving",
+   "default": "Classic"
+  },
+  {
+   "fieldname": "letter_head",
+   "fieldtype": "Link",
+   "label": "Letter Head",
+   "options": "Letter Head",
+   "description": "Empty: the company's default letter head"
+  },
+  {
+   "fieldname": "column_break_tpl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "print_heading",
+   "fieldtype": "Link",
+   "label": "Print Heading",
+   "options": "Print Heading"
+  },
+  {
+   "fieldname": "print_signature",
+   "fieldtype": "Link",
+   "label": "Print Signature",
+   "options": "Print Signature",
+   "description": "Empty: Report View's standard signature boxes"
+  },
+  {
+   "fieldname": "show_signatures",
+   "fieldtype": "Check",
+   "label": "Print the signature",
+   "default": "0"
+  },
+  {
+   "fieldname": "parts_section",
+   "fieldtype": "Section Break",
+   "label": "Letter head, heading and footer"
+  },
+  {
+   "fieldname": "letter_head_pages",
+   "fieldtype": "Select",
+   "label": "Letter head on",
+   "options": "Every page\nFirst page\nAll but the first",
+   "default": "First page"
+  },
+  {
+   "fieldname": "letter_head_height",
+   "fieldtype": "Float",
+   "label": "Letter head height (mm)",
+   "default": "26",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "heading_pages",
+   "fieldtype": "Select",
+   "label": "Print heading on",
+   "options": "Every page\nFirst page\nAll but the first",
+   "default": "First page"
+  },
+  {
+   "fieldname": "column_break_parts",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "footer_pages",
+   "fieldtype": "Select",
+   "label": "Footer on",
+   "options": "Every page\nFirst page\nAll but the first\nLast page",
+   "default": "Every page"
+  },
+  {
+   "fieldname": "footer_height",
+   "fieldtype": "Float",
+   "label": "Footer height (mm)",
+   "default": "11",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "numbers_section",
+   "fieldtype": "Section Break",
+   "label": "Page numbers and content"
+  },
+  {
+   "fieldname": "page_numbers",
+   "fieldtype": "Check",
+   "label": "Show page numbers",
+   "default": "1"
+  },
+  {
+   "fieldname": "number_position",
+   "fieldtype": "Select",
+   "label": "Page number position",
+   "options": "Bottom, at the end\nBottom, centred\nBottom, at the start\nTop, at the end\nTop, centred\nTop, at the start",
+   "default": "Bottom, at the end",
+   "depends_on": "page_numbers"
+  },
+  {
+   "fieldname": "number_format",
+   "fieldtype": "Select",
+   "label": "Number format",
+   "options": "Page 1 of 3\n1 / 3\n— 1 —\n1",
+   "default": "Page 1 of 3",
+   "depends_on": "page_numbers"
+  },
+  {
+   "fieldname": "column_break_content",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "include_filters",
+   "fieldtype": "Check",
+   "label": "Applied filters",
+   "default": "1"
+  },
+  {
+   "fieldname": "include_total",
+   "fieldtype": "Check",
+   "label": "Grand Total",
+   "default": "1"
+  },
+  {
+   "fieldname": "printed_on",
+   "fieldtype": "Check",
+   "label": "Print date and user",
+   "default": "1"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-10-12 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Report View",
+ "name": "Report View Global Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Desk User"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

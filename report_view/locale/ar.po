@@ -1829,3 +1829,241 @@ msgstr "لحفظ ملف PDF اختر «حفظ بتنسيق PDF» في نافذة
 
 msgid "Print settings are back to their defaults"
 msgstr "عادت إعدادات الطباعة إلى الافتراضي"
+
+msgctxt "Report View"
+msgid "Print Heading"
+msgstr "رأس الطباعة"
+
+msgid "No print heading"
+msgstr "بلا رأس طباعة"
+
+msgid "Instead of the report title"
+msgstr "بدلاً من عنوان التقرير"
+
+msgid "Heading margins"
+msgstr "هوامش رأس الطباعة"
+
+msgid "Rule under the heading"
+msgstr "الخط تحت رأس الطباعة"
+
+msgid "The heading is rendered with the report's name and its filters (Jinja: {{ title }}, {{ filters.company.value }}, {{ doc.from_date }})."
+msgstr "يُعرض رأس الطباعة باسم التقرير وفلاتره (Jinja: {{ title }}، {{ filters.company.value }}، {{ doc.from_date }})."
+
+msgid "Choose a print heading in «Template and language» to set its pages, size and place."
+msgstr "اختر رأس طباعة من «القالب واللغة» لتضبط صفحاته وحجمه ومكانه."
+
+msgid "No print heading yet: add one in Print Heading."
+msgstr "لا يوجد رأس طباعة بعد: أضف واحداً من شاشة «رأس الطباعة»."
+
+msgid "Print Signature"
+msgstr "توقيع الطباعة"
+
+msgid "The print heading could not be loaded: {0}"
+msgstr "تعذّر تحميل رأس الطباعة: {0}"
+
+msgid "The signature could not be loaded: {0}"
+msgstr "تعذّر تحميل التوقيع: {0}"
+
+msgid "Print Heading {0} not found"
+msgstr "رأس الطباعة {0} غير موجود"
+
+msgid "Print Signature {0} is not available for this report"
+msgstr "توقيع الطباعة {0} غير متاح لهذا التقرير"
+
+msgid "Print heading name is required"
+msgstr "اسم رأس الطباعة مطلوب"
+
+msgid "Print signature name is required"
+msgstr "اسم توقيع الطباعة مطلوب"
+
+msgid "Add at least one signatory"
+msgstr "أضف موقّعاً واحداً على الأقل"
+
+msgid "Write the HTML of the signature"
+msgstr "اكتب HTML التوقيع"
+
+msgid "Maximum rows of a report cannot be more than {0}"
+msgstr "لا يمكن أن يزيد الحد الأقصى لصفوف التقرير عن {0}"
+
+msgid "Maximum pages printed at once cannot be more than {0}"
+msgstr "لا يمكن أن يزيد الحد الأقصى للصفحات المطبوعة دفعة واحدة عن {0}"
+
+msgid "A page margin cannot be more than {0} mm"
+msgstr "لا يمكن أن يزيد هامش الصفحة عن {0} مم"
+
+msgid "Box title"
+msgstr "عنوان الخانة"
+
+msgid "Person"
+msgstr "الشخص"
+
+msgid "Job title"
+msgstr "المسمى الوظيفي"
+
+msgid "Date line"
+msgstr "سطر التاريخ"
+
+msgid "Above the box, e.g. Prepared by, Reviewed by, Approved by"
+msgstr "يظهر أعلى الخانة، مثل: أعدّه، راجعه، اعتمده"
+
+msgid "Empty: a line to write the name by hand"
+msgstr "فارغ: سطر لكتابة الاسم باليد"
+
+msgid "Signatories"
+msgstr "الموقّعون"
+
+msgid "Help: HTML and Jinja"
+msgstr "مساعدة: HTML و Jinja"
+
+msgid "Empty: offered for every report"
+msgstr "فارغ: متاح لكل التقارير"
+
+msgid "Empty: usable in the print format of any document"
+msgstr "فارغ: يُستخدم في قالب طباعة أي مستند"
+
+msgid "One box per row, side by side, in this order"
+msgstr "خانة لكل صف، متجاورة، بهذا الترتيب"
+
+msgid "Applies inside the signature only: write rules such as table { … } or .box { … }"
+msgstr "يُطبَّق داخل التوقيع فقط: اكتب قواعد مثل table { … } أو .box { … }"
+
+msgid "Report View Global Settings"
+msgstr "إعدادات Report View العامة"
+
+msgid "Limits"
+msgstr "الحدود"
+
+msgid "The fixed limits of Report View. The hard caps in the code still apply."
+msgstr "الحدود الثابتة في Report View. تبقى الحدود القصوى في الكود سارية."
+
+msgid "Maximum rows of a report"
+msgstr "الحد الأقصى لصفوف التقرير"
+
+msgid "Rows a report may return to Report View. Capped by System Settings › Max Report Rows and by 200,000."
+msgstr "عدد الصفوف التي يعيدها التقرير إلى Report View. لا يتجاوز «أقصى صفوف التقرير» في إعدادات النظام ولا 200,000."
+
+msgid "Maximum pages printed at once"
+msgstr "الحد الأقصى للصفحات المطبوعة دفعة واحدة"
+
+msgid "Above it the Pages view asks to narrow the filters. At most 2,000."
+msgstr "فوقه يطلب عرض الصفحات تضييق الفلاتر. الحد الأعلى 2,000."
+
+msgid "Standard print settings"
+msgstr "إعدادات الطباعة القياسية"
+
+msgid "What a user who has not changed the print setup starts with, and what «Reset» returns to. A user's own choices stay theirs."
+msgstr "ما يبدأ به المستخدم الذي لم يغيّر إعداد الطباعة، وما يعود إليه زر «استعادة الافتراضي». اختيارات كل مستخدم تبقى له."
+
+msgid "Auto: landscape when the columns do not fit a portrait page"
+msgstr "تلقائي: أفقي إذا لم تتسع الأعمدة لصفحة عمودية"
+
+msgid "Portrait page"
+msgstr "عمودي"
+
+msgid "Landscape page"
+msgstr "أفقي"
+
+msgid "Normal"
+msgstr "عادية"
+
+msgid "Top margin (mm)"
+msgstr "الهامش العلوي (مم)"
+
+msgid "Bottom margin (mm)"
+msgstr "الهامش السفلي (مم)"
+
+msgid "Start margin (mm)"
+msgstr "هامش البداية (مم)"
+
+msgid "End margin (mm)"
+msgstr "هامش النهاية (مم)"
+
+msgid "Empty: the company's default letter head"
+msgstr "فارغ: ترويسة الشركة الافتراضية"
+
+msgid "Empty: Report View's standard signature boxes"
+msgstr "فارغ: خانات التوقيع القياسية في Report View"
+
+msgid "Print the signature"
+msgstr "طباعة التوقيع"
+
+msgid "Letter head, heading and footer"
+msgstr "الترويسة ورأس الطباعة والتذييل"
+
+msgid "Letter head on"
+msgstr "الترويسة في"
+
+msgid "Letter head height (mm)"
+msgstr "ارتفاع الترويسة (مم)"
+
+msgid "Print heading on"
+msgstr "رأس الطباعة في"
+
+msgid "Footer on"
+msgstr "التذييل في"
+
+msgid "Footer height (mm)"
+msgstr "ارتفاع التذييل (مم)"
+
+msgid "Page numbers and content"
+msgstr "ترقيم الصفحات والمحتوى"
+
+msgid "the report's name, translated"
+msgstr "اسم التقرير مترجماً"
+
+msgid "the report's name as saved"
+msgstr "اسم التقرير كما هو محفوظ"
+
+msgid "a filter of the report: its label and its value"
+msgstr "فلتر من فلاتر التقرير: عنوانه وقيمته"
+
+msgid "the value of a filter, e.g. doc.company, doc.from_date"
+msgstr "قيمة فلتر، مثل doc.company و doc.from_date"
+
+msgid "the company of the filters"
+msgstr "الشركة المختارة في الفلاتر"
+
+msgid "the printed document, e.g. doc.name, doc.grand_total, doc.owner"
+msgstr "المستند المطبوع، مثل doc.name و doc.grand_total و doc.owner"
+
+msgid "the document type, translated"
+msgstr "نوع المستند مترجماً"
+
+msgid "the company of the document"
+msgstr "شركة المستند"
+
+msgid "the rows of the table: label, person_name, designation, show_date"
+msgstr "صفوف الجدول: label و person_name و designation و show_date"
+
+msgid "the full name of who prints"
+msgstr "الاسم الكامل لمن يطبع"
+
+msgid "the date and time of printing"
+msgstr "تاريخ الطباعة ووقتها"
+
+msgid "the language of the print"
+msgstr "لغة الطباعة"
+
+msgid "Choose it in Report View › Pages › Content › Signature. Leave «Report» empty to offer it for every report."
+msgstr "اختره من Report View › صفحات › المحتوى › التوقيع. اترك «التقرير» فارغاً ليظهر لكل التقارير."
+
+msgid "Call it in the Jinja print format of a document:"
+msgstr "استدعِه في قالب طباعة Jinja لأي مستند:"
+
+msgid "How it is used"
+msgstr "طريقة الاستخدام"
+
+msgid "Table: one box per signatory, with a line for the name and the signature (and the date when ticked). HTML: your own markup; it may use Jinja."
+msgstr "جدول: خانة لكل موقّع فيها سطر للاسم وسطر للتوقيع (وسطر للتاريخ عند تفعيله). HTML: تصميمك الخاص، ويمكن أن يستخدم Jinja."
+
+msgid "Write {{ value }} to print a value and {% if %} / {% for %} for conditions and lists. _(\"text\") translates a text to the language of the print; frappe.utils functions (format_date, fmt_money, get_fullname…) are available."
+msgstr "اكتب {{ value }} لطباعة قيمة، و {% if %} / {% for %} للشروط والقوائم. ‏_(\"text\") يترجم النص إلى لغة الطباعة، ودوال frappe.utils متاحة (format_date و fmt_money و get_fullname…)."
+
+msgid "The rules apply inside the signature only (they are nested in .rv-signature): write table { … } or .sig { … } without a prefix. Colours print as they are."
+msgstr "القواعد تُطبَّق داخل التوقيع فقط (تُضمَّن داخل ‎.rv-signature): اكتب table { … } أو ‎.sig { … } بلا بادئة. الألوان تُطبع كما هي."
+
+msgid "Prepared by"
+msgstr "أعدّه"
+
+msgid "Approved by"
+msgstr "اعتمده"

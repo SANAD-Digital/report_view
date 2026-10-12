@@ -2190,7 +2190,7 @@ const pages_settings = (s) => `&pages=${encodeURIComponent(JSON.stringify(s))}`;
 const open_sections = (page) =>
 	page.evaluate(() => {
 		const v = window.rv_page.pages;
-		v.open_secs = new Set(["paper", "tpl", "head", "heading", "foot", "num", "border", "wm", "content", "cols"]);
+		v.open_secs = new Set(["paper", "tpl", "head", "heading", "foot", "num", "sign", "border", "wm", "content", "cols"]);
 		v.render_panel();
 	});
 // a Link field of the panel (a Frappe control): typed, committed as the field is left
@@ -2324,7 +2324,7 @@ test("pages: paper, orientation, margins, content and columns change the pages; 
 	const wide = await pages_state(page);
 	expect(wide.box.inner_w).toBeLessThan(a3.box.inner_w);
 	// signatures and no grand total
-	await page.click('input[data-set="signatures"]');
+	await page.click('[data-sw="signatures"]');
 	await settle(page);
 	expect((await pages_state(page)).signatures).toBe(3);
 	await page.click('input[data-set="include_total"]');
@@ -2686,7 +2686,7 @@ test("pages: a print heading rendered with the filters, on its pages, instead of
 	expect(["start", "right"]).toContain(style.align);
 	expect(parseFloat(style.size)).toBeCloseTo(24, 0);
 	// a print signature replaces the standard boxes on the last page
-	await page.locator('input[data-set="signatures"]').check();
+	await page.click('[data-sw="signatures"]');
 	await settle(page);
 	await pick_link(page, "signature", "Finance approvals");
 	await settle(page);
@@ -2710,11 +2710,42 @@ test("pages: a print heading rendered with the filters, on its pages, instead of
 	expect(sig.color).toBe("rgb(138, 45, 59)");
 	expect(sig.title_color).not.toBe("rgb(138, 45, 59)");
 	await shot3(page, "pages-gl-heading-signature-rtl");
+	// on every page: in the foot of each page, above the footer; the pages make room for it
+	const before = (await pages_state(page)).count;
+	await page.click('[data-seg="sig_pages"][data-value="all"]');
+	await settle(page);
+	const every = await page.evaluate(async () => {
+		await window.rv_page.pages.fill_all();
+		return [...document.querySelectorAll(".rv-print-sheets .rv-page")].map((p) => {
+			const sig = p.querySelector(".rv-page-foot > .rv-page-sig");
+			const foot = p.querySelector(".rv-page-foot").getBoundingClientRect();
+			const page = p.getBoundingClientRect();
+			return { sig: Boolean(sig), inside: foot.bottom <= page.bottom + 1, tail: Boolean(p.querySelector(".rv-page-body > .rv-page-sig")) };
+		});
+	});
+	expect(every.every((x) => x.sig && x.inside && !x.tail)).toBe(true);
+	expect(every.length).toBeGreaterThanOrEqual(before);
+	// the last page only, at its bottom
+	await page.click('[data-seg="sig_pages"][data-value="last"]');
+	await settle(page);
+	await page.click('[data-seg="sig_pos"][data-value="bottom"]');
+	await settle(page);
+	const bottom = await page.evaluate(async () => {
+		await window.rv_page.pages.fill_all();
+		const pages = [...document.querySelectorAll(".rv-print-sheets .rv-page")];
+		const last = pages[pages.length - 1];
+		const sig = last.querySelector(".rv-page-body > .rv-page-sig.at-bottom");
+		const body = last.querySelector(".rv-page-body").getBoundingClientRect();
+		return { sig: Boolean(sig), gap: sig ? body.bottom - sig.getBoundingClientRect().bottom : null, others: pages.slice(0, -1).some((p) => p.querySelector(".rv-page-sig")) };
+	});
+	expect(bottom.sig).toBe(true);
+	expect(bottom.gap).toBeLessThan(2);
+	expect(bottom.others).toBe(false);
 	const saved = await page.evaluate(() => {
 		const s = window.rv_page.pages.settings;
-		return [s.heading, s.heading_pages, s.heading_replace, s.signature];
+		return [s.heading, s.heading_pages, s.heading_replace, s.signature, s.sig_pages, s.sig_pos];
 	});
-	expect(saved).toEqual(["Statement heading", "all", true, "Finance approvals"]);
+	expect(saved).toEqual(["Statement heading", "all", true, "Finance approvals", "last", "bottom"]);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 

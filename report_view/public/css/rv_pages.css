@@ -125,11 +125,15 @@
 .rv-pt b,.rv-pt strong,.rv-pt [style*="font-weight"]{font-weight:700 !important}
 .rv-pt .rv-n div,.rv-pt .lc div{display:inline;text-align:inherit !important}
 .rv-page-tail{flex:none}
-.rv-page-sign{display:grid;grid-template-columns:repeat(3,1fr);gap:10mm;margin-top:12mm}
+.rv-page-sign{display:grid;grid-template-columns:repeat(3,1fr);gap:10mm}
 .rv-page-sign div{border-top:1px solid var(--pp-tx);padding-top:1.5mm;font-weight:700;text-align:center}
 .rv-page-sign span{display:block;font-weight:400;color:var(--pp-tx-2);margin-top:4mm;white-space:nowrap;overflow:hidden;text-align:start}
 /* a Print Signature of type Table (templates/includes/print_signature.html) */
-.rv-signature{margin-top:10mm;break-inside:avoid}
+.rv-signature{break-inside:avoid}
+/* the signature block: its font size and margins are the user's; on the last page it may stand at the bottom */
+.rv-page-sig{padding-block:var(--pp-sig-mb,10mm 0);padding-inline:var(--pp-sig-mi,0);font-size:var(--pp-sig-fs,9pt);break-inside:avoid;flex:none}
+.rv-page-sig.at-bottom{margin-top:auto}
+.rv-page-foot > .rv-page-sig{padding-bottom:2mm}
 .rv-sig-row{display:grid;gap:8mm}
 .rv-sig{border-top:1px solid var(--pp-tx);padding-top:1.5mm;text-align:center;min-width:0}
 .rv-sig-t{font-weight:700}

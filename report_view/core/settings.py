@@ -153,6 +153,7 @@ def print_defaults() -> dict:
 		"signatures": bool(gs.show_signatures),
 		"lh_pages": _PAGES.get(gs.letter_head_pages, "first"),
 		"heading_pages": _PAGES.get(gs.heading_pages, "first"),
+		"sig_pages": _PAGES.get(gs.signature_pages, "last"),
 		"foot_pages": _PAGES.get(gs.footer_pages, "all"),
 		"page_numbers": bool(gs.page_numbers),
 		"number_pos": _NUMBER_POS.get(gs.number_position, "bottom-end"),

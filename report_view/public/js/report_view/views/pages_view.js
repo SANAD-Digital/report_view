@@ -56,8 +56,13 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	heading_line_w: 0,
 	heading_line_c: "#D9DFDB",
 	heading_line_s: "solid",
-	// a Print Signature of the report ("": Report View's standard boxes)
+	// a Print Signature of the report ("": Report View's standard boxes): on which pages,
+	// after the table or at the bottom of the last page, font size, margins
 	signature: "",
+	sig_pages: "last",
+	sig_pos: "after",
+	sig_size: 9,
+	sig_m: BOX(10, 0, 0, 0),
 	lang: "",
 	include_filters: true,
 	include_subtotals: true,
@@ -154,6 +159,7 @@ const NUMS = {
 	number_start: [1, 9999, 1],
 	number_size: [6, 16, 0.5],
 	heading_size: [8, 28, 0.5],
+	sig_size: [6, 14, 0.5],
 	heading_line_w: [0, 6, 0.2],
 	head_line_w: [0, 6, 0.2],
 	foot_line_w: [0, 6, 0.2],
@@ -166,7 +172,7 @@ const NUMS = {
 	pb_offset: [0, 40, 0.5],
 	pb_radius: [0, 20, 0.5],
 };
-const BOXES = ["page_m", "lh_m", "heading_m", "foot_m", "num_m"];
+const BOXES = ["page_m", "lh_m", "heading_m", "foot_m", "num_m", "sig_m"];
 const SIDES = ["top", "bottom", "start", "end"];
 
 // The page's own words, by msgid, for the translation pack of another language.
@@ -264,6 +270,8 @@ export function sanitize_settings(raw, base = DEFAULT_SETTINGS) {
 	if (FOOT_SCOPES.includes(raw.foot_pages)) out.foot_pages = raw.foot_pages;
 	if (PAGE_SCOPES.includes(raw.heading_pages)) out.heading_pages = raw.heading_pages;
 	if (ALIGN.includes(raw.heading_align)) out.heading_align = raw.heading_align;
+	if (FOOT_SCOPES.includes(raw.sig_pages)) out.sig_pages = raw.sig_pages;
+	if (["after", "bottom"].includes(raw.sig_pos)) out.sig_pos = raw.sig_pos;
 	for (const [k, r] of Object.entries(NUMS)) {
 		const v = clamp(raw[k], r);
 		if (v !== null) out[k] = v;
@@ -374,6 +382,10 @@ export class PagesView {
 		el.querySelector('[data-action="reset"]').addEventListener("click", () => this.reset());
 		for (const b of el.querySelectorAll("[data-zoom]")) b.addEventListener("click", () => this.zoom(b.dataset.zoom));
 		this.stage.addEventListener("scroll", () => this.update_position(), { passive: true });
+		// an open list of a Link field follows its field while the panel scrolls
+		this.bd.addEventListener("scroll", () => {
+			for (const input of this.bd.querySelectorAll(".rv-linkf input[aria-expanded='true']")) this.place_dropdown(input);
+		}, { passive: true });
 		this.resize_observer = new ResizeObserver(() => this.apply_zoom());
 		this.resize_observer.observe(this.stage);
 	}
@@ -679,6 +691,7 @@ export class PagesView {
 			tpl: ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/>'),
 			head: ic('<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 8h16"/>'),
 			heading: ic('<path d="M6 4v16M18 4v16M6 12h12"/>'),
+			sign: ic('<path d="M3 17c3-1 4-8 6-8s1 7 3 7 2-4 4-4 1 3 5 3"/><path d="M3 21h18"/>'),
 			foot: ic('<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 16h16"/>'),
 			num: ic('<path d="M5 9h14M5 15h14M10 4 8 20M16 4l-2 16"/>'),
 			wm: ic('<path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"/>'),
@@ -692,6 +705,7 @@ export class PagesView {
 		// four choices do not fit one line: two by two
 		const scopes = (key, list) => seg(key, __("Apply to"), list.map((v) => [v, scope_label[v]])).replace("rv-print-seg", `rv-print-seg${list.length > 3 ? " grid2" : ""}`);
 		const lh_sum = s.letter_head ? `${s.letter_head} · ${scope_label[s.lh_pages]}` : __("None", null, "Report View");
+		const sig_sum = s.signatures ? `${s.signature ? __(s.signature) : __("Standard boxes")} · ${scope_label[s.sig_pages]}` : __("None", null, "Report View");
 		const hdg_sum = s.heading ? `${__(s.heading)} · ${scope_label[s.heading_pages]}` : __("None", null, "Report View");
 		const headings = o.print_headings || [];
 		// a record of the site: a Link field (Frappe's search, with the user's permissions)
@@ -787,6 +801,26 @@ export class PagesView {
 				}`
 			),
 			section(
+				"sign",
+				I.sign,
+				__("Signatures"),
+				sig_sum,
+				`${sw("signatures", __("Print signatures"))}
+				${
+					s.signatures
+						? `${link("signature", __("Signature", null, "Report View"))}
+					${scopes("sig_pages", FOOT_SCOPES)}
+					${
+						s.sig_pages === "last"
+							? seg("sig_pos", __("Place", null, "Report View"), [["after", __("After the table")], ["bottom", __("Bottom of the page")]])
+							: `<p class="rv-zone-empty">${esc(__("On these pages the signature stands at the bottom, above the footer."))}</p>`
+					}
+					<div class="rv-print-row">${num("sig_size", __("Font size"), "pt")}</div>
+					${box("sig_m", __("Signature margins"))}`
+						: ""
+				}`
+			),
+			section(
 				"border",
 				I.border,
 				__("Page border"),
@@ -840,16 +874,11 @@ export class PagesView {
 				"content",
 				I.content,
 				__("Content", null, "Report View"),
-				s.signatures ? (s.signature ? __(s.signature) : __("Signature boxes")) : "",
+				"",
 				`<div class="rv-setlist tall">${check("include_filters", __("Applied filters"))}${model?.hierarchical ? check("include_subtotals", __("Group subtotals")) : ""}${check(
 					"include_total",
 					__("Grand Total")
-				)}${check("signatures", __("Signature boxes"))}${check("printed_on", __("Print date and user"))}</div>
-				${
-					s.signatures
-						? link("signature", __("Signature", null, "Report View"))
-						: ""
-				}`
+				)}${check("printed_on", __("Print date and user"))}</div>`
 			),
 			s.template
 				? ""
@@ -920,9 +949,35 @@ export class PagesView {
 			f.refresh();
 			if (!f.$input) f.make_input();
 			f.$input.attr("aria-label", el.dataset.label);
+			f.$input.on("awesomplete-open input focus", () => requestAnimationFrame(() => this.place_dropdown(f.$input.get(0))));
 			f.$input.attr("placeholder", def.placeholder);
 			f.set_input(this.settings[key] || "");
 		}
+	}
+
+	/**
+	 * The list of a Link field stands over the page (fixed), under the field or above it
+	 * when the room below is short: the panel and its sections would cut it.
+	 */
+	place_dropdown(input) {
+		const ul = input?.parentElement?.querySelector(":scope > ul");
+		if (!ul || ul.hidden) return;
+		const r = input.getBoundingClientRect();
+		const below = window.innerHeight - r.bottom - 8;
+		const above = r.top - 8;
+		const up = below < 220 && above > below;
+		Object.assign(ul.style, {
+			position: "fixed",
+			left: `${r.left}px`,
+			width: `${r.width}px`,
+			right: "auto",
+			top: up ? "auto" : `${r.bottom + 4}px`,
+			bottom: up ? `${window.innerHeight - r.top + 4}px` : "auto",
+			maxHeight: `${Math.max(120, Math.min(320, (up ? above : below) - 4))}px`,
+			overflowY: "auto",
+			zIndex: "1050",
+			margin: "0",
+		});
 	}
 
 	bind_panel() {
@@ -1133,6 +1188,9 @@ export class PagesView {
 		}
 		set("--pp-num-fs", `${s.number_size}pt`);
 		set("--pp-hdg-fs", `${s.heading_size}pt`);
+		set("--pp-sig-fs", `${s.sig_size}pt`);
+		set("--pp-sig-mb", block(s.sig_m));
+		set("--pp-sig-mi", inline(s.sig_m));
 		set("--pp-hdg-align", s.heading_align);
 		set("--pp-hdg-mb", block(s.heading_m));
 		set("--pp-hdg-mi", inline(s.heading_m));
@@ -1377,7 +1435,9 @@ export class PagesView {
 		const band = number || name ? `<div class="rv-page-foot-line${number ? " has-num" : ""}"><span class="st">${slots.start}</span><span class="ce">${slots.center}</span><span class="en">${slots.end}</span></div>` : "";
 		// `measure`: the probe page takes the footer wherever it may print (the tallest foot)
 		const lhf = letterhead?.footer && s.foot_height && (measure || on_page(s.foot_pages, n, total)) ? `<div class="rv-page-lhf">${letterhead.footer}</div>` : "";
-		return s.number_order === "before" ? `${band}${lhf}` : `${lhf}${band}`;
+		// a signature on pages other than the last only: above the footer
+		const sig = s.signatures && !this.sig_in_tail() && (measure || on_page(s.sig_pages, n, total)) ? this.signatures_html() : "";
+		return sig + (s.number_order === "before" ? `${band}${lhf}` : `${lhf}${band}`);
 	}
 
 	/** The page number at the top: a band of its own above the head (or nothing). */
@@ -1462,16 +1522,31 @@ export class PagesView {
 		return `${bottom}<tr class="total">${cells.join("")}</tr>`;
 	}
 
-	signatures_html() {
+	/**
+	 * The signature block: a Print Signature (its HTML, its CSS nested in .rv-signature,
+	 * rendered by the server) or Report View's standard boxes. On the last page only it
+	 * closes the content (after the table, or pushed to the bottom of the page); on other
+	 * pages it stands in the foot, above the footer (foot_html).
+	 */
+	signatures_html(bottom = false) {
 		if (!this.settings.signatures) return "";
-		// a Print Signature: its HTML, its CSS nested in .rv-signature (rendered by the server)
 		const own = this.settings.signature && this.signature;
-		if (own) return `<div class="rv-signature">${own.css ? `<style>${own.css.replace(/<\/style/gi, "")}</style>` : ""}${own.html}</div>`;
-		const t = (m, a) => this.t(m, a);
-		const dots = "................................";
-		return `<div class="rv-page-sign">${this.signature_labels()
-			.map((l) => `<div>${esc(this.in_lang(l))}<span>${esc(t("Name", null, "Report View"))}: ${dots}</span><span>${esc(t("Signature", null, "Report View"))}: ${dots}</span></div>`)
-			.join("")}</div>`;
+		let inner;
+		if (own) inner = `<div class="rv-signature">${own.css ? `<style>${own.css.replace(/<\/style/gi, "")}</style>` : ""}${own.html}</div>`;
+		else {
+			const t = (m, a) => this.t(m, a);
+			const dots = "................................";
+			const labels = this.signature_labels();
+			inner = `<div class="rv-page-sign" style="grid-template-columns:repeat(${labels.length},minmax(0,1fr))">${labels
+				.map((l) => `<div>${esc(this.in_lang(l))}<span>${esc(t("Name", null, "Report View"))}: ${dots}</span><span>${esc(t("Signature", null, "Report View"))}: ${dots}</span></div>`)
+				.join("")}</div>`;
+		}
+		return `<div class="rv-page-sig${bottom ? " at-bottom" : ""}">${inner}</div>`;
+	}
+
+	/** Whether the signature closes the content of the last page (else it is in the foot). */
+	sig_in_tail() {
+		return this.settings.signatures && this.settings.sig_pages === "last";
 	}
 
 	page_shell(i, box, dir, inner) {
@@ -1514,7 +1589,7 @@ export class PagesView {
 			dir,
 			`<header class="rv-page-top rv-page-top-first">${this.head_html(true, this.letterhead)}</header>
 			<table class="rv-pt" style="width:${box.inner_w}px">${table_head}<tbody>${probe_rows}</tbody></table>
-			<div class="rv-page-tail"><table class="rv-pt" style="width:${box.inner_w}px">${table_head.replace(/<thead>.*<\/thead>/s, "")}<tbody>${this.total_rows_html(cols)}</tbody></table>${this.signatures_html()}</div>
+			<div class="rv-page-tail"><table class="rv-pt" style="width:${box.inner_w}px">${table_head.replace(/<thead>.*<\/thead>/s, "")}<tbody>${this.total_rows_html(cols)}</tbody></table>${this.sig_in_tail() ? this.signatures_html() : ""}</div>
 			<footer class="rv-page-foot">${this.foot_html(1, 1, this.letterhead, true)}</footer>`
 		);
 		await wait_images(this.probe);
@@ -1635,7 +1710,10 @@ export class PagesView {
 			if (rec) body += this.body_row(rec, cols, values, plan);
 		}
 		let tail = "";
-		if (page.last) tail = `<div class="rv-page-tail"><table class="rv-pt" style="width:${box.inner_w}px">${this.table_head_html.replace(/<thead>.*<\/thead>/s, "")}<tbody>${this.total_rows_html(cols)}</tbody></table>${this.signatures_html()}</div>`;
+		if (page.last) {
+			tail = `<div class="rv-page-tail"><table class="rv-pt" style="width:${box.inner_w}px">${this.table_head_html.replace(/<thead>.*<\/thead>/s, "")}<tbody>${this.total_rows_html(cols)}</tbody></table></div>`;
+			if (this.sig_in_tail()) tail += this.signatures_html(this.settings.sig_pos === "bottom");
+		}
 		return `<header class="rv-page-top">${this.head_html(page.first, this.letterhead, i + 1, n)}</header>
 			<div class="rv-page-body"><table class="rv-pt" style="width:${box.inner_w}px">${this.table_head_html}<tbody>${body}</tbody></table>${tail}</div>
 			<footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
@@ -1674,8 +1752,7 @@ export class PagesView {
 		// fight the pages' paper: the pages are the paper here.
 		html = strip_scripts(html).replace(/@page\s*\{[^}]*\}/g, "");
 		// the signature closes the format's flow, as it closes the standard template
-		const sign = this.signatures_html();
-		if (sign) html += `<div class="rv-page-tail rv-page-tail-format">${sign}</div>`;
+		if (this.sig_in_tail()) html += this.signatures_html();
 		// Flow the HTML at the width of the page body and measure its blocks.
 		this.custom_styles = "";
 		// The pages carry the letter head as the standard template does: in full on the first

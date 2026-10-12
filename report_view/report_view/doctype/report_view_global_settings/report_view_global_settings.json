@@ -24,6 +24,7 @@
   "print_heading",
   "print_signature",
   "show_signatures",
+  "signature_pages",
   "parts_section",
   "letter_head_pages",
   "letter_head_height",
@@ -172,6 +173,14 @@
    "fieldtype": "Check",
    "label": "Print the signature",
    "default": "0"
+  },
+  {
+   "fieldname": "signature_pages",
+   "fieldtype": "Select",
+   "label": "Signature on",
+   "options": "Every page\nFirst page\nAll but the first\nLast page",
+   "default": "Last page",
+   "depends_on": "show_signatures"
   },
   {
    "fieldname": "parts_section",

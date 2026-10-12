@@ -2175,3 +2175,31 @@ msgstr "المُصدِر"
 
 msgid "To put a value inside a translated text use replace, not format (the sandbox does not allow format):"
 msgstr "لإدخال قيمة داخل نص مترجم استخدم replace لا format (البيئة الآمنة لا تسمح بـ format):"
+
+msgid "Signatures"
+msgstr "التوقيعات"
+
+msgid "Print signatures"
+msgstr "طباعة التوقيعات"
+
+msgctxt "Report View"
+msgid "Place"
+msgstr "المكان"
+
+msgid "After the table"
+msgstr "بعد الجدول"
+
+msgid "Bottom of the page"
+msgstr "أسفل الصفحة"
+
+msgid "On these pages the signature stands at the bottom, above the footer."
+msgstr "في هذه الصفحات يكون التوقيع في الأسفل، فوق التذييل."
+
+msgid "Signature margins"
+msgstr "هوامش التوقيع"
+
+msgid "Standard boxes"
+msgstr "الخانات القياسية"
+
+msgid "Signature on"
+msgstr "التوقيع في"

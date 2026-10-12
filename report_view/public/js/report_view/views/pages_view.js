@@ -991,22 +991,27 @@ export class PagesView {
 		// fight the pages' paper: the pages are the paper here.
 		html = strip_scripts(html).replace(/@page\s*\{[^}]*\}/g, "");
 		// Flow the HTML at the width of the page body and measure its blocks.
-		this.probe.innerHTML = this.page_shell(
-			0,
-			box,
-			dir,
-			`<header class="rv-page-top">${this.letterhead?.header ? `<div class="rv-page-lh">${this.letterhead.header}</div>` : ""}</header><div class="rv-page-flow">${html}</div><footer class="rv-page-foot">${this.foot_html(1, 1, this.letterhead)}</footer>`
-		);
+		this.custom_styles = "";
+		// The pages carry the letter head as the standard template does: in full on the first
+		// page, a slim line naming the report on the others (or the letter head on every page).
+		this.probe.innerHTML =
+			this.page_shell(1, box, dir, `<header class="rv-page-top rv-page-top-next">${this.custom_head(false)}</header>`) +
+			this.page_shell(
+				0,
+				box,
+				dir,
+				`<header class="rv-page-top rv-page-top-first">${this.custom_head(true)}</header><div class="rv-page-flow">${html}</div><footer class="rv-page-foot">${this.foot_html(1, 1, this.letterhead)}</footer>`
+			);
 		await wait_images(this.probe);
 		if (token !== this.token) return;
 		const q = (sel) => this.probe.querySelector(sel);
 		const h = (el) => (el ? el.getBoundingClientRect().height : 0);
-		const head_h = h(q(".rv-page-top"));
+		const first_h = h(q(".rv-page-top-first"));
+		const next_h = h(q(".rv-page-top-next"));
 		const foot_h = h(q(".rv-page-foot"));
-		const body_h = Math.max(40, box.inner_h - head_h - foot_h);
+		const body_h = Math.max(40, box.inner_h - next_h - foot_h);
+		const first_body_h = Math.max(40, box.inner_h - first_h - foot_h);
 		const flow = q(".rv-page-flow");
-		// A format laid out for a wider paper (Frappe prints reports in landscape by default)
-		// squeezes its first column to nothing: said, with the way out.
 		if (flow.scrollWidth > box.inner_w + 1 || [...flow.querySelectorAll("td, th")].some((c) => c.getBoundingClientRect().width < 1)) {
 			this.note(__("The print format is wider than the page: try landscape or a larger paper."), true);
 		}
@@ -1014,13 +1019,19 @@ export class PagesView {
 		// Pack the units into pages.
 		const pages = [];
 		let page = { units: [], used: 0 };
+		const room = () => (pages.length ? body_h : first_body_h);
 		for (const u of units) {
-			const extra = u.table && page.units.length && page.units[page.units.length - 1].table === u.table ? 0 : u.table ? u.table.head_h : 0;
-			if (page.units.length && page.used + extra + u.h > body_h) {
+			if (u.style) {
+				this.custom_styles += u.node.outerHTML;
+				continue;
+			}
+			// a table's head is repeated on every page its rows reach
+			const extra = u.table && page.units[page.units.length - 1]?.table !== u.table ? u.table.head_h : 0;
+			if (page.units.length && page.used + extra + u.h > room()) {
 				pages.push(page);
 				page = { units: [], used: 0 };
 			}
-			page.used += (page.units.length && page.units[page.units.length - 1].table === u.table ? 0 : u.table ? u.table.head_h : 0) + u.h;
+			page.used += (u.table && page.units[page.units.length - 1]?.table !== u.table ? u.table.head_h : 0) + u.h;
 			page.units.push(u);
 		}
 		pages.push(page);
@@ -1084,64 +1095,101 @@ export class PagesView {
 	// its header kept to repeat them), a block taller than a page by its children.
 	flow_units(container, body_h) {
 		const units = [];
-		const walk = (el) => {
+		// `path`: shallow copies of the elements between the flow and a block (a format styles
+		// its table through a wrapper such as .report-table: the pages rebuild it)
+		const walk = (el, path) => {
 			for (const child of el.children) {
-				const r = child.getBoundingClientRect();
-				const hh = r.height;
+				const hh = child.getBoundingClientRect().height;
+				if (child.tagName === "STYLE") {
+					units.push({ node: child.cloneNode(true), h: 0, table: null, style: true, path });
+					continue;
+				}
+				if (child.tagName === "SCRIPT") continue;
 				if (child.tagName === "TABLE") {
 					const head = child.tHead;
-					const head_h = head ? head.getBoundingClientRect().height : 0;
-					const shell = child.cloneNode(false);
-					const table = { shell, head: head ? head.cloneNode(true) : null, head_h, colgroup: child.querySelector("colgroup")?.cloneNode(true) || null };
+					const table = {
+						shell: child.cloneNode(false),
+						head: head ? head.cloneNode(true) : null,
+						head_h: head ? head.getBoundingClientRect().height : 0,
+						colgroups: [...child.querySelectorAll(":scope > colgroup")].map((c) => c.cloneNode(true)),
+						path,
+					};
 					for (const body of child.tBodies) {
-						for (const tr of body.rows) units.push({ node: tr.cloneNode(true), h: tr.getBoundingClientRect().height, table });
+						const tbody = body.cloneNode(false);
+						for (const tr of body.rows) units.push({ node: tr.cloneNode(true), h: tr.getBoundingClientRect().height, table, tbody, path });
 					}
-					if (child.tFoot) for (const tr of child.tFoot.rows) units.push({ node: tr.cloneNode(true), h: tr.getBoundingClientRect().height, table });
+					if (child.tFoot) {
+						const tbody = child.tFoot.cloneNode(false);
+						for (const tr of child.tFoot.rows) units.push({ node: tr.cloneNode(true), h: tr.getBoundingClientRect().height, table, tbody, path });
+					}
 					continue;
 				}
-				if (hh > body_h && child.children.length && !["STYLE", "SCRIPT"].includes(child.tagName)) {
-					walk(child);
+				if (hh > body_h && child.children.length) {
+					walk(child, [...path, child.cloneNode(false)]);
 					continue;
 				}
-				if (child.tagName === "STYLE") {
-					units.push({ node: child.cloneNode(true), h: 0, table: null, style: true });
-					continue;
-				}
-				units.push({ node: child.cloneNode(true), h: hh, table: null });
+				units.push({ node: child.cloneNode(true), h: hh, table: null, path });
 			}
 		};
-		walk(container);
+		walk(container, []);
 		return units;
+	}
+
+	/** The head of a page of a report print format: the letter head, or a slim line. */
+	custom_head(first) {
+		const lh = this.letterhead?.header;
+		if (lh && (first || this.settings.letterhead_all)) return `<div class="rv-page-lh">${lh}</div>`;
+		return first ? "" : this.head_html(false, this.letterhead);
 	}
 
 	custom_page_html(i) {
 		const page = this.custom_pages[i];
-		const box = this.box;
 		const n = this.pages.length;
 		const flow = document.createElement("div");
 		flow.className = "rv-page-flow";
+		// the open wrappers (by the path they copy), then the open table and tbody
+		let stack = [];
 		let table = null;
 		let tbody = null;
+		let tbody_src = null;
+		const parent_for = (path) => {
+			let k = 0;
+			while (k < stack.length && k < path.length && stack[k].src === path[k]) k += 1;
+			stack = stack.slice(0, k);
+			let parent = k ? stack[k - 1].el : flow;
+			for (let j = k; j < path.length; j++) {
+				const el = path[j].cloneNode(false);
+				parent.appendChild(el);
+				stack.push({ src: path[j], el });
+				parent = el;
+			}
+			return parent;
+		};
 		for (const u of page.units) {
+			const before = stack.length;
+			const parent = parent_for(u.path);
+			if (stack.length !== before || (table && table.parentNode !== parent)) table = null;
 			if (u.table) {
-				if (table !== u.table) {
-					table = u.table;
-					const t = table.shell.cloneNode(false);
-					if (table.colgroup) t.appendChild(table.colgroup.cloneNode(true));
-					if (table.head) t.appendChild(table.head.cloneNode(true));
-					tbody = document.createElement("tbody");
-					t.appendChild(tbody);
-					flow.appendChild(t);
+				if (!table || table.__src !== u.table) {
+					table = u.table.shell.cloneNode(false);
+					table.__src = u.table;
+					for (const c of u.table.colgroups) table.appendChild(c.cloneNode(true));
+					if (u.table.head) table.appendChild(u.table.head.cloneNode(true));
+					parent.appendChild(table);
+					tbody = null;
+				}
+				if (!tbody || tbody_src !== u.tbody) {
+					tbody = u.tbody.cloneNode(false);
+					tbody_src = u.tbody;
+					table.appendChild(tbody);
 				}
 				tbody.appendChild(u.node.cloneNode(true));
 			} else {
 				table = null;
-				flow.appendChild(u.node.cloneNode(true));
+				parent.appendChild(u.node.cloneNode(true));
 			}
 		}
-		// the styles of the format go on every page
-		const styles = this.custom_pages[0].units.filter((u) => u.style).map((u) => u.node.outerHTML).join("");
-		return `<header class="rv-page-top">${this.letterhead?.header ? `<div class="rv-page-lh">${this.letterhead.header}</div>` : ""}</header>${i ? styles : ""}${flow.outerHTML}<footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
+		return `<header class="rv-page-top">${this.custom_head(i === 0)}</header>${this.custom_styles}${flow.outerHTML}<footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
 	}
 
 	// ------------------------------------------------------------ zoom and position

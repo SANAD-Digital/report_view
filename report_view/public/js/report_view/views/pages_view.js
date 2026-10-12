@@ -692,7 +692,7 @@ export class PagesView {
 		// four choices do not fit one line: two by two
 		const scopes = (key, list) => seg(key, __("Apply to"), list.map((v) => [v, scope_label[v]])).replace("rv-print-seg", `rv-print-seg${list.length > 3 ? " grid2" : ""}`);
 		const lh_sum = s.letter_head ? `${s.letter_head} · ${scope_label[s.lh_pages]}` : __("None", null, "Report View");
-		const hdg_sum = s.heading ? `${s.heading} · ${scope_label[s.heading_pages]}` : __("None", null, "Report View");
+		const hdg_sum = s.heading ? `${__(s.heading)} · ${scope_label[s.heading_pages]}` : __("None", null, "Report View");
 		const headings = o.print_headings || [];
 		const sigs = o.print_signatures || [];
 		const foot_sum = !s.letter_head || !s.foot_height ? __("None", null, "Report View") : scope_label[s.foot_pages];
@@ -727,7 +727,7 @@ export class PagesView {
 					.map((lh) => option(lh.name, lh.name, s.letter_head === lh.name))
 					.join("")}</select></label>
 				<label class="rv-field"><span>${esc(__("Print Heading", null, "Report View"))}</span><select class="rv-input" data-set="heading">${option("", __("No print heading"), !s.heading)}${headings
-					.map((n) => option(n, n, s.heading === n))
+					.map((n) => option(n, __(n), s.heading === n))
 					.join("")}</select></label>
 				<label class="rv-field"><span>${esc(__("Language", null, "Report View"))}</span><select class="rv-input" data-set="lang">${option("", __("Session language ({0})", [o.lang || frappe.boot.lang]), !s.lang)}${o.languages
 					.map((l) => option(l.name, l.label, s.lang === l.name))
@@ -847,7 +847,7 @@ export class PagesView {
 				"content",
 				I.content,
 				__("Content", null, "Report View"),
-				s.signatures ? s.signature || __("Signature boxes") : "",
+				s.signatures ? (s.signature ? __(s.signature) : __("Signature boxes")) : "",
 				`<div class="rv-setlist tall">${check("include_filters", __("Applied filters"))}${model?.hierarchical ? check("include_subtotals", __("Group subtotals")) : ""}${check(
 					"include_total",
 					__("Grand Total")
@@ -855,7 +855,7 @@ export class PagesView {
 				${
 					s.signatures
 						? `<label class="rv-field"><span>${esc(__("Signature", null, "Report View"))}</span><select class="rv-input" data-set="signature">${option("", __("Report View (standard)"), !s.signature)}${
-								sigs.length ? `<optgroup label="${esc(__("Print Signature"))}">${sigs.map((x) => option(x.name, x.name, s.signature === x.name)).join("")}</optgroup>` : ""
+								sigs.length ? `<optgroup label="${esc(__("Print Signature"))}">${sigs.map((x) => option(x.name, __(x.name), s.signature === x.name)).join("")}</optgroup>` : ""
 						  }</select></label>`
 						: ""
 				}`

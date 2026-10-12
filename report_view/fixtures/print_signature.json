@@ -1,0 +1,287 @@
+[
+ {
+  "doctype": "Print Signature",
+  "name": "Prepared, Reviewed, Approved",
+  "signature_name": "Prepared, Reviewed, Approved",
+  "disabled": 0,
+  "signature_for": "Report",
+  "content_type": "Table",
+  "css": "",
+  "html": null,
+  "modified": "2026-10-12 12:20:00.000000",
+  "docstatus": 0,
+  "signatories": [
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 1,
+    "label": "Prepared by",
+    "designation": "Accountant",
+    "person_name": null,
+    "show_date": 1
+   },
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 2,
+    "label": "Reviewed by",
+    "designation": "Finance Manager",
+    "person_name": null,
+    "show_date": 1
+   },
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 3,
+    "label": "Approved by",
+    "designation": "General Manager",
+    "person_name": null,
+    "show_date": 1
+   }
+  ]
+ },
+ {
+  "doctype": "Print Signature",
+  "name": "Accountant and Finance Manager",
+  "signature_name": "Accountant and Finance Manager",
+  "disabled": 0,
+  "signature_for": "Report",
+  "content_type": "Table",
+  "css": "",
+  "html": null,
+  "modified": "2026-10-12 12:20:00.000000",
+  "docstatus": 0,
+  "signatories": [
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 1,
+    "label": "Accountant",
+    "designation": null,
+    "person_name": null,
+    "show_date": 1
+   },
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 2,
+    "label": "Finance Manager",
+    "designation": null,
+    "person_name": null,
+    "show_date": 1
+   }
+  ]
+ },
+ {
+  "doctype": "Print Signature",
+  "name": "Audit Committee",
+  "signature_name": "Audit Committee",
+  "disabled": 0,
+  "signature_for": "Report",
+  "content_type": "Table",
+  "css": "",
+  "html": null,
+  "modified": "2026-10-12 12:20:00.000000",
+  "docstatus": 0,
+  "signatories": [
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 1,
+    "label": "Internal Auditor",
+    "designation": null,
+    "person_name": null,
+    "show_date": 1
+   },
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 2,
+    "label": "External Auditor",
+    "designation": null,
+    "person_name": null,
+    "show_date": 1
+   },
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 3,
+    "label": "Audit Committee Chair",
+    "designation": null,
+    "person_name": null,
+    "show_date": 1
+   }
+  ]
+ },
+ {
+  "doctype": "Print Signature",
+  "name": "Treasury and Payments",
+  "signature_name": "Treasury and Payments",
+  "disabled": 0,
+  "signature_for": "Report",
+  "content_type": "Table",
+  "css": "",
+  "html": null,
+  "modified": "2026-10-12 12:20:00.000000",
+  "docstatus": 0,
+  "signatories": [
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 1,
+    "label": "Prepared by",
+    "designation": "Accountant",
+    "person_name": null,
+    "show_date": 0
+   },
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 2,
+    "label": "Cashier",
+    "designation": null,
+    "person_name": null,
+    "show_date": 0
+   },
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 3,
+    "label": "Received by",
+    "designation": null,
+    "person_name": null,
+    "show_date": 1
+   }
+  ]
+ },
+ {
+  "doctype": "Print Signature",
+  "name": "Inventory Count Committee",
+  "signature_name": "Inventory Count Committee",
+  "disabled": 0,
+  "signature_for": "Report",
+  "content_type": "Table",
+  "css": "",
+  "html": null,
+  "modified": "2026-10-12 12:20:00.000000",
+  "docstatus": 0,
+  "signatories": [
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 1,
+    "label": "Storekeeper",
+    "designation": null,
+    "person_name": null,
+    "show_date": 0
+   },
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 2,
+    "label": "Committee Member",
+    "designation": null,
+    "person_name": null,
+    "show_date": 0
+   },
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 3,
+    "label": "Committee Member",
+    "designation": null,
+    "person_name": null,
+    "show_date": 0
+   },
+   {
+    "doctype": "Print Signature Item",
+    "parentfield": "signatories",
+    "parenttype": "Print Signature",
+    "idx": 4,
+    "label": "Committee Head",
+    "designation": null,
+    "person_name": null,
+    "show_date": 1
+   }
+  ]
+ },
+ {
+  "doctype": "Print Signature",
+  "name": "Signature and Company Stamp",
+  "signature_name": "Signature and Company Stamp",
+  "disabled": 0,
+  "signature_for": "Report",
+  "content_type": "HTML",
+  "html": "{# Two signatures and a circle for the stamp. _(\"…\") prints a text in the language of the print. #}\n<div class=\"rvs-row\">\n  <div class=\"rvs-box\"><b>{{ _(\"Finance Manager\") }}</b><i></i><span>{{ _(\"Signature\", context=\"Report View\") }}</span></div>\n  <div class=\"rvs-stamp\">{{ _(\"Company stamp\") }}</div>\n  <div class=\"rvs-box\"><b>{{ _(\"General Manager\") }}</b><i></i><span>{{ _(\"Signature\", context=\"Report View\") }}</span></div>\n</div>",
+  "css": ".rvs-row{display:grid;grid-template-columns:1fr 32mm 1fr;gap:10mm;align-items:end}\n.rvs-box{text-align:center}\n.rvs-box i{display:block;height:14mm;border-bottom:1px solid var(--pp-tx,#1b1f1d)}\n.rvs-box span{display:block;margin-top:1mm;color:var(--pp-tx-2,#4a524e)}\n.rvs-stamp{width:30mm;height:30mm;border:1.2px dashed var(--pp-tx-3,#6b736f);border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--pp-tx-3,#6b736f);font-size:.9em}",
+  "modified": "2026-10-12 12:20:00.000000",
+  "docstatus": 0,
+  "signatories": []
+ },
+ {
+  "doctype": "Print Signature",
+  "name": "Authorized Signatory",
+  "signature_name": "Authorized Signatory",
+  "disabled": 0,
+  "signature_for": "Report",
+  "content_type": "HTML",
+  "html": "{# One signature at the end of the line, with the name of who prints and the date. #}\n<div class=\"rvs-sig\">\n  <b>{{ _(\"Authorized Signatory\") }}</b>\n  <i></i>\n  <div>{{ printed_by }}</div>\n  <small>{{ frappe.utils.formatdate(printed_on) }}</small>\n</div>",
+  "css": ".rvs-sig{width:65mm;margin-inline-start:auto;text-align:center}\n.rvs-sig i{display:block;height:16mm;border-bottom:1px solid var(--pp-tx,#1b1f1d);margin-bottom:1.5mm}\n.rvs-sig small{color:var(--pp-tx-3,#6b736f)}",
+  "modified": "2026-10-12 12:20:00.000000",
+  "docstatus": 0,
+  "signatories": []
+ },
+ {
+  "doctype": "Print Signature",
+  "name": "Balance Confirmation",
+  "signature_name": "Balance Confirmation",
+  "disabled": 0,
+  "signature_for": "Report",
+  "content_type": "HTML",
+  "html": "{# A statement sent to a customer or a supplier: their confirmation and the company's signature. #}\n<p class=\"rvs-note\">{{ _(\"We confirm that the balance shown in this statement is correct as on {0}.\")|replace(\"{0}\", frappe.utils.formatdate(doc.to_date or doc.report_date or printed_on)) }}</p>\n<div class=\"rvs-row\">\n  <div><b>{{ _(\"For the customer / supplier\") }}</b><span>{{ _(\"Name\", context=\"Report View\") }}:</span><span>{{ _(\"Signature\", context=\"Report View\") }}:</span><span>{{ _(\"Stamp\") }}:</span></div>\n  <div><b>{{ _(\"For {0}\")|replace(\"{0}\", doc.company) if doc.company else _(\"For the company\") }}</b><span>{{ _(\"Name\", context=\"Report View\") }}:</span><span>{{ _(\"Signature\", context=\"Report View\") }}:</span><span>{{ _(\"Stamp\") }}:</span></div>\n</div>",
+  "css": ".rvs-note{border:1px solid var(--pp-line,#d9dfdb);border-radius:1.5mm;padding:2mm 3mm;margin-bottom:6mm}\n.rvs-row{display:grid;grid-template-columns:1fr 1fr;gap:14mm}\n.rvs-row b{display:block;padding-bottom:1mm;border-bottom:1px solid var(--pp-tx,#1b1f1d)}\n.rvs-row span{display:block;margin-top:5mm;color:var(--pp-tx-2,#4a524e)}",
+  "modified": "2026-10-12 12:20:00.000000",
+  "docstatus": 0,
+  "signatories": []
+ },
+ {
+  "doctype": "Print Signature",
+  "name": "Signature Grid",
+  "signature_name": "Signature Grid",
+  "disabled": 0,
+  "signature_for": "Report",
+  "content_type": "HTML",
+  "html": "{# A formal grid: one row per signatory. Add or remove rows as you need. #}\n<table class=\"rvs-grid\">\n  <thead><tr><th>{{ _(\"Capacity\") }}</th><th>{{ _(\"Name\", context=\"Report View\") }}</th><th>{{ _(\"Signature\", context=\"Report View\") }}</th><th>{{ _(\"Date\") }}</th></tr></thead>\n  <tbody>\n  {% for role in [_(\"Prepared by\"), _(\"Reviewed by\"), _(\"Approved by\")] %}\n    <tr><td>{{ role }}</td><td></td><td></td><td></td></tr>\n  {% endfor %}\n  </tbody>\n</table>",
+  "css": ".rvs-grid{width:100%;border-collapse:collapse;table-layout:fixed}\n.rvs-grid th,.rvs-grid td{border:1px solid var(--pp-tx,#1b1f1d);padding:2mm 3mm;text-align:start}\n.rvs-grid th{background:var(--pp-head,#eef1ef);font-weight:700}\n.rvs-grid td{height:10mm}\n.rvs-grid th:first-child{width:28%}",
+  "modified": "2026-10-12 12:20:00.000000",
+  "docstatus": 0,
+  "signatories": []
+ },
+ {
+  "doctype": "Print Signature",
+  "name": "Issued by and Received by",
+  "signature_name": "Issued by and Received by",
+  "disabled": 0,
+  "signature_for": "Document",
+  "content_type": "HTML",
+  "html": "{# For a document's print format: {{ report_view_signature(\"Issued by and Received by\", doc) }} #}\n<div class=\"rvs-row\">\n  <div><b>{{ _(\"Issued by\") }}</b><div>{{ frappe.get_fullname(doc.owner) }}</div><span>{{ _(\"Signature\", context=\"Report View\") }}:</span></div>\n  <div><b>{{ _(\"Received by\") }}</b><span>{{ _(\"Name\", context=\"Report View\") }}:</span><span>{{ _(\"Signature\", context=\"Report View\") }}:</span><span>{{ _(\"Date\") }}:</span></div>\n</div>\n<small class=\"rvs-doc\">{{ _(doc.doctype) }} {{ doc.name }}</small>",
+  "css": ".rvs-row{display:grid;grid-template-columns:1fr 1fr;gap:14mm;margin-top:8mm}\n.rvs-row b{display:block;padding-bottom:1mm;border-bottom:1px solid #1b1f1d}\n.rvs-row span{display:block;margin-top:5mm;color:#4a524e}\n.rvs-doc{display:block;margin-top:4mm;color:#6b736f}",
+  "modified": "2026-10-12 12:20:00.000000",
+  "docstatus": 0,
+  "signatories": []
+ }
+]

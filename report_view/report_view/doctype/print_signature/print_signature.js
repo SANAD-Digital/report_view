@@ -38,15 +38,15 @@ function render_help(frm) {
 	);
 	const code = (s) => `<code>${esc(s)}</code>`;
 	const example = report
-		? `<div class="sig">
+		? `<div class="my-sig">
   <b>{{ _("Prepared by") }}</b>
   <span>{{ printed_by }}</span>
   <small>{{ frappe.utils.format_date(printed_on) }}</small>
 </div>
 {% if doc.company %}<p>{{ doc.company }}</p>{% endif %}`
-		: `<div class="sig">
+		: `<div class="my-sig">
   <b>{{ _("Approved by") }}</b>
-  <span>{{ frappe.utils.get_fullname(doc.owner) }}</span>
+  <span>{{ frappe.get_fullname(doc.owner) }}</span>
 </div>`;
 	const use = report
 		? __("Choose it in Report View › Pages › Content › Signature. Leave «Report» empty to offer it for every report.")
@@ -54,11 +54,12 @@ function render_help(frm) {
 	field.$wrapper.html(`<div class="rv-sig-help" style="font-size:var(--text-sm);line-height:1.7;color:var(--text-color)">
 		<p><b>${esc(__("How it is used"))}</b><br>${use}</p>
 		<p><b>${esc(__("Content type"))}</b><br>${esc(__("Table: one box per signatory, with a line for the name and the signature (and the date when ticked). HTML: your own markup; it may use Jinja."))}</p>
-		<p><b>${esc(__("Jinja"))}</b><br>${esc(__("Write {{ value }} to print a value and {% if %} / {% for %} for conditions and lists. _(\"text\") translates a text to the language of the print; frappe.utils functions (format_date, fmt_money, get_fullname…) are available."))}</p>
+		<p><b>${esc(__("Jinja"))}</b><br>${esc(__("Write {{ value }} to print a value and {% if %} / {% for %} for conditions and lists. _(\"text\") translates a text to the language of the print; frappe.utils functions (formatdate, format_datetime, fmt_money…) and frappe.get_fullname are available."))}</p>
+		<p>${esc(__("To put a value inside a translated text use replace, not format (the sandbox does not allow format):"))}<br>${code('{{ _("As on {0}")|replace("{0}", frappe.utils.formatdate(doc.to_date)) }}')}</p>
 		<p><b>${esc(__("Variables"))}</b></p>
 		<ul style="padding-inline-start:18px;margin:0 0 8px">${vars.map(([k, v]) => `<li>${code(k)} — ${esc(v)}</li>`).join("")}</ul>
 		<p><b>${esc(__("Example"))}</b></p>
 		<pre style="direction:ltr;text-align:left;background:var(--control-bg);padding:8px 10px;border-radius:6px;white-space:pre-wrap">${esc(example)}</pre>
-		<p><b>CSS</b><br>${esc(__("The rules apply inside the signature only (they are nested in .rv-signature): write table { … } or .sig { … } without a prefix. Colours print as they are."))}</p>
+		<p><b>CSS</b><br>${esc(__("The rules apply inside the signature only (they are nested in .rv-signature): write table { … } or .my-sig { … } without a prefix. Give your classes names of their own (my-sig, not row or box): common names belong to the page's styles. Colours print as they are."))}</p>
 	</div>`);
 }

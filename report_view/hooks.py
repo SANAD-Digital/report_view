@@ -81,6 +81,13 @@ app_include_js = ["report_view_entry.bundle.js"]
 # A Print Signature of type Document in a document's print format (ADR-015):
 # {{ report_view_signature("Name", doc) }}
 jinja = {"methods": ["report_view.core.printing.report_view_signature"]}
+
+# The standard print headings and signatures (ADR-015), synced on migrate; a record the
+# user edited stays as edited (its `modified` is newer than the file's).
+fixtures = [
+	{"dt": "Print Heading", "filters": [["name", "in", ["Financial Statement", "Account Statement", "Confidential Report", "Draft Report", "Board Report"]]]},
+	{"dt": "Print Signature", "filters": [["name", "in", ["Prepared, Reviewed, Approved", "Accountant and Finance Manager", "Audit Committee", "Treasury and Payments", "Inventory Count Committee", "Signature and Company Stamp", "Authorized Signatory", "Balance Confirmation", "Signature Grid", "Issued by and Received by"]]]},
+]
 # jinja = {
 # 	"methods": "report_view.utils.jinja_methods",
 # 	"filters": "report_view.utils.jinja_filters"

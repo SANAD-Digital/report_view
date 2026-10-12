@@ -24,6 +24,8 @@
 - `Print Signature`: كتابة System Manager، قراءة `Desk User`. `Report View Global Settings`: كتابة System Manager، قراءة `Desk User`؛ يُقرأ في الخادم كإعدادات (كما يقرأ Frappe إعدادات النظام) لأنه لا يحمل بيانات مستخدمين.
 
 ## العواقب
-- hook جديد واحد: `jinja.methods` (`report_view.core.printing.report_view_signature`).
+- hook جديد: `jinja.methods` (`report_view.core.printing.report_view_signature`).
+- hook `fixtures`: رؤوس طباعة وتواقيع قياسية تُشحن في `report_view/fixtures/` (خمسة رؤوس، وتسعة تواقيع للتقارير منها خمسة جداول وأربعة HTML، وتوقيع واحد للمستندات). تُزامَن مع `bench migrate`، والسجل الذي عدّله المستخدم يبقى كما عدّله (`modified` أحدث من الملف). أسماؤها ونصوصها بالإنجليزية وتُترجم بلغة الطباعة عبر `_()`، وقوالبها أمثلة موثقة بتعليقات `{# #}`.
+- بيئة Jinja في Frappe لا تسمح بـ `str.format` (`UNSAFE_ATTRIBUTES`): القيم تُدخل في النص المترجم بـ `|replace("{0}", …)`، ومتاح `frappe.get_fullname` لا `frappe.utils.get_fullname`. أصناف CSS في القوالب ببادئة `rvs-` لأن الأسماء الشائعة (`.row`) تخص تنسيقات Desk.
 - ثلاثة DocTypes جديدة: `Print Signature`، `Print Signature Item` (جدول)، `Report View Global Settings` (Single). تُثبَّت بـ `bench migrate` أو `reload-doc`.
 - `core/settings.get_row_limit` يقرأ `max_rows` من الإعدادات العامة؛ `PRINT_MAX_PAGES` يبقى قيمة احتياطية في المتصفح.

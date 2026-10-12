@@ -2056,14 +2056,122 @@ msgstr "طريقة الاستخدام"
 msgid "Table: one box per signatory, with a line for the name and the signature (and the date when ticked). HTML: your own markup; it may use Jinja."
 msgstr "جدول: خانة لكل موقّع فيها سطر للاسم وسطر للتوقيع (وسطر للتاريخ عند تفعيله). HTML: تصميمك الخاص، ويمكن أن يستخدم Jinja."
 
-msgid "Write {{ value }} to print a value and {% if %} / {% for %} for conditions and lists. _(\"text\") translates a text to the language of the print; frappe.utils functions (format_date, fmt_money, get_fullname…) are available."
-msgstr "اكتب {{ value }} لطباعة قيمة، و {% if %} / {% for %} للشروط والقوائم. ‏_(\"text\") يترجم النص إلى لغة الطباعة، ودوال frappe.utils متاحة (format_date و fmt_money و get_fullname…)."
+msgid "Write {{ value }} to print a value and {% if %} / {% for %} for conditions and lists. _(\"text\") translates a text to the language of the print; frappe.utils functions (formatdate, format_datetime, fmt_money…) and frappe.get_fullname are available."
+msgstr "اكتب {{ value }} لطباعة قيمة، و {% if %} / {% for %} للشروط والقوائم. ‏_(\"text\") يترجم النص إلى لغة الطباعة، ودوال frappe.utils متاحة (formatdate و format_datetime و fmt_money…) وكذلك frappe.get_fullname."
 
-msgid "The rules apply inside the signature only (they are nested in .rv-signature): write table { … } or .sig { … } without a prefix. Colours print as they are."
-msgstr "القواعد تُطبَّق داخل التوقيع فقط (تُضمَّن داخل ‎.rv-signature): اكتب table { … } أو ‎.sig { … } بلا بادئة. الألوان تُطبع كما هي."
+msgid "The rules apply inside the signature only (they are nested in .rv-signature): write table { … } or .my-sig { … } without a prefix. Give your classes names of their own (my-sig, not row or box): common names belong to the page's styles. Colours print as they are."
+msgstr "القواعد تُطبَّق داخل التوقيع فقط (تُضمَّن داخل ‎.rv-signature): اكتب table { … } أو ‎.my-sig { … } بلا بادئة. سمِّ الأصناف بأسماء خاصة بك (my-sig لا row أو box)، لأن الأسماء الشائعة تخص تنسيقات الصفحة. الألوان تُطبع كما هي."
 
 msgid "Prepared by"
 msgstr "أعدّه"
 
 msgid "Approved by"
 msgstr "اعتمده"
+
+msgid "Financial Statement"
+msgstr "قائمة مالية"
+
+msgid "Account Statement"
+msgstr "كشف حساب"
+
+msgid "Confidential Report"
+msgstr "تقرير سري"
+
+msgid "Draft Report"
+msgstr "مسودة تقرير"
+
+msgid "Board Report"
+msgstr "تقرير مجلس الإدارة"
+
+msgid "CONFIDENTIAL"
+msgstr "سرّي"
+
+msgid "For internal use only. Printed by {0} on {1}"
+msgstr "للاستخدام الداخلي فقط. طبعه {0} في {1}"
+
+msgid "Draft copy"
+msgstr "مسودة"
+
+msgid "Figures may change before approval."
+msgstr "الأرقام قابلة للتغيير قبل الاعتماد."
+
+msgid "Submitted to the Board of Directors"
+msgstr "مقدَّم إلى مجلس الإدارة"
+
+msgid "Prepared, Reviewed, Approved"
+msgstr "أعدّه، راجعه، اعتمده"
+
+msgid "Accountant and Finance Manager"
+msgstr "المحاسب والمدير المالي"
+
+msgid "Audit Committee"
+msgstr "لجنة المراجعة"
+
+msgid "Treasury and Payments"
+msgstr "الخزينة والمدفوعات"
+
+msgid "Inventory Count Committee"
+msgstr "لجنة جرد المخزون"
+
+msgid "Signature and Company Stamp"
+msgstr "التوقيع وختم الشركة"
+
+msgid "Balance Confirmation"
+msgstr "مصادقة رصيد"
+
+msgid "Signature Grid"
+msgstr "جدول التواقيع"
+
+msgid "Issued by and Received by"
+msgstr "المُصدِر والمستلم"
+
+msgid "Reviewed by"
+msgstr "راجعه"
+
+msgid "Internal Auditor"
+msgstr "المراجع الداخلي"
+
+msgid "External Auditor"
+msgstr "المراجع الخارجي"
+
+msgid "Audit Committee Chair"
+msgstr "رئيس لجنة المراجعة"
+
+msgid "Received by"
+msgstr "المستلم"
+
+msgid "Storekeeper"
+msgstr "أمين المخزن"
+
+msgid "Committee Member"
+msgstr "عضو اللجنة"
+
+msgid "Committee Head"
+msgstr "رئيس اللجنة"
+
+msgid "Company stamp"
+msgstr "ختم الشركة"
+
+msgid "We confirm that the balance shown in this statement is correct as on {0}."
+msgstr "نصادق على صحة الرصيد الظاهر في هذا الكشف كما في {0}."
+
+msgid "For the customer / supplier"
+msgstr "عن العميل / المورد"
+
+msgid "For {0}"
+msgstr "عن {0}"
+
+msgid "For the company"
+msgstr "عن الشركة"
+
+msgid "Stamp"
+msgstr "الختم"
+
+msgid "Capacity"
+msgstr "الصفة"
+
+msgid "Issued by"
+msgstr "المُصدِر"
+
+msgid "To put a value inside a translated text use replace, not format (the sandbox does not allow format):"
+msgstr "لإدخال قيمة داخل نص مترجم استخدم replace لا format (البيئة الآمنة لا تسمح بـ format):"

@@ -324,3 +324,70 @@ class TestPrintHeadingAndSignature(RVTestCase):
 		gs.max_rows = 10**7
 		with self.assertRaises(frappe.ValidationError):
 			gs.save()
+
+
+class TestShippedHeadingsAndSignatures(RVTestCase):
+	"""The standard print headings and signatures (fixtures, ADR-015) render for a report
+	in both languages; the document signature renders in a document's print format."""
+
+	@classmethod
+	def setUpClass(cls) -> None:
+		import json
+		import os
+
+		from frappe.core.doctype.data_import.data_import import import_doc
+
+		super().setUpClass()
+		folder = os.path.join(frappe.get_app_path("report_view"), "fixtures")
+		cls.shipped = {}
+		for f in ("print_heading.json", "print_signature.json"):
+			path = os.path.join(folder, f)
+			import_doc(path)
+			cls.shipped[f] = json.load(open(path, encoding="utf-8"))
+
+	def render_all(self, lang):
+		from report_view.tests.utils import TB_FILTERS
+
+		meta = [{"fieldname": "company", "label": "Company", "fieldtype": "Link"}]
+		out = {}
+		with self.as_user("accountant"):
+			frappe.local.lang = lang
+			try:
+				for d in self.shipped["print_heading.json"]:
+					out[d["name"]] = api.render_print_heading("Trial Balance", d["name"], TB_FILTERS, meta)
+				for d in self.shipped["print_signature.json"]:
+					if d["signature_for"] == "Report":
+						out[d["name"]] = api.render_print_signature("Trial Balance", d["name"], TB_FILTERS, meta)
+			finally:
+				frappe.local.lang = "en"
+		return out
+
+	def test_every_shipped_heading_and_signature_renders(self):
+		from report_view.tests.utils import TB_FILTERS
+
+		en = self.render_all("en")
+		ar = self.render_all("ar")
+		self.assertEqual(len(en), 5 + 9)
+		for name, r in en.items():
+			self.assertTrue(r["html"].strip() or r.get("title"), name)
+			self.assertNotIn("{{", r["html"], name)
+			self.assertNotIn("{#", r["html"], name)
+		self.assertIn(TB_FILTERS["company"], en["Financial Statement"]["html"])
+		self.assertIn("Company:", en["Account Statement"]["html"])
+		# in Arabic: the names and the words of the templates are translated
+		self.assertEqual(ar["Financial Statement"]["title"], "قائمة مالية")
+		self.assertIn("سرّي", ar["Confidential Report"]["html"])
+		self.assertIn("ختم الشركة", ar["Signature and Company Stamp"]["html"])
+		self.assertIn("الصفة", ar["Signature Grid"]["html"])
+		self.assertIn("راجعه", ar["Prepared, Reviewed, Approved"]["html"])
+		self.assertIn("رئيس اللجنة", ar["Inventory Count Committee"]["html"])
+		for r in en.values():
+			if r.get("css"):
+				self.assertTrue(r["css"].startswith(".rv-signature{"))
+
+	def test_the_shipped_document_signature(self):
+		from report_view.core.printing import report_view_signature
+
+		html = report_view_signature("Issued by and Received by", frappe.get_doc("Company", COMPANY))
+		self.assertIn(COMPANY, html)
+		self.assertIn("Received by", html)

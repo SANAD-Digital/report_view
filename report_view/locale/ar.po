@@ -2203,3 +2203,61 @@ msgstr "الخانات القياسية"
 
 msgid "Signature on"
 msgstr "التوقيع في"
+
+msgid "The printed pages are empty"
+msgstr "الصفحات المطبوعة فارغة"
+
+msgid "The printed pages are larger than {0} MB"
+msgstr "حجم الصفحات المطبوعة أكبر من {0} ميغابايت"
+
+msgid "Creating the PDF took longer than {0} seconds. Print fewer pages."
+msgstr "استغرق إنشاء ملف PDF أكثر من {0} ثانية. اطبع صفحات أقل."
+
+msgid "The PDF has {0} pages; at most {1} pages can be printed"
+msgstr "ملف PDF فيه {0} صفحة، والحد الأقصى للطباعة {1} صفحة"
+
+msgid "Document is required"
+msgstr "المستند مطلوب"
+
+msgid "Advanced Print"
+msgstr "الطباعة المتقدمة"
+
+msgid "Back to the document"
+msgstr "العودة إلى المستند"
+
+msgid "Frappe's print page"
+msgstr "صفحة الطباعة الأصلية"
+
+msgid "The same pages as a PDF file, made by the server"
+msgstr "الصفحات نفسها كملف PDF يُنشئه الخادم"
+
+msgid "Making the PDF…"
+msgstr "جارٍ إنشاء ملف PDF…"
+
+msgid "The PDF could not be made"
+msgstr "تعذّر إنشاء ملف PDF"
+
+msgid "Document type and name are required"
+msgstr "نوع المستند واسمه مطلوبان"
+
+msgid "Document type {0} not found"
+msgstr "نوع المستند {0} غير موجود"
+
+msgid "Not permitted to print {0} {1}"
+msgstr "غير مسموح بطباعة {0} {1}"
+
+msgid "Print Format {0} is not available for {1}"
+msgstr "قالب الطباعة {0} غير متاح لـ {1}"
+
+msgid "The print format could not be rendered"
+msgstr "تعذّر عرض قالب الطباعة"
+
+msgid "Print Signature {0} is not available for this document"
+msgstr "توقيع الطباعة {0} غير متاح لهذا المستند"
+
+msgid "Letter Head {0} not found"
+msgstr "الترويسة {0} غير موجودة"
+
+msgctxt "Report View"
+msgid "Open a document, then «Advanced Print»."
+msgstr "افتح مستنداً ثم اختر «الطباعة المتقدمة»."

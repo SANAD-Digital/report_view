@@ -134,28 +134,54 @@ def report_signature(name: str, report_names: list[str], context: dict) -> dict:
 	return render_signature(frappe.get_doc("Print Signature", found[0].name), context)
 
 
-def report_view_signature(name: str, doc=None) -> str:
-	"""Jinja method of a document's print format: ``{{ report_view_signature("Name", doc) }}``.
+def document_context(doc) -> dict:
+	"""What a heading or a signature of a document may read: ``doc`` (the document),
+	``title`` (its type, translated), ``company``, ``printed_by``, ``printed_on``, ``lang``."""
+	doctype = getattr(doc, "doctype", None)
+	return {
+		"doc": doc,
+		"title": _(doctype) if doctype else "",
+		"report_name": "",
+		"filters": frappe._dict(),
+		"company": getattr(doc, "company", None),
+		"printed_by": get_fullname(),
+		"printed_on": now_datetime(),
+		"lang": frappe.local.lang,
+	}
 
-	The signature must be enabled, of type Document, and for the document's type (or for
-	all). Read with ``frappe.get_list``: who may not read it prints nothing.
-	"""
+
+def list_document_signatures(doctype: str | None) -> list[dict]:
+	"""Enabled signatures of type Document for ``doctype`` or for all."""
+	filters, or_filters = signature_filters("Document", [doctype] if doctype else None, "reference_doctype")
+	rows = frappe.get_list(
+		"Print Signature", filters=filters, or_filters=or_filters, fields=["name", "content_type"], order_by="name asc", limit=0
+	)
+	return [{"name": r.name, "content_type": r.content_type} for r in rows]
+
+
+def document_signature(name: str, doc, standalone: bool = False) -> dict:
+	"""A signature of type Document offered for ``doc`` (its doctype, or for all)."""
 	doctype = getattr(doc, "doctype", None)
 	filters, or_filters = signature_filters("Document", [doctype] if doctype else None, "reference_doctype")
 	found = frappe.get_list(
 		"Print Signature", filters={"name": name, **filters}, or_filters=or_filters, fields=["name"], limit=1
 	)
 	if not found:
+		frappe.throw(_("Print Signature {0} is not available for this document").format(name), frappe.DoesNotExistError)
+	context = {**document_context(doc), "standalone": standalone}
+	return render_signature(frappe.get_doc("Print Signature", found[0].name), context)
+
+
+def report_view_signature(name: str, doc=None) -> str:
+	"""Jinja method of a document's print format: ``{{ report_view_signature("Name", doc) }}``.
+
+	The signature must be enabled, of type Document, and for the document's type (or for
+	all). Read with ``frappe.get_list``: who may not read it prints nothing.
+	"""
+	try:
+		out = document_signature(name, doc, standalone=True)
+	except frappe.DoesNotExistError:
+		frappe.clear_last_message()
 		return ""
-	context = {
-		"doc": doc,
-		"title": _(doctype) if doctype else "",
-		"company": getattr(doc, "company", None),
-		"printed_by": get_fullname(),
-		"printed_on": now_datetime(),
-		"lang": frappe.local.lang,
-		"standalone": True,
-	}
-	out = render_signature(frappe.get_doc("Print Signature", found[0].name), context)
 	style = f"<style>{out['css']}</style>" if out["css"] else ""
 	return f'{style}<div class="rv-signature">{out["html"]}</div>'

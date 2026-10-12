@@ -98,8 +98,30 @@ function current_route() {
 	return frappe.get_route() || [];
 }
 
+// «Advanced Print» on Frappe's print page (ADR-017): the document in the pages of Report
+// View. The page's wrapper (frappe.pages.print) is made on its first show: wait for it.
+function add_advanced_print(tries = 0) {
+	const route = current_route();
+	if (route[0] !== "print" || !route[1] || !route[2]) return;
+	const wrapper = frappe.pages?.print;
+	if (!wrapper?.page) {
+		if (tries < WAIT_MAX) setTimeout(() => add_advanced_print(tries + 1), WAIT_STEP);
+		return;
+	}
+	if (wrapper.rv_advanced_print) return;
+	wrapper.rv_advanced_print = wrapper.page.add_button(
+		__("Advanced Print"),
+		() => {
+			const r = current_route();
+			if (r[0] === "print" && r[1] && r[2]) frappe.set_route("rv-print", r[1], r.slice(2).join("/"));
+		},
+		{ icon: "printer" }
+	);
+}
+
 function on_route_change() {
 	const route = current_route();
+	if (route[0] === "print") add_advanced_print();
 	if (route[0] !== "query-report" || !route[1]) return stop_watching();
 	const report_name = route[1];
 	get_entry_state(report_name).then((state) => {

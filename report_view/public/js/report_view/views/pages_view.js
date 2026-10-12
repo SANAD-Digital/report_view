@@ -349,7 +349,10 @@ export class PagesView {
 				<div class="bd"></div>
 				<div class="rv-print-ft">
 					<span class="rv-print-note"></span>
-					<button type="button" class="rv-btn primary rv-print-go" data-action="print">${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
+					<div class="rv-print-acts">
+						<button type="button" class="rv-btn primary rv-print-go" data-action="print">${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
+						<button type="button" class="rv-btn rv-print-pdf" data-action="pdf" title="${esc(__("The same pages as a PDF file, made by the server"))}">PDF</button>
+					</div>
 					<small class="rv-print-tip">${esc(__("To keep a PDF file, choose «Save as PDF» in the print dialog."))}</small>
 				</div>
 			</aside>
@@ -379,6 +382,9 @@ export class PagesView {
 		this.zoom_lbl = el.querySelector(".rv-print-zoom-lbl");
 		this.busy_el = el.querySelector(".rv-print-busy");
 		el.querySelector('[data-action="print"]').addEventListener("click", () => this.print());
+		const pdf = el.querySelector('[data-action="pdf"]');
+		if (this.host.pages_pdf_target) pdf.addEventListener("click", () => this.pdf());
+		else pdf.remove();
 		el.querySelector('[data-action="reset"]').addEventListener("click", () => this.reset());
 		for (const b of el.querySelectorAll("[data-zoom]")) b.addEventListener("click", () => this.zoom(b.dataset.zoom));
 		this.stage.addEventListener("scroll", () => this.update_position(), { passive: true });
@@ -450,40 +456,7 @@ export class PagesView {
 		this.session = session;
 		this.current = opened;
 		this.ctx = this.host.pages_context();
-		const name = this.ctx.report_name;
-		const fresh = this.settings_report !== name || this.options_report !== name;
-		if (fresh) {
-			this.skeleton();
-			this.busy(__("Loading the print settings…"));
-			if (this.pending?.report !== name) this.prefetch();
-			const { settings_p, options_p } = this.pending;
-			let saved = null;
-			try {
-				[saved, this.options] = await Promise.all([settings_p, options_p]);
-			} catch (e) {
-				this.options = { letter_heads: [], default_letter_head: null, print_formats: [], print_format_types: {}, print_headings: [], print_signatures: [], languages: [], lang: frappe.boot.lang };
-				this.note(e.message || String(e), true);
-			}
-			if (token !== this.token) return;
-			// the site's standard settings (Report View Global Settings) under the user's own
-			this.base = sanitize_settings(this.options.defaults || null);
-			if (this.settings_report !== name) {
-				this.settings = sanitize_settings(saved, this.base);
-				this.unsaved = !saved;
-			}
-			this.settings_report = name;
-			this.options_report = name;
-			// Unknown choices of a saved setting fall back; the company's letter head is the
-			// first choice when none was made.
-			if (this.settings.letter_head && !this.options.letter_heads.some((lh) => lh.name === this.settings.letter_head)) this.settings.letter_head = "";
-			if (this.settings.template && !this.options.print_formats.includes(this.settings.template)) this.settings.template = "";
-			if (this.settings.lang && !this.options.languages.some((l) => l.name === this.settings.lang)) this.settings.lang = "";
-			if (this.settings.heading && !(this.options.print_headings || []).includes(this.settings.heading)) this.settings.heading = "";
-			if (this.settings.signature && !(this.options.print_signatures || []).some((x) => x.name === this.settings.signature)) this.settings.signature = "";
-			if (!this.settings.letter_head && this.options.default_letter_head && this.settings.letter_head !== null) {
-				this.settings.letter_head = this.options.default_letter_head;
-			}
-		}
+		if (!(await this.load_setup(token))) return;
 		if (!opened.post.label_key) {
 			this.clear_pages();
 			return;
@@ -500,6 +473,64 @@ export class PagesView {
 			const label_kept = fit.widths[0] / ((input[0].width * this.base_font()) / SCREEN_FONT);
 			this.settings.orientation = fit.scale >= 1 && label_kept >= 0.75 ? "portrait" : "landscape";
 		}
+		this.render_panel();
+		this.ready = this.relayout(token);
+		await this.ready;
+	}
+
+	/**
+	 * The user's settings and the print options, once per report (or document): the
+	 * site's standard settings under the user's own, unknown saved choices dropped.
+	 * False when another show came meanwhile.
+	 */
+	async load_setup(token) {
+		const name = this.ctx.report_name;
+		if (this.settings_report === name && this.options_report === name) return true;
+		this.skeleton();
+		this.busy(__("Loading the print settings…"));
+		if (this.pending?.report !== name) this.prefetch();
+		const { settings_p, options_p } = this.pending;
+		let saved = null;
+		try {
+			[saved, this.options] = await Promise.all([settings_p, options_p]);
+		} catch (e) {
+			this.options = { letter_heads: [], default_letter_head: null, print_formats: [], print_format_types: {}, print_headings: [], print_signatures: [], languages: [], lang: frappe.boot.lang };
+			this.note(e.message || String(e), true);
+		}
+		if (token !== this.token) return false;
+		// the site's standard settings (Report View Global Settings) under the user's own
+		this.base = sanitize_settings(this.options.defaults || null);
+		if (this.settings_report !== name) {
+			this.settings = sanitize_settings(saved, this.base);
+			this.unsaved = !saved;
+		}
+		this.settings_report = name;
+		this.options_report = name;
+		// Unknown choices of a saved setting fall back; the company's letter head is the
+		// first choice when none was made.
+		if (this.settings.letter_head && !this.options.letter_heads.some((lh) => lh.name === this.settings.letter_head)) this.settings.letter_head = "";
+		if (this.settings.template && !this.options.print_formats.includes(this.settings.template)) this.settings.template = "";
+		if (this.settings.lang && !this.options.languages.some((l) => l.name === this.settings.lang)) this.settings.lang = "";
+		if (this.settings.heading && !(this.options.print_headings || []).includes(this.settings.heading)) this.settings.heading = "";
+		if (this.settings.signature && !(this.options.print_signatures || []).some((x) => x.name === this.settings.signature)) this.settings.signature = "";
+		if (!this.settings.letter_head && this.options.default_letter_head && this.settings.letter_head !== null) {
+			this.settings.letter_head = this.options.default_letter_head;
+		}
+		return true;
+	}
+
+	/**
+	 * Shows a document (ADR-017): its print format, rendered by Frappe, in the pages of
+	 * Report View. The host gives pages_format("" = the doctype's default), the letter head,
+	 * the heading and the signature rendered with the document.
+	 */
+	async show_document() {
+		const token = ++this.token;
+		this.doc_mode = true;
+		this.el.classList.add("rv-doc-mode");
+		this.current = { doc: true };
+		this.ctx = this.host.pages_context();
+		if (!(await this.load_setup(token))) return;
 		this.render_panel();
 		this.ready = this.relayout(token);
 		await this.ready;
@@ -591,6 +622,13 @@ export class PagesView {
 	async load_lang(lang) {
 		if (!lang || lang === frappe.boot.lang) return null;
 		if (this.lang_packs.has(lang)) return this.lang_packs.get(lang);
+		if (this.doc_mode) {
+			// a document is rendered by the server in the language; the page's own words here
+			const pack = (await this.host.pages_translations(lang, [...PAGE_MESSAGES, ...this.signature_labels().map((x) => this.msgid_of(x))])) || {};
+			const entry = { pack, report: undefined };
+			this.lang_packs.set(lang, entry);
+			return entry;
+		}
 		const model = this.rows.model;
 		const labels = [...model.pinned, ...model.data, { title: model.label_title }].map((d) => this.msgid_of(d.title));
 		const bands = [...(model.bands?.values() || [])].map((b) => this.msgid_of(b.label));
@@ -870,7 +908,9 @@ export class PagesView {
 						: ""
 				}`
 			),
-			section(
+			this.doc_mode
+				? ""
+				: section(
 				"content",
 				I.content,
 				__("Content", null, "Report View"),
@@ -880,7 +920,7 @@ export class PagesView {
 					__("Grand Total")
 				)}${check("printed_on", __("Print date and user"))}</div>`
 			),
-			s.template
+			s.template || this.doc_mode
 				? ""
 				: section(
 						"cols",
@@ -909,17 +949,26 @@ export class PagesView {
 		const o = this.options || {};
 		const reports = o.reports || [this.ctx?.report_name];
 		return {
-			template: {
-				doctype: "Print Format",
-				placeholder: __("Report View (standard)"),
-				query: () => ({ filters: { print_format_for: "Report", report: ["in", reports], print_format_type: ["in", ["JS", "Jinja"]], disabled: 0 } }),
-			},
+			template: this.doc_mode
+				? {
+						doctype: "Print Format",
+						placeholder: o.default_print_format || __("Standard"),
+						query: () => ({ filters: { doc_type: o.doctype, print_format_type: "Jinja", disabled: 0 } }),
+				  }
+				: {
+						doctype: "Print Format",
+						placeholder: __("Report View (standard)"),
+						query: () => ({ filters: { print_format_for: "Report", report: ["in", reports], print_format_type: ["in", ["JS", "Jinja"]], disabled: 0 } }),
+				  },
 			letter_head: { doctype: "Letter Head", placeholder: __("No letter head"), query: () => ({ filters: { disabled: 0 } }) },
 			heading: { doctype: "Print Heading", placeholder: __("No print heading") },
 			signature: {
 				doctype: "Print Signature",
 				placeholder: __("Report View (standard)"),
-				query: () => ({ query: "report_view.api.search_print_signatures", filters: { report_name: this.ctx?.report_name } }),
+				query: () =>
+					this.doc_mode
+						? { query: "report_view.api.document.search_doc_signatures", filters: { doctype: o.doctype, name: o.name } }
+						: { query: "report_view.api.search_print_signatures", filters: { report_name: this.ctx?.report_name } },
 			},
 			lang: { doctype: "Language", placeholder: __("Session language ({0})", [o.lang || frappe.boot.lang]), query: () => ({ filters: { enabled: 1 } }) },
 		};
@@ -1113,7 +1162,7 @@ export class PagesView {
 		const s = this.settings;
 		const steps = [];
 		if (s.lang && s.lang !== frappe.boot.lang && !this.lang_packs.has(s.lang)) steps.push(__("Running the report in the chosen language…"));
-		if (s.template) steps.push(__("Rendering the print format…"));
+		if (s.template || this.doc_mode) steps.push(__("Rendering the print format…"));
 		this.busy(steps.length ? steps.join(" · ") : this.pages.length ? __("Updating the pages…") : __("Preparing the pages…"));
 		// back on the tab: a page-sized sheet while the pages are prepared
 		this.skeleton(false);
@@ -1161,6 +1210,8 @@ export class PagesView {
 		try {
 			if (format) {
 				await this.layout_custom(token, box, dir);
+			} else if (this.doc_mode) {
+				this.clear_pages();
 			} else {
 				await this.layout_standard(token, box, dir);
 			}
@@ -1268,7 +1319,8 @@ export class PagesView {
 	}
 
 	async load_format(name) {
-		if (!name) return null;
+		// a document always has a format: "" is its doctype's default
+		if (!name && !this.doc_mode) return null;
 		// a Jinja format is rendered with the criteria and the language: one per both
 		const key = `${name}|${this.settings.lang || ""}|${JSON.stringify(this.ctx.filters || {})}`;
 		if (!this.formats.has(key)) {
@@ -1728,12 +1780,14 @@ export class PagesView {
 	 */
 	async layout_custom(token, box, dir) {
 		const ctx = this.ctx;
-		const { columns, data, report } = this.query_report_facade();
 		let html = "";
 		try {
-			// a Jinja format comes rendered by the server
+			// a Jinja format (and a document's) comes rendered by the server; a JS one reads
+			// query-report's context
 			if (this.format.type === "Jinja") html = `<style>${this.format.css || ""}</style>${this.format.html}`;
-			else html = frappe.render_template(`<style>${this.format.css || ""}</style>${this.format.html}`, {
+			else {
+				const { columns, data, report } = this.query_report_facade();
+				html = frappe.render_template(`<style>${this.format.css || ""}</style>${this.format.html}`, {
 				title: this.t(ctx.report_name),
 				subtitle: this.settings.include_filters ? this.filters_html() : null,
 				filters: ctx.filters || {},
@@ -1743,7 +1797,8 @@ export class PagesView {
 				report,
 				print_settings: { letter_head: this.letterhead, orientation: this.settings.orientation, include_filters: this.settings.include_filters },
 				can_use_smaller_font: 1,
-			});
+				});
+			}
 		} catch (e) {
 			this.note(__("The print format could not be rendered: {0}", [e.message || e]), true);
 			html = "";
@@ -1784,6 +1839,13 @@ export class PagesView {
 		let page = { units: [], used: 0 };
 		const room = () => (pages.length ? body_h : first_body_h);
 		for (const u of units) {
+			if (u.brk) {
+				if (page.units.length) {
+					pages.push(page);
+					page = { units: [], used: 0 };
+				}
+				continue;
+			}
 			if (u.style) {
 				this.custom_styles += u.node.outerHTML;
 				continue;
@@ -1797,7 +1859,7 @@ export class PagesView {
 			page.used += (u.table && page.units[page.units.length - 1]?.table !== u.table ? u.table.head_h : 0) + u.h;
 			page.units.push(u);
 		}
-		pages.push(page);
+		if (page.units.length || !pages.length) pages.push(page);
 		this.custom_pages = pages;
 		this.pages = pages.map((p, i) => ({ start: 0, end: 0, first: i === 0, last: i === pages.length - 1 }));
 		this.probe.replaceChildren();
@@ -1868,6 +1930,13 @@ export class PagesView {
 					continue;
 				}
 				if (child.tagName === "SCRIPT") continue;
+				// Frappe's .page-break: a page of the format (a wrapper of its blocks, or an empty
+				// marker); what follows starts a new page
+				if (child.classList?.contains("page-break")) {
+					if (child.children.length) walk(child, [...path, child.cloneNode(false)]);
+					units.push({ brk: true, h: 0, table: null, path });
+					continue;
+				}
 				if (child.tagName === "TABLE") {
 					const head = child.tHead;
 					const table = {
@@ -2064,6 +2133,7 @@ export class PagesView {
 		// the paper's rules last in the document: after any style a format carries
 		root.append(sheets, style);
 		document.body.appendChild(root);
+		this.print_root = root;
 		const restore = () => {
 			window.removeEventListener("afterprint", restore);
 			if (root.isConnected) {
@@ -2079,6 +2149,113 @@ export class PagesView {
 			button.disabled = false;
 		};
 		return restore;
+	}
+
+	/**
+	 * The PDF of these pages (ADR-016): the sheets as printed (prepare_print), in a document
+	 * of their own with the page's styles and the images inlined, are sent to the server's
+	 * engine (Chromium), which prints them as this browser would: the same pages.
+	 */
+	async pdf() {
+		if (!this.pages.length || this.printing) return;
+		if (this.pages.length > this.max_pages()) return this.print();
+		const target = this.host.pages_pdf_target();
+		const button = this.el.querySelector('[data-action="pdf"]');
+		const restore = await this.prepare_print();
+		if (!restore) return;
+		button.disabled = true;
+		this.busy(__("Making the PDF…"));
+		let html;
+		try {
+			html = await this.print_document(this.print_root);
+		} finally {
+			restore();
+		}
+		const title = `${this.ctx.report_name}`.replace(/[\\/:*?"<>|]+/g, "-").slice(0, 120);
+		try {
+			const body = new URLSearchParams({ ...target.args, html, title });
+			const r = await fetch(`/api/method/${target.method}`, {
+				method: "POST",
+				headers: { "X-Frappe-CSRF-Token": frappe.csrf_token, Accept: "application/pdf, application/json" },
+				body,
+			});
+			const type = r.headers.get("Content-Type") || "";
+			if (!r.ok || !type.includes("pdf")) {
+				let message = __("The PDF could not be made");
+				try {
+					const j = await r.json();
+					const msgs = j._server_messages ? JSON.parse(j._server_messages).map((m) => JSON.parse(m).message) : [];
+					message = msgs.join("<br>") || j.exception || message;
+				} catch {
+					// not JSON: keep the general message
+				}
+				frappe.msgprint({ title: __("PDF"), message, indicator: "red" });
+				return;
+			}
+			const blob = await r.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `${title}.pdf`;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			setTimeout(() => URL.revokeObjectURL(url), 30000);
+		} finally {
+			button.disabled = false;
+			this.busy(null);
+		}
+	}
+
+	/**
+	 * A self-contained HTML document of the printed sheets: every style of the page (the
+	 * pages' own and the format's), the images as data: URIs (the server's engine reaches
+	 * the site's public assets only), the base of the site for the fonts.
+	 */
+	async print_document(root) {
+		const css = [];
+		for (const sheet of document.styleSheets) {
+			let rules;
+			try {
+				rules = sheet.cssRules;
+			} catch {
+				continue;
+			}
+			if (!rules) continue;
+			const base = sheet.href || location.href;
+			let text = "";
+			for (const rule of rules) text += rule.cssText + "\n";
+			// url() of a stylesheet resolve against its own address
+			css.push(text.replace(/url\((['"]?)(?!data:|https?:|\/)([^'")]+)\1\)/g, (m, q, u) => `url(${q}${new URL(u, base).pathname}${q})`));
+		}
+		const clone = root.cloneNode(true);
+		const cache = new Map();
+		const inline = async (src) => {
+			if (!src || src.startsWith("data:")) return src;
+			const url = new URL(src, location.href);
+			if (url.origin !== location.origin) return src;
+			if (!cache.has(url.href)) {
+				cache.set(
+					url.href,
+					fetch(url.href, { credentials: "same-origin" })
+						.then((r) => (r.ok ? r.blob() : Promise.reject()))
+						.then((b) => new Promise((resolve) => {
+							const fr = new FileReader();
+							fr.onload = () => resolve(fr.result);
+							fr.onerror = () => resolve(src);
+							fr.readAsDataURL(b);
+						}))
+						.catch(() => src)
+				);
+			}
+			return cache.get(url.href);
+		};
+		await Promise.all([...clone.querySelectorAll("img")].map(async (img) => img.setAttribute("src", await inline(img.getAttribute("src")))));
+		for (const el of clone.querySelectorAll("script")) el.remove();
+		// the attributes of <html> and <body> as they are: an app may set the fonts or the
+		// theme there (an inline variable, a class), and the print reads them
+		const attrs = (el) => [...el.attributes].map((x) => `${x.name}="${esc(x.value)}"`).join(" ");
+		return `<!doctype html><html ${attrs(document.documentElement)}><head><meta charset="utf-8"><base href="${esc(location.origin)}/"><title>${esc(this.ctx.report_name)}</title><style>${css.join("\n").replace(/<\/style/gi, "<\\/style")}</style></head><body ${attrs(document.body)}>${clone.outerHTML}</body></html>`;
 	}
 
 	print_css() {

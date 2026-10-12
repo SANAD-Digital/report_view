@@ -1096,7 +1096,12 @@ export class ReportViewPage {
 		return render(this.report_name, name, this.last_filters, meta, lang);
 	}
 
-	pages_translations(lang, messages) {
+	/** The PDF of the pages (ADR-016): the server's engine prints the very sheets. */
+	pages_pdf_target() {
+		return { method: "report_view.api.pdf.pages_pdf_report", args: { report_name: this.report_name } };
+	}
+
+		pages_translations(lang, messages) {
 		return api.get_translations(this.report_name, lang, messages);
 	}
 

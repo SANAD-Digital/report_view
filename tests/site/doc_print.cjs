@@ -192,6 +192,13 @@ const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", nam
 	const pdf = fs.readFileSync(file);
 	const pages = (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) || []).length;
 	check("PDF of the long document: same page count", pages === s.pages.length, `pdf ${pages} vs ${s.pages.length}`);
+	// more than 40 sheets: a background job, its progress, then the file
+	await set({ margins: "custom", page_m: { top: 110, bottom: 110, start: 12, end: 12 } });
+	s = await state();
+	const [dl2] = await Promise.all([page.waitForEvent("download", { timeout: 300000 }), page.click('[data-action="pdf"]')]);
+	const pdf2 = fs.readFileSync(await dl2.path());
+	const pages2 = (pdf2.toString("latin1").match(/\/Type\s*\/Page[^s]/g) || []).length;
+	check("PDF by a background job (over 40 pages): same page count", s.pages.length > 40 && pages2 === s.pages.length, `pdf ${pages2} vs ${s.pages.length}`);
 	await page.evaluate((g) => eval(g).reset(), V); await page.waitForTimeout(1200);
 
 	// 11. a user without print

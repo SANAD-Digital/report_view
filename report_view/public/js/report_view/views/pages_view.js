@@ -207,6 +207,28 @@ const PAGE_MESSAGES = [
 	"Yes",
 ];
 
+/** The words of an error: a thrown Error, or the answer of a failed frappe.call. */
+function err_text(e) {
+	if (typeof e === "string") return e;
+	if (typeof e?.message === "string" && e.message) return e.message;
+	// a failed request (jQuery's xhr) carries Frappe's answer
+	if (e?.responseJSON) e = e.responseJSON;
+	try {
+		const first = JSON.parse(e?._server_messages || "[]")[0];
+		if (first) return strip_tags(JSON.parse(first).message || first);
+	} catch {
+		// not Frappe's list of messages
+	}
+	if (typeof e?.exception === "string") return e.exception.replace(/^[\w.]+:\s*/, "");
+	return __("Unknown error", null, "Report View");
+}
+
+const strip_tags = (html) => {
+	const d = document.createElement("div");
+	d.innerHTML = String(html);
+	return d.textContent || "";
+};
+
 function format_msg(text, args) {
 	return String(text).replace(/\{(\d+)\}/g, (m, i) => (args && args[i] !== undefined ? args[i] : m));
 }
@@ -1209,11 +1231,11 @@ export class PagesView {
 		try {
 			[lang_entry, letterhead, format, heading, signature] = await Promise.all([
 				this.load_lang(s.lang).catch((e) => {
-					this.note(__("The language could not be loaded: {0}", [e.message || e]), true);
+					this.note(__("The language could not be loaded: {0}", [err_text(e)]), true);
 					return null;
 				}),
 				this.load_letterhead(s.letter_head),
-				this.load_format(s.template),
+				this.load_format(s.template).then((f) => (f || !s.template || !this.doc_mode ? f : this.load_format(""))),
 				this.load_part("heading", s.heading),
 				this.load_part("signature", s.signatures ? s.signature : ""),
 			]);
@@ -1327,7 +1349,7 @@ export class PagesView {
 				const r = await this.host.pages_letterhead(name);
 				this.letterheads.set(key, { header: strip_scripts(r?.header), footer: strip_scripts(r?.footer) });
 			} catch (e) {
-				this.note(__("The letter head could not be loaded: {0}", [e.message || e]), true);
+				this.note(__("The letter head could not be loaded: {0}", [err_text(e)]), true);
 				this.letterheads.set(key, null);
 			}
 		}
@@ -1347,7 +1369,7 @@ export class PagesView {
 				const r = await this.host.pages_part(kind, name, this.settings.lang || null);
 				this.parts.set(key, r ? { ...r, html: strip_scripts(r.html) } : null);
 			} catch (e) {
-				const msg = kind === "heading" ? __("The print heading could not be loaded: {0}", [e.message || e]) : __("The signature could not be loaded: {0}", [e.message || e]);
+				const msg = kind === "heading" ? __("The print heading could not be loaded: {0}", [err_text(e)]) : __("The signature could not be loaded: {0}", [err_text(e)]);
 				this.note(msg, true);
 				this.parts.set(key, null);
 			}
@@ -1364,7 +1386,7 @@ export class PagesView {
 			try {
 				this.formats.set(key, await this.host.pages_format(name, this.settings.lang || null, this.options?.print_format_types?.[name]));
 			} catch (e) {
-				this.note(__("The print format could not be loaded: {0}", [e.message || e]), true);
+				this.note(__("The print format could not be loaded: {0}", [err_text(e)]), true);
 				this.formats.set(key, null);
 			}
 		}
@@ -1862,7 +1884,7 @@ export class PagesView {
 				});
 			}
 		} catch (e) {
-			this.note(__("The print format could not be rendered: {0}", [e.message || e]), true);
+			this.note(__("The print format could not be rendered: {0}", [err_text(e)]), true);
 			html = "";
 		}
 		// The format's own @page rules (paper and margins of a whole-document print) would
@@ -2408,7 +2430,7 @@ export class PagesView {
 		this.busy(__("Making the PDF: {0} of {1} pages…", [num(0), num(total)]));
 		for (;;) {
 			await new Promise((r) => setTimeout(r, 1000));
-			const st = await frappe.xcall("report_view.api.pdf.pages_pdf_status", { job });
+			const st = await frappe.xcall("report_view.api.pdf.pages_pdf_status", { job }, "GET");
 			if (st.state === "failed") return this.pdf_error({ exception: st.error });
 			if (st.state === "done") break;
 			this.busy(__("Making the PDF: {0} of {1} pages…", [num(st.done || 0), num(st.total || total)]));

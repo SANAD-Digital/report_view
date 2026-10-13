@@ -2794,3 +2794,47 @@ test("pages: a long report prints every sheet with its content (far pages are no
 	expect(out.css_kb).toBeLessThan(400);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
+
+test("pages: on a phone the pages take the screen and the settings open as a sheet from the bottom bar", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=tb&lang=ar&rv=${PAGES}`);
+	await settle(page);
+	// the harness opens at desktop size: the phone's width after
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.waitForTimeout(300);
+	const layout = () =>
+		page.evaluate(() => {
+			const r = (sel) => document.querySelector(sel).getBoundingClientRect();
+			const side = r(".rv-print-side");
+			return {
+				open: document.querySelector(".rv-pages").classList.contains("sheet-open"),
+				side_top: Math.round(side.top),
+				side_bottom: Math.round(side.bottom),
+				bd_shown: getComputedStyle(document.querySelector(".rv-print-side .bd")).display !== "none",
+				stage_w: Math.round(r(".rv-print-stage").width),
+				pages_w: Math.round(r(".rv-pages").width),
+				hscroll: document.documentElement.scrollWidth > innerWidth,
+			};
+		});
+	let st = await layout();
+	// closed: only the bar at the bottom, the stage as wide as the screen
+	expect(st.open).toBe(false);
+	expect(st.bd_shown).toBe(false);
+	expect(st.side_bottom).toBe(844);
+	expect(st.side_top).toBeGreaterThan(700);
+	expect(st.stage_w).toBeGreaterThanOrEqual(st.pages_w - 1);
+	expect(st.hscroll).toBe(false);
+	await page.click('[data-action="sheet"]');
+	st = await layout();
+	expect(st.open).toBe(true);
+	expect(st.bd_shown).toBe(true);
+	expect(st.side_top).toBeLessThan(500);
+	expect(await page.getAttribute('[data-action="sheet"]', "aria-expanded")).toBe("true");
+	// a tap outside the sheet closes it; Escape too
+	await page.mouse.click(30, 30);
+	expect((await layout()).open).toBe(false);
+	await page.click('[data-action="sheet"]');
+	await page.keyboard.press("Escape");
+	expect((await layout()).open).toBe(false);
+	expect(problems).toEqual([]);
+});

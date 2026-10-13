@@ -2311,3 +2311,7 @@ msgstr "إقرار استلام"
 
 msgid "I acknowledge that I have received the above in full and in good order."
 msgstr "أقرّ بأنني استلمت ما ورد أعلاه كاملاً وبحالة سليمة."
+
+msgctxt "Report View"
+msgid "Settings"
+msgstr "الإعدادات"

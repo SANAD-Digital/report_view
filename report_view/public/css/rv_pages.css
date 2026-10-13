@@ -218,10 +218,6 @@
 /* ---------- the sheets alone in the document while printing (pages_view.js print_css) ---------- */
 .rv-print-root{position:absolute;inset-inline-start:0;top:0}
 
-@media (max-width:900px){
-  .rv-pages{flex-direction:column}
-  .rv-print-side{width:100%;max-height:45%;border-inline-end:0;border-bottom:1px solid var(--line-2)}
-}
 
 /* ---------- panel: groups with a switch, segmented choices, rule controls ---------- */
 .rv-print-group{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
@@ -381,3 +377,25 @@
 .rv-page-flow .row:not([class*="col-"] .row){margin-inline:0}
 .rv-print-acts .rv-print-go{width:auto;min-width:0}
 .rv-psec-bd .rv-zone-empty.warn{color:var(--warn);background:var(--warn-soft);border:1px solid var(--warn-line);border-radius:var(--r);padding:6px 8px}
+
+/* a narrow screen: the pages take the screen; the panel's foot is a bar at the bottom
+   (settings, print, PDF) and the settings open over the pages as a sheet from it */
+.rv-print-sheet-btn,.rv-print-scrim{display:none}
+@media (max-width:900px){
+  .rv-pages{flex-direction:column}
+  .rv-print-stage{padding-bottom:72px}
+  .rv-print-sheets{padding:12px;gap:12px}
+  .rv-print-side{position:fixed;inset-inline:0;bottom:0;z-index:1031;width:auto;max-height:none;border-inline-end:0;border-top:1px solid var(--line-2);border-radius:14px 14px 0 0;box-shadow:var(--pp-shadow);padding-bottom:env(safe-area-inset-bottom)}
+  .rv-pages:not(.sheet-open) .rv-print-side > :not(.rv-print-ft){display:none}
+  .rv-pages.sheet-open .rv-print-side .bd{max-height:min(68vh,calc(100vh - 190px))}
+  .rv-print-ft{border-radius:14px 14px 0 0;padding:8px 12px 10px}
+  .rv-pages.sheet-open .rv-print-ft{border-radius:0}
+  .rv-print-acts{flex:1;display:flex;gap:8px}
+  .rv-print-acts .rv-btn{flex:1;justify-content:center;height:var(--ctl)}
+  .rv-print-acts .rv-print-pdf{flex:0 0 auto}
+  .rv-print-sheet-btn{display:inline-flex}
+  .rv-print-sheet-btn[aria-expanded="true"]{border-color:var(--pri);color:var(--pri-tx);background:var(--pri-soft)}
+  .rv-print-tip{display:none}
+  .rv-print-scrim{display:block;position:fixed;inset:0;z-index:1030;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .2s}
+  .rv-pages.sheet-open .rv-print-scrim{opacity:1;pointer-events:auto}
+}

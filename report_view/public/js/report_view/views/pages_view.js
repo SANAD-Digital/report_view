@@ -405,6 +405,7 @@ export class PagesView {
 				<div class="rv-print-ft">
 					<span class="rv-print-note"></span>
 					<div class="rv-print-acts">
+						<button type="button" class="rv-btn rv-print-sheet-btn" data-action="sheet" aria-expanded="false">${icons.sliders()}<span>${esc(__("Settings", null, "Report View"))}</span></button>
 						<button type="button" class="rv-btn primary rv-print-go" data-action="print">${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
 						<button type="button" class="rv-btn rv-print-pdf" data-action="pdf" title="${esc(__("The same pages as a PDF file, made by the server"))}">PDF</button>
 					</div>
@@ -425,7 +426,8 @@ export class PagesView {
 				<div class="rv-print-busy" role="status" aria-live="polite" hidden><span class="rv-spin" aria-hidden="true"></span><span class="txt"></span></div>
 				<div class="rv-print-sheets" dir="${this.rtl ? "rtl" : "ltr"}"></div>
 				<div class="rv-print-probe" aria-hidden="true"></div>
-			</div>`;
+			</div>
+			<div class="rv-print-scrim" aria-hidden="true"></div>`;
 		this.side = el.querySelector(".rv-print-side");
 		this.bd = el.querySelector(".rv-print-side .bd");
 		this.stage = el.querySelector(".rv-print-stage");
@@ -441,6 +443,12 @@ export class PagesView {
 		if (this.host.pages_pdf_target) pdf.addEventListener("click", () => this.pdf());
 		else pdf.remove();
 		el.querySelector('[data-action="reset"]').addEventListener("click", () => this.reset());
+		// a narrow screen: the settings are a sheet over the pages, opened from the bar
+		el.querySelector('[data-action="sheet"]').addEventListener("click", () => this.toggle_sheet());
+		el.querySelector(".rv-print-scrim").addEventListener("click", () => this.toggle_sheet(false));
+		el.addEventListener("keydown", (e) => {
+			if (e.key === "Escape" && el.classList.contains("sheet-open")) this.toggle_sheet(false);
+		});
 		for (const b of el.querySelectorAll("[data-zoom]")) b.addEventListener("click", () => this.zoom(b.dataset.zoom));
 		this.stage.addEventListener("scroll", () => this.update_position(), { passive: true });
 		// an open list of a Link field follows its field while the panel scrolls
@@ -449,6 +457,11 @@ export class PagesView {
 		}, { passive: true });
 		this.resize_observer = new ResizeObserver(() => this.apply_zoom());
 		this.resize_observer.observe(this.stage);
+	}
+
+	toggle_sheet(open = !this.el.classList.contains("sheet-open")) {
+		this.el.classList.toggle("sheet-open", open);
+		this.el.querySelector('[data-action="sheet"]').setAttribute("aria-expanded", String(open));
 	}
 
 	// ------------------------------------------------------------ loading
@@ -2271,7 +2284,9 @@ export class PagesView {
 	zoom_value() {
 		const z = this.settings.zoom;
 		if (z === "fit") {
-			const w = this.stage.clientWidth - 2 * STAGE_PAD;
+			// the sheets' own padding (smaller on a narrow screen), at the zoom it is drawn with
+			const pad = parseFloat(getComputedStyle(this.sheets).paddingInlineStart) || STAGE_PAD;
+			const w = this.stage.clientWidth - 2 * pad;
 			return Math.max(0.3, Math.min(1.25, w / (this.box?.w || 794)));
 		}
 		return z;

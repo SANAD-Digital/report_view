@@ -378,6 +378,45 @@
 .rv-print-acts .rv-print-go{width:auto;min-width:0}
 .rv-psec-bd .rv-zone-empty.warn{color:var(--warn);background:var(--warn-soft);border:1px solid var(--warn-line);border-radius:var(--r);padding:6px 8px}
 
+/* ---------- compact panel (owner's choice, 2026-10-14): flat sections between thin rules,
+   each summary on its title's line, smaller fields, the four margins on one row ---------- */
+.rv-print-side{width:288px}
+.rv-print-hd{height:40px;padding-inline:12px 8px}
+.rv-print-side .bd{padding:0;gap:0}
+.rv-print-side .rv-psec{border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none;background:var(--surface)}
+.rv-print-side .rv-psec[open]{box-shadow:none;background:var(--surface-2)}
+.rv-print-side .rv-psec > summary{min-height:36px;padding:4px 12px;gap:8px}
+.rv-print-side .rv-psec[open] > summary{border-bottom:0;background:none}
+.rv-print-side .rv-psec > summary .ic{width:20px;height:20px;border-radius:5px}
+.rv-print-side .rv-psec > summary .ic svg{width:13px;height:13px}
+.rv-print-side .rv-psec > summary .tx{flex-direction:row;align-items:baseline;gap:8px}
+.rv-print-side .rv-psec > summary .tt{font-size:var(--fs-xs);flex:none}
+.rv-print-side .rv-psec > summary .sm{flex:1;min-width:0;font-size:11px;text-align:end}
+.rv-print-side .rv-psec-bd{gap:8px;padding:2px 12px 12px}
+.rv-print-side .rv-psec-bd .rv-field{gap:3px}
+.rv-print-side .rv-psec-bd .rv-field > span{font-size:11px}
+.rv-print-side .rv-psec-bd .rv-print-row{gap:8px}
+.rv-print-side .rv-psec-bd .rv-input{height:26px}
+.rv-print-side .rv-psec-bd .rv-print-seg button{height:22px;font-size:11.5px}
+.rv-print-side .rv-psec-bd .rv-print-sw{font-size:var(--fs-xs)}
+.rv-print-side .rv-psec-bd .rv-zone-empty{font-size:11px}
+/* the four margins: one row, each named above its field (top, bottom, start, end) */
+.rv-print-side .rv-box4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:auto;gap:6px}
+.rv-print-side .rv-box4-page{display:none}
+.rv-print-side .rv-box4-top{order:1}
+.rv-print-side .rv-box4-bottom{order:2}
+.rv-print-side .rv-box4-start{order:3}
+.rv-print-side .rv-box4-end{order:4}
+.rv-print-side .rv-box4 > label{grid-row:1;grid-column:auto;display:flex;flex-direction:column;gap:2px}
+.rv-print-side .rv-box4 label::before{content:attr(title);font-size:10.5px;color:var(--tx-3);text-align:center}
+.rv-print-side .rv-box4 input.rv-input{height:26px;padding:0 4px}
+/* Frappe's own fields in the panel (template, letter head, heading, signature) */
+.rv-print-side [data-link] .form-control{height:26px;min-height:0;font-size:var(--fs-xs);padding:0 8px;border-radius:var(--r-sm)}
+.rv-print-side [data-link] .awesomplete > ul li{font-size:var(--fs-xs);padding:5px 8px}
+.rv-print-ft{padding:8px 12px 10px;gap:4px}
+.rv-print-go,.rv-print-pdf{height:32px}
+.rv-print-tip{font-size:10.5px}
+
 /* a narrow screen: the pages take the screen; the panel's foot is a bar at the bottom
    (settings, print, PDF) and the settings open over the pages as a sheet from it */
 .rv-print-sheet-btn,.rv-print-scrim{display:none}

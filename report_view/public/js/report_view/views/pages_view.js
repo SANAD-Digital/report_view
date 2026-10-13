@@ -62,7 +62,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	sig_pages: "last",
 	sig_pos: "after",
 	sig_size: 9,
-	sig_m: BOX(10, 0, 0, 0),
+	sig_m: BOX(4, 0, 0, 0),
 	lang: "",
 	include_filters: true,
 	include_subtotals: true,
@@ -85,7 +85,6 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	// the page number: place, order against the footer, format, first number, size,
 	// the report's name beside it, the space around it
 	number_pos: "bottom-end",
-	number_order: "after",
 	number_format: "full",
 	number_start: 1,
 	number_size: 8,
@@ -95,10 +94,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	head_line_w: 0.6,
 	head_line_c: "#D9DFDB",
 	head_line_s: "solid",
-	foot_line_w: 0,
+	foot_line_w: 0.6,
 	foot_line_c: "#D9DFDB",
 	foot_line_s: "solid",
-	num_line_w: 0.6,
+	num_line_w: 0,
 	num_line_c: "#9AA39E",
 	num_line_s: "solid",
 	// a border round the page: thickness (px), style, colour, distance from the paper's edge
@@ -257,6 +256,14 @@ async function pdf_body(args, html) {
 	return form;
 }
 
+// The room a page's foot takes: its box and the top margin of its first part (a signature's
+// space above it), which falls outside the box.
+function foot_height(foot) {
+	if (!foot) return 0;
+	const first = foot.firstElementChild;
+	return foot.getBoundingClientRect().height + (first ? Math.max(0, parseFloat(getComputedStyle(first).marginTop) || 0) : 0);
+}
+
 // A turn of the browser between two pieces of long work: the window stays responsive, a
 // newer change of the settings can take over.
 const breathe = () => new Promise((r) => setTimeout(r, 0));
@@ -327,7 +334,6 @@ export function sanitize_settings(raw, base = DEFAULT_SETTINGS) {
 	}
 	if (PAGE_STYLES.some((st) => st.id === raw.style)) out.style = raw.style;
 	if (NUMBER_POS.includes(raw.number_pos)) out.number_pos = raw.number_pos;
-	if (["after", "before"].includes(raw.number_order)) out.number_order = raw.number_order;
 	if (NUMBER_FORMATS.includes(raw.number_format)) out.number_format = raw.number_format;
 	if (ALIGN.includes(raw.lh_align)) out.lh_align = raw.lh_align;
 	if (ALIGN.includes(raw.foot_align)) out.foot_align = raw.foot_align;
@@ -889,7 +895,6 @@ export class PagesView {
 				${
 					s.page_numbers
 						? `${select("number_pos", __("Page number position"), Object.entries(pos_label))}
-					${s.number_pos.startsWith("bottom") ? seg("number_order", __("Against the footer"), [["after", __("Under the footer")], ["before", __("Above the footer")]]) : ""}
 					<div class="rv-print-row">${select("number_format", __("Number format"), [["full", __("Page 1 of 3")], ["short", "1 / 3"], ["dash", "— 1 —"], ["number", "1"]])}${num("number_start", __("Start at"), "")}</div>
 					<div class="rv-print-row">${num("number_size", __("Font size"), "pt")}<div class="rv-field rv-sw-field">${sw("number_caption", __("Report name beside it"))}</div></div>
 					${box("num_m", __("Space around the number"))}
@@ -1554,7 +1559,8 @@ export class PagesView {
 		const lhf = letterhead?.footer && s.foot_height && (measure || on_page(s.foot_pages, n, total)) ? `<div class="rv-page-lhf">${letterhead.footer}</div>` : "";
 		// a signature on pages other than the last only: above the footer
 		const sig = s.signatures && !this.sig_in_tail() && (measure || on_page(this.sig_pages(), n, total)) ? this.signatures_html() : "";
-		return sig + (s.number_order === "before" ? `${band}${lhf}` : `${lhf}${band}`);
+		// the number closes the page: under the footer (whose rule stands above it)
+		return sig + lhf + band;
 	}
 
 	/** The page number at the top: a band of its own above the head (or nothing). */
@@ -1735,7 +1741,7 @@ export class PagesView {
 		const row_h = h(q(".rv-pt tbody tr:last-child")) || fit.font * 2;
 		const top_h = report_rows.top.length * row_h;
 		const tail_h = h(q(".rv-page-tail"));
-		const foot_h = h(q(".rv-page-foot"));
+		const foot_h = foot_height(q(".rv-page-foot"));
 		// the body of a continuation page; the first page gives up the difference of its head
 		const body_h = box.inner_h - next_h - thead_h - foot_h - SAFETY_PX;
 		if (this.sig_leaves_no_room(body_h, box)) return this.layout_standard(token, box, dir);
@@ -1914,7 +1920,7 @@ export class PagesView {
 		const h = (el) => (el ? el.getBoundingClientRect().height : 0);
 		const first_h = h(q(".rv-page-top-first"));
 		const next_h = h(q(".rv-page-top-next"));
-		const foot_h = h(q(".rv-page-foot"));
+		const foot_h = foot_height(q(".rv-page-foot"));
 		const body_h = Math.max(40, box.inner_h - next_h - foot_h - SAFETY_PX);
 		const first_body_h = Math.max(40, box.inner_h - first_h - foot_h - SAFETY_PX);
 		if (this.sig_leaves_no_room(box.inner_h - next_h - foot_h - SAFETY_PX, box)) return this.layout_custom(token, box, dir);
@@ -1996,9 +2002,14 @@ export class PagesView {
 			// a foot (footer, number, signature) beyond the paper: the content cannot push it
 			// (the body clips), so moving rows would not help; the panel says so
 			if (foot.bottom > sheet.getBoundingClientRect().bottom + 1) this.foot_overflow = true;
-			let bottom = 0;
+			// the content ends where the body ends (it clips), which is above the foot by the
+			// margin of the foot's first part (a signature's space above it)
+			const body = sheet.querySelector(".rv-page-body").getBoundingClientRect();
+			const limit = Math.min(foot.top, body.bottom);
+			// the probe may stand above the window (the pages scrolled): places can be negative
+			let bottom = -Infinity;
 			for (const el of sheet.querySelectorAll(".rv-page-body *")) bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
-			return { foot, over: bottom > foot.top + 1, room: foot.top - sheet.querySelector(".rv-page-body").getBoundingClientRect().top };
+			return { limit, over: bottom > limit + 1, room: limit - body.top };
 		};
 		const limit = () => Math.min(pages.length, this.max_pages());
 		let images = true;
@@ -2061,7 +2072,7 @@ export class PagesView {
 			// else (a wrapper's padding or margin) the last block alone
 			let from = pages[i].units.length - 1;
 			for (const el of sheet.querySelectorAll("[data-rv-unit]")) {
-				if (el.getBoundingClientRect().bottom > m.foot.top + 1) {
+				if (el.getBoundingClientRect().bottom > m.limit + 1) {
 					from = Math.max(1, Math.min(from, Number(el.dataset.rvUnit)));
 					break;
 				}

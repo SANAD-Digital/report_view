@@ -2558,10 +2558,11 @@ test("pages: page setup as in a word processor: four margins typed, letter head 
 	expect(st.lhf).toEqual(st.lhf.map((_, i) => i > 0));
 	await page.click('[data-seg="foot_pages"][data-value="all"]');
 	await settle(page);
-	// the number band above the footer, its own rule; a dashed rule under the letter head
-	await page.click('[data-seg="number_order"][data-value="before"]');
-	await settle(page);
-	expect((await state()).foot_order).toEqual(["rv-page-foot-line", "rv-page-lhf"]);
+	// the number band stays under the footer (no choice); a rule of its own when asked; a
+	// dashed rule under the letter head
+	expect(await page.locator('[data-seg="number_order"]').count()).toBe(0);
+	expect((await state()).foot_order).toEqual(["rv-page-lhf", "rv-page-foot-line"]);
+	await type_num(page, 'input[data-num="num_line_w"]', 0.6);
 	await type_num(page, 'input[data-num="head_line_w"]', 2);
 	await page.selectOption('select[data-set="head_line_s"]', "dashed");
 	await settle(page);

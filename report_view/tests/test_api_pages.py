@@ -391,6 +391,17 @@ class TestShippedHeadingsAndSignatures(RVTestCase):
 	def test_the_shipped_document_signature(self):
 		from report_view.core.printing import report_view_signature
 
-		html = report_view_signature("Issued by and Received by", frappe.get_doc("Company", COMPANY))
-		self.assertIn(COMPANY, html)
+		doc = frappe.get_doc("Company", COMPANY)
+		html = report_view_signature("Issued by and Received by", doc)
 		self.assertIn("Received by", html)
+		self.assertIn(frappe.utils.get_fullname(doc.owner), html)
+		# every shipped document signature renders for a document, its rules scoped to it
+		for name, words in {
+			"Approval Steps": ["Prepared by", "Reviewed by", "Approved by"],
+			"Accountant, Manager and Stamp": ["Company stamp", "Finance Manager"],
+			"Receipt Acknowledgement": ["I acknowledge that I have received the above"],
+		}.items():
+			html = report_view_signature(name, doc)
+			self.assertIn(".rv-signature{", html)
+			for word in words:
+				self.assertIn(word, html)

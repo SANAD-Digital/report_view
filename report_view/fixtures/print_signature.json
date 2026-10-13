@@ -8,7 +8,7 @@
   "content_type": "Table",
   "css": "",
   "html": null,
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0,
   "signatories": [
    {
@@ -52,7 +52,7 @@
   "content_type": "Table",
   "css": "",
   "html": null,
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0,
   "signatories": [
    {
@@ -86,7 +86,7 @@
   "content_type": "Table",
   "css": "",
   "html": null,
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0,
   "signatories": [
    {
@@ -130,7 +130,7 @@
   "content_type": "Table",
   "css": "",
   "html": null,
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0,
   "signatories": [
    {
@@ -174,7 +174,7 @@
   "content_type": "Table",
   "css": "",
   "html": null,
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0,
   "signatories": [
    {
@@ -228,7 +228,7 @@
   "content_type": "HTML",
   "html": "{# Two signatures and a circle for the stamp. _(\"…\") prints a text in the language of the print. #}\n<div class=\"rvs-row\">\n  <div class=\"rvs-box\"><b>{{ _(\"Finance Manager\") }}</b><i></i><span>{{ _(\"Signature\", context=\"Report View\") }}</span></div>\n  <div class=\"rvs-stamp\">{{ _(\"Company stamp\") }}</div>\n  <div class=\"rvs-box\"><b>{{ _(\"General Manager\") }}</b><i></i><span>{{ _(\"Signature\", context=\"Report View\") }}</span></div>\n</div>",
   "css": ".rvs-row{display:grid;grid-template-columns:1fr 32mm 1fr;gap:10mm;align-items:end}\n.rvs-box{text-align:center}\n.rvs-box i{display:block;height:14mm;border-bottom:1px solid var(--pp-tx,#1b1f1d)}\n.rvs-box span{display:block;margin-top:1mm;color:var(--pp-tx-2,#4a524e)}\n.rvs-stamp{width:30mm;height:30mm;border:1.2px dashed var(--pp-tx-3,#6b736f);border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--pp-tx-3,#6b736f);font-size:.9em}",
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0,
   "signatories": []
  },
@@ -241,7 +241,7 @@
   "content_type": "HTML",
   "html": "{# One signature at the end of the line, with the name of who prints and the date. #}\n<div class=\"rvs-sig\">\n  <b>{{ _(\"Authorized Signatory\") }}</b>\n  <i></i>\n  <div>{{ printed_by }}</div>\n  <small>{{ frappe.utils.formatdate(printed_on) }}</small>\n</div>",
   "css": ".rvs-sig{width:65mm;margin-inline-start:auto;text-align:center}\n.rvs-sig i{display:block;height:16mm;border-bottom:1px solid var(--pp-tx,#1b1f1d);margin-bottom:1.5mm}\n.rvs-sig small{color:var(--pp-tx-3,#6b736f)}",
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0,
   "signatories": []
  },
@@ -254,7 +254,7 @@
   "content_type": "HTML",
   "html": "{# A statement sent to a customer or a supplier: their confirmation and the company's signature. #}\n<p class=\"rvs-note\">{{ _(\"We confirm that the balance shown in this statement is correct as on {0}.\")|replace(\"{0}\", frappe.utils.formatdate(doc.to_date or doc.report_date or printed_on)) }}</p>\n<div class=\"rvs-row\">\n  <div><b>{{ _(\"For the customer / supplier\") }}</b><span>{{ _(\"Name\", context=\"Report View\") }}:</span><span>{{ _(\"Signature\", context=\"Report View\") }}:</span><span>{{ _(\"Stamp\") }}:</span></div>\n  <div><b>{{ _(\"For {0}\")|replace(\"{0}\", doc.company) if doc.company else _(\"For the company\") }}</b><span>{{ _(\"Name\", context=\"Report View\") }}:</span><span>{{ _(\"Signature\", context=\"Report View\") }}:</span><span>{{ _(\"Stamp\") }}:</span></div>\n</div>",
   "css": ".rvs-note{border:1px solid var(--pp-line,#d9dfdb);border-radius:1.5mm;padding:2mm 3mm;margin-bottom:6mm}\n.rvs-row{display:grid;grid-template-columns:1fr 1fr;gap:14mm}\n.rvs-row b{display:block;padding-bottom:1mm;border-bottom:1px solid var(--pp-tx,#1b1f1d)}\n.rvs-row span{display:block;margin-top:5mm;color:var(--pp-tx-2,#4a524e)}",
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0,
   "signatories": []
  },
@@ -267,7 +267,7 @@
   "content_type": "HTML",
   "html": "{# A formal grid: one row per signatory. Add or remove rows as you need. #}\n<table class=\"rvs-grid\">\n  <thead><tr><th>{{ _(\"Capacity\") }}</th><th>{{ _(\"Name\", context=\"Report View\") }}</th><th>{{ _(\"Signature\", context=\"Report View\") }}</th><th>{{ _(\"Date\") }}</th></tr></thead>\n  <tbody>\n  {% for role in [_(\"Prepared by\"), _(\"Reviewed by\"), _(\"Approved by\")] %}\n    <tr><td>{{ role }}</td><td></td><td></td><td></td></tr>\n  {% endfor %}\n  </tbody>\n</table>",
   "css": ".rvs-grid{width:100%;border-collapse:collapse;table-layout:fixed}\n.rvs-grid th,.rvs-grid td{border:1px solid var(--pp-tx,#1b1f1d);padding:2mm 3mm;text-align:start}\n.rvs-grid th{background:var(--pp-head,#eef1ef);font-weight:700}\n.rvs-grid td{height:10mm}\n.rvs-grid th:first-child{width:28%}",
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0,
   "signatories": []
  },
@@ -278,9 +278,48 @@
   "disabled": 0,
   "signature_for": "Document",
   "content_type": "HTML",
-  "html": "{# For a document's print format: {{ report_view_signature(\"Issued by and Received by\", doc) }} #}\n<div class=\"rvs-row\">\n  <div><b>{{ _(\"Issued by\") }}</b><div>{{ frappe.get_fullname(doc.owner) }}</div><span>{{ _(\"Signature\", context=\"Report View\") }}:</span></div>\n  <div><b>{{ _(\"Received by\") }}</b><span>{{ _(\"Name\", context=\"Report View\") }}:</span><span>{{ _(\"Signature\", context=\"Report View\") }}:</span><span>{{ _(\"Date\") }}:</span></div>\n</div>\n<small class=\"rvs-doc\">{{ _(doc.doctype) }} {{ doc.name }}</small>",
-  "css": ".rvs-row{display:grid;grid-template-columns:1fr 1fr;gap:14mm;margin-top:8mm}\n.rvs-row b{display:block;padding-bottom:1mm;border-bottom:1px solid #1b1f1d}\n.rvs-row span{display:block;margin-top:5mm;color:#4a524e}\n.rvs-doc{display:block;margin-top:4mm;color:#6b736f}",
-  "modified": "2026-10-12 12:20:00.000000",
+  "html": "{# A document's signature. In a print format of your own: {{ report_view_signature(\"Issued by and Received by\", doc) }} #}\n{% set day = doc.posting_date or doc.transaction_date or doc.creation %}\n<div class=\"rvs-pair\">\n  <section>\n    <header>{{ _(\"Issued by\") }}</header>\n    <p class=\"rvs-ln\"><span>{{ _(\"Name\", context=\"Report View\") }}</span><b>{{ frappe.get_fullname(doc.owner) }}</b></p>\n    <p class=\"rvs-ln\"><span>{{ _(\"Signature\", context=\"Report View\") }}</span><i></i></p>\n    <p class=\"rvs-ln\"><span>{{ _(\"Date\") }}</span><b>{{ frappe.utils.format_date(day) if day else \"\" }}</b></p>\n  </section>\n  <section>\n    <header>{{ _(\"Received by\") }}</header>\n    <p class=\"rvs-ln\"><span>{{ _(\"Name\", context=\"Report View\") }}</span><i></i></p>\n    <p class=\"rvs-ln\"><span>{{ _(\"Signature\", context=\"Report View\") }}</span><i></i></p>\n    <p class=\"rvs-ln\"><span>{{ _(\"Date\") }}</span><i></i></p>\n  </section>\n</div>",
+  "css": ".rvs-pair{display:grid;grid-template-columns:1fr 1fr;gap:8mm}\n.rvs-pair section{border:1px solid #d5dbd8;border-radius:2mm;padding:2.2mm 3.5mm 3mm;break-inside:avoid}\n.rvs-pair header{font-weight:700;padding-bottom:1.2mm;border-bottom:1.5px solid #1b1f1d}\n.rvs-ln{display:flex;align-items:flex-end;gap:2mm;margin:3.2mm 0 0;color:#5b6560}\n.rvs-ln span{white-space:nowrap}\n.rvs-ln span::after{content:\":\"}\n.rvs-ln i{flex:1;height:1em;border-bottom:1px dotted #8a948f}\n.rvs-ln b{flex:1;color:#1b1f1d;font-weight:600}",
+  "modified": "2026-10-13 10:00:00.000000",
+  "docstatus": 0,
+  "signatories": []
+ },
+ {
+  "doctype": "Print Signature",
+  "name": "Approval Steps",
+  "signature_name": "Approval Steps",
+  "disabled": 0,
+  "signature_for": "Document",
+  "content_type": "HTML",
+  "html": "{# Three steps, numbered: who prepared the document (filled), who reviews and who approves it. #}\n<div class=\"rvs-steps\">\n{% for label, who in [(_(\"Prepared by\"), frappe.get_fullname(doc.owner)), (_(\"Reviewed by\"), \"\"), (_(\"Approved by\"), \"\")] %}\n  <section>\n    <header><em>{{ loop.index }}</em>{{ label }}</header>\n    <p class=\"rvs-ln\"><span>{{ _(\"Name\", context=\"Report View\") }}</span>{% if who %}<b>{{ who }}</b>{% else %}<i></i>{% endif %}</p>\n    <div class=\"rvs-box\"><span>{{ _(\"Signature\", context=\"Report View\") }}</span></div>\n    <p class=\"rvs-ln\"><span>{{ _(\"Date\") }}</span><i></i></p>\n  </section>\n{% endfor %}\n</div>",
+  "css": ".rvs-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6mm}\n.rvs-steps section{break-inside:avoid}\n.rvs-steps header{display:flex;align-items:center;gap:1.8mm;font-weight:700;padding-bottom:1.2mm;border-bottom:1.5px solid #1b1f1d}\n.rvs-steps em{display:inline-grid;place-items:center;width:4.6mm;height:4.6mm;border-radius:50%;background:#1b1f1d;color:#fff;font-style:normal;font-size:.8em;font-weight:700}\n.rvs-box{height:13mm;margin-top:2.5mm;border:1px dashed #b5bdb9;border-radius:1.5mm;display:flex;align-items:flex-end;padding:1mm 2mm;color:#8a948f;font-size:.85em}\n.rvs-ln{display:flex;align-items:flex-end;gap:2mm;margin:2.8mm 0 0;color:#5b6560}\n.rvs-ln span{white-space:nowrap}\n.rvs-ln span::after{content:\":\"}\n.rvs-ln i{flex:1;height:1em;border-bottom:1px dotted #8a948f}\n.rvs-ln b{flex:1;color:#1b1f1d;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+  "modified": "2026-10-13 10:00:00.000000",
+  "docstatus": 0,
+  "signatories": []
+ },
+ {
+  "doctype": "Print Signature",
+  "name": "Accountant, Manager and Stamp",
+  "signature_name": "Accountant, Manager and Stamp",
+  "disabled": 0,
+  "signature_for": "Document",
+  "content_type": "HTML",
+  "html": "{# Two signatures and the place of the company's stamp, with its name. #}\n<div class=\"rvs-stamped\">\n  <section>\n    <header>{{ _(\"Accountant\", context=\"Report View\") }}</header>\n    <p class=\"rvs-ln\"><span>{{ _(\"Name\", context=\"Report View\") }}</span><b>{{ frappe.get_fullname(doc.owner) }}</b></p>\n    <p class=\"rvs-ln\"><span>{{ _(\"Signature\", context=\"Report View\") }}</span><i></i></p>\n  </section>\n  <section>\n    <header>{{ _(\"Finance Manager\") }}</header>\n    <p class=\"rvs-ln\"><span>{{ _(\"Name\", context=\"Report View\") }}</span><i></i></p>\n    <p class=\"rvs-ln\"><span>{{ _(\"Signature\", context=\"Report View\") }}</span><i></i></p>\n  </section>\n  <div class=\"rvs-seal\"><span>{{ _(\"Company stamp\") }}</span>{% if company %}<small>{{ company }}</small>{% endif %}</div>\n</div>",
+  "css": ".rvs-stamped{display:grid;grid-template-columns:1fr 1fr 30mm;gap:7mm;align-items:center}\n.rvs-stamped section{break-inside:avoid}\n.rvs-stamped header{font-weight:700;padding-bottom:1.2mm;border-bottom:1.5px solid #1b1f1d}\n.rvs-seal{width:28mm;height:28mm;border:1.5px dashed #8a948f;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1mm;text-align:center;color:#6b736f;padding:3mm;box-sizing:border-box}\n.rvs-seal small{font-size:.8em;line-height:1.2}\n.rvs-ln{display:flex;align-items:flex-end;gap:2mm;margin:3.2mm 0 0;color:#5b6560}\n.rvs-ln span{white-space:nowrap}\n.rvs-ln span::after{content:\":\"}\n.rvs-ln i{flex:1;height:1em;border-bottom:1px dotted #8a948f}\n.rvs-ln b{flex:1;color:#1b1f1d;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+  "modified": "2026-10-13 10:00:00.000000",
+  "docstatus": 0,
+  "signatories": []
+ },
+ {
+  "doctype": "Print Signature",
+  "name": "Receipt Acknowledgement",
+  "signature_name": "Receipt Acknowledgement",
+  "disabled": 0,
+  "signature_for": "Document",
+  "content_type": "HTML",
+  "html": "{# One framed statement the receiver signs: name, signature, date in a row. #}\n<div class=\"rvs-ack\">\n  <p class=\"rvs-ack-t\">{{ _(\"I acknowledge that I have received the above in full and in good order.\") }}</p>\n  <div class=\"rvs-ack-row\">\n    <p class=\"rvs-ln\"><span>{{ _(\"Name\", context=\"Report View\") }}</span><i></i></p>\n    <p class=\"rvs-ln\"><span>{{ _(\"Signature\", context=\"Report View\") }}</span><i></i></p>\n    <p class=\"rvs-ln\"><span>{{ _(\"Date\") }}</span><i></i></p>\n  </div>\n</div>",
+  "css": ".rvs-ack{border:1px solid #d5dbd8;border-inline-start:3px solid #1b1f1d;border-radius:1.5mm;background:#f5f7f6;padding:2.5mm 4mm 3mm;break-inside:avoid}\n.rvs-ack-t{margin:0;font-weight:600}\n.rvs-ack-row{display:grid;grid-template-columns:1.3fr 1fr .8fr;gap:6mm}\n.rvs-ln{display:flex;align-items:flex-end;gap:2mm;margin:4mm 0 0;color:#5b6560}\n.rvs-ln span{white-space:nowrap}\n.rvs-ln span::after{content:\":\"}\n.rvs-ln i{flex:1;height:1em;border-bottom:1px dotted #8a948f}",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0,
   "signatories": []
  }

@@ -4,7 +4,7 @@
   "name": "Financial Statement",
   "print_heading": "Financial Statement",
   "description": "{# The company and the period come from the report's filters (doc = the filter values). #}\n<b>{{ doc.company or \"\" }}</b>\n{% if doc.from_date and doc.to_date %}<br>{{ _(\"For the period from {0} to {1}\")|replace(\"{0}\", frappe.utils.formatdate(doc.from_date))|replace(\"{1}\", frappe.utils.formatdate(doc.to_date)) }}{% elif doc.to_date %}<br>{{ _(\"As on {0}\")|replace(\"{0}\", frappe.utils.formatdate(doc.to_date)) }}{% endif %}",
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0
  },
  {
@@ -12,7 +12,7 @@
   "name": "Account Statement",
   "print_heading": "Account Statement",
   "description": "{# Every filter with a value, by its label: filters.<fieldname>.label / .value #}\n{% for key, f in filters.items() if f.value and f.fieldtype != \"Check\" %}<span style=\"white-space:nowrap\">{{ f.label }}: <b>{{ f.value|join(\", \") if (f.value is iterable and f.value is not string) else f.value }}</b></span>{% if not loop.last %} · {% endif %}{% endfor %}",
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0
  },
  {
@@ -20,7 +20,7 @@
   "name": "Confidential Report",
   "print_heading": "Confidential Report",
   "description": "{# HTML is allowed: a framed word, then who printed it and when. #}\n<div style=\"display:inline-block;border:1.5px solid currentColor;border-radius:1.5mm;padding:.6mm 4mm;font-weight:700;letter-spacing:.18em\">{{ _(\"CONFIDENTIAL\") }}</div>\n<div style=\"margin-top:1mm\">{{ _(\"For internal use only. Printed by {0} on {1}\")|replace(\"{0}\", printed_by)|replace(\"{1}\", frappe.utils.format_datetime(printed_on)) }}</div>",
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0
  },
  {
@@ -28,7 +28,7 @@
   "name": "Draft Report",
   "print_heading": "Draft Report",
   "description": "{# Plain text without tags: each line prints on its own line. #}\n{{ title }} · {{ _(\"Draft copy\") }}\n{{ _(\"Figures may change before approval.\") }}",
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0
  },
  {
@@ -36,7 +36,7 @@
   "name": "Board Report",
   "print_heading": "Board Report",
   "description": "{# Choose «Instead of the report title» to make this heading the title of the pages. #}\n{{ _(\"Submitted to the Board of Directors\") }}\n{{ doc.company or \"\" }}{% if doc.fiscal_year %} · {{ _(\"Fiscal Year {0}\")|replace(\"{0}\", doc.fiscal_year) }}{% endif %}",
-  "modified": "2026-10-12 12:20:00.000000",
+  "modified": "2026-10-13 10:00:00.000000",
   "docstatus": 0
  }
 ]

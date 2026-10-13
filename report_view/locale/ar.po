@@ -2295,3 +2295,19 @@ msgstr "مع التوقيع في هذه الصفحات لا تبقى مساحة 
 msgctxt "Report View"
 msgid "Unknown error"
 msgstr "خطأ غير معروف"
+
+msgctxt "Report View"
+msgid "Accountant"
+msgstr "المحاسب"
+
+msgid "Approval Steps"
+msgstr "خطوات الاعتماد"
+
+msgid "Accountant, Manager and Stamp"
+msgstr "المحاسب والمدير والختم"
+
+msgid "Receipt Acknowledgement"
+msgstr "إقرار استلام"
+
+msgid "I acknowledge that I have received the above in full and in good order."
+msgstr "أقرّ بأنني استلمت ما ورد أعلاه كاملاً وبحالة سليمة."

@@ -44,7 +44,7 @@
 .rv-print-probe:empty{display:none}
 
 /* ---------- a page (paper) ---------- */
-.rv-page{background:var(--pp-bg);color:var(--pp-tx);box-shadow:var(--pp-shadow);display:flex;flex-direction:column;flex:none;position:relative;overflow:hidden;box-sizing:border-box;font-size:var(--pp-fs,12px);line-height:1.35;letter-spacing:0;font-family:var(--font);-webkit-font-smoothing:antialiased}
+.rv-page{isolation:isolate;background:var(--pp-bg);color:var(--pp-tx);box-shadow:var(--pp-shadow);display:flex;flex-direction:column;flex:none;position:relative;overflow:hidden;box-sizing:border-box;font-size:var(--pp-fs,12px);line-height:1.35;letter-spacing:0;font-family:var(--font);-webkit-font-smoothing:antialiased}
 .rv-page *{box-sizing:border-box}
 .rv-page-ph{position:absolute;inset:0;display:grid;place-items:center;font-size:28px;font-weight:600;color:var(--pp-line);font-variant-numeric:tabular-nums}
 .rv-page-top{flex:none}

@@ -2861,3 +2861,31 @@ test("pages: the mouse wheel over a focused number field scrolls the panel, the 
 	expect(await page.evaluate(() => window.rv_page.pages.settings.page_m.top)).toBe(Number(before));
 	expect(problems).toEqual([]);
 });
+
+test("side panel: ticking a column keeps the columns list and the panel where they were", async ({ page }) => {
+	const problems = watch_console(page);
+	await page.setViewportSize({ width: 1280, height: 640 });
+	await open(page, "report=gl&lang=ar");
+	await settle(page);
+	await page.locator('[data-side="columns"]').click();
+	const where = () => page.evaluate(() => ({ list: document.querySelector(".rv-collist").scrollTop, bd: document.querySelector(".rv-panel-bd").scrollTop }));
+	// down the list and the panel, then untick and tick the last column
+	await page.evaluate(() => {
+		const list = document.querySelector(".rv-collist");
+		list.scrollTop = list.scrollHeight;
+		const bd = document.querySelector(".rv-panel-bd");
+		bd.scrollTop = 60;
+	});
+	const before = await where();
+	expect(before.list).toBeGreaterThan(0);
+	const last = page.locator(".rv-collist [data-col]:not([disabled])").last();
+	const key = await last.getAttribute("data-col");
+	await last.click();
+	await settle(page);
+	expect(await where()).toEqual(before);
+	await page.locator(`.rv-collist [data-col="${key}"]`).click();
+	await settle(page);
+	expect(await where()).toEqual(before);
+	expect(await page.evaluate(() => document.activeElement?.dataset?.col)).toBe(key);
+	expect(problems).toEqual([]);
+});

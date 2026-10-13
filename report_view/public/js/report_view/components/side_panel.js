@@ -11,6 +11,14 @@ import { icons } from "./icons.js";
 import { SetList } from "./set_filter.js";
 import { DRAG_COLUMN, DRAG_GROUP, DRAG_PIVOT, accepts, dragged } from "./group_panel.js";
 
+// A selector that finds a control of the panel again once the panel is drawn anew.
+function focus_key(el) {
+	for (const attr of ["data-col", "data-agg", "data-pagg", "data-add", "data-action"]) {
+		if (el.hasAttribute?.(attr)) return `[${attr}="${CSS.escape(el.getAttribute(attr))}"]`;
+	}
+	return null;
+}
+
 function esc(s) {
 	return frappe.utils.escape_html(String(s ?? ""));
 }
@@ -79,9 +87,19 @@ export class SidePanel {
 			}
 			return;
 		}
+		// drawn again for the same side (a column ticked, a group added): where the panel and
+		// its lists stood, and the control in hand, stay
+		const again = this.shown === side;
+		const scrolls = again ? [...this.panel.querySelectorAll(".rv-panel-bd, .rv-collist")].map((el) => el.scrollTop) : [];
+		const focus = again && this.panel.contains(document.activeElement) ? focus_key(document.activeElement) : null;
 		this.shown = side;
 		if (side === "columns") this.columns_panel();
 		else this.filters_panel(filters);
+		if (!again) return;
+		[...this.panel.querySelectorAll(".rv-panel-bd, .rv-collist")].forEach((el, i) => {
+			if (scrolls[i]) el.scrollTop = scrolls[i];
+		});
+		if (focus) this.panel.querySelector(focus)?.focus({ preventScroll: true });
 	}
 
 	header(title, extra = "") {

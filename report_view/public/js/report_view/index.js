@@ -1081,19 +1081,19 @@ export class ReportViewPage {
 	}
 
 	/** A report print format: a JS template as it is, a Jinja one rendered by the server. */
-	async pages_format(name, lang = null, type = null) {
+	async pages_format(name, lang = null, type = null, view_columns = null) {
 		// a Jinja format known from the options is rendered at once (one request, not two)
 		const format = type === "Jinja" ? { type } : await api.get_print_format(this.report_name, name);
 		if (format.type !== "Jinja") return format;
 		const meta = (this.report_settings?.filters || []).map((df) => ({ fieldname: df.fieldname, label: __(df.label || ""), fieldtype: df.fieldtype }));
-		return api.render_print_format(this.report_name, name, this.last_filters, this.filters.js_filters(), meta, this.prepared_report_name, lang);
+		return api.render_print_format(this.report_name, name, this.last_filters, this.filters.js_filters(), meta, this.prepared_report_name, lang, view_columns);
 	}
 
 	/** A print heading or signature (ADR-015), rendered by the server with the filters on screen. */
-	pages_part(kind, name, lang = null) {
+	pages_part(kind, name, lang = null, view_columns = null) {
 		const meta = (this.report_settings?.filters || []).map((df) => ({ fieldname: df.fieldname, label: __(df.label || ""), fieldtype: df.fieldtype }));
 		const render = kind === "heading" ? api.render_print_heading : api.render_print_signature;
-		return render(this.report_name, name, this.last_filters, meta, lang);
+		return render(this.report_name, name, this.last_filters, meta, lang, view_columns);
 	}
 
 	/** The PDF of the pages (ADR-016): the server's engine prints the very sheets. */

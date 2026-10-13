@@ -16,6 +16,7 @@
 
 import { GridRows } from "./grid_rows.js";
 import { build_layout } from "../engine/row_layout.js";
+import { ordered_columns } from "../engine/view_config.js";
 import { page_box, fit_columns, paginate, preset_margins, PAGE_SIZES, MARGINS, PAGE_FONT, SCREEN_FONT } from "../engine/page_layout.js";
 import { icons } from "../components/icons.js";
 import { esc } from "../util.js";
@@ -1387,10 +1388,11 @@ export class PagesView {
 	 */
 	async load_part(kind, name) {
 		if (!name) return null;
-		const key = `${kind}|${name}|${this.settings.lang || ""}|${JSON.stringify(this.ctx.filters || {})}`;
+		const cols = this.view_columns();
+		const key = `${kind}|${name}|${this.settings.lang || ""}|${JSON.stringify(this.ctx.filters || {})}|${JSON.stringify(cols)}`;
 		if (!this.parts.has(key)) {
 			try {
-				const r = await this.host.pages_part(kind, name, this.settings.lang || null);
+				const r = await this.host.pages_part(kind, name, this.settings.lang || null, cols);
 				this.parts.set(key, r ? { ...r, html: strip_scripts(r.html) } : null);
 			} catch (e) {
 				const msg = kind === "heading" ? __("The print heading could not be loaded: {0}", [err_text(e)]) : __("The signature could not be loaded: {0}", [err_text(e)]);
@@ -1405,10 +1407,11 @@ export class PagesView {
 		// a document always has a format: "" is its doctype's default
 		if (!name && !this.doc_mode) return null;
 		// a Jinja format is rendered with the criteria and the language: one per both
-		const key = `${name}|${this.settings.lang || ""}|${JSON.stringify(this.ctx.filters || {})}`;
+		const cols = this.view_columns();
+		const key = `${name}|${this.settings.lang || ""}|${JSON.stringify(this.ctx.filters || {})}|${JSON.stringify(cols)}`;
 		if (!this.formats.has(key)) {
 			try {
-				this.formats.set(key, await this.host.pages_format(name, this.settings.lang || null, this.options?.print_format_types?.[name]));
+				this.formats.set(key, await this.host.pages_format(name, this.settings.lang || null, this.options?.print_format_types?.[name], cols));
 			} catch (e) {
 				this.note(__("The print format could not be loaded: {0}", [err_text(e)]), true);
 				this.formats.set(key, null);
@@ -2118,6 +2121,23 @@ export class PagesView {
 	 * the report returned them (Frappe's total row last, `is_total_row`), and the parts of
 	 * the query-report object the formats call. Labels come in the language of the pages.
 	 */
+	/**
+	 * The report's columns as the view shows them, for the templates (a print format, a
+	 * heading, a signature): in the view's order, each with `hidden` when the columns panel or
+	 * the pages hide it. The report's own columns only (an enrichment's are not in its rows).
+	 * Null without a report (a document's pages).
+	 */
+	view_columns() {
+		if (!this.report?.columns) return null;
+		const hidden = new Set([...(this.state?.columns?.hidden || []), ...(this.settings.hidden || [])]);
+		const pos = new Map((this.state?.columns?.order || []).map((k, i) => [k, i]));
+		return ordered_columns(this.report)
+			.filter((c) => !c.enriched && c.fieldname)
+			.map((c, i) => ({ c, i }))
+			.sort((a, b) => (pos.get(a.c.key) ?? 1e6 + a.i) - (pos.get(b.c.key) ?? 1e6 + b.i))
+			.map(({ c }) => ({ fieldname: c.fieldname, label: c.label, hidden: Boolean(c.hidden) || hidden.has(c.key) }));
+	}
+
 	query_report_facade() {
 		const ctx = this.ctx;
 		const source = this.lang_entry?.report || this.report;
@@ -2141,6 +2161,9 @@ export class PagesView {
 					docfield,
 				};
 			});
+		// in the view's order (the columns panel)
+		const at = new Map((this.view_columns() || []).map((c, i) => [c.fieldname, i]));
+		columns.sort((a, b) => (at.get(a.fieldname) ?? 1e6 + a._index) - (at.get(b.fieldname) ?? 1e6 + b._index));
 		const data = source.rows.map((r, i) => ({ ...r, _index: i }));
 		const total = source.report_totals?.frappe_total;
 		if (total) data.push({ ...total, _index: data.length, is_total_row: true });

@@ -2315,3 +2315,15 @@ msgstr "أقرّ بأنني استلمت ما ورد أعلاه كاملاً و�
 msgctxt "Report View"
 msgid "Settings"
 msgstr "الإعدادات"
+
+msgid "the report's columns as the view shows them, in its order: c.fieldname, c.label, c.hidden"
+msgstr "أعمدة التقرير كما يعرضها العرض وبترتيبه: c.fieldname و c.label و c.hidden"
+
+msgid "the columns shown, in the view's order"
+msgstr "الأعمدة الظاهرة فقط، بترتيب العرض"
+
+msgid "Too many columns"
+msgstr "عدد الأعمدة كبير جداً"
+
+msgid "Invalid columns of the view"
+msgstr "أعمدة العرض غير صالحة"

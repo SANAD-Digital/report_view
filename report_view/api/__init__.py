@@ -306,6 +306,7 @@ def render_print_format(
 	js_filters: list | str | None = None,
 	filter_meta: list | str | None = None,
 	prepared_report_name: str | None = None,
+	view_columns: list | str | None = None,
 ) -> dict:
 	"""A Jinja report print format rendered on the server (§2.8, ADR-014).
 
@@ -314,7 +315,9 @@ def render_print_format(
 	formats read: ``title``, ``filters`` (``{fieldname: {label, fieldtype, value}}``),
 	``columns`` (``[{fieldname, label, fieldtype, options, width, hidden}]``) and ``data``
 	(the report's rows as dicts, Frappe's total row included). The language is the
-	request's (``_lang``).
+	request's (``_lang``). ``view_columns`` (the columns as the view shows them, sent by the
+	Pages view) orders ``columns`` and hides those the view hides; ``visible_columns`` are
+	the ones shown, in that order.
 	"""
 	report = guard_report(report_name)
 	guard_print(report)
@@ -323,6 +326,7 @@ def render_print_format(
 	if doc.print_format_type != "Jinja":
 		frappe.throw(_("Print Format {0} is not a Jinja template").format(doc.name), RVInvalidInput)
 	filter_objs, values = printing.filter_objects(filters, filter_meta)
+	view = printing.parse_view_columns(view_columns)
 	response = runner.run(report, report_name, filters, js_filters, prepared_report_name)
 	if response["status"] != "ok":
 		frappe.throw(_("The report did not return rows to print"), RVInvalidInput)
@@ -340,12 +344,14 @@ def render_print_format(
 				hidden=1 if c.get("hidden") and str(c.get("hidden")) not in ("0", "False", "false") else 0,
 			)
 		)
+	columns_as_returned = list(columns)
+	columns = printing.apply_view_columns(columns, view)
 	data = []
 	for row in raw.get("result") or []:
 		if isinstance(row, dict):
 			data.append(frappe._dict(row))
 		elif isinstance(row, list | tuple):
-			data.append(frappe._dict({c.fieldname: row[i] if i < len(row) else None for i, c in enumerate(columns)}))
+			data.append(frappe._dict({c.fieldname: row[i] if i < len(row) else None for i, c in enumerate(columns_as_returned)}))
 	html = frappe.render_template(
 		doc.html or "",
 		{
@@ -353,6 +359,7 @@ def render_print_format(
 			"report_name": report.name,
 			"filters": filter_objs,
 			"columns": columns,
+			"visible_columns": [c for c in columns if not c.hidden],
 			"data": data,
 			"doc": frappe._dict(values),
 		},
@@ -361,7 +368,9 @@ def render_print_format(
 
 
 @frappe.whitelist(methods=["POST"])
-def render_print_heading(report_name: str, name: str, filters: dict | str, filter_meta: list | str | None = None) -> dict:
+def render_print_heading(
+	report_name: str, name: str, filters: dict | str, filter_meta: list | str | None = None, view_columns: list | str | None = None
+) -> dict:
 	"""A ``Print Heading`` of the Pages view (ADR-015): its title and description rendered
 	as Jinja with the report's name and the filters on screen (``printing.report_context``),
 	in the request's language (``_lang``). The report does not run again."""
@@ -369,11 +378,13 @@ def render_print_heading(report_name: str, name: str, filters: dict | str, filte
 	guard_print(report)
 	if not isinstance(name, str) or not name.strip():
 		frappe.throw(_("Print heading name is required"), RVInvalidInput)
-	return printing.render_heading(name, printing.report_context(report, filters, filter_meta))
+	return printing.render_heading(name, printing.report_context(report, filters, filter_meta, view_columns))
 
 
 @frappe.whitelist(methods=["POST"])
-def render_print_signature(report_name: str, name: str, filters: dict | str, filter_meta: list | str | None = None) -> dict:
+def render_print_signature(
+	report_name: str, name: str, filters: dict | str, filter_meta: list | str | None = None, view_columns: list | str | None = None
+) -> dict:
 	"""A ``Print Signature`` of type Report (ADR-015), for this report or for all: its
 	table of signatories or its HTML/Jinja, with the report's context; its CSS nested in
 	``.rv-signature``."""
@@ -382,7 +393,7 @@ def render_print_signature(report_name: str, name: str, filters: dict | str, fil
 	if not isinstance(name, str) or not name.strip():
 		frappe.throw(_("Print signature name is required"), RVInvalidInput)
 	names = list(dict.fromkeys([report_name, report.name]))
-	return printing.report_signature(name, names, printing.report_context(report, filters, filter_meta))
+	return printing.report_signature(name, names, printing.report_context(report, filters, filter_meta, view_columns))
 
 
 @frappe.whitelist(methods=["POST"])

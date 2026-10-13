@@ -12,7 +12,7 @@ import re
 
 import frappe
 from frappe import _
-from frappe.utils import escape_html, get_fullname, now_datetime
+from frappe.utils import escape_html, get_fullname, now_datetime, strip_html_tags
 
 from report_view.core.errors import RVInvalidInput
 from report_view.core.inputs import parse_json_arg
@@ -41,12 +41,56 @@ def filter_objects(filters: dict | str, filter_meta: list | str | None) -> tuple
 	return objs, values
 
 
-def report_context(report, filters: dict | str, filter_meta: list | str | None) -> dict:
+MAX_VIEW_COLUMNS = 500
+
+
+def parse_view_columns(view_columns: list | str | None) -> list[frappe._dict]:
+	"""The report's columns as the view shows them (the Pages view sends them): in its order,
+	``{fieldname, label, hidden}`` each. Labels are text (tags dropped)."""
+	view = parse_json_arg(view_columns, "view_columns", list, allow_none=True) or []
+	if len(view) > MAX_VIEW_COLUMNS:
+		frappe.throw(_("Too many columns"), RVInvalidInput)
+	out = []
+	for v in view:
+		if not isinstance(v, dict) or not isinstance(v.get("fieldname"), str) or not v["fieldname"]:
+			frappe.throw(_("Invalid columns of the view"), RVInvalidInput)
+		label = v.get("label")
+		out.append(
+			frappe._dict(
+				fieldname=v["fieldname"][:140],
+				label=strip_html_tags(label)[:140] if isinstance(label, str) else v["fieldname"][:140],
+				hidden=1 if v.get("hidden") else 0,
+			)
+		)
+	return out
+
+
+def apply_view_columns(columns: list, view: list) -> list:
+	"""The report's ``columns`` in the order of the view, hidden where the view hides them (a
+	column the report hides stays hidden); those the view does not name keep their order after."""
+	if not view:
+		return columns
+	by = {c.fieldname: c for c in columns}
+	out = []
+	for v in view:
+		c = by.pop(v.fieldname, None)
+		if c is not None:
+			c.hidden = 1 if (v.hidden or c.hidden) else 0
+			out.append(c)
+	return out + list(by.values())
+
+
+def report_context(report, filters: dict | str, filter_meta: list | str | None, view_columns: list | str | None = None) -> dict:
 	"""What a heading or a signature of a report may read (the help of Print Signature lists
 	it): ``title``, ``report_name``, ``filters``, ``doc`` (the filter values as a document),
-	``company``, ``printed_by``, ``printed_on`` and ``lang``."""
+	``company``, ``printed_by``, ``printed_on``, ``lang``, and the columns as the view shows
+	them: ``columns`` (``{fieldname, label, hidden}``, in the view's order) and
+	``visible_columns`` (those shown)."""
 	objs, values = filter_objects(filters, filter_meta)
+	cols = parse_view_columns(view_columns)
 	return {
+		"columns": cols,
+		"visible_columns": [c for c in cols if not c.hidden],
 		"title": _(report.name),
 		"report_name": report.name,
 		"filters": frappe._dict(objs),

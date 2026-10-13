@@ -120,21 +120,21 @@ export const api = {
 
 	// A Jinja print format, rendered on the server with the report run again (`lang`: the
 	// language of the pages, read by Frappe from `_lang`).
-	render_print_format: (report_name, name, filters, js_filters, filter_meta, prepared_report_name = null, lang = null) =>
+	render_print_format: (report_name, name, filters, js_filters, filter_meta, prepared_report_name = null, lang = null, view_columns = null) =>
 		message(
 			call(
 				"report_view.api.render_print_format",
-				{ report_name, name, filters, js_filters, filter_meta, prepared_report_name, ...(lang ? { _lang: lang } : {}) },
+				{ report_name, name, filters, js_filters, filter_meta, prepared_report_name, view_columns, ...(lang ? { _lang: lang } : {}) },
 				{ type: "POST" }
 			)
 		),
 
 	// A Print Heading / Print Signature (ADR-015) rendered with the report and its filters.
-	render_print_heading: (report_name, name, filters, filter_meta, lang = null) =>
-		message(call("report_view.api.render_print_heading", { report_name, name, filters, filter_meta, ...(lang ? { _lang: lang } : {}) }, { type: "POST" })),
+	render_print_heading: (report_name, name, filters, filter_meta, lang = null, view_columns = null) =>
+		message(call("report_view.api.render_print_heading", { report_name, name, filters, filter_meta, view_columns, ...(lang ? { _lang: lang } : {}) }, { type: "POST" })),
 
-	render_print_signature: (report_name, name, filters, filter_meta, lang = null) =>
-		message(call("report_view.api.render_print_signature", { report_name, name, filters, filter_meta, ...(lang ? { _lang: lang } : {}) }, { type: "POST" })),
+	render_print_signature: (report_name, name, filters, filter_meta, lang = null, view_columns = null) =>
+		message(call("report_view.api.render_print_signature", { report_name, name, filters, filter_meta, view_columns, ...(lang ? { _lang: lang } : {}) }, { type: "POST" })),
 
 	get_translations: (report_name, lang, messages) =>
 		message(call("report_view.api.get_translations", { report_name, lang, messages }, { type: "POST" })),

@@ -24,6 +24,8 @@ function render_help(frm) {
 				["filters.<fieldname>.label / .value", __("a filter of the report: its label and its value")],
 				["doc.<fieldname>", __("the value of a filter, e.g. doc.company, doc.from_date")],
 				["company", __("the company of the filters")],
+				["columns", __("the report's columns as the view shows them, in its order: c.fieldname, c.label, c.hidden")],
+				["visible_columns", __("the columns shown, in the view's order")],
 		  ]
 		: [
 				["doc", __("the printed document, e.g. doc.name, doc.grand_total, doc.owner")],

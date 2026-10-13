@@ -405,3 +405,61 @@ class TestShippedHeadingsAndSignatures(RVTestCase):
 			self.assertIn(".rv-signature{", html)
 			for word in words:
 				self.assertIn(word, html)
+
+
+class TestViewColumnsInTemplates(RVTestCase):
+	"""The columns as the view shows them (the columns panel) reach the templates: a report
+	print format, a heading, a signature."""
+
+	def test_a_jinja_format_gets_the_columns_in_the_view_order_and_hiding(self):
+		from report_view.tests.utils import TB_FILTERS, TB_JS_FILTERS
+
+		fmt = frappe.get_doc(
+			{
+				"doctype": "Print Format",
+				"name": "RV Test View Columns",
+				"doc_type": "GL Entry",
+				"print_format_for": "Report",
+				"report": "Trial Balance",
+				"print_format_type": "Jinja",
+				"standard": "No",
+				"html": "ALL:{% for c in columns %}{{ c.fieldname }}{% if c.hidden %}-h{% endif %},{% endfor %}"
+				"|SHOWN:{% for c in visible_columns %}{{ c.fieldname }},{% endfor %}"
+				"|ROW:{{ data[0][visible_columns[0].fieldname] is not none }}",
+			}
+		).insert(ignore_permissions=True)
+		meta = [{"fieldname": "company", "label": "Company", "fieldtype": "Link"}]
+		view = [
+			{"fieldname": "credit", "label": "Credit", "hidden": False},
+			{"fieldname": "account", "label": "Account", "hidden": False},
+			{"fieldname": "debit", "label": "<b>Debit</b>", "hidden": True},
+		]
+		with self.as_user("accountant"):
+			html = api.render_print_format("Trial Balance", fmt.name, TB_FILTERS, TB_JS_FILTERS, meta, None, view)["html"]
+		shown = html.split("|SHOWN:")[1].split("|")[0].split(",")
+		# the view's order first, the view's hidden column hidden, the others after in the report's order
+		self.assertEqual(shown[:2], ["credit", "account"])
+		self.assertNotIn("debit", shown)
+		self.assertIn("debit-h,", html)
+		self.assertTrue(html.split("|ALL:")[0].startswith("ALL:credit,account,debit-h,"))
+		# the rows keep their values by fieldname whatever the order
+		self.assertIn("|ROW:True", html)
+		# without the view: the report's columns as returned
+		with self.as_user("accountant"):
+			plain = api.render_print_format("Trial Balance", fmt.name, TB_FILTERS, TB_JS_FILTERS, meta)["html"]
+		self.assertFalse(plain.startswith("ALL:credit,"))
+
+	def test_a_heading_reads_the_view_columns_and_bad_input_is_refused(self):
+		from report_view.core import printing
+
+		report = frappe.get_doc("Report", "Trial Balance")
+		ctx = printing.report_context(
+			report, {"company": COMPANY}, None, [{"fieldname": "account", "label": "<i>Account</i>"}, {"fieldname": "debit", "label": "Debit", "hidden": 1}]
+		)
+		self.assertEqual([c.fieldname for c in ctx["columns"]], ["account", "debit"])
+		self.assertEqual([c.fieldname for c in ctx["visible_columns"]], ["account"])
+		self.assertEqual(ctx["columns"][0].label, "Account")
+		self.assertEqual(printing.report_context(report, {"company": COMPANY}, None)["columns"], [])
+		for bad in ([{"label": "x"}], ["account"], [{"fieldname": ""}], [{"fieldname": "a"}] * (printing.MAX_VIEW_COLUMNS + 1)):
+			with self.assertRaises(RVInvalidInput):
+				printing.parse_view_columns(bad)

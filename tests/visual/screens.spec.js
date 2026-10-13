@@ -2838,3 +2838,26 @@ test("pages: on a phone the pages take the screen and the settings open as a she
 	expect((await layout()).open).toBe(false);
 	expect(problems).toEqual([]);
 });
+
+test("pages: the mouse wheel over a focused number field scrolls the panel, the value stays", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=tb&lang=ar&rv=${PAGES}`);
+	await settle(page);
+	await open_sections(page);
+	const field = page.locator('input[data-box="page_m"][data-side="top"]');
+	await field.scrollIntoViewIfNeeded();
+	const before = await field.inputValue();
+	await field.click();
+	const box = await field.boundingBox();
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+	expect(await field.evaluate((el) => el === document.activeElement)).toBe(true);
+	await page.mouse.wheel(0, -120);
+	await page.mouse.wheel(0, 240);
+	await page.waitForTimeout(200);
+	// the field let go of the focus at the first turn: a desktop browser steps only a
+	// focused number field (headless Chromium does not step it at all)
+	expect(await field.evaluate((el) => el === document.activeElement)).toBe(false);
+	expect(await field.inputValue()).toBe(before);
+	expect(await page.evaluate(() => window.rv_page.pages.settings.page_m.top)).toBe(Number(before));
+	expect(problems).toEqual([]);
+});

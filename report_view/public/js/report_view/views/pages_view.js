@@ -451,7 +451,13 @@ export class PagesView {
 		});
 		for (const b of el.querySelectorAll("[data-zoom]")) b.addEventListener("click", () => this.zoom(b.dataset.zoom));
 		this.stage.addEventListener("scroll", () => this.update_position(), { passive: true });
-		// an open list of a Link field follows its field while the panel scrolls
+		// the wheel scrolls the panel; a focused number field would take it as a step up or
+		// down and change its value under the pointer: it lets the field go first
+		this.bd.addEventListener("wheel", (e) => {
+			const t = e.target;
+			if (t instanceof HTMLInputElement && t.type === "number" && t === document.activeElement) t.blur();
+		}, { passive: true });
+				// an open list of a Link field follows its field while the panel scrolls
 		this.bd.addEventListener("scroll", () => {
 			for (const input of this.bd.querySelectorAll(".rv-linkf input[aria-expanded='true']")) this.place_dropdown(input);
 		}, { passive: true });

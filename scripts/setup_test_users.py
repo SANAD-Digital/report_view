@@ -4,22 +4,25 @@ Run from the bench "sites" directory:
     cd sites && ../env/bin/python ../apps/report_view/scripts/setup_test_users.py <site> [company]
 
 Idempotent: re-running updates roles, passwords and permissions in place.
-Passwords are development-only and are documented in docs/progress/phase-0.md.
+The passwords come from the environment, one variable per user (never from the
+code): RV_ADMIN_PASSWORD, RV_ACCOUNTANT_PASSWORD, RV_RESTRICTED_PASSWORD,
+RV_NOEXPORT_PASSWORD and RV_NONE_PASSWORD (the upper-case username + _PASSWORD).
 This is a development setup script, not application code: it is never imported
 by the app.
 """
 
+import os
 import sys
 
 import frappe
 from frappe.permissions import update_permission_property
 
 USERS = {
-	"rv_admin": {"roles": ["System Manager"], "password": "***REMOVED***"},
-	"rv_accountant": {"roles": ["Accounts User", "Accounts Manager"], "password": "***REMOVED***"},
-	"rv_restricted": {"roles": ["Accounts User"], "password": "***REMOVED***"},
-	"rv_noexport": {"roles": ["Accounts User"], "password": "***REMOVED***"},
-	"rv_none": {"roles": [], "password": "***REMOVED***"},
+	"rv_admin": {"roles": ["System Manager"]},
+	"rv_accountant": {"roles": ["Accounts User", "Accounts Manager"]},
+	"rv_restricted": {"roles": ["Accounts User"]},
+	"rv_noexport": {"roles": ["Accounts User"]},
+	"rv_none": {"roles": []},
 }
 EMAIL_DOMAIN = "rv.test"
 NO_EXPORT_DOCTYPES = ("GL Entry", "Account")
@@ -29,7 +32,20 @@ def email_of(username):
 	return f"{username}@{EMAIL_DOMAIN}"
 
 
-def upsert_user(username, cfg):
+def password_variable(username):
+	return f"{username.upper()}_PASSWORD"
+
+
+def read_passwords():
+	"""{username: password} from the environment; exits naming every missing variable."""
+	passwords = {u: os.environ.get(password_variable(u)) for u in USERS}
+	missing = [password_variable(u) for u, p in passwords.items() if not p]
+	if missing:
+		sys.exit("Set the test users' passwords in the environment: " + ", ".join(missing))
+	return passwords
+
+
+def upsert_user(username, cfg, password):
 	email = email_of(username)
 	if frappe.db.exists("User", email):
 		user = frappe.get_doc("User", email)
@@ -41,7 +57,7 @@ def upsert_user(username, cfg):
 	user.enabled = 1
 	user.user_type = "System User"
 	user.send_welcome_email = 0
-	user.new_password = cfg["password"]
+	user.new_password = password
 	user.set("roles", [])
 	for role in cfg["roles"]:
 		user.append("roles", {"role": role})
@@ -63,6 +79,7 @@ def remove_export_for_accounts_user():
 
 
 def main(site, company=None):
+	passwords = read_passwords()
 	frappe.init(site=site)
 	frappe.connect()
 	frappe.set_user("Administrator")
@@ -70,7 +87,7 @@ def main(site, company=None):
 		if not company:
 			company = frappe.db.get_single_value("Global Defaults", "default_company")
 		for username, cfg in USERS.items():
-			email = upsert_user(username, cfg)
+			email = upsert_user(username, cfg, passwords[username])
 			print("user ok:", email, cfg["roles"])
 		restrict_to_company(email_of("rv_restricted"), company)
 		print("rv_restricted limited to company:", company)

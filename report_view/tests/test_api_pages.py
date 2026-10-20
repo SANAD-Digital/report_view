@@ -1,6 +1,8 @@
 """The Pages view API (ADR-014): print options, a report print format and translations,
 behind the report and print permissions like the rest of the API."""
 
+from unittest.mock import patch
+
 import frappe
 from frappe.translate import get_all_languages
 
@@ -463,3 +465,146 @@ class TestViewColumnsInTemplates(RVTestCase):
 		for bad in ([{"label": "x"}], ["account"], [{"fieldname": ""}], [{"fieldname": "a"}] * (printing.MAX_VIEW_COLUMNS + 1)):
 			with self.assertRaises(RVInvalidInput):
 				printing.parse_view_columns(bad)
+
+
+class TestPrintEscaping(RVTestCase):
+	"""What the browser sends (filters, labels, columns) and the report's rows print
+	HTML-escaped in headings, signatures and report print formats; the templates still
+	compare and look up the values as they are."""
+
+	PAYLOAD = "<img src=x onerror=alert(1)>"
+	ESCAPED = "&lt;img src=x onerror=alert(1)&gt;"
+
+	@classmethod
+	def setUpClass(cls) -> None:
+		super().setUpClass()
+		cls.heading = frappe.get_doc(
+			{
+				"doctype": "Print Heading",
+				"print_heading": "RV Esc {{ doc.rv_note }}",
+				"description": "<b>{{ doc.rv_note }}</b>|{{ filters.rv_note.label }}|{{ filters.rv_note.value }}"
+				"|{% for c in columns %}{{ c.fieldname }}{% endfor %}|{{ printed_by }}"
+				"|{{ doc.rv_note|upper }}|{{ doc.rv_note ~ '!' }}|{{ '%s'|format(doc.rv_note) }}"
+				"|{{ [doc.rv_note]|join(',') }}|{{ doc.rv_note|e }}|{{ doc.rv_note[0:4] }}",
+			}
+		).insert(ignore_if_duplicate=True)
+		cls.plain = frappe.get_doc(
+			{"doctype": "Print Heading", "print_heading": "RV Esc Plain", "description": "Note: {{ doc.rv_note }}"}
+		).insert(ignore_if_duplicate=True)
+		cls.signature = frappe.get_doc(
+			{
+				"doctype": "Print Signature",
+				"signature_name": "RV Esc Signature",
+				"signature_for": "Report",
+				"content_type": "HTML",
+				"html": "<p>{{ doc.rv_note }} {{ company }}</p>",
+			}
+		).insert()
+
+	def filters(self, note):
+		from report_view.tests.utils import TB_FILTERS
+
+		return {**TB_FILTERS, "rv_note": note}
+
+	def test_a_heading_prints_the_filters_escaped(self):
+		meta = [{"fieldname": "rv_note", "label": "<svg onload=alert(2)>", "fieldtype": "Data"}]
+		view = [{"fieldname": 'a"><img src=x onerror=alert(3)>', "label": "A"}]
+		with self.as_user("accountant"):
+			out = api.render_print_heading("Trial Balance", self.heading.name, self.filters(self.PAYLOAD), meta, view)
+		html = out["html"]
+		self.assertNotIn("<img", html)
+		self.assertNotIn("<svg", html)
+		parts = html.split("|")
+		self.assertEqual(parts[0], f"<b>{self.ESCAPED}</b>")
+		self.assertEqual(parts[1], "&lt;svg onload=alert(2)&gt;")
+		self.assertEqual(parts[2], self.ESCAPED)
+		self.assertIn("&lt;img src=x onerror=alert(3)&gt;", parts[3])
+		# the string methods, filters and operators of a template keep the escaping
+		self.assertEqual(parts[5], self.ESCAPED.upper().replace("&LT;", "&lt;").replace("&GT;", "&gt;"))
+		self.assertEqual(parts[6:11], [self.ESCAPED + "!", self.ESCAPED, self.ESCAPED, self.ESCAPED, "&lt;img"])
+		# the title is text (the browser escapes it), never HTML-escaped twice
+		self.assertEqual(out["title"], f"RV Esc {self.PAYLOAD}")
+
+	def test_a_plain_text_heading_is_escaped_once(self):
+		with self.as_user("accountant"):
+			out = api.render_print_heading("Trial Balance", self.plain.name, self.filters("A & B <i>"))
+		self.assertEqual(out["html"], "Note: A &amp; B &lt;i&gt;")
+
+	def test_a_signature_prints_the_filters_escaped(self):
+		with self.as_user("accountant"):
+			out = api.render_print_signature("Trial Balance", self.signature.name, self.filters(self.PAYLOAD))
+		self.assertNotIn("<img", out["html"])
+		self.assertIn(self.ESCAPED, out["html"])
+
+	def test_a_report_print_format_prints_filters_and_rows_escaped(self):
+		from report_view.tests.utils import TB_JS_FILTERS
+
+		fmt = frappe.get_doc(
+			{
+				"doctype": "Print Format",
+				"name": "RV Test Escaping",
+				"doc_type": "GL Entry",
+				"print_format_for": "Report",
+				"report": "Trial Balance",
+				"print_format_type": "Jinja",
+				"standard": "No",
+				"html": "{{ doc.rv_note }}|{{ filters.rv_note.value }}|{{ filters.rv_note.label }}"
+				"|{% for row in data if row.account == \"'Total'\" %}{{ row.account }}{% endfor %}"
+				"|{{ frappe.db.get_value('Company', doc.company, 'name') }}",
+			}
+		).insert(ignore_permissions=True)
+		meta = [{"fieldname": "rv_note", "label": "<b>Note</b>", "fieldtype": "Data"}]
+		with self.as_user("accountant"):
+			html = api.render_print_format(
+				"Trial Balance", fmt.name, self.filters(self.PAYLOAD), TB_JS_FILTERS, meta
+			)["html"]
+		parts = html.split("|")
+		self.assertNotIn("<img", html)
+		self.assertEqual(parts[:3], [self.ESCAPED, self.ESCAPED, "&lt;b&gt;Note&lt;/b&gt;"])
+		# a row compared as itself, printed escaped; a record looked up by a filter value
+		self.assertEqual(parts[3], "&apos;Total&apos;")
+		self.assertEqual(parts[4], COMPANY)
+
+	def test_a_report_print_format_has_a_row_cap(self):
+		from report_view.core.errors import RVLimitExceeded
+		from report_view.tests.utils import TB_FILTERS, TB_JS_FILTERS
+
+		fmt = frappe.get_doc(
+			{
+				"doctype": "Print Format",
+				"name": "RV Test Row Cap",
+				"doc_type": "GL Entry",
+				"print_format_for": "Report",
+				"report": "Trial Balance",
+				"print_format_type": "Jinja",
+				"standard": "No",
+				"html": "{{ data|length }}",
+			}
+		).insert(ignore_permissions=True)
+		with (
+			self.as_user("accountant"),
+			patch("report_view.api.get_print_max_pages", return_value=0),
+			self.assertRaises(RVLimitExceeded),
+		):
+			api.render_print_format("Trial Balance", fmt.name, TB_FILTERS, TB_JS_FILTERS)
+
+	def test_a_document_print_does_not_break_on_a_signature_it_may_not_read(self):
+		from report_view.core.printing import report_view_signature
+
+		company = frappe.get_doc("Company", COMPANY)
+		with patch("report_view.core.printing.document_signature", side_effect=frappe.PermissionError):
+			self.assertEqual(report_view_signature("RV Test Document", company), "")
+
+	def test_an_escaped_value_still_finds_its_record(self):
+		from report_view.core.printing import Text
+
+		name = frappe.get_doc(
+			{"doctype": "Print Heading", "print_heading": "RV Esc & Co 'x'", "description": ""}
+		).insert(ignore_if_duplicate=True).name
+		value = Text(name)
+		self.assertEqual(str(value), "RV Esc &amp; Co &apos;x&apos;")
+		self.assertEqual(frappe.db.get_value("Print Heading", value, "name"), name)
+		self.assertEqual(frappe.db.get_value("Print Heading", {"name": value}, "name"), name)
+		self.assertEqual(frappe.get_list("Print Heading", filters={"name": ["in", [value]]}, pluck="name"), [name])
+		self.assertEqual(frappe.get_doc("Print Heading", value).name, name)
+		self.assertEqual(frappe.as_json({"v": value}), frappe.as_json({"v": name}))

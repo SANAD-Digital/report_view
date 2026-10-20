@@ -6,7 +6,7 @@ from frappe.desk import query_report
 
 from report_view import api
 from report_view.core import engine, normalize, runner
-from report_view.core.errors import RVInvalidInput
+from report_view.core.errors import RVInvalidInput, RVReportError
 from report_view.core.settings import load_settings
 from report_view.tests.utils import (
 	COMPANY,
@@ -119,3 +119,83 @@ class TestApiRun(RVTestCase):
 		self.assertEqual(response["status"], "too_large")
 		self.assertEqual(response["limit"], 5)
 		self.assertNotIn("raw", response)
+
+
+class TestRunHardening(RVTestCase):
+	"""The report's own error is logged and not shown; the per-user limits; the report
+	checked once per request; the shipped settings read once."""
+
+	def test_a_report_error_is_logged_not_shown(self):
+		with (
+			self.as_user("accountant"),
+			patch("report_view.core.runner.query_report.run", side_effect=KeyError("tabSecret.column")),
+			patch("report_view.core.runner.frappe.log_error") as log_error,
+			patch.dict(frappe.local.conf, {"developer_mode": 0}),
+			self.assertRaises(RVReportError) as caught,
+		):
+			api.run("Trial Balance", TB_FILTERS, TB_JS_FILTERS)
+		self.assertNotIn("tabSecret", str(caught.exception))
+		self.assertEqual(str(caught.exception), "The report could not run. The error was logged.")
+		log_error.assert_called_once()
+		# Frappe's own refusals still reach the user unchanged
+		with (
+			self.as_user("accountant"),
+			patch("report_view.core.runner.query_report.run", side_effect=frappe.ValidationError("Bad date")),
+			self.assertRaises(frappe.ValidationError) as caught,
+		):
+			api.run("Trial Balance", TB_FILTERS, TB_JS_FILTERS)
+		self.assertEqual(str(caught.exception), "Bad date")
+
+	def test_the_rate_limit_counts_per_user(self):
+		from report_view.api import _rate_limit
+
+		calls = []
+		limited = _rate_limit(2, seconds=5)(lambda: calls.append(1))
+		keys = [
+			frappe.cache.make_key(f"report_view:rl:<lambda>:{self.users[k]}:5")
+			for k in ("accountant", "admin")
+		]
+		try:
+			with patch.object(frappe.local, "request", True, create=True):
+				with self.as_user("accountant"):
+					limited()
+					limited()
+					with self.assertRaises(frappe.RateLimitExceededError):
+						limited()
+				# another user has a count of their own
+				with self.as_user("admin"):
+					limited()
+			self.assertEqual(len(calls), 3)
+		finally:
+			for key in keys:
+				frappe.cache.delete(key)
+		# outside a web request (a job, a test, the console) nothing is counted
+		with self.as_user("accountant"):
+			for _i in range(3):
+				limited()
+		self.assertEqual(len(calls), 6)
+
+	def test_the_report_is_checked_once_per_request(self):
+		from report_view.api import _guard
+
+		with (
+			self.as_user("accountant"),
+			patch("report_view.api.guard_report", wraps=api.guard_report) as guard,
+		):
+			self.assertIs(_guard("Trial Balance"), _guard("Trial Balance"))
+			self.assertEqual(guard.call_count, 1)
+		# per user: another user (set_user starts afresh) is checked again, and refused
+		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
+			_guard("Trial Balance")
+
+	def test_settings_are_read_once_and_copied(self):
+		first = load_settings("Trial Balance")
+		first["filter_defs"].append({"fieldname": "x"})
+		with patch("report_view.core.settings.open") as opened:
+			second = load_settings("Trial Balance")
+			opened.assert_not_called()
+		self.assertNotIn({"fieldname": "x"}, second["filter_defs"])
+		self.assertEqual(second["source"], "defaults")
+		# a name is never a path out of the defaults folder
+		for name in ("../hooks", "a/b", "..", ""):
+			self.assertIsNone(load_settings(name)["source"])

@@ -158,7 +158,8 @@ def render_doc_letterhead(doctype: str, name: str, letterhead: str) -> dict:
 	if not found:
 		frappe.throw(_("Letter Head {0} not found").format(letterhead), frappe.DoesNotExistError)
 	lh = frappe.get_doc("Letter Head", found[0].name)
-	context = {"doc": doc.as_dict()}
+	# the document's strings print HTML-escaped (Frappe's Jinja does not autoescape)
+	context = {"doc": printing.escaped(doc.as_dict())}
 	return {
 		"header": frappe.render_template(lh.content or "", context),
 		"footer": frappe.render_template(lh.footer or "", context),

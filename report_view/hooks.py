@@ -8,7 +8,9 @@ app_license = "mit"
 # Apps
 # ------------------
 
-# required_apps = []
+# The print options and the Excel title read ERPNext's Company; the shipped settings and
+# headings are for ERPNext's accounting reports.
+required_apps = ["erpnext"]
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
@@ -159,6 +161,14 @@ fixtures = [
 
 # Scheduled Tasks
 # ---------------
+
+# Files of background exports (Excel) and server PDFs never downloaded go after an hour.
+scheduler_events = {
+	"hourly": [
+		"report_view.core.export.jobs.cleanup",
+		"report_view.core.pdf.cleanup_stale",
+	],
+}
 
 # scheduler_events = {
 # 	"all": [

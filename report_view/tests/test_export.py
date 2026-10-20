@@ -1,4 +1,5 @@
 import json
+import os
 from io import BytesIO
 from unittest.mock import patch
 
@@ -8,7 +9,13 @@ from openpyxl import load_workbook
 from report_view import api
 from report_view.core import engine
 from report_view.core import view_state as vs
-from report_view.core.errors import RVExportMismatch, RVInvalidInput, RVInvalidViewState, RVNoExport
+from report_view.core.errors import (
+	RVExportMismatch,
+	RVInvalidInput,
+	RVInvalidViewState,
+	RVLimitExceeded,
+	RVNoExport,
+)
 from report_view.core.export import model as export_model
 from report_view.core.export import xlsx
 from report_view.core.normalize import normalize
@@ -423,3 +430,156 @@ class TestExportXlsx(RVTestCase):
 	def test_denied_user(self):
 		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
 			self._export("Trial Balance", tb_model())
+
+
+class TestExportSafetyAndJobs(RVTestCase):
+	"""Text never becomes a formula; a large export is a background job of its user."""
+
+	def setUp(self):
+		super().setUp()
+		frappe.response.pop("filecontent", None)
+		self._free_users()
+
+	def tearDown(self):
+		self._free_users()
+		super().tearDown()
+
+	def _free_users(self):
+		# the job state lives in Redis, outside the rolled-back transaction
+		from report_view.core.export import jobs
+
+		for user in self.users.values():
+			frappe.cache.delete_value(jobs._running_key(user))
+
+	def test_text_that_looks_like_a_formula_stays_text(self):
+		columns = [
+			{"key": "party", "label": "=Party", "fieldtype": "Data", "width": 120},
+			{"key": "amount", "label": "Amount", "fieldtype": "Float", "width": 120},
+		]
+		rows = [
+			{"party": '=HYPERLINK("http://x","a")', "amount": -5},
+			{"party": "+cmd|' /C calc'!A0", "amount": 1.5},
+			{"party": "-2+3", "amount": None},
+			{"party": "@SUM(A1)", "amount": 0},
+			{"party": "\tTab", "amount": 2},
+			{"party": "Plain - text", "amount": -0.25},
+		]
+		result = {
+			"columns": columns,
+			"label_key": "party",
+			"rows": [
+				{
+					"kind": "row",
+					"values": r,
+					"level": 0,
+					"bold": False,
+					"hidden": False,
+					"open": None,
+					"label": None,
+				}
+				for r in rows
+			],
+			"totals": {"amount": -1.75},
+		}
+		model = {
+			"layout": {"title": "=1+1", "include_filters": True},
+			"filters": {"company": "=Co", "party": "@x"},
+		}
+		content = xlsx.build(
+			"Trial Balance", {"columns": columns}, result, model, empty_settings("Trial Balance")
+		)
+		ws = load_workbook(BytesIO(content)).active
+		cells = [c for row in ws.iter_rows() for c in row if c.value is not None]
+		self.assertFalse([c.coordinate for c in cells if c.data_type == "f"])
+		self.assertEqual(ws["A1"].value, "=Co")
+		self.assertTrue(ws["A1"].quotePrefix)
+		self.assertEqual(ws["A2"].value, "=1+1")
+		body = body_rows(ws)
+		self.assertEqual([v[0] for _r, v in body[:-1]], [r["party"] for r in rows])
+		self.assertTrue(all(ws.cell(row=r, column=1).quotePrefix for r, _v in body[:5]))
+		# plain text and real numbers are written as before
+		self.assertFalse(ws.cell(row=body[5][0], column=1).quotePrefix)
+		self.assertEqual([v[1] for _r, v in body[:-1]], [-5, 1.5, None, 0, 2, -0.25])
+		self.assertEqual(ws.cell(row=body[0][0], column=2).data_type, "n")
+		self.assertEqual(body[-1][1], ["Total", -1.75])
+
+	def test_a_large_export_is_a_job_of_its_user(self):
+		from report_view.core.export import jobs
+
+		with (
+			self.as_user("accountant"),
+			patch.object(jobs, "ASYNC_ROWS", 5),
+			patch("report_view.core.export.jobs.frappe.enqueue") as enqueue,
+		):
+			out = api.export_xlsx("Trial Balance", json.dumps(tb_model()))
+			self.assertEqual(out["status"], "queued")
+			self.assertGreater(out["row_count"], 5)
+			self.assertNotIn("filecontent", frappe.response)
+			enqueue.assert_called_once()
+			self.assertEqual(enqueue.call_args.kwargs["queue"], "long")
+			job = out["job"]
+			self.assertEqual(api.export_xlsx_status(job)["state"], "queued")
+			# one export job at a time per user
+			with self.assertRaises(RVLimitExceeded):
+				api.export_xlsx("Trial Balance", json.dumps(tb_model()))
+			# the browser's expected row count queues without a run in the request
+			with patch("report_view.core.export.jobs.runner.run") as run:
+				with self.assertRaises(RVLimitExceeded):
+					api.export_xlsx("Trial Balance", json.dumps(tb_model(expected={"row_count": 6})))
+				run.assert_not_called()
+			with self.assertRaises(RVInvalidInput):
+				api.export_xlsx_download(job)
+			old_lang = frappe.local.lang
+			try:
+				jobs.run_job(job)
+			finally:
+				frappe.local.lang = old_lang
+			self.assertEqual(api.export_xlsx_status(job)["state"], "done")
+		# another user's job does not exist for them
+		with self.as_user("admin"), self.assertRaises(frappe.DoesNotExistError):
+			api.export_xlsx_status(job)
+		with self.as_user("accountant"):
+			api.export_xlsx_download(job)
+			self.assertEqual(frappe.response["type"], "binary")
+			self.assertEqual(frappe.response["filename"], "trial_balance.xlsx")
+			ws = load_workbook(BytesIO(frappe.response["filecontent"])).active
+			self.assertEqual(ws["A1"].value, TB_FILTERS["company"])
+			# downloaded once: the job and its file are gone
+			self.assertFalse(os.path.exists(jobs._path(job)))
+			with self.assertRaises(frappe.DoesNotExistError):
+				api.export_xlsx_status(job)
+			for bad in ("x", "../../etc", "A" * 16):
+				with self.assertRaises(RVInvalidInput):
+					api.export_xlsx_status(bad)
+
+	def test_a_failed_job_says_why_and_frees_the_user(self):
+		from report_view.core.export import jobs
+
+		with (
+			self.as_user("accountant"),
+			patch.object(jobs, "ASYNC_ROWS", 5),
+			patch("report_view.core.export.jobs.frappe.enqueue"),
+		):
+			totals = {"debit": -1}
+			job = api.export_xlsx("Trial Balance", json.dumps(tb_model(expected={"totals": totals})))["job"]
+			with patch("report_view.core.export.model.frappe.log_error"):
+				jobs.run_job(job)
+			state = api.export_xlsx_status(job)
+			self.assertEqual(state["state"], "failed")
+			self.assertTrue(state["error"])
+			# the user may start another export
+			self.assertEqual(api.export_xlsx("Trial Balance", json.dumps(tb_model()))["status"], "queued")
+
+	def test_cleanup_removes_old_files_only(self):
+		from report_view.core.export import jobs
+
+		os.makedirs(jobs._path(None), exist_ok=True)
+		old, new = jobs._path("0" * 16), jobs._path("1" * 16)
+		for path in (old, new):
+			with open(path, "wb") as f:
+				f.write(b"x")
+		os.utime(old, (0, 0))
+		jobs.cleanup()
+		self.assertFalse(os.path.exists(old))
+		self.assertTrue(os.path.exists(new))
+		os.remove(new)

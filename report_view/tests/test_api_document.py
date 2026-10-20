@@ -86,3 +86,22 @@ class TestDocumentPrint(RVTestCase):
 			if lh:
 				out = api.render_doc_letterhead("Journal Entry", self.je, lh)
 				self.assertEqual(set(out) - {"header", "footer"}, set())
+
+	def test_a_letter_head_prints_the_document_escaped(self):
+		from unittest.mock import patch
+
+		lh = frappe.get_doc(
+			{
+				"doctype": "Letter Head",
+				"letter_head_name": "RV Test Escaped Letter Head",
+				"source": "HTML",
+				"content": "<div>{{ doc.user_remark }}</div>",
+				"footer": "{{ doc.user_remark|e }}",
+			}
+		).insert(ignore_if_duplicate=True)
+		doc = frappe.get_doc("Journal Entry", self.je)
+		doc.user_remark = "<img src=x onerror=alert(1)>"
+		with self.as_user("accountant"), patch.object(api, "guard_doc_print", return_value=doc):
+			out = api.render_doc_letterhead("Journal Entry", self.je, lh.name)
+		self.assertEqual(out["header"], "<div>&lt;img src=x onerror=alert(1)&gt;</div>")
+		self.assertEqual(out["footer"], "&lt;img src=x onerror=alert(1)&gt;")

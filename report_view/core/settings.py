@@ -5,6 +5,7 @@ Per report, only the shipped ``report_view/defaults/<scrub(report)>.json`` is re
 standard print settings come from the ``Report View Global Settings`` single (ADR-015).
 """
 
+import copy
 import json
 import os
 import re
@@ -18,6 +19,9 @@ HARD_PRINT_MAX_PAGES = 2000
 GLOBAL_SETTINGS = "Report View Global Settings"
 _DEFAULTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "defaults")
 _FIELDNAME_RE = re.compile(r"^[A-Za-z0-9_]+$")
+_SCRUBBED_RE = re.compile(r"^[a-z0-9_]+$")
+# load_settings: {path: (mtime, settings)}; the shipped files change on deploy only
+_SETTINGS_CACHE: dict[str, tuple[float, dict]] = {}
 
 
 def empty_settings(report_name: str) -> dict:
@@ -46,11 +50,27 @@ def _split_fields(value: object) -> list[str]:
 
 
 def load_settings(report_name: str) -> dict:
-	"""Merged server settings for ``report_name`` (shipped defaults only, see the module docstring)."""
+	"""Merged server settings for ``report_name`` (shipped defaults only, see the module docstring).
+
+	A file is read once per process (again when it changes); the caller gets its own copy."""
+	scrubbed = frappe.scrub(report_name or "")
+	if not _SCRUBBED_RE.match(scrubbed):
+		# never a path outside the defaults folder (a name with "/" or "..")
+		return empty_settings(report_name)
+	path = os.path.join(_DEFAULTS_DIR, scrubbed + ".json")
+	try:
+		mtime = os.path.getmtime(path)
+	except OSError:
+		return empty_settings(report_name)
+	cached = _SETTINGS_CACHE.get(path)
+	if cached is None or cached[0] != mtime or cached[1]["report"] != report_name:
+		cached = (mtime, _read_settings(report_name, path))
+		_SETTINGS_CACHE[path] = cached
+	return copy.deepcopy(cached[1])
+
+
+def _read_settings(report_name: str, path: str) -> dict:
 	settings = empty_settings(report_name)
-	path = os.path.join(_DEFAULTS_DIR, frappe.scrub(report_name) + ".json")
-	if not os.path.isfile(path):
-		return settings
 	with open(path, encoding="utf-8") as f:
 		data = json.load(f)
 	if data.get("report") != report_name:

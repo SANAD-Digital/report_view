@@ -1,19 +1,20 @@
 """Whitelisted API of report_view (docs/architecture.md §2).
 
-Every function calls ``guard_report`` on its first line.
+Every function calls ``guard_report`` on its first line (``_guard``: once per request).
 """
 
 import re
+from functools import wraps
 from typing import Any
 
 import frappe
 from frappe import _
 from frappe.desk import query_report
 
-from report_view.core import engine, normalize, printing, runner
+from report_view.core import normalize, printing, runner
 from report_view.core.errors import RVEnrichNotAllowed, RVInvalidInput, RVLimitExceeded
+from report_view.core.export import jobs as export_jobs
 from report_view.core.export import model as export_model_mod
-from report_view.core.export import xlsx
 from report_view.core.guard import (
 	can_export,
 	can_print,
@@ -27,10 +28,51 @@ from report_view.core.settings import get_print_max_pages, get_row_limit, load_s
 
 MAX_ENRICH_NAMES = 5000
 MAX_TRANSLATION_MESSAGES = 2000
+# rows a server-rendered report print format may hold per printed page (print_max_pages)
+PRINT_ROWS_PER_PAGE = 40
 _FIELD_RE = re.compile(r"^[A-Za-z0-9_]+$")
 
 
+def _rate_limit(limit: int, seconds: int = 60):
+	"""At most ``limit`` calls of the function per user in ``seconds`` (a web request only).
+
+	``frappe.rate_limiter.rate_limit`` counts per IP address or per a form field, never per
+	user: the users of an office share one address. The count and the refusal are Frappe's
+	(``RateLimitExceededError``, HTTP 429, its translated message)."""
+
+	def decorator(fn):
+		@wraps(fn)
+		def wrapper(*args, **kwargs):
+			if getattr(frappe.local, "request", None):
+				key = frappe.cache.make_key(f"report_view:rl:{fn.__name__}:{frappe.session.user}:{seconds}")
+				count = frappe.cache.incrby(key, 1)
+				if count == 1:
+					frappe.cache.expire(key, seconds)
+				if count > limit:
+					frappe.throw(
+						_("You hit the rate limit because of too many requests. Please try after sometime."),
+						frappe.RateLimitExceededError,
+					)
+			return fn(*args, **kwargs)
+
+		return wrapper
+
+	return decorator
+
+
+def _guard(report_name: str):
+	"""``guard_report``, memoised for the request (``frappe.local.cache``, which Frappe
+	empties on every request and on ``set_user``): a call that renders one print part and
+	reads another checks the report once. A refusal is not kept: it raises every time."""
+	cache = frappe.local.cache.setdefault("report_view:guard", {})
+	key = (frappe.session.user, report_name)
+	if key not in cache:
+		cache[key] = guard_report(report_name)
+	return cache[key]
+
+
 @frappe.whitelist(methods=["POST"])
+@_rate_limit(30)
 def run(
 	report_name: str,
 	filters: dict | str,
@@ -38,7 +80,7 @@ def run(
 	prepared_report_name: str | None = None,
 ) -> dict:
 	"""Run a report through ``frappe.desk.query_report.run`` (§2.1)."""
-	report = guard_report(report_name)
+	report = _guard(report_name)
 	return runner.run(report, report_name, filters, js_filters, prepared_report_name)
 
 
@@ -49,7 +91,7 @@ def get_meta(report_name: str) -> dict:
 	Settings come from ``report_view/defaults/<scrub(report)>.json`` only (``core/settings``);
 	``defaults`` is empty until the saved views exist (§2.7).
 	"""
-	report = guard_report(report_name)
+	report = _guard(report_name)
 	settings = load_settings(report.name)
 	return {
 		"report": {
@@ -85,6 +127,7 @@ def get_entry_state(report_name: str) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
+@_rate_limit(60)
 def enrich(
 	report_name: str,
 	doctype: str,
@@ -93,7 +136,7 @@ def enrich(
 	source_column: str,
 ) -> dict:
 	"""Fields of linked documents, restricted to the server allowlist (§2.3, ADR-011)."""
-	report = guard_report(report_name)
+	report = _guard(report_name)
 	names = parse_json_arg(names, "names", list)
 	fields = parse_json_arg(fields, "fields", list)
 	if not isinstance(doctype, str) or not isinstance(source_column, str) or not fields:
@@ -147,42 +190,48 @@ def enrich(
 
 
 @frappe.whitelist(methods=["POST"])
+@_rate_limit(10)
 def export_xlsx(report_name: str, export_model: dict | str) -> Any:
-	"""Re-run the report on the server and build an Excel file from the view state (§2.4)."""
-	report = guard_report(report_name)
+	"""Re-run the report on the server and build an Excel file from the view state (§2.4).
+
+	Up to ``export_jobs.ASYNC_ROWS`` report rows the file is the response (a download).
+	Above, the export is a background job and the response is ``{"status": "queued", "job",
+	"row_count"}``: the browser polls ``export_xlsx_status`` and downloads with
+	``export_xlsx_download``. The browser's ``expected.row_count`` queues it without a run
+	in the request; the server's count decides otherwise."""
+	report = _guard(report_name)
 	guard_export(report)
 	model = export_model_mod.parse(export_model, "xlsx")
-	response = runner.run(
-		report, report_name, model["filters"], model["js_filters"], model["prepared_report_name"]
-	)
-	if response["status"] == "too_large":
-		frappe.throw(
-			_("The report has {0} rows, more than the limit of {1}").format(
-				response["row_count"], response["limit"]
-			),
-			RVLimitExceeded,
-		)
-	if response["status"] != "ok":
-		frappe.throw(_("The prepared report result is not available"), RVInvalidInput)
+	hint = (model.get("expected") or {}).get("row_count")
+	if isinstance(hint, int) and hint > export_jobs.ASYNC_ROWS:
+		return export_jobs.enqueue(report, report_name, export_model, hint)
+	response = export_jobs.run_report(report, report_name, model)
+	if response["row_count"] > export_jobs.ASYNC_ROWS:
+		row_count = response["row_count"]
+		del response
+		return export_jobs.enqueue(report, report_name, export_model, row_count)
 
-	settings = load_settings(report.name)
-	nr = normalize.normalize(response["raw"], model["filters"], settings["report_settings"], {}, translate=_)
-	export_model_mod.check_against_report(model, nr)
-	result = engine.apply(
-		nr,
-		model["view_state"],
-		model["selection"],
-		model["layout"]["columns"],
-		lang=frappe.local.lang,
-		quick_filters=model["quick_filters"],
-	)
-	export_model_mod.compare_expected(model, result, nr, report.name)
-
-	content = xlsx.build(report.name, nr, result, model, settings)
-	frappe.response["filename"] = f"{frappe.scrub(report.name)}.xlsx"
+	content = export_jobs.workbook(report, model, response)
+	frappe.response["filename"] = export_jobs.filename(report)
 	frappe.response["filecontent"] = content
 	frappe.response["type"] = "binary"
 	return None
+
+
+@frappe.whitelist(methods=["GET"])
+def export_xlsx_status(job: str) -> dict:
+	"""``{state: queued|running|done|failed, row_count, error}`` of the user's own export job;
+	the job's report and ``can_export`` are checked again (``export_jobs._job``)."""
+	return export_jobs.status(job)
+
+
+@frappe.whitelist(methods=["GET"])
+def export_xlsx_download(job: str) -> None:
+	"""The Excel file of the user's finished export job, as a download; the job is removed."""
+	content, name = export_jobs.download(job)
+	frappe.response["filename"] = name
+	frappe.response["filecontent"] = content
+	frappe.response["type"] = "binary"
 
 
 # ------------------------------------------------- the Pages view (ADR-014)
@@ -199,7 +248,7 @@ def get_print_options(report_name: str, company: str | None = None) -> dict:
 	Every list is read with ``frappe.get_list``: a user who may not read letter heads gets
 	none, as on the query-report page.
 	"""
-	report = guard_report(report_name)
+	report = _guard(report_name)
 	guard_print(report)
 	defaults = print_defaults()
 	letter_heads: list[dict] = []
@@ -279,8 +328,15 @@ def get_print_format(report_name: str, name: str) -> dict:
 	format for a user who may print the document (ADR-014); the Print Format itself needs
 	no ``read`` of its own.
 	"""
-	report = guard_report(report_name)
+	report = _guard(report_name)
 	guard_print(report)
+	doc = _print_format_doc(report, report_name, name)
+	return {"name": doc.name, "type": doc.print_format_type, "html": doc.html or "", "css": doc.css or ""}
+
+
+def _print_format_doc(report, report_name: str, name: str):
+	"""A report print format offered for the report (``_print_format_filters``). The caller
+	has checked the report and the print permission."""
 	if not isinstance(name, str) or not name.strip():
 		frappe.throw(_("Print format name is required"), RVInvalidInput)
 	found = frappe.get_list(
@@ -294,11 +350,11 @@ def get_print_format(report_name: str, name: str) -> dict:
 			_("Print Format {0} is not available for report {1}").format(name, _(report.name)),
 			frappe.DoesNotExistError,
 		)
-	doc = frappe.get_doc("Print Format", name)
-	return {"name": doc.name, "type": doc.print_format_type, "html": doc.html or "", "css": doc.css or ""}
+	return frappe.get_doc("Print Format", found[0].name)
 
 
 @frappe.whitelist(methods=["POST"])
+@_rate_limit(10)
 def render_print_format(
 	report_name: str,
 	name: str,
@@ -318,11 +374,13 @@ def render_print_format(
 	request's (``_lang``). ``view_columns`` (the columns as the view shows them, sent by the
 	Pages view) orders ``columns`` and hides those the view hides; ``visible_columns`` are
 	the ones shown, in that order.
+
+	Every string of the filters, the view and the rows prints HTML-escaped
+	(``printing.Text``). At most ``print_max_pages`` times ``PRINT_ROWS_PER_PAGE`` rows print.
 	"""
-	report = guard_report(report_name)
+	report = _guard(report_name)
 	guard_print(report)
-	doc_name = get_print_format(report_name, name)["name"]
-	doc = frappe.get_doc("Print Format", doc_name)
+	doc = _print_format_doc(report, report_name, name)
 	if doc.print_format_type != "Jinja":
 		frappe.throw(_("Print Format {0} is not a Jinja template").format(doc.name), RVInvalidInput)
 	filter_objs, values = printing.filter_objects(filters, filter_meta)
@@ -330,6 +388,14 @@ def render_print_format(
 	response = runner.run(report, report_name, filters, js_filters, prepared_report_name)
 	if response["status"] != "ok":
 		frappe.throw(_("The report did not return rows to print"), RVInvalidInput)
+	max_rows = get_print_max_pages() * PRINT_ROWS_PER_PAGE
+	if response["row_count"] > max_rows:
+		frappe.throw(
+			_("The report has {0} rows; at most {1} rows can be printed with a print format").format(
+				response["row_count"], max_rows
+			),
+			RVLimitExceeded,
+		)
 	raw = response["raw"]
 	columns = []
 	for col in raw.get("columns") or []:
@@ -337,7 +403,7 @@ def render_print_format(
 		columns.append(
 			frappe._dict(
 				fieldname=c.get("fieldname"),
-				label=_(c.get("label") or c.get("fieldname") or ""),
+				label=printing.escaped(_(c.get("label") or c.get("fieldname") or "")),
 				fieldtype=c.get("fieldtype") or "Data",
 				options=c.get("options"),
 				width=c.get("width"),
@@ -349,9 +415,11 @@ def render_print_format(
 	data = []
 	for row in raw.get("result") or []:
 		if isinstance(row, dict):
-			data.append(frappe._dict(row))
+			data.append(printing.escaped(row))
 		elif isinstance(row, list | tuple):
-			data.append(frappe._dict({c.fieldname: row[i] if i < len(row) else None for i, c in enumerate(columns_as_returned)}))
+			data.append(
+				printing.escaped({c.fieldname: row[i] if i < len(row) else None for i, c in enumerate(columns_as_returned)})
+			)
 	html = frappe.render_template(
 		doc.html or "",
 		{
@@ -374,7 +442,7 @@ def render_print_heading(
 	"""A ``Print Heading`` of the Pages view (ADR-015): its title and description rendered
 	as Jinja with the report's name and the filters on screen (``printing.report_context``),
 	in the request's language (``_lang``). The report does not run again."""
-	report = guard_report(report_name)
+	report = _guard(report_name)
 	guard_print(report)
 	if not isinstance(name, str) or not name.strip():
 		frappe.throw(_("Print heading name is required"), RVInvalidInput)
@@ -388,7 +456,7 @@ def render_print_signature(
 	"""A ``Print Signature`` of type Report (ADR-015), for this report or for all: its
 	table of signatories or its HTML/Jinja, with the report's context; its CSS nested in
 	``.rv-signature``."""
-	report = guard_report(report_name)
+	report = _guard(report_name)
 	guard_print(report)
 	if not isinstance(name, str) or not name.strip():
 		frappe.throw(_("Print signature name is required"), RVInvalidInput)
@@ -402,7 +470,7 @@ def get_translations(report_name: str, lang: str, messages: list | str) -> dict:
 	report in a language other than the session's. ``lang`` must be a language the site
 	enables; keys with a context come as Frappe keys them (``"<msgid>:<context>"``).
 	"""
-	guard_report(report_name)
+	_guard(report_name)
 	messages = parse_json_arg(messages, "messages", list)
 	if not isinstance(lang, str) or lang not in (frappe.translate.get_all_languages() or []):
 		frappe.throw(_("Language {0} is not enabled on this site").format(lang), RVInvalidInput)

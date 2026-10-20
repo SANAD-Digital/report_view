@@ -9,6 +9,7 @@ permission first (``report_view.api``), and every record is read with
 """
 
 import re
+from html import unescape
 
 import frappe
 from frappe import _
@@ -24,9 +25,85 @@ _HTML_TAG = re.compile(r"<[A-Za-z/!]")
 _STYLE_END = re.compile(r"</\s*style", re.IGNORECASE)
 
 
+class Text(str):
+	"""A string from the browser or from the report's rows in a template's context.
+
+	Frappe's Jinja does not autoescape, so ``{{ value }}`` would print a filter such as
+	``<img src=x onerror=...>`` as HTML. A ``Text`` prints HTML-escaped (``str``, ``format``,
+	``|e``, ``|join``, ``~``) but compares, translates and looks up records as itself, so the
+	site's formats keep working (``row.account == "'Total'"``, ``_(row.account)``,
+	``frappe.db.get_value("Customer", doc.customer)``). The string methods a template uses
+	return a ``Text`` again, except ``replace`` and ``translate``: the query builder quotes a
+	value with them before it formats it, so a lookup gets the value as it is (the
+	``|replace`` filter of Jinja prints escaped all the same)."""
+
+	__slots__ = ()
+
+	def __str__(self) -> str:
+		return escape_html(str.__str__(self))
+
+	def __html__(self) -> str:
+		return str(self)
+
+	def __format__(self, spec: str) -> str:
+		return format(str(self), spec)
+
+	def __add__(self, other):
+		return Text(str.__add__(self, other)) if isinstance(other, str) else NotImplemented
+
+	def __radd__(self, other):
+		return Text(str.__add__(other, self)) if isinstance(other, str) else NotImplemented
+
+	def __getitem__(self, key):
+		return Text(str.__getitem__(self, key))
+
+	def __mul__(self, n):
+		return Text(str.__mul__(self, n))
+
+	def __mod__(self, args):
+		return Text(str.__mod__(self, args))
+
+
+def _keep_text(name: str):
+	method = getattr(str, name)
+
+	def wrapper(self, *args, **kwargs):
+		out = method(self, *args, **kwargs)
+		if isinstance(out, str):
+			return Text(out)
+		if isinstance(out, list | tuple):
+			return type(out)(Text(v) for v in out)
+		return out
+
+	wrapper.__name__ = name
+	return wrapper
+
+
+for _name in (
+	"capitalize", "casefold", "center", "expandtabs", "ljust", "lower", "lstrip", "partition",
+	"removeprefix", "removesuffix", "rjust", "rpartition", "rsplit", "rstrip", "split",
+	"splitlines", "strip", "swapcase", "title", "upper", "zfill",
+):
+	setattr(Text, _name, _keep_text(_name))
+
+
+def escaped(value):
+	"""``value`` with every string in it a ``Text`` (lists and dicts walked)."""
+	if isinstance(value, Text):
+		return value
+	if isinstance(value, str):
+		return Text(value)
+	if isinstance(value, list | tuple):
+		return [escaped(v) for v in value]
+	if isinstance(value, dict):
+		return frappe._dict({k: escaped(v) for k, v in value.items()})
+	return value
+
+
 def filter_objects(filters: dict | str, filter_meta: list | str | None) -> tuple[dict, dict]:
 	"""The filters as the site's report formats read them: ``{fieldname: {label,
-	fieldtype, value}}`` (labels from the report's filter definitions), and the raw values."""
+	fieldtype, value}}`` (labels from the report's filter definitions), and the values. Both
+	come from the browser: every string in them is a ``Text`` (printed escaped)."""
 	values = parse_json_arg(filters, "filters", dict)
 	meta = parse_json_arg(filter_meta or [], "filter_meta", list)
 	if len(meta) > MAX_FILTER_META or not all(isinstance(m, dict) for m in meta):
@@ -36,9 +113,11 @@ def filter_objects(filters: dict | str, filter_meta: list | str | None) -> tuple
 	for key, value in values.items():
 		m = by_name.get(key, {})
 		objs[key] = frappe._dict(
-			label=str(m.get("label") or frappe.unscrub(key)), fieldtype=str(m.get("fieldtype") or "Data"), value=value
+			label=Text(m.get("label") or frappe.unscrub(key)),
+			fieldtype=Text(m.get("fieldtype") or "Data"),
+			value=escaped(value),
 		)
-	return objs, values
+	return objs, escaped(values)
 
 
 MAX_VIEW_COLUMNS = 500
@@ -46,7 +125,7 @@ MAX_VIEW_COLUMNS = 500
 
 def parse_view_columns(view_columns: list | str | None) -> list[frappe._dict]:
 	"""The report's columns as the view shows them (the Pages view sends them): in its order,
-	``{fieldname, label, hidden}`` each. Labels are text (tags dropped)."""
+	``{fieldname, label, hidden}`` each. Labels are text (tags dropped); both are ``Text``."""
 	view = parse_json_arg(view_columns, "view_columns", list, allow_none=True) or []
 	if len(view) > MAX_VIEW_COLUMNS:
 		frappe.throw(_("Too many columns"), RVInvalidInput)
@@ -57,8 +136,8 @@ def parse_view_columns(view_columns: list | str | None) -> list[frappe._dict]:
 		label = v.get("label")
 		out.append(
 			frappe._dict(
-				fieldname=v["fieldname"][:140],
-				label=strip_html_tags(label)[:140] if isinstance(label, str) else v["fieldname"][:140],
+				fieldname=Text(v["fieldname"][:140]),
+				label=Text(strip_html_tags(label)[:140] if isinstance(label, str) else v["fieldname"][:140]),
 				hidden=1 if v.get("hidden") else 0,
 			)
 		)
@@ -96,17 +175,18 @@ def report_context(report, filters: dict | str, filter_meta: list | str | None, 
 		"filters": frappe._dict(objs),
 		"doc": frappe._dict(values),
 		"company": values.get("company"),
-		"printed_by": get_fullname(),
+		"printed_by": Text(get_fullname()),
 		"printed_on": now_datetime(),
 		"lang": frappe.local.lang,
 	}
 
 
 def _as_html(text: str) -> str:
-	"""A template's output as HTML: a plain text keeps its lines."""
+	"""A template's output as HTML: a plain text keeps its lines. Its values were printed
+	escaped already (``Text``): unescaped first, so they are not escaped twice."""
 	text = (text or "").strip()
 	if text and not _HTML_TAG.search(text):
-		return escape_html(text).replace("\n", "<br>")
+		return escape_html(unescape(text)).replace("\n", "<br>")
 	return text
 
 
@@ -124,7 +204,8 @@ def render_heading(name: str, context: dict) -> dict:
 		frappe.throw(_("Print Heading {0} not found").format(name), frappe.DoesNotExistError)
 	doc = frappe.get_doc("Print Heading", found[0].name)
 	context = {**context, "heading": _(doc.print_heading or "")}
-	title = frappe.render_template(_(doc.print_heading or ""), context).strip()
+	# the title is text (the browser escapes it): its escaped values are unescaped
+	title = unescape(frappe.render_template(_(doc.print_heading or ""), context)).strip()
 	html = _as_html(frappe.render_template(doc.description or "", context))
 	return {"name": doc.name, "title": title, "html": html}
 
@@ -220,11 +301,13 @@ def report_view_signature(name: str, doc=None) -> str:
 	"""Jinja method of a document's print format: ``{{ report_view_signature("Name", doc) }}``.
 
 	The signature must be enabled, of type Document, and for the document's type (or for
-	all). Read with ``frappe.get_list``: who may not read it prints nothing.
+	all). Read with ``frappe.get_list``: who may not read it prints nothing, and the
+	document prints.
 	"""
 	try:
 		out = document_signature(name, doc, standalone=True)
-	except frappe.DoesNotExistError:
+	except (frappe.DoesNotExistError, frappe.PermissionError):
+		# a user who may not read signatures (a portal user) still prints the document
 		frappe.clear_last_message()
 		return ""
 	style = f"<style>{out['css']}</style>" if out["css"] else ""

@@ -118,7 +118,17 @@ def run(
 	except _PASS_THROUGH:
 		raise
 	except Exception as e:
-		frappe.throw(str(e) or _("Report execution failed"), RVReportError)
+		# The report's own error (SQL, a key, a path) is logged, never shown: the user reads a
+		# translated message, a developer site adds the error's text.
+		frappe.log_error(
+			title="Report View: report execution failed",
+			reference_doctype="Report",
+			reference_name=report.name,
+		)
+		message = _("The report could not run. The error was logged.")
+		if frappe.conf.developer_mode and str(e):
+			message = f"{message} ({e})"
+		frappe.throw(message, RVReportError)
 	execution_time = round(time.monotonic() - started, 3)
 
 	limit = get_row_limit()

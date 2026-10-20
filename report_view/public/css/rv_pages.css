@@ -289,7 +289,7 @@
 .rv-page-foot{margin-top:0}
 
 /* ---------- page border: its own rule round the page, at a distance from the paper's edge ---------- */
-.rv-page-border{position:absolute;inset:var(--pp-pb-off,6mm);border:var(--pp-pb,1.5px solid #1B1F1D);border-radius:var(--pp-pb-r,0);pointer-events:none;z-index:5}
+.rv-page-border{position:absolute;inset:var(--pp-pb-off,6mm);border:var(--pp-pb,1.5px solid var(--pp-border));border-radius:var(--pp-pb-r,0);pointer-events:none;z-index:5}
 
 /* ==========================================================================
    The settings panel, polished: one scale of controls (28px), quiet labels,
@@ -457,3 +457,13 @@
   .rv-print-sheets{padding:12px;gap:12px}
   .rv-print-pop{inset:auto 0 0 0!important;width:auto!important;max-height:72vh!important;border-radius:14px 14px 0 0;padding-bottom:env(safe-area-inset-bottom)}
 }
+
+/* ---------- long reports: the browser lays out only what is near the viewport ---------- */
+/* a sheet far from the viewport is skipped (its size is its own: width and height are set on
+   it); printed apart (.rv-print-root) every sheet is drawn, and print_css() says so too */
+.rv-print-stage > .rv-print-sheets > .rv-page{content-visibility:auto;contain-intrinsic-size:auto var(--pp-w,794px) var(--pp-h,1123px)}
+.rv-print-thumbs button{content-visibility:auto;contain-intrinsic-size:auto 54px calc(54px * var(--th-ratio,1.414) + 18px)}
+/* the pages past the print limit are not mounted: a card at the end says how many */
+.rv-print-more{flex:none;box-sizing:border-box;width:var(--pp-w,794px);max-width:100%;padding:18px 22px;border:1px dashed var(--line-3);border-radius:var(--r);background:var(--surface);color:var(--tx-2);font-size:var(--fs-sm);line-height:1.6;text-align:center}
+/* a PDF job of the server can be cancelled from the line that follows it */
+.rv-print-busy .rv-btn{height:24px;padding:0 10px;margin-inline-end:-6px}

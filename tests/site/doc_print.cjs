@@ -78,6 +78,9 @@ const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", nam
 	for (const f of ["", ...formats]) {
 		await set({ template: f }); s = await state();
 		check(`format «${f || "standard"}» renders`, s.pages.length >= 1 && !/could not|تعذّر/.test(s.note) && s.pages.every((p) => p.foot_inside && !p.overlap), `${s.pages.length} pages ${s.note}`);
+		// the format's <style> blocks stand once beside the sheets, never in every page
+		const styles = await page.evaluate((g) => { const v = eval(g); return { in_pages: v.sheets.querySelectorAll(":scope > .rv-page > style").length, shared: v.fmt_css.querySelectorAll("style").length }; }, V);
+		check(`format «${f || "standard"}»: its styles once, not in every page`, styles.in_pages === 0, JSON.stringify(styles));
 	}
 	await set({ template: "" });
 

@@ -28,6 +28,20 @@ const SAFETY_PX = 6;
 const NEAR_PAGES = 2;
 const KEEP_FILLED = 16;
 const FILL_PARALLEL = 1;
+// Printing fills the pages in runs read from the view at once, a few runs side by side.
+const PRINT_RUN = 20;
+const PRINT_PARALLEL = 3;
+// Kept per page view: languages (each a whole run of the report), letter heads, formats and
+// headings or signatures (each rendered by the server for one set of filters).
+const KEEP_LANGS = 3;
+const KEEP_LETTERHEADS = 8;
+const KEEP_FORMATS = 4;
+const KEEP_PARTS = 8;
+// A PDF job of the server (ADR-016): asked about every second; given up when the server has
+// not started it, or has not finished it, within these times.
+const PDF_POLL_MS = 1000;
+const PDF_QUEUE_LIMIT_MIN = 5;
+const PDF_WAIT_LIMIT_MIN = 16;
 const ZOOM_STEPS = [0.4, 0.5, 0.67, 0.8, 1, 1.25, 1.5];
 const PAGE_GAP = 24;
 const STAGE_PAD = 28;
@@ -55,7 +69,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	heading_size: 13,
 	heading_m: BOX(0, 2, 0, 0),
 	heading_line_w: 0,
-	heading_line_c: "#D9DFDB",
+	// colours: "" is the paper's own (rv_tokens.css, COLOR_TOKENS), else a #rrggbb chosen
+	heading_line_c: "",
 	heading_line_s: "solid",
 	// a Print Signature of the report ("": Report View's standard boxes): on which pages,
 	// after the table or at the bottom of the last page, font size, margins
@@ -93,20 +108,20 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	num_m: BOX(1.5, 0, 0, 0),
 	// the three rules: under the letter head, above the footer, above (or under) the number
 	head_line_w: 0.6,
-	head_line_c: "#D9DFDB",
+	head_line_c: "",
 	head_line_s: "solid",
 	foot_line_w: 0.6,
-	foot_line_c: "#D9DFDB",
+	foot_line_c: "",
 	foot_line_s: "solid",
 	num_line_w: 0,
-	num_line_c: "#9AA39E",
+	num_line_c: "",
 	num_line_s: "solid",
 	// a border round the page: thickness (px), style, colour, distance from the paper's edge
 	// (mm), rounded corners (mm), on every page or the first
 	pb_on: false,
 	pb_w: 1.5,
 	pb_s: "solid",
-	pb_c: "#1B1F1D",
+	pb_c: "",
 	pb_offset: 6,
 	pb_radius: 0,
 	pb_pages: "all",
@@ -116,7 +131,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	wm_image: "",
 	wm_size: 72,
 	wm_scale: 50,
-	wm_color: "#8A2D3B",
+	wm_color: "",
 	wm_opacity: 10,
 	wm_angle: -30,
 	wm_pages: "all",
@@ -168,6 +183,15 @@ const ALIGN = ["start", "center", "end"];
 const LH_FIT = ["contain", "wide"];
 const LINE_STYLES = ["solid", "dashed", "dotted", "double"];
 const COLOR = /^#[0-9a-fA-F]{6}$/;
+// The paper's colour of a colour setting left empty (rv_tokens.css).
+const COLOR_TOKENS = {
+	heading_line_c: "--pp-rule",
+	head_line_c: "--pp-rule",
+	foot_line_c: "--pp-rule",
+	num_line_c: "--pp-rule-2",
+	pb_c: "--pp-border",
+	wm_color: "--pp-mark",
+};
 // number settings: [min, max, step]
 const NUMS = {
 	lh_height: [LH_HEIGHT.min, LH_HEIGHT.max, 1],
@@ -294,6 +318,57 @@ function wait_images(el, timeout = 2500) {
 	);
 }
 
+/** A Map that keeps its `max` most recently used entries. */
+class Lru extends Map {
+	constructor(max) {
+		super();
+		this.max = max;
+	}
+
+	get(key) {
+		if (!super.has(key)) return undefined;
+		const value = super.get(key);
+		super.delete(key);
+		super.set(key, value);
+		return value;
+	}
+
+	/** The value without making it the most recent. */
+	peek(key) {
+		return super.get(key);
+	}
+
+	set(key, value) {
+		super.delete(key);
+		super.set(key, value);
+		while (this.size > this.max) super.delete(this.keys().next().value);
+		return this;
+	}
+}
+
+// The style rules kept for a PDF of a site stylesheet (by its address): Desk's sheets do not
+// change while the page is open, so the rules the pages use are tested once per kind of pages.
+const CSS_KEPT = new Map();
+
+/**
+ * What decides which rules match a sample of the printed sheets: the element names, classes
+ * and attribute names found in it, a few attribute values the styles test, and the
+ * attributes of <html>, <body> and the print root.
+ */
+function sample_signature(nodes, root) {
+	const VALUES = new Set(["dir", "lang", "type", "role", "rowspan", "colspan"]);
+	const tokens = new Set();
+	for (const top of nodes) {
+		for (const el of [top, ...top.querySelectorAll("*")]) {
+			tokens.add(el.localName);
+			for (const c of el.classList) tokens.add(`.${c}`);
+			for (const a of el.attributes) if (a.name !== "class" && a.name !== "style") tokens.add(VALUES.has(a.name) ? `[${a.name}=${a.value}]` : `[${a.name}]`);
+		}
+	}
+	const attrs = (el) => [...el.attributes].map((a) => `${a.name}=${a.value}`).join(" ");
+	return `${attrs(document.documentElement)}|${attrs(document.body)}|${root.className}|${[...tokens].sort().join(" ")}`;
+}
+
 const clamp = (v, [min, max, step]) => {
 	const n = Number(v);
 	if (!Number.isFinite(n)) return null;
@@ -385,20 +460,25 @@ export class PagesView {
 		this.settings_report = null;
 		this.options = null;
 		this.options_report = null;
-		this.lang_packs = new Map();
-		this.letterheads = new Map();
-		this.formats = new Map();
-		this.parts = new Map();
+		// bounded: a format or a language holds a whole run of the report; failures are not kept
+		this.lang_packs = new Lru(KEEP_LANGS);
+		this.letterheads = new Lru(KEEP_LETTERHEADS);
+		this.formats = new Lru(KEEP_FORMATS);
+		this.parts = new Lru(KEEP_PARTS);
 		this.base = DEFAULT_SETTINGS;
 		this.token = 0;
 		this.pages = [];
 		this.filled = new Map();
 		this.filling = new Set();
 		this.queue = [];
+		// the fills of the pages near the viewport under way (print waits for them)
+		this.inflight = new Set();
 		this.observer = null;
 		this.current = null;
 		this.ready = null;
 		this.printing = false;
+		// the PDF job followed ({job, stop, reason}), or null
+		this.pdf_job = null;
 		this.el = parent;
 		this.make_dom();
 	}
@@ -434,7 +514,8 @@ export class PagesView {
 					<span class="sp"></span>
 					<span class="rv-print-pos"></span>
 				</div>
-				<div class="rv-print-busy" role="status" aria-live="polite" hidden><span class="rv-spin" aria-hidden="true"></span><span class="txt"></span></div>
+				<div class="rv-print-busy" role="status" aria-live="polite" hidden><span class="rv-spin" aria-hidden="true"></span><span class="txt"></span><button type="button" class="rv-btn sm ghost" data-action="pdf-cancel" hidden>${esc(__("Cancel"))}</button></div>
+				<div class="rv-print-fmt-css" hidden></div>
 				<div class="rv-print-sheets" dir="${this.rtl ? "rtl" : "ltr"}"></div>
 				<div class="rv-print-probe" aria-hidden="true"></div>
 			</div>
@@ -449,6 +530,8 @@ export class PagesView {
 		this.pos_el = el.querySelector(".rv-print-pos");
 		this.zoom_lbl = el.querySelector(".rv-print-zoom-lbl");
 		this.busy_el = el.querySelector(".rv-print-busy");
+		this.fmt_css = el.querySelector(".rv-print-fmt-css");
+		this.busy_el.querySelector('[data-action="pdf-cancel"]').addEventListener("click", () => this.pdf_job && this.stop_pdf_job(this.pdf_job, "cancel"));
 		el.querySelector('[data-action="print"]').addEventListener("click", () => this.print());
 		const pdf = el.querySelector('[data-action="pdf"]');
 		if (this.host.pages_pdf_target) pdf.addEventListener("click", () => this.pdf());
@@ -457,18 +540,15 @@ export class PagesView {
 		el.addEventListener("keydown", (e) => {
 			if (e.key === "Escape" && this.open_secs?.size) this.close_menu();
 		});
-		// a tool's menu closes on a click elsewhere (lists of its own fields excepted)
-		document.addEventListener(
-			"pointerdown",
-			(e) => {
-				if (!this.open_secs?.size || !this.el.isConnected) return;
-				const t = e.target;
-				if (this.bd.contains(t) || t.closest?.(".awesomplete, .modal, .dropdown-menu, .datepicker, .pcr-app")) return;
-				this.close_menu();
-			},
-			true
-		);
-		window.addEventListener("resize", () => this.place_menu(), { passive: true });
+		// a tool's menu closes on a click elsewhere (lists of its own fields excepted) and
+		// follows the window's size: listened to only while a menu is open (menu_listeners)
+		this.on_outside = (e) => {
+			if (!this.open_secs?.size || !this.el.isConnected) return;
+			const t = e.target;
+			if (this.bd.contains(t) || t.closest?.(".awesomplete, .modal, .dropdown-menu, .datepicker, .pcr-app")) return;
+			this.close_menu();
+		};
+		this.on_resize = () => this.place_menu();
 		this.thumbs = el.querySelector(".rv-print-thumbs");
 		this.thumbs.addEventListener("click", (e) => {
 			const b = e.target.closest("[data-thumb]");
@@ -551,6 +631,7 @@ export class PagesView {
 		this.session = session;
 		this.current = opened;
 		this.ctx = this.host.pages_context();
+		this.resize_observer.observe(this.stage);
 		if (!(await this.load_setup(token))) return;
 		if (!opened.post.label_key) {
 			this.clear_pages();
@@ -625,6 +706,7 @@ export class PagesView {
 		this.el.classList.add("rv-doc-mode");
 		this.current = { doc: true };
 		this.ctx = this.host.pages_context();
+		this.resize_observer.observe(this.stage);
 		if (!(await this.load_setup(token))) return;
 		this.render_panel();
 		this.ready = this.relayout(token);
@@ -633,10 +715,16 @@ export class PagesView {
 
 	destroy() {
 		this.token += 1;
+		// a PDF job followed for these pages: its file would never be fetched
+		if (this.pdf_job) this.stop_pdf_job(this.pdf_job, "leave");
 		this.busy(null);
 		this.current = null;
 		this.clear_pages();
 		this.bd.replaceChildren();
+		// nothing of the pages listens while they are not shown (show observes the stage again)
+		this.open_secs = new Set();
+		this.menu_listeners(false);
+		this.resize_observer.disconnect();
 	}
 
 	clear_pages() {
@@ -646,10 +734,21 @@ export class PagesView {
 		this.filled.clear();
 		this.filling.clear();
 		this.queue = [];
+		this.set_format_css("");
 		this.sheets.replaceChildren();
 		this.probe.replaceChildren();
 		this.count_el.textContent = "";
 		this.pos_el.textContent = "";
+	}
+
+	/**
+	 * The <style> blocks of a print format, once for all its pages, beside the sheets (and
+	 * printed with them); "" removes them.
+	 */
+	set_format_css(html) {
+		if (this.fmt_css_html === html) return;
+		this.fmt_css_html = html;
+		this.fmt_css.innerHTML = html;
 	}
 
 	note(text, warn = false) {
@@ -705,9 +804,15 @@ export class PagesView {
 	t(msgid, args, context = null) {
 		const lang = this.settings.lang;
 		if (!lang || lang === frappe.boot.lang) return __(msgid, args, context);
-		const pack = this.lang_packs.get(lang)?.pack;
+		const pack = this.lang_packs.peek(this.lang_key(lang))?.pack;
 		const text = (context && pack?.[`${msgid}:${context}`]) || pack?.[msgid] || msgid;
 		return format_msg(text, args);
+	}
+
+	// A language's entry is the report run again with these filters (a document: rendered again).
+	lang_key(lang) {
+		const ctx = this.ctx || {};
+		return `${lang}|${ctx.report_name || ""}|${this.doc_mode ? "" : JSON.stringify(ctx.filters || {})}`;
 	}
 
 	// The msgid of a text the session translated (the register's labels are translated at
@@ -723,12 +828,13 @@ export class PagesView {
 	// Translation pack and report of another language, once per language.
 	async load_lang(lang) {
 		if (!lang || lang === frappe.boot.lang) return null;
-		if (this.lang_packs.has(lang)) return this.lang_packs.get(lang);
+		const key = this.lang_key(lang);
+		if (this.lang_packs.has(key)) return this.lang_packs.get(key);
 		if (this.doc_mode) {
 			// a document is rendered by the server in the language; the page's own words here
 			const pack = (await this.host.pages_translations(lang, [...PAGE_MESSAGES, ...this.signature_labels().map((x) => this.msgid_of(x))])) || {};
 			const entry = { pack, report: undefined };
-			this.lang_packs.set(lang, entry);
+			this.lang_packs.set(key, entry);
 			return entry;
 		}
 		const model = this.rows.model;
@@ -742,7 +848,8 @@ export class PagesView {
 		const pack_p = this.host.pages_translations(lang, messages).then((p) => p || {});
 		const [pack, report] = await Promise.all([pack_p, this.host.pages_run_lang(lang, pack_p)]);
 		const entry = { pack, report };
-		this.lang_packs.set(lang, entry);
+		// (a request that failed threw: nothing is kept, the next layout asks again)
+		this.lang_packs.set(key, entry);
 		return entry;
 	}
 
@@ -809,7 +916,7 @@ export class PagesView {
 				]
 					.map(([v, l]) => option(v, l, s[`${key}_s`] === v))
 					.join("")}</select>
-				<input type="color" data-color="${key}_c" value="${s[`${key}_c`]}" aria-label="${esc(__("Colour"))}" title="${esc(__("Colour"))}"></div></div>`;
+				<input type="color" data-color="${key}_c" value="${this.color_of(s, `${key}_c`)}" aria-label="${esc(__("Colour"))}" title="${esc(__("Colour"))}"></div></div>`;
 		const section = (id, icon, title, summary, body, extra = "") =>
 			`<details class="rv-psec" data-sec="${id}" ${this.open_secs.has(id) ? "open" : ""}><summary><span class="ic">${icon}</span><span class="tx"><span class="tt">${esc(title)}</span>${summary ? `<span class="sm">${esc(summary)}</span>` : ""}</span>${extra}</summary><div class="rv-psec-bd">${body}</div></details>`;
 		const align3 = [["start", __("Start", null, "Report View")], ["center", __("Centre")], ["end", __("End", null, "Report View")]];
@@ -979,7 +1086,7 @@ export class PagesView {
 								.map(([v, l]) => option(v, l, s.pb_s === v))
 								.join("")}</select></label></div>
 					<div class="rv-print-row">${num("pb_offset", __("From the edge of the paper"), mm)}${num("pb_radius", __("Rounded corners"), mm)}</div>
-					<div class="rv-print-row"><label class="rv-field"><span>${esc(__("Colour"))}</span><input type="color" class="rv-color-wide" data-color="pb_c" value="${s.pb_c}"></label></div>
+					<div class="rv-print-row"><label class="rv-field"><span>${esc(__("Colour"))}</span><input type="color" class="rv-color-wide" data-color="pb_c" value="${this.color_of(s, "pb_c")}"></label></div>
 					${scopes("pb_pages", PAGE_SCOPES)}`
 						: ""
 				}`
@@ -993,7 +1100,7 @@ export class PagesView {
 				${
 					s.wm_type === "text"
 						? `<label class="rv-field"><span>${esc(__("Text", null, "Report View"))}</span><input type="text" class="rv-input" data-text="wm_text" maxlength="120" value="${esc(s.wm_text)}" placeholder="${esc(__("e.g. DRAFT, CONFIDENTIAL"))}"></label>
-						<div class="rv-print-row">${num("wm_size", __("Font size"), "pt")}<label class="rv-field"><span>${esc(__("Colour"))}</span><input type="color" class="rv-color-wide" data-color="wm_color" value="${s.wm_color}"></label></div>`
+						<div class="rv-print-row">${num("wm_size", __("Font size"), "pt")}<label class="rv-field"><span>${esc(__("Colour"))}</span><input type="color" class="rv-color-wide" data-color="wm_color" value="${this.color_of(s, "wm_color")}"></label></div>`
 						: ""
 				}
 				${
@@ -1087,6 +1194,7 @@ export class PagesView {
 			summary.setAttribute("aria-expanded", String(d.open));
 		}
 		const open = [...bd.querySelectorAll("details[data-sec][open]")];
+		this.menu_listeners(open.length > 0);
 		if (!open.length) return;
 		const menu = document.createElement("div");
 		menu.className = "rv-print-pop";
@@ -1105,6 +1213,19 @@ export class PagesView {
 		bd.append(menu);
 		menu.addEventListener("scroll", () => (this.menu_scroll = { id: [...this.open_secs].join(), top: menu.scrollTop }), { passive: true });
 		this.place_menu();
+	}
+
+	/** The listeners of the document and the window an open menu needs, on or off. */
+	menu_listeners(on) {
+		if (Boolean(this.listening) === on) return;
+		this.listening = on;
+		if (on) {
+			document.addEventListener("pointerdown", this.on_outside, true);
+			window.addEventListener("resize", this.on_resize, { passive: true });
+		} else {
+			document.removeEventListener("pointerdown", this.on_outside, true);
+			window.removeEventListener("resize", this.on_resize, { passive: true });
+		}
 	}
 
 	/** The menu of the open tool: under its tool, inside the window (a sheet on a phone, by CSS). */
@@ -1383,7 +1504,7 @@ export class PagesView {
 		this.sig_fallback = false;
 		const s = this.settings;
 		const steps = [];
-		if (s.lang && s.lang !== frappe.boot.lang && !this.lang_packs.has(s.lang)) steps.push(__("Running the report in the chosen language…"));
+		if (s.lang && s.lang !== frappe.boot.lang && !this.lang_packs.has(this.lang_key(s.lang))) steps.push(__("Running the report in the chosen language…"));
 		if (s.template || this.doc_mode) steps.push(__("Rendering the print format…"));
 		this.busy(steps.length ? steps.join(" · ") : this.pages.length ? __("Updating the pages…") : __("Preparing the pages…"));
 		// back on the tab: a page-sized sheet while the pages are prepared
@@ -1475,9 +1596,9 @@ export class PagesView {
 			const w = s[`${k}_w`];
 			// a double rule needs three pixels to show its two lines
 			const width = s[`${k}_s`] === "double" ? Math.max(3, w) : w;
-			set(`--pp-${k.replace("_", "-")}`, w ? `${width}px ${s[`${k}_s`]} ${s[`${k}_c`]}` : "0 solid transparent");
+			set(`--pp-${k.replace("_", "-")}`, w ? `${width}px ${s[`${k}_s`]} ${this.color_of(s, `${k}_c`)}` : "0 solid transparent");
 		}
-		set("--pp-wm-color", s.wm_color);
+		set("--pp-wm-color", this.color_of(s, "wm_color"));
 		set("--pp-wm-size", `${s.wm_size}pt`);
 		set("--pp-wm-op", String(s.wm_opacity / 100));
 		set("--pp-wm-angle", `${s.wm_angle}deg`);
@@ -1487,9 +1608,37 @@ export class PagesView {
 			for (const el of page.querySelectorAll(":scope > .rv-page-wm, :scope > .rv-page-border")) el.remove();
 			page.insertAdjacentHTML("beforeend", this.watermark_html(Number(page.dataset.page)));
 		}
-		set("--pp-pb", `${s.pb_s === "double" ? Math.max(3, s.pb_w) : s.pb_w}px ${s.pb_s} ${s.pb_c}`);
+		set("--pp-pb", `${s.pb_s === "double" ? Math.max(3, s.pb_w) : s.pb_w}px ${s.pb_s} ${this.color_of(s, "pb_c")}`);
 		set("--pp-pb-off", `${s.pb_offset}mm`);
 		set("--pp-pb-r", `${s.pb_radius}mm`);
+	}
+
+	/**
+	 * A colour setting as #rrggbb: the one chosen, else the paper's (COLOR_TOKENS, read from
+	 * rv_tokens.css): the colour field shows it, and the printed sheets carry it as written.
+	 */
+	color_of(s, key) {
+		return s[key] || this.token_color(COLOR_TOKENS[key]);
+	}
+
+	token_color(name) {
+		if (!this._tokens) this._tokens = new Map();
+		if (!this._tokens.has(name)) {
+			let value = getComputedStyle(this.root).getPropertyValue(name).trim();
+			if (value && !COLOR.test(value)) {
+				// a token written another way (rgb(), a short #rgb): as the browser computes it
+				const probe = document.createElement("i");
+				probe.style.color = `var(${name})`;
+				this.root.appendChild(probe);
+				const rgb = getComputedStyle(probe).color.match(/\d+(\.\d+)?/g) || [];
+				probe.remove();
+				value = rgb.length >= 3 ? `#${rgb.slice(0, 3).map((v) => Math.round(Number(v)).toString(16).padStart(2, "0")).join("")}` : "";
+			}
+			// not kept before the tokens are there (the stylesheet still loading)
+			if (!value) return "";
+			this._tokens.set(name, value);
+		}
+		return this._tokens.get(name);
 	}
 
 	/** The watermark of a page: a text or an image over the page, never in the way of a click. */
@@ -1516,8 +1665,9 @@ export class PagesView {
 				const r = await this.host.pages_letterhead(name);
 				this.letterheads.set(key, { header: strip_scripts(r?.header), footer: strip_scripts(r?.footer) });
 			} catch (e) {
+				// not kept: the next layout asks again
 				this.note(__("The letter head could not be loaded: {0}", [err_text(e)]), true);
-				this.letterheads.set(key, null);
+				return null;
 			}
 		}
 		return this.letterheads.get(key);
@@ -1539,7 +1689,7 @@ export class PagesView {
 			} catch (e) {
 				const msg = kind === "heading" ? __("The print heading could not be loaded: {0}", [err_text(e)]) : __("The signature could not be loaded: {0}", [err_text(e)]);
 				this.note(msg, true);
-				this.parts.set(key, null);
+				return null;
 			}
 		}
 		return this.parts.get(key);
@@ -1556,7 +1706,7 @@ export class PagesView {
 				this.formats.set(key, await this.host.pages_format(name, this.settings.lang || null, this.options?.print_format_types?.[name], cols));
 			} catch (e) {
 				this.note(__("The print format could not be loaded: {0}", [err_text(e)]), true);
-				this.formats.set(key, null);
+				return null;
 			}
 		}
 		return this.formats.get(key);
@@ -1916,26 +2066,49 @@ export class PagesView {
 			this.note(__("The letter head and the margins leave no room for rows on this paper."), true);
 		}
 		this.pages = paginate({ count: this.layout.size, row_h, body_h: Math.max(body_h, row_h), first_h: filt_h + top_h, tail_h });
+		this.set_format_css("");
 		this.mount_pages(box, dir);
 	}
 
+	/**
+	 * The sheets of the pages, empty until near the viewport. Pages past the print limit are
+	 * never printed: they are not mounted, a card at the end says how many there are.
+	 */
 	mount_pages(box, dir) {
 		if (this.observer) this.observer.disconnect();
 		this.filled.clear();
 		this.filling.clear();
 		this.queue = [];
 		const n = this.pages.length;
+		const max = this.max_pages();
+		const shown = Math.min(n, max);
 		const num = (v) => frappe.format(v, { fieldtype: "Int" }, { inline: true });
-		this.sheets.innerHTML = this.pages.map((p, i) => this.page_shell(i, box, dir, `<span class="rv-page-ph">${esc(num(i + 1))}</span>`)).join("");
+		let html = "";
+		for (let i = 0; i < shown; i++) html += this.page_shell(i, box, dir, `<span class="rv-page-ph">${esc(num(i + 1))}</span>`);
+		if (n > shown) {
+			html += `<div class="rv-print-more" role="note">${esc(
+				__("{0} more pages are not shown: no more than {1} pages print at once. Narrow the filters, fold groups or export to Excel.", [num(n - shown), num(max)])
+			)}</div>`;
+		}
+		this.sheets.innerHTML = html;
 		this.count_el.textContent = __("{0} pages", [num(n)]);
 		this.render_thumbs();
-		this.el.classList.toggle("many", n > this.max_pages());
+		this.el.classList.toggle("many", n > max);
 		this.observer = new IntersectionObserver((entries) => this.on_intersect(entries), {
 			root: this.stage,
 			rootMargin: `${Math.round(box.h * NEAR_PAGES)}px 0px`,
 			threshold: 0,
 		});
-		for (const el of this.sheets.children) this.observer.observe(el);
+		this.observe_pages();
+	}
+
+	/** The mounted sheets of the pages (the card of the pages not shown aside). */
+	page_sheets() {
+		return this.sheets.querySelectorAll(":scope > .rv-page[data-page]");
+	}
+
+	observe_pages() {
+		for (const el of this.page_sheets()) this.observer.observe(el);
 	}
 
 	on_intersect(entries) {
@@ -1956,12 +2129,14 @@ export class PagesView {
 		while (this.filling.size < FILL_PARALLEL && this.queue.length) {
 			const i = this.queue.shift();
 			this.filling.add(i);
-			this.fill(i)
+			const done = this.fill(i)
 				.catch(() => {})
 				.finally(() => {
 					this.filling.delete(i);
+					this.inflight.delete(done);
 					this.pump();
 				});
+			this.inflight.add(done);
 		}
 	}
 
@@ -2000,9 +2175,48 @@ export class PagesView {
 			html = this.standard_page_html(i, page, plan, recs, values);
 		}
 		if (token !== this.token) return;
+		this.paint(i, el, html);
+	}
+
+	paint(i, el, html) {
 		// the watermark goes with the content of the page
 		el.innerHTML = html + this.watermark_html(i);
 		this.filled.set(i, true);
+	}
+
+	/**
+	 * Fills a run of neighbouring pages (printing): their rows are read from the view at once,
+	 * then each page is drawn from what was read.
+	 * @param {number[]} run indices of pages, in order, none filled
+	 */
+	async fill_run(run) {
+		const token = this.token;
+		const cur = this.current;
+		for (const i of run) this.filling.add(i);
+		try {
+			if (this.format) {
+				for (const i of run) {
+					const el = this.sheets.children[i];
+					if (el && this.pages[i]) this.paint(i, el, this.custom_page_html(i));
+				}
+				return;
+			}
+			const first = this.pages[run[0]];
+			const last = this.pages[run[run.length - 1]];
+			if (!first || !last || !cur) return;
+			const plan = this.rows.plan(this.layout, first.start, last.end - first.start);
+			const [recs, values] = await Promise.all([
+				this.rows.read_records(cur, plan, this.layout),
+				this.rows.read_values(cur, plan, 0, this.rows.model.data.length),
+			]);
+			if (token !== this.token || this.current !== cur) return;
+			for (const i of run) {
+				const el = this.sheets.children[i];
+				if (el && !this.filled.has(i)) this.paint(i, el, this.standard_page_html(i, this.pages[i], plan, recs, values));
+			}
+		} finally {
+			for (const i of run) this.filling.delete(i);
+		}
 	}
 
 	standard_page_html(i, page, plan, recs, values) {
@@ -2099,10 +2313,17 @@ export class PagesView {
 			const flow = q(".rv-page-flow");
 			wide = flow.scrollWidth > box.inner_w + 1 || [...flow.querySelectorAll("td, th")].some((c) => c.getBoundingClientRect().width < 1);
 			units = this.flow_units(flow, body_h);
-			this.flow_cache = { key: flow_key, units, wide };
+			// a block placed out of the flow (absolute, fixed) can stand beyond the flow's box:
+			// the pages of such a format are checked element by element (fit_custom_pages)
+			const loose = [...flow.querySelectorAll("*")].some((el) => /^(absolute|fixed)$/.test(getComputedStyle(el).position));
+			this.flow_cache = { key: flow_key, units, wide, loose };
 		}
+		this.flow_loose = Boolean(this.flow_cache?.loose);
 		if (wide) this.note(__("The print format is wider than the page: try landscape or a larger paper."), true);
 		this.custom_styles = units.filter((u) => u.style).map((u) => u.node.outerHTML).join("");
+		// the format's styles once, for the pages measured and the pages shown: a <style> in
+		// every page would make the browser restyle the whole window for each of them
+		this.set_format_css(this.custom_styles);
 		this.custom_room = body_h;
 		const pages = this.pack_units(units.filter((u) => !u.style), first_body_h, body_h);
 		this.custom_pages = pages;
@@ -2157,9 +2378,8 @@ export class PagesView {
 	async fit_custom_pages(token, box, dir) {
 		const pages = this.custom_pages;
 		const sync = () => (this.pages = pages.map((p, i) => ({ start: 0, end: 0, first: i === 0, last: i === pages.length - 1 })));
-		// the format's styles once, beside the pages measured: a <style> put in again for every
-		// page would make the browser restyle the whole window each time
-		this.probe.innerHTML = `${this.custom_styles}<div></div>`;
+		// the format's styles are in the stage once (set_format_css), for the probe too
+		this.probe.innerHTML = "<div></div>";
 		const holder = this.probe.lastElementChild;
 		this.foot_overflow = false;
 		const measure = (sheet) => {
@@ -2171,10 +2391,20 @@ export class PagesView {
 			// margin of the foot's first part (a signature's space above it)
 			const body = sheet.querySelector(".rv-page-body").getBoundingClientRect();
 			const limit = Math.min(foot.top, body.bottom);
+			const room = limit - body.top;
+			// The flow clips what it holds (overflow:hidden): no element of it ends below its box
+			// with what overflows it (scrollHeight). A page whose flow ends above the limit fits;
+			// only the others, or a format with blocks out of the flow, are checked element by
+			// element (thousands of boxes on a page of a long table).
+			const flow = sheet.querySelector(".rv-page-body > .rv-page-flow");
+			if (flow && !this.flow_loose) {
+				const fr = flow.getBoundingClientRect();
+				if (fr.top + Math.max(fr.height, flow.scrollHeight) <= limit) return { limit, over: false, room };
+			}
 			// the probe may stand above the window (the pages scrolled): places can be negative
 			let bottom = -Infinity;
 			for (const el of sheet.querySelectorAll(".rv-page-body *")) bottom = Math.max(bottom, el.getBoundingClientRect().bottom);
-			return { limit, over: bottom > limit + 1, room: limit - body.top };
+			return { limit, over: bottom > limit + 1, room };
 		};
 		const limit = () => Math.min(pages.length, this.max_pages());
 		let images = true;
@@ -2398,7 +2628,7 @@ export class PagesView {
 		return first ? this.top_number(n, total) + heading : this.head_html(false, null, n, total);
 	}
 
-	/** @param {boolean} [mark] measuring: each block carries its place (data-rv-unit); the styles are already in the probe */
+	/** @param {boolean} [mark] measuring: each block carries its place (data-rv-unit) */
 	custom_page_html(i, mark = false) {
 		const page = this.custom_pages[i];
 		const n = this.pages.length;
@@ -2448,7 +2678,7 @@ export class PagesView {
 				parent.appendChild(node);
 			}
 		}
-		return `<header class="rv-page-top">${this.custom_head(i === 0, i + 1, n)}</header>${mark ? "" : this.custom_styles}<div class="rv-page-body">${flow.outerHTML}</div><footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
+		return `<header class="rv-page-top">${this.custom_head(i === 0, i + 1, n)}</header><div class="rv-page-body">${flow.outerHTML}</div><footer class="rv-page-foot">${this.foot_html(i + 1, n, this.letterhead)}</footer>`;
 	}
 
 	// ------------------------------------------------------------ zoom and position
@@ -2514,9 +2744,30 @@ export class PagesView {
 
 	// ------------------------------------------------------------ print
 
+	/**
+	 * Fills every mounted page: the pages not filled in runs (PRINT_RUN pages read at once,
+	 * PRINT_PARALLEL runs side by side); resolves once the fills under way are done too.
+	 */
 	async fill_all() {
-		for (let i = 0; i < this.pages.length; i++) this.request_fill(i);
-		while (this.queue.length || this.filling.size) await new Promise((r) => setTimeout(r, 20));
+		// the pages waiting for the viewport are filled here, with the others
+		this.queue = [];
+		const n = Math.min(this.pages.length, this.page_sheets().length);
+		const runs = [];
+		let run = null;
+		for (let i = 0; i < n; i++) {
+			if (this.filled.has(i) || this.filling.has(i)) {
+				run = null;
+				continue;
+			}
+			if (!run || run.length >= PRINT_RUN) runs.push((run = []));
+			run.push(i);
+		}
+		let next = 0;
+		const worker = async () => {
+			while (next < runs.length) await this.fill_run(runs[next++]).catch(() => {});
+		};
+		await Promise.all(Array.from({ length: Math.min(PRINT_PARALLEL, runs.length) }, worker));
+		await Promise.all([...this.inflight]);
 	}
 
 	/** Prints the pages: every page is filled, the sheets stand alone in the document, the browser's dialog opens. */
@@ -2570,23 +2821,29 @@ export class PagesView {
 		const style = document.createElement("style");
 		style.textContent = this.print_css();
 		const sheets = this.sheets;
-		// the paper's rules last in the document: after any style a format carries
-		root.append(sheets, style);
+		const fmt_css = this.fmt_css;
+		// the format's styles (once for all the pages) before the sheets; the paper's rules
+		// last in the document, after any style a format carries (core/pdf.py splits the
+		// sheets at "</div><style>@page{")
+		root.append(fmt_css, sheets, style);
 		document.body.appendChild(root);
 		this.print_root = root;
 		const restore = () => {
 			window.removeEventListener("afterprint", restore);
 			if (root.isConnected) {
+				this.stage.insertBefore(fmt_css, this.probe);
 				this.stage.insertBefore(sheets, this.probe);
 				root.remove();
 			}
 			// the pages are observed from their stage again
 			if (this.observer) {
 				this.observer.disconnect();
-				for (const el of this.sheets.children) this.observer.observe(el);
+				this.observe_pages();
 			}
 			this.printing = false;
 			button.disabled = false;
+			// the far pages give their content back (a long print filled them all)
+			if (this.box) this.trim_filled();
 		};
 		return restore;
 	}
@@ -2613,10 +2870,13 @@ export class PagesView {
 		}
 		const title = `${this.ctx.report_name}`.replace(/[\\/:*?"<>|]+/g, "-").slice(0, 120);
 		try {
+			const body = await pdf_body({ ...target.args, title }, html);
+			// the document is not kept while a job is followed (it may be tens of MB)
+			html = null;
 			const r = await fetch(`/api/method/${target.method}`, {
 				method: "POST",
 				headers: { "X-Frappe-CSRF-Token": frappe.csrf_token, Accept: "application/pdf, application/json" },
-				body: await pdf_body({ ...target.args, title }, html),
+				body,
 			});
 			if ((r.headers.get("Content-Type") || "").includes("pdf") && r.ok) return this.save_pdf(await r.blob(), title);
 			const j = await r.json().catch(() => ({}));
@@ -2631,22 +2891,105 @@ export class PagesView {
 		}
 	}
 
-	/** Follows a PDF job of the server (ADR-016) until its file is ready, then downloads it. */
+	/**
+	 * Follows a PDF job of the server (ADR-016) until its file is ready, then downloads it.
+	 * Waiting in the queue and printing are told apart; the person may cancel; the wait ends
+	 * when the job fails or is cancelled, when the server does not start it in
+	 * PDF_QUEUE_LIMIT_MIN or finish it in PDF_WAIT_LIMIT_MIN, or when the pages are left.
+	 */
 	async wait_pdf_job(job, total, title) {
 		const num = (v) => frappe.format(v, { fieldtype: "Int" }, { inline: true });
-		this.busy(__("Making the PDF: {0} of {1} pages…", [num(0), num(total)]));
-		for (;;) {
-			await new Promise((r) => setTimeout(r, 1000));
-			const st = await frappe.xcall("report_view.api.pdf.pages_pdf_status", { job }, "GET");
-			if (st.state === "failed") return this.pdf_error({ exception: st.error });
-			if (st.state === "done") break;
-			this.busy(__("Making the PDF: {0} of {1} pages…", [num(st.done || 0), num(st.total || total)]));
+		const run = { job, stop: false, reason: null };
+		this.pdf_job = run;
+		const cancel = this.busy_el.querySelector('[data-action="pdf-cancel"]');
+		const started = Date.now();
+		let running = false;
+		let misses = 0;
+		// the server says whether the job can still be cancelled (`cancellable`)
+		let cancel_ok = true;
+		const say = (text) => {
+			this.busy(text);
+			cancel.hidden = !cancel_ok;
+		};
+		say(__("Waiting for the server to start the PDF…"));
+		try {
+			for (;;) {
+				await new Promise((r) => setTimeout(r, PDF_POLL_MS));
+				if (run.stop) return this.pdf_stopped(run);
+				const waited = (Date.now() - started) / 60000;
+				if (!running && waited > PDF_QUEUE_LIMIT_MIN) {
+					this.stop_pdf_job(run, "limit");
+					return this.pdf_error({ exception: __("The server did not start the PDF within {0} minutes. Try again later or print fewer pages.", [PDF_QUEUE_LIMIT_MIN]) });
+				}
+				if (waited > PDF_WAIT_LIMIT_MIN) {
+					this.stop_pdf_job(run, "limit");
+					return this.pdf_error({ exception: __("The PDF took longer than {0} minutes and was stopped. Print fewer pages.", [PDF_WAIT_LIMIT_MIN]) });
+				}
+				let st;
+				try {
+					const r = await fetch(`/api/method/report_view.api.pdf.pages_pdf_status?${new URLSearchParams({ job })}`, {
+						headers: { "X-Frappe-CSRF-Token": frappe.csrf_token, Accept: "application/json" },
+					});
+					const j = await r.json().catch(() => ({}));
+					// the server answered no (the job is gone, not this user's): nothing to wait for
+					if (!r.ok) return this.pdf_error(j);
+					st = j.message || {};
+					misses = 0;
+				} catch (e) {
+					// the network: a few misses in a row are borne
+					if (++misses >= 3) return this.pdf_error({ exception: __("The server could not be reached: {0}", [err_text(e)]) });
+					continue;
+				}
+				if (run.stop) return this.pdf_stopped(run);
+				// `stage` (queued, waiting, rendering, done, failed, cancelled) where the server
+				// gives it, else `state` (queued, running, done, failed)
+				const stage = st.stage || st.state;
+				cancel_ok = st.cancellable !== false;
+				if (stage === "cancelled" || st.error_code === "cancelled") {
+					run.reason = run.reason || "cancel";
+					return this.pdf_stopped(run);
+				}
+				if (stage === "failed" || st.state === "failed") return this.pdf_error({ exception: st.error });
+				if (stage === "done" || st.state === "done") break;
+				if (stage === "queued" || stage === "waiting") {
+					say(__("Waiting for the server to start the PDF…"));
+					continue;
+				}
+				running = true;
+				say(__("Making the PDF: {0} of {1} pages…", [num(st.done || 0), num(st.total || total)]));
+			}
+			const r = await fetch(`/api/method/report_view.api.pdf.pages_pdf_download?${new URLSearchParams({ job })}`, {
+				headers: { "X-Frappe-CSRF-Token": frappe.csrf_token },
+			});
+			if (!r.ok) return this.pdf_error(await r.json().catch(() => ({})));
+			const blob = await r.blob();
+			if (!run.stop) this.save_pdf(blob, title);
+		} finally {
+			cancel.hidden = true;
+			if (this.pdf_job === run) this.pdf_job = null;
 		}
-		const r = await fetch(`/api/method/report_view.api.pdf.pages_pdf_download?${new URLSearchParams({ job })}`, {
-			headers: { "X-Frappe-CSRF-Token": frappe.csrf_token },
-		});
-		if (!r.ok) return this.pdf_error(await r.json().catch(() => ({})));
-		this.save_pdf(await r.blob(), title);
+	}
+
+	/**
+	 * Stops following a PDF job and asks the server to drop it (pages_pdf_cancel; its answer
+	 * is not waited for: the job is no longer followed either way).
+	 * @param {"cancel"|"limit"|"leave"} reason
+	 */
+	stop_pdf_job(run, reason) {
+		if (run.stop) return;
+		run.stop = true;
+		run.reason = reason;
+		const form = new FormData();
+		form.append("job", run.job);
+		fetch("/api/method/report_view.api.pdf.pages_pdf_cancel", {
+			method: "POST",
+			headers: { "X-Frappe-CSRF-Token": frappe.csrf_token, Accept: "application/json" },
+			body: form,
+		}).catch(() => {});
+	}
+
+	pdf_stopped(run) {
+		if (run.reason === "cancel") frappe.show_alert?.({ message: __("The PDF was cancelled"), indicator: "orange" });
 	}
 
 	save_pdf(blob, title) {
@@ -2682,7 +3025,11 @@ export class PagesView {
 		const PUBLIC = /^\/(assets|files)\//;
 		const used = this.css_in_use(root);
 		const head = [];
+		const seen = new Set();
 		for (const sheet of document.styleSheets) {
+			// the styles inside the printed root (a format's, a signature's, the paper's) go
+			// with the sheets themselves
+			if (sheet.ownerNode && root.contains(sheet.ownerNode)) continue;
 			let rules;
 			try {
 				rules = sheet.cssRules;
@@ -2691,8 +3038,19 @@ export class PagesView {
 			}
 			if (!rules) continue;
 			const base = sheet.href || location.href;
-			const text = used(rules);
-			if (!text) continue;
+			// a stylesheet of the site is tested once per kind of pages (CSS_KEPT)
+			let text;
+			if (sheet.href) {
+				const key = `${rules.length}|${used.signature()}`;
+				const kept = CSS_KEPT.get(sheet.href);
+				if (kept?.key === key) text = kept.text;
+				else {
+					text = used(rules);
+					CSS_KEPT.set(sheet.href, { key, text });
+				}
+			} else text = used(rules);
+			if (!text || seen.has(text)) continue;
+			seen.add(text);
 			// url() of a stylesheet resolve against its own address
 			const fixed = text.replace(/url\((['"]?)(?!data:|https?:|\/)([^'")]+)\1\)/g, (m, q, u) => `url(${q}${new URL(u, base).pathname}${q})`);
 			head.push(`<style>${fixed.replace(/<\/style/gi, "<\\/style")}</style>`);
@@ -2747,19 +3105,23 @@ export class PagesView {
 	 * <html> or <body>; @font-face and anything that cannot be tested are kept, @media and
 	 * the like keep what they hold that is used. Desk carries some twelve thousand rules the
 	 * pages never use: sent with them, they slow the server's engine down.
-	 * @returns {(rules: CSSRuleList) => string}
+	 * The sample is built on the first test; `signature()` names what the tests depend on.
+	 * @returns {((rules: CSSRuleList) => string) & {signature: () => string}}
 	 */
 	css_in_use(root) {
 		const sheets = [...root.querySelectorAll(".rv-page")];
 		const pick = new Set([0, 1, sheets.length - 1]);
 		for (let k = 1; k < 6; k++) pick.add(Math.floor((sheets.length * k) / 6));
-		const sample = document.createElement("div");
-		sample.className = root.className;
-		for (const i of pick) if (sheets[i]) sample.appendChild(sheets[i].cloneNode(true));
-		const wrap = document.createElement("div");
-		wrap.className = "rv-print-sheets";
-		wrap.append(...sample.childNodes);
-		sample.appendChild(wrap);
+		const picked = [...pick].filter((i) => sheets[i]).map((i) => sheets[i]);
+		let sample = null;
+		const make_sample = () => {
+			sample = document.createElement("div");
+			sample.className = root.className;
+			const wrap = document.createElement("div");
+			wrap.className = "rv-print-sheets";
+			for (const el of picked) wrap.appendChild(el.cloneNode(true));
+			sample.appendChild(wrap);
+		};
 		const html = document.documentElement;
 		const body = document.body;
 		// what never matches in a static page, and pseudo-elements (their element is tested)
@@ -2767,6 +3129,7 @@ export class PagesView {
 		const DYNAMIC = /:(hover|focus|focus-visible|focus-within|active|visited|target)\b/i;
 		const matches = (selector) => {
 			if (DYNAMIC.test(selector)) return false;
+			if (!sample) make_sample();
 			const sel = selector.replace(PSEUDO, "").trim() || "*";
 			try {
 				return Boolean(html.matches(sel) || body.matches(sel) || sample.matches(sel) || sample.querySelector(sel));
@@ -2791,18 +3154,23 @@ export class PagesView {
 			}
 			return out;
 		};
+		let signature = null;
+		keep.signature = () => (signature ??= sample_signature(picked, root));
 		return keep;
 	}
 
 	print_css() {
 		const b = this.box;
+		// the paper's colour (rv_tokens.css) under the sheets: <html> and <body> are not in .rv
+		const paper = getComputedStyle(this.root).getPropertyValue("--pp-bg").trim();
 		return `@page{size:${b.paper_w_mm}mm ${b.paper_h_mm}mm;margin:0}
 @media print{
-html,body{width:${b.paper_w_mm}mm!important;min-width:0!important;height:auto!important;margin:0!important;padding:0!important;background:#fff!important;overflow:visible!important}
+html,body{width:${b.paper_w_mm}mm!important;min-width:0!important;height:auto!important;margin:0!important;padding:0!important;${paper ? `background:${paper}!important;` : ""}overflow:visible!important}
 body>*:not(.rv-print-root){display:none!important}
 .rv-print-root{display:block!important;position:static!important;background:transparent!important}
 .rv-print-root .rv-print-sheets{display:block!important;padding:0!important;gap:0!important;zoom:1!important}
-.rv-print-root .rv-page{box-shadow:none!important;margin:0!important;break-after:page;page-break-after:always;break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.rv-print-root .rv-print-more{display:none!important}
+.rv-print-root .rv-page{content-visibility:visible!important;box-shadow:none!important;margin:0!important;break-after:page;page-break-after:always;break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .rv-print-root .rv-page *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .rv-print-root .rv-page:last-child{break-after:auto;page-break-after:auto}
 }`;

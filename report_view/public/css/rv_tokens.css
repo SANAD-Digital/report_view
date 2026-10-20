@@ -63,3 +63,7 @@
 /* the pinned edge shadow falls toward the scrolling columns: the inline end */
 .rv[dir=ltr]{--pin-sh:6px 0 8px -6px rgba(17,24,20,.16)}
 .rv.dark[dir=ltr]{--pin-sh:6px 0 8px -6px rgba(0,0,0,.55)}
+
+/* Pages view: the colours a page starts from for its rules, its border and its watermark
+   (views/pages_view.js COLOR_TOKENS: a colour setting left empty); paper, the same in both themes */
+.rv{--pp-rule:var(--pp-line); --pp-rule-2:var(--pp-line-2); --pp-border:var(--pp-tx); --pp-mark:#8A2D3B}

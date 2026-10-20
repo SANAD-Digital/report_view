@@ -75,3 +75,27 @@
 | 600 | 206 ث (وطلب يُرفض 413) | 61 ث | 937 كيلوبايت (من 20.5 ميغابايت) | 10 ميغابايت (من 60) |
 
 المطابقة مع طباعة المتصفح بعد كل ذلك: قيد يومية 0%، دفتر الأستاذ 13 صفحة 0% (أقصى 0.0002%)، كشف حساب عميل 9 صفحات 0% (صفحة واحدة 0.04%).
+
+## التشغيل في الإنتاج (2026-10-20)
+بعد مراجعة الجاهزية (عمليات Chromium يتيمة، لا حد للتزامن، مهام عالقة). هذا القسم يحل محل الأرقام السابقة حيث تختلف.
+
+- **عمر Chromium**: يبدأ في جلسة (مجموعة عمليات) خاصة به (`start_new_session`) ومعه `prctl(PR_SET_PDEATHSIG, SIGKILL)` (عبر `preexec_fn` و`ctypes`)، فيموت إذا قُتل العامل الذي شغّله (مهلة gunicorn، مهلة RQ، OOM، إعادة تشغيل). الإغلاق يرسل SIGTERM ثم SIGKILL للمجموعة كلها ويحذف الملف الشخصي. الملفات الشخصية في `<bench>/tmp/rv-chromium-*` (مجلد واحد لكل العمال مهما كان `TMPDIR`)، وفي كل منها `rv-owner` (رقم العملية التي شغّلته ووقت بدئها).
+- **المهل**: طلب متزامن 60 ثانية كلها (منها حتى 10 ثوانٍ انتظاراً لمحرك)، أقل بوضوح من `-t 120` في gunicorn. المهمة: مهلة RQ ‏900 ثانية (`JOB_TIMEOUT`)، وميزانيتها داخلها 840 ثانية (منها حتى 240 انتظاراً لمحرك)، والباقي لحفظ الملف والحالة. عند انتهاء المهلة أو الإلغاء أو فشل دفعة تتوقف كل الدفعات خلال ثانية (`abort`).
+- **حد التزامن**: `report_view_pdf_slots` في `common_site_config.json` (الافتراضي 2) خانات على مستوى الـ bench كله في redis (`SET NX EX` بانتهاء = المهلة + 30 ث؛ خانة صاحبها عملية منتهية على المضيف نفسه تُسترد فوراً). الطلب المتزامن ينتظر حتى 10 ثوانٍ ثم يرد `RVPdfBusy` (HTTP 429) برسالة مترجمة «المحرك مشغول، حاول بعد دقيقة». **مهمة واحدة لكل مستخدم**: مهمة ثانية أثناء الأولى تُرفض بـ `RVPdfBusy`.
+- **حدود المدخلات**: HTML بلا أوراق `.rv-page` يُرفض (`RVInvalidInput`) بدل طباعته؛ `pageRanges = 1-(الحد+1)` في `printToPDF` فلا يطبع Chromium أكثر من صفحة واحدة فوق `print_max_pages`؛ جسم أكبر من 4 ميغابايت يذهب إلى مهمة مهما كان عدد أوراقه.
+- **الشبكة**: فوق اعتراض `Fetch`، لا شبكة لـ Chromium أصلاً: `--proxy-server=127.0.0.1:9` مع `--proxy-bypass-list=<-loopback>`، و`--host-resolver-rules=MAP * ~NOTFOUND`، و`--disable-features=NetworkPrediction,Prerender2,SpeculationRules,IsolateOrigins,site-per-process,…` مع `--disable-site-isolation-trials` (كل الإطارات في عملية الصفحة)، و`Target.setAutoAttach` (‏`waitForDebuggerOnStart`) يطبق الاعتراض وتعطيل السكربتات على أي إطار أو عامل يحصل على هدف خاص به. مستند `data:` (إطار) محجوب. اختبار `test_no_request_leaves_the_engine` يعيد فحص الـ SSRF من المراجعة (16 متجهاً، مستمع محلي يجب ألا يصله اتصال).
+- **حالة المهمة** (`pages_pdf_status`): الحقول القديمة كما هي (`state` ∈ queued/running/done/failed، `done`، `total`، `error`) وأضيف: `stage` (queued: تنتظر عاملاً، waiting: تنتظر محركاً، rendering، done، failed، cancelled)، `error_code` (timeout، limit، busy، lost، no_worker، cancelled، failed)، `updated_at`، `seconds_since_update`، `cancellable`، `downloadable`. المهمة تكتب نبضاً كل ثانيتين؛ تُعلن `failed/lost` إذا فشلت مهمة RQ أو أوقفت، أو لم تنبض 60 ثانية، و`no_worker` إذا بقيت في الطابور 120 ثانية بلا عامل يخدمه. نص الخطأ يُترجم عند السؤال بلغة المستخدم، والخطأ الحقيقي في Error Log فقط (لا تفاصيل CDP للمستخدم). المهمة الملغاة تُقرأ `state = failed` مع `error_code = cancelled` حتى تتوقف الصفحات القديمة عن السؤال.
+- **الإلغاء** (`pages_pdf_cancel`، POST، لصاحب المهمة فقط): مهمة في الطابور لا تبدأ، والجارية تتوقف خلال ثوانٍ، والمنتهية يُحذف ملفها. الرد بشكل `pages_pdf_status`.
+- **التنزيل**: الملف لا يُحذف عند التنزيل (تنزيل منقطع يُعاد)؛ يبقى حتى ساعة من إنشائه أو حتى الإلغاء.
+- **التنظيف كل ساعة**: `report_view.core.pdf.cleanup_stale` في `scheduler_events["hourly"]` في hooks.py: يقتل عمليات Chromium الخاصة بالمحرك الأقدم من 960 ثانية وصاحبها غير موجود (مع مجموعتها)، ويحذف الملفات الشخصية التي لا تستعملها عملية حية وصاحبها غير موجود أو أقدم من ذلك (وفي مجلد النظام المؤقت أيضاً، حيث كانت سابقاً)، وملفات المهام في `private/rv_pdf` الأقدم من ساعة.
+- **طابور خاص**: `report_view_pdf_queue` في إعدادات الموقع (الافتراضي `long`). في الإنتاج يُعرّف طابور وعامله، وعدد العمال = عدد الخانات:
+  ```json
+  // common_site_config.json
+  "workers": {"rv_pdf": {"timeout": 900, "background_workers": 2}},
+  "report_view_pdf_queue": "rv_pdf",
+  "report_view_pdf_slots": 2
+  ```
+  ثم `bench setup supervisor` (أو `bench worker --queue rv_pdf` في التطوير). اسم طابور غير معرّف في `workers` يُسجَّل تحذيراً ويرجع إلى `long`.
+- **Chromium الاحتياطي**: لا نستعمل `ChromePDFGenerator` ولا دواله الخاصة بعد الآن: إن غاب `chromium-rv` يؤخذ مسار Chromium الخاص بـ Frappe بدالته العامة `find_or_download_chromium_executable` ويُشغَّل بالطريقة نفسها أعلاه، مع تحذير في `logs/report_view.log` مرة لكل عملية. الاعتماد الوحيد الباقي على Frappe هو `CDPSocketClient`.
+- **التثبيت**: `apps/report_view/scripts/install_chromium.sh` ينزّل Chrome for Testing `chrome-headless-shell` ‏153.0.8010.12 (مثبت بـ SHA-256 للأرشيف وللملف) إلى `<bench>/chromium-rv`، ويتحقق منه، ويطبع حزم apt المطلوبة؛ لا يفعل شيئاً إن كانت النسخة نفسها موجودة، ولا يستبدل نسخة أخرى إلا بـ `--force`.
+- **ما بقي**: `--no-sandbox` باقٍ (`kernel.apparmor_restrict_unprivileged_userns = 1`): حذفه يحتاج ملف AppArmor لـ `chrome-headless-shell` أو تشغيل المحرك بمستخدم نظام لا يقرأ `site_config.json`.

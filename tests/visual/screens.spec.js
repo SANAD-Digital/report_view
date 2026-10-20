@@ -2763,6 +2763,8 @@ test("pages: the site's standard print settings are where a new user starts and 
 	});
 	const want = { size: "A3", orientation: "portrait", style: "ledger", heading: "Statement heading", heading_pages: "all", page_numbers: false, number_format: "full" };
 	expect(await st()).toEqual(want);
+	// the paper tool of the toolbar opens its menu
+	await page.click('details[data-sec="paper"] > summary');
 	await page.click('[data-seg="margins"][data-value="wide"]').catch(() => {});
 	await page.selectOption('select[data-set="size"]', "A4");
 	await settle(page);
@@ -2795,47 +2797,74 @@ test("pages: a long report prints every sheet with its content (far pages are no
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
-test("pages: on a phone the pages take the screen and the settings open as a sheet from the bottom bar", async ({ page }) => {
+test("pages: the toolbar opens one tool's menu at a time, under its tool; elsewhere or Escape closes it", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=tb&lang=ar&rv=${PAGES}`);
+	await settle(page);
+	const menu = () =>
+		page.evaluate(() => {
+			const m = document.querySelector(".rv-print-pop");
+			if (!m) return null;
+			const r = m.getBoundingClientRect();
+			return { secs: [...m.querySelectorAll(".rv-pop-sec")].map((x) => x.dataset.sec), top: Math.round(r.top), bottom: Math.round(r.bottom), w: Math.round(r.width) };
+		});
+	// four groups, every section a tool, nothing open
+	expect(await page.locator(".rv-rg").count()).toBe(4);
+	expect(await menu()).toBe(null);
+	await page.click('details[data-sec="sign"] > summary');
+	let m = await menu();
+	expect(m.secs).toEqual(["sign"]);
+	const tool = await page.locator('details[data-sec="sign"] > summary').boundingBox();
+	expect(m.top).toBeGreaterThanOrEqual(Math.round(tool.y + tool.height));
+	// a change inside the menu keeps it open
+	await page.click('.rv-print-pop [data-sw="signatures"]');
+	await settle(page);
+	expect((await menu()).secs).toEqual(["sign"]);
+	// another tool replaces it; the same tool again closes it
+	await page.click('details[data-sec="paper"] > summary');
+	expect((await menu()).secs).toEqual(["paper"]);
+	await page.click('details[data-sec="paper"] > summary');
+	expect(await menu()).toBe(null);
+	// a click on the pages closes it, Escape too
+	await page.click('details[data-sec="foot"] > summary');
+	const stage = await page.locator(".rv-print-stage").boundingBox();
+	const open_menu = await page.locator(".rv-print-pop").boundingBox();
+	// a point of the stage away from the menu
+	const x = open_menu.x > stage.x + 60 ? stage.x + 20 : stage.x + stage.width - 20;
+	await page.mouse.click(x, stage.y + stage.height - 20);
+	expect(await menu()).toBe(null);
+	await page.click('details[data-sec="foot"] > summary');
+	await page.keyboard.press("Escape");
+	expect(await menu()).toBe(null);
+	// the thumbnails: one a page, the current marked, a click goes to its page
+	const n = await page.evaluate(() => window.rv_page.pages.pages.length);
+	expect(await page.locator(".rv-print-thumbs [data-thumb]").count()).toBe(n);
+	expect(await page.getAttribute(".rv-print-thumbs [data-thumb='0']", "aria-current")).toBe("page");
+	expect(problems).toEqual([]);
+});
+
+test("pages: on a phone the toolbar stays on top and a tool's menu opens as a sheet from the bottom", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, `report=tb&lang=ar&rv=${PAGES}`);
 	await settle(page);
 	// the harness opens at desktop size: the phone's width after
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.waitForTimeout(300);
-	const layout = () =>
+	const st = () =>
 		page.evaluate(() => {
-			const r = (sel) => document.querySelector(sel).getBoundingClientRect();
-			const side = r(".rv-print-side");
-			return {
-				open: document.querySelector(".rv-pages").classList.contains("sheet-open"),
-				side_top: Math.round(side.top),
-				side_bottom: Math.round(side.bottom),
-				bd_shown: getComputedStyle(document.querySelector(".rv-print-side .bd")).display !== "none",
-				stage_w: Math.round(r(".rv-print-stage").width),
-				pages_w: Math.round(r(".rv-pages").width),
-				hscroll: document.documentElement.scrollWidth > innerWidth,
-			};
+			const m = document.querySelector(".rv-print-pop")?.getBoundingClientRect();
+			return { menu: m ? { top: Math.round(m.top), bottom: Math.round(m.bottom), w: Math.round(m.width) } : null, thumbs: getComputedStyle(document.querySelector(".rv-print-thumbs")).display, hscroll: document.documentElement.scrollWidth > innerWidth };
 		});
-	let st = await layout();
-	// closed: only the bar at the bottom, the stage as wide as the screen
-	expect(st.open).toBe(false);
-	expect(st.bd_shown).toBe(false);
-	expect(st.side_bottom).toBe(844);
-	expect(st.side_top).toBeGreaterThan(700);
-	expect(st.stage_w).toBeGreaterThanOrEqual(st.pages_w - 1);
-	expect(st.hscroll).toBe(false);
-	await page.click('[data-action="sheet"]');
-	st = await layout();
-	expect(st.open).toBe(true);
-	expect(st.bd_shown).toBe(true);
-	expect(st.side_top).toBeLessThan(500);
-	expect(await page.getAttribute('[data-action="sheet"]', "aria-expanded")).toBe("true");
-	// a tap outside the sheet closes it; Escape too
-	await page.mouse.click(30, 30);
-	expect((await layout()).open).toBe(false);
-	await page.click('[data-action="sheet"]');
+	let s = await st();
+	expect(s.menu).toBe(null);
+	expect(s.thumbs).toBe("none");
+	expect(s.hscroll).toBe(false);
+	await page.locator('details[data-sec="paper"] > summary').click();
+	s = await st();
+	expect(s.menu.bottom).toBe(844);
+	expect(s.menu.w).toBe(390);
 	await page.keyboard.press("Escape");
-	expect((await layout()).open).toBe(false);
+	expect((await st()).menu).toBe(null);
 	expect(problems).toEqual([]);
 });
 

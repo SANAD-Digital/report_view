@@ -139,6 +139,15 @@ const NUMBER_POS = ["bottom-end", "bottom-center", "bottom-start", "top-end", "t
 const NUMBER_FORMATS = ["full", "short", "number", "dash"];
 // Settings drawn over the pages (the watermark, the border round the page): changed on
 // the pages already cut, without cutting them again.
+// The toolbar above the pages (owner's choice, 2026-10-20): the panel's sections as tools
+// in four groups; a tool opens its settings in one menu under it.
+const RIBBON = [
+	{ id: "page", label: () => __("Page", null, "Report View"), secs: ["paper"] },
+	{ id: "content", label: () => __("Content", null, "Report View"), secs: ["tpl", "content", "cols"] },
+	{ id: "identity", label: () => __("Identity", null, "Report View"), secs: ["head", "heading", "foot", "sign"] },
+	{ id: "marks", label: () => __("Marks", null, "Report View"), secs: ["num", "border", "wm"] },
+];
+
 // the least share of a page left to the content before a repeated signature moves to the last page
 const MIN_ROOM = 0.25;
 // pages of a format drawn at once in the probe to be checked
@@ -406,13 +415,14 @@ export class PagesView {
 				<div class="rv-print-ft">
 					<span class="rv-print-note"></span>
 					<div class="rv-print-acts">
-						<button type="button" class="rv-btn rv-print-sheet-btn" data-action="sheet" aria-expanded="false">${icons.sliders()}<span>${esc(__("Settings", null, "Report View"))}</span></button>
-						<button type="button" class="rv-btn primary rv-print-go" data-action="print">${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
+						<button type="button" class="rv-btn primary rv-print-go" data-action="print" title="${esc(__("To keep a PDF file, choose «Save as PDF» in the print dialog."))}">${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
 						<button type="button" class="rv-btn rv-print-pdf" data-action="pdf" title="${esc(__("The same pages as a PDF file, made by the server"))}">PDF</button>
 					</div>
 					<small class="rv-print-tip">${esc(__("To keep a PDF file, choose «Save as PDF» in the print dialog."))}</small>
 				</div>
 			</aside>
+			<div class="rv-print-main">
+			<nav class="rv-print-thumbs" aria-label="${esc(__("Pages", null, "Report View"))}"></nav>
 			<div class="rv-print-stage" tabindex="0">
 				<div class="rv-print-tools">
 					<div class="rv-seg rv-zoom" role="group" aria-label="${esc(__("Zoom"))}">
@@ -428,7 +438,7 @@ export class PagesView {
 				<div class="rv-print-sheets" dir="${this.rtl ? "rtl" : "ltr"}"></div>
 				<div class="rv-print-probe" aria-hidden="true"></div>
 			</div>
-			<div class="rv-print-scrim" aria-hidden="true"></div>`;
+			</div>`;
 		this.side = el.querySelector(".rv-print-side");
 		this.bd = el.querySelector(".rv-print-side .bd");
 		this.stage = el.querySelector(".rv-print-stage");
@@ -444,11 +454,25 @@ export class PagesView {
 		if (this.host.pages_pdf_target) pdf.addEventListener("click", () => this.pdf());
 		else pdf.remove();
 		el.querySelector('[data-action="reset"]').addEventListener("click", () => this.reset());
-		// a narrow screen: the settings are a sheet over the pages, opened from the bar
-		el.querySelector('[data-action="sheet"]').addEventListener("click", () => this.toggle_sheet());
-		el.querySelector(".rv-print-scrim").addEventListener("click", () => this.toggle_sheet(false));
 		el.addEventListener("keydown", (e) => {
-			if (e.key === "Escape" && el.classList.contains("sheet-open")) this.toggle_sheet(false);
+			if (e.key === "Escape" && this.open_secs?.size) this.close_menu();
+		});
+		// a tool's menu closes on a click elsewhere (lists of its own fields excepted)
+		document.addEventListener(
+			"pointerdown",
+			(e) => {
+				if (!this.open_secs?.size || !this.el.isConnected) return;
+				const t = e.target;
+				if (this.bd.contains(t) || t.closest?.(".awesomplete, .modal, .dropdown-menu, .datepicker, .pcr-app")) return;
+				this.close_menu();
+			},
+			true
+		);
+		window.addEventListener("resize", () => this.place_menu(), { passive: true });
+		this.thumbs = el.querySelector(".rv-print-thumbs");
+		this.thumbs.addEventListener("click", (e) => {
+			const b = e.target.closest("[data-thumb]");
+			if (b) this.go_to_page(Number(b.dataset.thumb));
 		});
 		for (const b of el.querySelectorAll("[data-zoom]")) b.addEventListener("click", () => this.zoom(b.dataset.zoom));
 		this.stage.addEventListener("scroll", () => this.update_position(), { passive: true });
@@ -461,14 +485,10 @@ export class PagesView {
 				// an open list of a Link field follows its field while the panel scrolls
 		this.bd.addEventListener("scroll", () => {
 			for (const input of this.bd.querySelectorAll(".rv-linkf input[aria-expanded='true']")) this.place_dropdown(input);
-		}, { passive: true });
+			this.place_menu();
+		}, { passive: true, capture: true });
 		this.resize_observer = new ResizeObserver(() => this.apply_zoom());
 		this.resize_observer.observe(this.stage);
-	}
-
-	toggle_sheet(open = !this.el.classList.contains("sheet-open")) {
-		this.el.classList.toggle("sheet-open", open);
-		this.el.querySelector('[data-action="sheet"]').setAttribute("aria-expanded", String(open));
 	}
 
 	// ------------------------------------------------------------ loading
@@ -751,7 +771,7 @@ export class PagesView {
 		const o = this.options || { letter_heads: [], print_formats: [], languages: [] };
 		const model = this.rows.model;
 		const scroll = this.bd.scrollTop;
-		if (!this.open_secs) this.open_secs = new Set(["paper"]);
+		if (!this.open_secs) this.open_secs = new Set();
 		const mm = __("mm");
 		const option = (value, label, on) => `<option value="${esc(value)}" ${on ? "selected" : ""}>${esc(label)}</option>`;
 		const check = (key, label) =>
@@ -1020,8 +1040,126 @@ export class PagesView {
 				  ),
 			`<p class="rv-zone-empty">${esc(__("The pages show the table as it is: the same filters, grouping and folded groups."))}</p>`,
 		].join("");
-		this.bd.scrollTop = scroll;
+		this.ribbon_layout();
+		this.bd.scrollLeft = this.ribbon_scroll || 0;
+		const menu = this.bd.querySelector(".rv-print-pop");
+		if (menu && this.menu_scroll && this.menu_scroll.id === [...this.open_secs].join()) menu.scrollTop = this.menu_scroll.top;
+		void scroll;
 		this.bind_panel();
+	}
+
+	/**
+	 * The sections as the tools of the toolbar, in RIBBON's groups; the open ones (one when
+	 * a person opens a tool) show their settings in one menu under the tool, its title and
+	 * summary at its head. The controls are the sections' own: bind_panel binds them as before.
+	 */
+	ribbon_layout() {
+		const bd = this.bd;
+		const take = (id) => bd.querySelector(`:scope > details[data-sec="${id}"]`);
+		const frag = document.createDocumentFragment();
+		let last = null;
+		for (const g of RIBBON) {
+			const secs = g.secs.map(take).filter(Boolean);
+			if (!secs.length) continue;
+			const wrap = document.createElement("div");
+			wrap.className = "rv-rg";
+			wrap.dataset.group = g.id;
+			wrap.setAttribute("role", "group");
+			wrap.setAttribute("aria-label", g.label());
+			const tools = document.createElement("div");
+			tools.className = "rv-rg-tools";
+			tools.append(...secs);
+			const name = document.createElement("span");
+			name.className = "rv-rg-name";
+			name.textContent = g.label();
+			wrap.append(tools, name);
+			frag.append(wrap);
+			last = tools;
+		}
+		// a section no group names (a later one) joins the last group
+		for (const d of bd.querySelectorAll(":scope > details[data-sec]")) last?.append(d);
+		bd.replaceChildren(frag);
+		for (const d of bd.querySelectorAll("details[data-sec]")) {
+			const summary = d.querySelector(":scope > summary");
+			const sm = summary.querySelector(".sm")?.textContent || "";
+			summary.title = sm;
+			summary.setAttribute("aria-haspopup", "dialog");
+			summary.setAttribute("aria-expanded", String(d.open));
+		}
+		const open = [...bd.querySelectorAll("details[data-sec][open]")];
+		if (!open.length) return;
+		const menu = document.createElement("div");
+		menu.className = "rv-print-pop";
+		menu.setAttribute("role", "dialog");
+		menu.setAttribute("aria-label", open.map((d) => d.querySelector(".tt")?.textContent || "").join(" · "));
+		for (const d of open) {
+			const sec = document.createElement("section");
+			sec.className = "rv-pop-sec";
+			sec.dataset.sec = d.dataset.sec;
+			const hd = document.createElement("div");
+			hd.className = "rv-pop-hd";
+			hd.innerHTML = `<strong>${esc(d.querySelector(".tt")?.textContent || "")}</strong><span>${esc(d.querySelector(".sm")?.textContent || "")}</span>`;
+			sec.append(hd, d.querySelector(":scope > .rv-psec-bd"));
+			menu.append(sec);
+		}
+		bd.append(menu);
+		menu.addEventListener("scroll", () => (this.menu_scroll = { id: [...this.open_secs].join(), top: menu.scrollTop }), { passive: true });
+		this.place_menu();
+	}
+
+	/** The menu of the open tool: under its tool, inside the window (a sheet on a phone, by CSS). */
+	place_menu() {
+		const menu = this.bd?.querySelector(".rv-print-pop");
+		if (!menu) return;
+		const id = this.open_secs.has(this.menu_anchor) ? this.menu_anchor : [...this.open_secs][0];
+		const tool = this.bd.querySelector(`details[data-sec="${id}"] > summary`);
+		if (!tool) return;
+		const r = tool.getBoundingClientRect();
+		const w = Math.min(360, window.innerWidth - 16);
+		const start = this.rtl ? r.right - w : r.left;
+		Object.assign(menu.style, {
+			top: `${Math.round(r.bottom + 6)}px`,
+			left: `${Math.round(Math.max(8, Math.min(start, window.innerWidth - w - 8)))}px`,
+			width: `${w}px`,
+			maxHeight: `${Math.max(220, Math.round(window.innerHeight - r.bottom - 18))}px`,
+		});
+	}
+
+	open_menu(id) {
+		const only = this.open_secs.size === 1 && this.open_secs.has(id);
+		this.ribbon_scroll = this.bd.scrollLeft;
+		this.open_secs = only ? new Set() : new Set([id]);
+		this.menu_anchor = id;
+		this.menu_scroll = null;
+		this.render_panel();
+		if (!only) this.bd.querySelector(".rv-print-pop input:not([type=hidden]), .rv-print-pop select, .rv-print-pop button")?.focus({ preventScroll: true });
+	}
+
+	close_menu() {
+		if (!this.open_secs?.size) return;
+		const id = this.menu_anchor;
+		this.ribbon_scroll = this.bd.scrollLeft;
+		this.open_secs = new Set();
+		this.render_panel();
+		this.bd.querySelector(`details[data-sec="${id}"] > summary`)?.focus({ preventScroll: true });
+	}
+
+	/** The thumbnails of the pages (numbers on little sheets): one each, the current marked. */
+	render_thumbs() {
+		if (!this.thumbs) return;
+		const num = (v) => frappe.format(v, { fieldtype: "Int" }, { inline: true });
+		const n = Math.min(this.pages.length, this.max_pages());
+		let html = "";
+		for (let i = 0; i < n; i++) html += `<button type="button" data-thumb="${i}" aria-label="${esc(__("Page {0}", [num(i + 1)]))}"><i aria-hidden="true"></i><span>${esc(num(i + 1))}</span></button>`;
+		this.thumbs.innerHTML = html;
+		this.thumbs.style.setProperty("--th-ratio", String(this.box ? this.box.h / this.box.w : 1.414));
+	}
+
+	go_to_page(i) {
+		const sheet = this.sheets.children[i];
+		if (!sheet) return;
+		const top = sheet.getBoundingClientRect().top - this.stage.getBoundingClientRect().top + this.stage.scrollTop - 12;
+		this.stage.scrollTo({ top, behavior: "smooth" });
 	}
 
 	/**
@@ -1111,8 +1249,12 @@ export class PagesView {
 	bind_panel() {
 		const bd = this.bd;
 		this.mount_links();
-		for (const d of bd.querySelectorAll("details[data-sec]")) {
-			d.addEventListener("toggle", () => (d.open ? this.open_secs.add(d.dataset.sec) : this.open_secs.delete(d.dataset.sec)));
+		for (const summary of bd.querySelectorAll("details[data-sec] > summary")) {
+			summary.addEventListener("click", (e) => {
+				if (e.target !== summary && e.target.closest("button, input, select, a")) return;
+				e.preventDefault();
+				this.open_menu(summary.parentElement.dataset.sec);
+			});
 		}
 		for (const sel of bd.querySelectorAll("select[data-set]")) {
 			sel.addEventListener("change", () => this.update({ [sel.dataset.set]: sel.value }));
@@ -1786,6 +1928,7 @@ export class PagesView {
 		const num = (v) => frappe.format(v, { fieldtype: "Int" }, { inline: true });
 		this.sheets.innerHTML = this.pages.map((p, i) => this.page_shell(i, box, dir, `<span class="rv-page-ph">${esc(num(i + 1))}</span>`)).join("");
 		this.count_el.textContent = __("{0} pages", [num(n)]);
+		this.render_thumbs();
 		this.el.classList.toggle("many", n > this.max_pages());
 		this.observer = new IntersectionObserver((entries) => this.on_intersect(entries), {
 			root: this.stage,
@@ -2358,6 +2501,15 @@ export class PagesView {
 		const at = Math.min(this.pages.length, Math.floor((this.stage.scrollTop + this.stage.clientHeight / 2 - STAGE_PAD * z) / h) + 1);
 		const num = (v) => frappe.format(v, { fieldtype: "Int" }, { inline: true });
 		this.pos_el.textContent = __("Page {0} of {1}", [num(Math.max(1, at)), num(this.pages.length)]);
+		const cur = this.thumbs?.querySelector('[aria-current="page"]');
+		const next = this.thumbs?.children[Math.max(1, at) - 1];
+		if (cur !== next) {
+			cur?.removeAttribute("aria-current");
+			if (next) {
+				next.setAttribute("aria-current", "page");
+				if (next.offsetTop < this.thumbs.scrollTop || next.offsetTop + next.offsetHeight > this.thumbs.scrollTop + this.thumbs.clientHeight) next.scrollIntoView({ block: "nearest" });
+			}
+		}
 	}
 
 	// ------------------------------------------------------------ print

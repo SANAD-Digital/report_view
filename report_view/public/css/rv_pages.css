@@ -378,63 +378,84 @@
 .rv-print-acts .rv-print-go{width:auto;min-width:0}
 .rv-psec-bd .rv-zone-empty.warn{color:var(--warn);background:var(--warn-soft);border:1px solid var(--warn-line);border-radius:var(--r);padding:6px 8px}
 
-/* ---------- compact panel (owner's choice, 2026-10-14): flat sections between thin rules,
-   each summary on its title's line, smaller fields, the four margins on one row ---------- */
-.rv-print-side{width:288px}
-.rv-print-hd{height:40px;padding-inline:12px 8px}
-.rv-print-side .bd{padding:0;gap:0}
-.rv-print-side .rv-psec{border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none;background:var(--surface)}
-.rv-print-side .rv-psec[open]{box-shadow:none;background:var(--surface-2)}
-.rv-print-side .rv-psec > summary{min-height:36px;padding:4px 12px;gap:8px}
-.rv-print-side .rv-psec[open] > summary{border-bottom:0;background:none}
-.rv-print-side .rv-psec > summary .ic{width:20px;height:20px;border-radius:5px}
-.rv-print-side .rv-psec > summary .ic svg{width:13px;height:13px}
-.rv-print-side .rv-psec > summary .tx{flex-direction:row;align-items:baseline;gap:8px}
-.rv-print-side .rv-psec > summary .tt{font-size:var(--fs-xs);flex:none}
-.rv-print-side .rv-psec > summary .sm{flex:1;min-width:0;font-size:11px;text-align:end}
-.rv-print-side .rv-psec-bd{gap:8px;padding:2px 12px 12px}
-.rv-print-side .rv-psec-bd .rv-field{gap:3px}
-.rv-print-side .rv-psec-bd .rv-field > span{font-size:11px}
-.rv-print-side .rv-psec-bd .rv-print-row{gap:8px}
-.rv-print-side .rv-psec-bd .rv-input{height:26px}
-.rv-print-side .rv-psec-bd .rv-print-seg button{height:22px;font-size:11.5px}
-.rv-print-side .rv-psec-bd .rv-print-sw{font-size:var(--fs-xs)}
-.rv-print-side .rv-psec-bd .rv-zone-empty{font-size:11px}
-/* the four margins: one row, each named above its field (top, bottom, start, end) */
-.rv-print-side .rv-box4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:auto;gap:6px}
-.rv-print-side .rv-box4-page{display:none}
-.rv-print-side .rv-box4-top{order:1}
-.rv-print-side .rv-box4-bottom{order:2}
-.rv-print-side .rv-box4-start{order:3}
-.rv-print-side .rv-box4-end{order:4}
-.rv-print-side .rv-box4 > label{grid-row:1;grid-column:auto;display:flex;flex-direction:column;gap:2px}
-.rv-print-side .rv-box4 label::before{content:attr(title);font-size:10.5px;color:var(--tx-3);text-align:center}
-.rv-print-side .rv-box4 input.rv-input{height:26px;padding:0 4px}
-/* Frappe's own fields in the panel (template, letter head, heading, signature) */
-.rv-print-side [data-link] .form-control{height:26px;min-height:0;font-size:var(--fs-xs);padding:0 8px;border-radius:var(--r-sm)}
-.rv-print-side [data-link] .awesomplete > ul li{font-size:var(--fs-xs);padding:5px 8px}
-.rv-print-ft{padding:8px 12px 10px;gap:4px}
+/* ---------- the toolbar above the pages (owner's choice, 2026-10-20) ----------
+   The panel is a bar over the pages: its head (title, count, reset) and foot (note, print,
+   PDF) on one line, the sections under it as the tools of four groups. A tool opens its
+   settings in one menu under it (.rv-print-pop, placed by pages_view.js place_menu). */
+.rv-pages{flex-direction:column}
+.rv-print-side{width:auto;flex:none;display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);grid-template-areas:"hd ft" "bd bd";border-inline-end:0;border-bottom:1px solid var(--line-2);background:var(--surface);min-height:0;position:relative;z-index:5}
+.rv-print-hd{grid-area:hd;height:44px;border-bottom:1px solid var(--line);padding-inline:14px 8px}
+.rv-print-ft{grid-area:ft;flex-direction:row;align-items:center;justify-content:flex-end;gap:8px;height:44px;box-sizing:border-box;padding:0 14px;border-top:0;border-bottom:1px solid var(--line)}
+.rv-print-ft .rv-print-note{order:0;flex:0 1 auto;min-width:0;max-width:560px;-webkit-line-clamp:1;padding:3px 8px}
+.rv-print-acts{width:auto;flex:none}
+.rv-print-tip{display:none}
 .rv-print-go,.rv-print-pdf{height:32px}
-.rv-print-tip{font-size:10.5px}
+.rv-print-go{padding-inline:18px}
 
-/* a narrow screen: the pages take the screen; the panel's foot is a bar at the bottom
-   (settings, print, PDF) and the settings open over the pages as a sheet from it */
-.rv-print-sheet-btn,.rv-print-scrim{display:none}
+/* the tools: a group's tools on a line, its name under them */
+.rv-print-side .bd{grid-area:bd;flex-direction:row;align-items:stretch;gap:0;padding:4px 6px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;min-height:0}
+.rv-rg{flex:none;display:flex;flex-direction:column;justify-content:center;gap:1px;padding:2px 8px;border-inline-end:1px solid var(--line)}
+.rv-rg:last-child{border-inline-end:0}
+.rv-rg-tools{display:flex;gap:2px}
+.rv-rg-name{font-size:10.5px;line-height:1.3;color:var(--tx-3);text-align:center}
+.rv-print-side .rv-rg .rv-psec{border:0;border-radius:var(--r-sm);background:none;box-shadow:none;overflow:visible}
+.rv-print-side .rv-rg .rv-psec > summary{min-height:30px;padding:0 8px;gap:6px;border:0;border-radius:var(--r-sm);background:none;color:var(--tx)}
+.rv-print-side .rv-rg .rv-psec > summary:hover{background:var(--hover)}
+.rv-print-side .rv-rg .rv-psec > summary .ic{width:auto;height:auto;background:none;color:var(--tx-2)}
+.rv-print-side .rv-rg .rv-psec > summary .tx{flex-direction:row}
+.rv-print-side .rv-rg .rv-psec > summary .tt{font-size:var(--fs-xs);font-weight:500;color:inherit}
+.rv-print-side .rv-rg .rv-psec > summary .sm{display:none}
+.rv-print-side .rv-rg .rv-psec > summary::after{width:5px;height:5px;margin-inline-start:0}
+.rv-print-side .rv-rg .rv-psec[open] > summary{background:var(--pri-soft);color:var(--pri-tx);box-shadow:inset 0 0 0 1px var(--pri)}
+.rv-print-side .rv-rg .rv-psec[open] > summary .ic{color:var(--pri-tx)}
+
+/* the menu of the open tool */
+.rv-print-pop{text-align:start;position:fixed;z-index:1040;display:flex;flex-direction:column;overflow:auto;overscroll-behavior:contain;background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-lg);box-shadow:var(--sh-2),0 12px 32px rgba(17,24,20,.14);scrollbar-width:thin}
+.rv-pop-sec + .rv-pop-sec{border-top:1px solid var(--line)}
+.rv-pop-hd{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:12px 14px 2px;text-align:start}
+.rv-pop-hd strong{font-size:var(--fs-sm);font-weight:600;color:var(--tx)}
+.rv-pop-hd span{font-size:11px;color:var(--tx-3)}
+.rv-pop-hd span:empty{display:none}
+.rv-print-pop .rv-psec-bd{gap:8px;padding:8px 14px 14px}
+.rv-print-pop .rv-psec-bd .rv-field{gap:3px}
+.rv-print-pop .rv-psec-bd .rv-field > span{font-size:11px}
+.rv-print-pop .rv-psec-bd .rv-print-row{gap:8px}
+.rv-print-pop .rv-psec-bd .rv-input{height:28px}
+.rv-print-pop .rv-psec-bd .rv-print-seg button{height:24px;font-size:11.5px}
+.rv-print-pop .rv-psec-bd .rv-print-sw{font-size:var(--fs-xs)}
+.rv-print-pop [data-link] .form-control{height:28px;min-height:0;font-size:var(--fs-xs);padding:0 8px;border-radius:var(--r-sm)}
+.rv-print-pop [data-link] .awesomplete > ul li{font-size:var(--fs-xs);padding:5px 8px}
+/* the four margins: one row, each named above its field */
+.rv-print-pop .rv-box4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:auto;gap:6px}
+.rv-print-pop .rv-box4-page{display:none}
+.rv-print-pop .rv-box4-top{order:1}
+.rv-print-pop .rv-box4-bottom{order:2}
+.rv-print-pop .rv-box4-start{order:3}
+.rv-print-pop .rv-box4-end{order:4}
+.rv-print-pop .rv-box4 > label{grid-row:1;grid-column:auto;display:flex;flex-direction:column;gap:2px}
+.rv-print-pop .rv-box4 > label::before{content:attr(title);font-size:10.5px;color:var(--tx-3);text-align:center}
+.rv-print-pop .rv-box4 input.rv-input{height:28px;padding:0 4px}
+
+/* the pages: thumbnails beside the stage */
+.rv-print-main{flex:1;min-height:0;display:flex}
+.rv-print-thumbs{width:92px;flex:none;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 0;background:var(--surface-2);border-inline-end:1px solid var(--line);scrollbar-width:thin}
+.rv-print-thumbs:empty{display:none}
+.rv-print-thumbs button{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0;border:0;background:none;cursor:pointer;color:var(--tx-3);font:inherit;font-size:10.5px;font-variant-numeric:tabular-nums}
+.rv-print-thumbs i{display:block;width:54px;aspect-ratio:1/var(--th-ratio,1.414);box-sizing:border-box;border:1px solid var(--line-2);border-radius:2px;background:var(--pp-bg) linear-gradient(var(--pp-line),var(--pp-line)) 6px 7px/calc(100% - 12px) 4px no-repeat;box-shadow:var(--sh-1)}
+.rv-print-thumbs button:hover i{border-color:var(--line-3)}
+.rv-print-thumbs button[aria-current="page"]{color:var(--pri-tx);font-weight:600}
+.rv-print-thumbs button[aria-current="page"] i{border-color:var(--pri);box-shadow:0 0 0 1.5px var(--pri)}
+
+/* a narrow screen: head, actions and tools one under the other; the menu is a sheet from
+   the bottom; no thumbnails */
 @media (max-width:900px){
-  .rv-pages{flex-direction:column}
-  .rv-print-stage{padding-bottom:72px}
-  .rv-print-sheets{padding:12px;gap:12px}
-  .rv-print-side{position:fixed;inset-inline:0;bottom:0;z-index:1031;width:auto;max-height:none;border-inline-end:0;border-top:1px solid var(--line-2);border-radius:14px 14px 0 0;box-shadow:var(--pp-shadow);padding-bottom:env(safe-area-inset-bottom)}
-  .rv-pages:not(.sheet-open) .rv-print-side > :not(.rv-print-ft){display:none}
-  .rv-pages.sheet-open .rv-print-side .bd{max-height:min(68vh,calc(100vh - 190px))}
-  .rv-print-ft{border-radius:14px 14px 0 0;padding:8px 12px 10px}
-  .rv-pages.sheet-open .rv-print-ft{border-radius:0}
-  .rv-print-acts{flex:1;display:flex;gap:8px}
-  .rv-print-acts .rv-btn{flex:1;justify-content:center;height:var(--ctl)}
+  .rv-print-side{grid-template-columns:minmax(0,1fr);grid-template-areas:"hd" "ft" "bd"}
+  .rv-print-ft{justify-content:stretch}
+  .rv-print-ft .rv-print-note{display:none}
+  .rv-print-acts{flex:1}
+  .rv-print-acts .rv-btn{flex:1;justify-content:center}
   .rv-print-acts .rv-print-pdf{flex:0 0 auto}
-  .rv-print-sheet-btn{display:inline-flex}
-  .rv-print-sheet-btn[aria-expanded="true"]{border-color:var(--pri);color:var(--pri-tx);background:var(--pri-soft)}
-  .rv-print-tip{display:none}
-  .rv-print-scrim{display:block;position:fixed;inset:0;z-index:1030;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .2s}
-  .rv-pages.sheet-open .rv-print-scrim{opacity:1;pointer-events:auto}
+  .rv-print-thumbs{display:none}
+  .rv-print-sheets{padding:12px;gap:12px}
+  .rv-print-pop{inset:auto 0 0 0!important;width:auto!important;max-height:72vh!important;border-radius:14px 14px 0 0;padding-bottom:env(safe-area-inset-bottom)}
 }

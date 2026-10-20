@@ -2327,3 +2327,18 @@ msgstr "عدد الأعمدة كبير جداً"
 
 msgid "Invalid columns of the view"
 msgstr "أعمدة العرض غير صالحة"
+
+msgctxt "Report View"
+msgid "Page"
+msgstr "الصفحة"
+
+msgctxt "Report View"
+msgid "Identity"
+msgstr "الهوية"
+
+msgctxt "Report View"
+msgid "Marks"
+msgstr "العلامات"
+
+msgid "Page {0}"
+msgstr "الصفحة {0}"

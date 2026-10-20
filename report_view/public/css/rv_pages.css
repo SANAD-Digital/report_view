@@ -10,7 +10,6 @@
 
 /* ---------- settings panel ---------- */
 .rv-print-side{width:300px;flex:none;background:var(--surface);border-inline-end:1px solid var(--line-2);display:flex;flex-direction:column;min-height:0}
-.rv.compact .rv-print-side{width:272px}
 .rv-print-side .bd{flex:1;overflow:auto;padding:12px 14px 14px;display:flex;flex-direction:column;gap:16px;min-height:0}
 .rv-print-side h4{margin:0 0 6px;font-size:var(--fs-xs);font-weight:600;color:var(--tx-3)}
 .rv-print-count{font-size:var(--fs-xs);color:var(--tx-3);white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -297,7 +296,6 @@
    folding sections with an icon tile and their summary on a line of their own
    ========================================================================== */
 .rv-print-side{width:320px;background:var(--surface-2)}
-.rv.compact .rv-print-side{width:300px}
 .rv-print-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;height:48px;padding:0 10px 0 14px;border-bottom:1px solid var(--line);background:var(--surface);flex:none}
 .rv[dir=rtl] .rv-print-hd{padding:0 14px 0 10px}
 .rv-print-hd-t{display:flex;align-items:center;gap:8px;min-width:0}

@@ -2918,3 +2918,18 @@ test("side panel: ticking a column keeps the columns list and the panel where th
 	expect(await page.evaluate(() => document.activeElement?.dataset?.col)).toBe(key);
 	expect(problems).toEqual([]);
 });
+
+test("pages: in compact density the toolbar spans the pages, as in the comfortable one", async ({ page }) => {
+	const problems = watch_console(page);
+	for (const density of ["comfortable", "compact"]) {
+		await open(page, `report=tb&lang=ar&density=${density}&rv=${PAGES}`);
+		await settle(page);
+		const w = await page.evaluate(() => {
+			const r = (s) => Math.round(document.querySelector(s).getBoundingClientRect().width);
+			return { compact: Boolean(document.querySelector(".rv.compact")), pages: r(".rv-pages"), toolbar: r(".rv-print-side") };
+		});
+		expect(w.compact).toBe(density === "compact");
+		expect(w.toolbar).toBe(w.pages);
+	}
+	expect(problems).toEqual([]);
+});

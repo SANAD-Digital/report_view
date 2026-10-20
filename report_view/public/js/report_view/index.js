@@ -28,7 +28,6 @@ import { install_facade, make_facade } from "./filters/facade.js";
 import { make_formatter } from "./format.js";
 import { GridView } from "./views/grid_view.js";
 import { PivotView } from "./views/pivot_view.js";
-import { PagesView } from "./views/pages_view.js";
 import { PivotBar } from "./components/pivot_bar.js";
 import { open_pivot_drill, DRILL_LIMIT } from "./components/pivot_drill.js";
 import { StateOverlay } from "./components/states.js";
@@ -39,10 +38,14 @@ import { Summary } from "./components/summary.js";
 import { GroupPanel } from "./components/group_panel.js";
 import { SidePanel } from "./components/side_panel.js";
 import { HeaderCells } from "./components/header_cells.js";
-import { close_popover } from "./components/popover.js";
+import * as popover from "./components/popover.js";
+import * as set_filter from "./components/set_filter.js";
+import * as chart_config from "./engine/chart_config.js";
+import * as dashboard_state from "./state/dashboard_state.js";
 import { ViewControls } from "./view_controls.js";
 import { NoticeBar, describe_notices } from "./components/notices.js";
 import { icons } from "./components/icons.js";
+import { wait_for_export, ExportJobError } from "./export_job.js";
 
 const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
 // Local preferences of this browser (the theme is not part of the view state, §7.1).
@@ -199,10 +202,41 @@ export class ReportViewPage {
 		});
 		this.pivot_token = 0;
 		this.pivot_opened = null;
-		this.pages = new PagesView({ parent: this.$(".rv-pages"), root, rtl: this.rtl, host: this });
+		// The Pages view and its bundle load on first use (report_view_pages.bundle.js).
+		this.pages_view = null;
+		this.pages_stub = {
+			show: async (args) => {
+				const view = await this.load_pages();
+				if (this.state?.mode === "pages" && this.opened === args.opened) await view.show(args);
+			},
+			destroy: () => {},
+			prefetch: () => this.load_pages().then((v) => v.prefetch()),
+			print: () => {},
+		};
+		// Its settings, options and letter head are asked for when the tab is about to be used.
+		const warm = (e) => {
+			if (e.target.closest?.('[data-mode="pages"]') && this.report && this.meta?.perms?.can_print) {
+				Promise.resolve(this.pages.prefetch()).catch(() => {});
+			}
+		};
+		this.toolbar.el.addEventListener("pointerover", warm);
+		this.toolbar.el.addEventListener("focusin", warm);
 		this.side = new SidePanel({ body, host: this.controls.side_host() });
 		this.status = new StatusBar({ parent: wrap });
 		this.apply_density();
+	}
+
+	/** The Pages view once its bundle is loaded, else what stands for it until then. */
+	get pages() {
+		return this.pages_view || this.pages_stub;
+	}
+
+	async load_pages() {
+		if (!this.pages_view) {
+			if (!window.report_view?.PagesView) await frappe.require("report_view_pages.bundle.js");
+			this.pages_view ||= new report_view.PagesView({ parent: this.$(".rv-pages"), root: this.root, rtl: this.rtl, host: this });
+		}
+		return this.pages_view;
 	}
 
 	/**
@@ -541,7 +575,7 @@ export class ReportViewPage {
 	// Leaving the page: every view and table is deleted now; the worker is terminated if the
 	// user does not come back within a minute (docs/architecture.md §8أ.3).
 	hide() {
-		close_popover();
+		popover.close_popover();
 		if (this.restore_facade) this.restore_facade();
 		this.restore_facade = null;
 		this.visible = false;
@@ -856,21 +890,36 @@ export class ReportViewPage {
 		}
 		if (!session) return;
 		const token = ++this.render_token;
+		const charts = this.state.mode === "charts";
+		const pivot = this.state.mode === "pivot";
+		const pages = this.state.mode === "pages";
+		// The pivot and the charts read their own views: what the page shows around them
+		// (summary cards, status bar, notices) needs no grid view (ReportSession.summarize).
+		const light = charts || pivot;
+		const spec = session.spec_of(this.state);
+		const key = session.view_key(spec);
 		let opened;
-		try {
-			// The main view also stands behind the charts: summary cards, status bar, export.
-			opened = await session.open(this.state, "grid");
-		} catch (e) {
-			// The result was replaced (its tables deleted) while this view was being opened.
-			if (session !== this.session) return;
-			throw e;
+		const kept = this.opened;
+		if (kept && kept.key === key && (kept.view || light)) {
+			// Same rows and numbers (a change of mode, density, subtotals, or of the columns of
+			// a grouped view): the view stays, with what the engine does not compute renewed.
+			session.supersede();
+			opened = session.adopt(kept, spec);
+		} else {
+			try {
+				opened = light ? await session.summarize(this.state, spec) : await session.open(this.state, "grid", spec);
+			} catch (e) {
+				// The result was replaced (its tables deleted) while this view was being opened.
+				if (session !== this.session) return;
+				throw e;
+			}
 		}
 		if (!opened) return;
 		if (token !== this.render_token || session !== this.session) {
-			await session.close_view(opened);
+			if (opened !== this.opened) await session.close_view(opened);
 			return;
 		}
-		const previous = this.opened;
+		const previous = this.opened === opened ? null : this.opened;
 		this.opened = opened;
 		const mode = { tree: "tree", levels: "tree", group: "group", flat: "flat", report: "flat" }[opened.post.shape];
 		this.result = { mode };
@@ -878,9 +927,6 @@ export class ReportViewPage {
 		// What the view state asks for and the screen does not do is said, once, not dropped.
 		this.notices.show(describe_notices(opened.post.notices, report.columns));
 		this.refresh_controls();
-		const charts = this.state.mode === "charts";
-		const pivot = this.state.mode === "pivot";
-		const pages = this.state.mode === "pages";
 		try {
 			if (charts || pivot || pages) {
 				this.grid.destroy();
@@ -912,9 +958,6 @@ export class ReportViewPage {
 		if (pivot && this.opened === opened) await this.show_pivot(session);
 		if (pages && this.opened === opened) {
 			await this.pages.show({ report, opened, session, state: this.state, config: this.config, fmt: this.formatter });
-		} else if (this.meta?.perms?.can_print && this.opened === opened) {
-			// the pages' settings, options and letter head, ready before the tab is opened
-			this.pages.prefetch();
 		}
 		this.update_url(this.last_filters, this.state, default_state(this.config));
 	}
@@ -1149,16 +1192,25 @@ export class ReportViewPage {
 		this._pages_save = setTimeout(() => frappe.model.user_settings.save(key, "pages", settings), PAGES_SAVE_MS);
 	}
 
-	// Export model v1 (docs/architecture.md §4.1).
+	// Export model v1 (docs/architecture.md §4.1). Quick filters travel with their definitions
+	// (ADR-013): the server applies the same expressions; an id with no definition is left
+	// out, as the screen leaves it out (a QUICK_FILTER_UNKNOWN notice).
 	export_model() {
 		const cols = visible_columns(this.report, this.state);
+		const defined = (this.config?.quick_filters || []).filter((q) => q && typeof q.id === "string" && typeof q.expression === "string");
+		const known = new Set(defined.map((q) => q.id));
 		return {
 			version: 1,
 			format: "xlsx",
 			filters: this.last_filters,
 			js_filters: this.filters.js_filters(),
 			prepared_report_name: this.prepared_report_name,
-			view_state: { ...this.state, report_filters: this.last_filters },
+			view_state: {
+				...this.state,
+				quick_filters: (this.state.quick_filters || []).filter((id) => known.has(id)),
+				report_filters: this.last_filters,
+			},
+			quick_filters: defined.map((q) => ({ id: q.id, expression: q.expression })),
 			scope: "all",
 			selection: null,
 			// Read from the view (§8أ.6): the facts that pass the filters and the total shown.
@@ -1177,40 +1229,73 @@ export class ReportViewPage {
 	}
 
 	async export_xlsx() {
-		if (!this.opened) return;
-		// Quick filters are engine expressions of the browser; the server export cannot apply
-		// them yet, so the file would not be the screen. Said instead of exporting another file.
-		if (this.state.quick_filters?.length) {
-			frappe.msgprint({
-				title: __("Export not available with quick filters"),
-				message: esc(__("Quick filters are applied on screen only for now. Remove them to export the file.")),
-				indicator: "orange",
-			});
-			return;
-		}
-		const btn = this.header.export_button;
-		btn.disabled = true;
+		// The file is the table's: the server exports the grid view only.
+		if (!this.opened || this.state.mode !== "grid" || this.export_job) return;
+		this.header.set_exporting(true);
 		try {
-			const out = await api.export_xlsx(this.report_name, this.export_model());
-			if (out.queued) {
-				frappe.show_alert({ message: __("The export is being prepared; you will be notified."), indicator: "blue" });
-				return;
-			}
-			const url = URL.createObjectURL(out.blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = out.filename;
-			document.body.appendChild(a);
-			a.click();
-			a.remove();
-			setTimeout(() => URL.revokeObjectURL(url), 1000);
+			let out = await api.export_xlsx(this.report_name, this.export_model());
+			if (out.queued) out = await this.wait_export_job(out.queued);
+			if (!out) return;
+			this.save_file(out);
 			frappe.show_alert({ message: __("Excel file downloaded"), indicator: "green" });
 		} catch (e) {
+			// HTTP 429 and the other refusals: the server's own message, once (no retry)
 			const title = (ERROR_TITLES[e.exc_type] || (() => __("Export failed")))();
 			frappe.msgprint({ title, message: esc(e.message), indicator: "red" });
 		} finally {
-			btn.disabled = false;
+			this.header.set_exporting(false);
 		}
+	}
+
+	/**
+	 * A large export runs on the server (export_jobs): its state is asked for until it is
+	 * done, shown next to the button with a way to stop waiting, then the file is downloaded.
+	 * @returns {Promise<{blob, filename}|null>} null when the user stopped waiting
+	 */
+	async wait_export_job(queued) {
+		const job = { id: queued.job, stopped: false };
+		this.export_job = job;
+		const rows = Number(queued.row_count) || 0;
+		const stop = () => {
+			job.stopped = true;
+			this.header.set_export_job(null);
+		};
+		const show = (state) => {
+			const running = state === "running" ? __("Building the Excel file") : __("The Excel file is queued");
+			const text = rows ? __("{0} · {1} rows", [running, format_int(rows)]) : running;
+			this.header.set_export_job({ text, on_stop: stop });
+		};
+		show("queued");
+		try {
+			await wait_for_export(job.id, {
+				status: (id) => api.export_xlsx_status(id),
+				cancelled: () => job.stopped || this.export_job !== job,
+				on_state: (s) => show(s.state),
+			});
+			this.header.set_export_job({ text: __("Downloading the Excel file"), on_stop: stop });
+			const file = await api.export_xlsx_download(job.id, this.report_name);
+			return job.stopped ? null : file;
+		} catch (e) {
+			if (!(e instanceof ExportJobError)) throw e;
+			if (e.reason === "cancelled") return null;
+			const message =
+				e.reason === "timeout" ? __("The Excel file is taking longer than expected. Try again in a few minutes.") : e.message || __("The Excel file could not be prepared.");
+			throw Object.assign(new Error(message), { exc_type: null });
+		} finally {
+			if (this.export_job === job) this.export_job = null;
+			this.header.set_export_job(null);
+		}
+	}
+
+	save_file({ blob, filename }) {
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		setTimeout(() => URL.revokeObjectURL(url), 1000);
 	}
 
 	// Raw values read by the Playwright test: totals of the current view.
@@ -1250,4 +1335,7 @@ function format_int(n) {
 }
 
 frappe.provide("report_view");
-Object.assign(window.report_view, { register, get_config, ReportViewPage });
+// The modules the Charts bundle shares with the page (views/charts_shared.js): one copy of
+// each, so that close_popover() closes a popover the charts opened too.
+const shared = { popover, set_filter, icons: { icons }, chart_config, dashboard_state };
+Object.assign(window.report_view, { register, get_config, ReportViewPage, shared });

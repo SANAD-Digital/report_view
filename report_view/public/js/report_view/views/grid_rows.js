@@ -10,12 +10,16 @@ import { RID, KIND } from "../engine/schema.js";
 import { DEPTH, HAS_CHILDREN, LEAVES, LEVELS } from "../engine/tree_nodes.js";
 import { CURRENCY_COUNT_PREFIX } from "../engine/view_config.js";
 import { entry_at } from "../engine/row_layout.js";
+import { column_runs } from "../engine/queries.js";
 import { header_bands } from "../state/column_groups.js";
 
 // Pinned columns next to the label need room: on a narrower grid only the label is pinned.
 const MIN_WIDTH_FOR_PINS = 600;
 // View rows this close are read in one window.
 const RUN_GAP = 8;
+// Formatted report cells kept for a scroll back; beyond this the cache starts again (a
+// window is cheap to format, a cell per row of a long report is not cheap to keep).
+export const HTML_CACHE_MAX = 50000;
 // A column without a band: not the empty string, so that regular-table does not merge its
 // band cell with the one of the pinned columns.
 const NO_BAND = " ";
@@ -29,6 +33,17 @@ const BLANK = { html: "", sign: "" };
 
 function empty(v) {
 	return v === null || v === undefined || v === "";
+}
+
+/** Runs [a, b) of a set of row numbers, rows this close read together. */
+function row_runs(rows) {
+	const runs = [];
+	for (const row of [...new Set(rows)].sort((a, b) => a - b)) {
+		const last = runs[runs.length - 1];
+		if (last && row - last[1] < RUN_GAP) last[1] = row + 1;
+		else runs.push([row, row + 1]);
+	}
+	return runs;
 }
 
 export class GridRows {
@@ -167,6 +182,14 @@ export class GridRows {
 		);
 	}
 
+	// Named columns of the view for every run of the plan: one read per run of rows and run
+	// of neighbouring columns, merged per run of rows.
+	async read_named(cur, plan, names) {
+		const col_runs = column_runs(cur.post.index, names);
+		const parts = await Promise.all(col_runs.map(([start, stop]) => this.read_runs(cur, plan, start, stop)));
+		return plan.runs.map((_, r) => Object.assign({}, ...parts.map((part) => part[r])));
+	}
+
 	/**
 	 * What each row of a window is: a report row (by __rid), a group Perspective computed,
 	 * its subtotal, a spacer.
@@ -175,23 +198,13 @@ export class GridRows {
 	async read_records(cur, plan, layout) {
 		const { post } = cur;
 		const grouped = post.row_offset === 1;
+		const of_row = cur.fold ? await this.read_fold_rows(cur, plan, layout) : new Map();
 		// The technical columns, and the currency columns when they are visible ones: read as
 		// runs of neighbouring view columns.
-		const wanted = [...new Set([...post.technical, ...(grouped ? post.currency_keys : [])])]
-			.map((name) => post.index[name])
-			.sort((a, b) => a - b);
-		const col_runs = [];
-		for (const index of wanted) {
-			const last = col_runs[col_runs.length - 1];
-			if (last && last[1] === index) last[1] = index + 1;
-			else col_runs.push([index, index + 1]);
-		}
-		const parts = await Promise.all(col_runs.map(([start, stop]) => this.read_runs(cur, plan, start, stop)));
-		const by_run = plan.runs.map((_, r) => Object.assign({}, ...parts.map((part) => part[r])));
+		const by_run = cur.fold ? [] : await this.read_named(cur, plan, [...post.technical, ...(grouped ? post.currency_keys : [])]);
 		const by_rid = this.session.rows_by_rid;
 
-		const of_row = new Map();
-		for (const [row, run] of plan.slot) {
+		for (const [row, run] of cur.fold ? [] : plan.slot) {
 			const cols = by_run[run];
 			const i = row - plan.runs[run][0];
 			const open = Boolean(layout.open[row]);
@@ -246,15 +259,87 @@ export class GridRows {
 	}
 
 	/**
+	 * The rows of a grouping of the user (engine/group_fold.js): groups from what the fold
+	 * read of the group view, facts by their __rid, read from the flat view in runs.
+	 * @returns {Promise<Map<number, object>>} view row -> record
+	 */
+	async read_fold_rows(cur, plan, layout) {
+		const { post, fold } = cur;
+		const by_rid = this.session.rows_by_rid;
+		const cols = fold.columns;
+		const leaf_rows = [];
+		for (const row of plan.slot.keys()) if (fold.leaf_at[row] >= 0) leaf_rows.push(fold.leaf_at[row]);
+		const runs = row_runs(leaf_rows);
+		const at = post.leaves.index[RID];
+		const read = await Promise.all(runs.map(([a, b]) => cur.leaves.to_columns({ start_row: a, end_row: b, start_col: at, end_col: at + 1 })));
+		const rid_of = (f) => {
+			const r = runs.findIndex(([a, b]) => f >= a && f < b);
+			return r < 0 ? undefined : read[r][RID]?.[f - runs[r][0]];
+		};
+		const out = new Map();
+		for (const row of plan.slot.keys()) {
+			const g = fold.group_at[row];
+			if (g < 0) {
+				const record = by_rid.get(rid_of(fold.leaf_at[row]));
+				if (record) out.set(row, { type: "row", row: record, depth: post.group_keys.length, parent: false });
+				continue;
+			}
+			const path = fold.paths[g];
+			const depth = path.length - 1;
+			const currencies = {};
+			const mixed = {};
+			for (const ck of post.currency_keys) {
+				currencies[ck] = cols[ck]?.[g] || null;
+				mixed[ck] = !currencies[ck] && (cols[CURRENCY_COUNT_PREFIX + ck]?.[g] || 0) > 1;
+			}
+			out.set(row, {
+				type: "group",
+				depth,
+				open: Boolean(layout.open[row]),
+				count: fold.counts[g],
+				key: post.group_keys[depth],
+				value: path[depth],
+				node: null,
+				currencies,
+				mixed,
+			});
+		}
+		return out;
+	}
+
+	/**
 	 * Values of the data columns of a window, for the rows Perspective computed (groups and
 	 * their subtotals read their numbers from the view). Null when the view is not grouped.
+	 * Only the totalled columns are part of a grouped view (engine/view_config.js).
 	 * @returns {Promise<Array<object>|null>} per run of the plan, the view's columns by name
 	 */
 	async read_values(cur, plan, x0, x1) {
 		const m = this.model;
 		if (cur.post.row_offset !== 1 || x1 <= x0) return null;
-		const first = m.data[x0]?.index;
-		return this.read_runs(cur, plan, first, first + (x1 - x0));
+		const names = m.data.slice(x0, x1).filter((d) => d.totalled).map((d) => d.column.key);
+		if (!names.length) return plan.runs.map(() => ({}));
+		if (!cur.fold) return this.read_named(cur, plan, names);
+		// a grouping of the user: the group rows of the window, read from the group view
+		const fold = cur.fold;
+		const groups = [];
+		for (const row of plan.slot.keys()) if (fold.group_at[row] >= 0) groups.push(fold.group_at[row]);
+		const g_runs = row_runs(groups);
+		const col_runs = column_runs(cur.post.index, names);
+		const off = cur.post.row_offset;
+		const parts = await Promise.all(
+			g_runs.map(([a, b]) =>
+				Promise.all(col_runs.map(([c0, c1]) => cur.view.to_columns({ start_row: off + a, end_row: off + b, start_col: c0, end_col: c1 })))
+			)
+		);
+		const read = parts.map((p) => Object.assign({}, ...p));
+		const out = plan.runs.map(([a, b]) => Object.fromEntries(names.map((name) => [name, new Array(b - a).fill(null)])));
+		for (const [row, run] of plan.slot) {
+			const g = fold.group_at[row];
+			if (g < 0) continue;
+			const r = g_runs.findIndex(([a, b]) => g >= a && g < b);
+			for (const name of names) out[run][name][row - plan.runs[run][0]] = read[r][name]?.[g - g_runs[r][0]] ?? null;
+		}
+		return out;
 	}
 
 	/** The value of a data column for a view row, out of read_values. */
@@ -344,6 +429,7 @@ export class GridRows {
 		let out = this.html_cache.get(key);
 		if (!out) {
 			out = { html: this.fmt.value_html(col.column, row), sign: this.fmt.sign_of(col.column, row) };
+			if (this.html_cache.size >= HTML_CACHE_MAX) this.html_cache.clear();
 			this.html_cache.set(key, out);
 		}
 		return out;

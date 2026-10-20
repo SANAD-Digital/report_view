@@ -10,8 +10,9 @@
 // Shapes of the view (engine/view_config.js): "tree" = the report tree as it came (nodes
 // table, folded by an engine filter); "report" = the rows of a report as it came, its own
 // opening / total / closing rows between the facts (rows table); "flat" = the facts;
-// "group" / "levels" = a grouped view of the facts, opened and closed with view.expand /
-// view.collapse.
+// "levels" = a grouped view of the facts, opened and closed with view.expand / view.collapse;
+// "group" = a view of the user's groups and a flat view of their facts, folded by
+// engine/group_fold.js (placement only, no engine call).
 //
 // Rows of the body (engine/row_layout.js): the rows of the view, a subtotal row after every
 // open group (the values of the group's own row), and spacer rows under the report rows that
@@ -233,11 +234,13 @@ export class GridView extends RtView {
 		this.set_layout(cur);
 		await this.rt.draw();
 		this.restore_focus();
-		this.on_fold_changed(expanded_from_paths(structure.paths, cur.post.leaf_depth));
+		this.on_fold_changed(structure.expanded ?? expanded_from_paths(structure.paths, cur.post.leaf_depth));
 	}
 
-	// After a fold from the keyboard the focus goes back to the caret of the same row.
+	// After a fold from the keyboard the focus goes back to the caret of the same row; after
+	// a sort from the keyboard, to the title of the column.
 	restore_focus() {
+		this.cells?.restore_focus();
 		const y = this.refocus;
 		this.refocus = null;
 		if (y === null || y === undefined || !this.rt) return;
@@ -314,7 +317,14 @@ export class GridView extends RtView {
 			th.classList.toggle("num", Boolean(col?.numeric));
 			th.classList.toggle("band-end", Boolean(col?.band_end));
 			if (col && leaf) shown.push(meta.x);
-			if (leaf) leaves.push({ th, text, col, head, x: meta.x });
+			if (leaf) {
+				leaves.push({ th, text, col, head, x: meta.x });
+				// the sort of the column, for assistive technology
+				const key = col ? col.column.key : head === 0 ? m.label.key : m.pinned[head - 1]?.column.key;
+				const sort = key ? this.cells.aria_sort(key) : null;
+				if (sort) th.setAttribute("aria-sort", sort);
+				else th.removeAttribute("aria-sort");
+			}
 		}
 		this.measure_headers(leaves, shown);
 

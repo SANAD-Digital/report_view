@@ -24,6 +24,12 @@
 /* ---------- page actions in Desk's page head (components/header.js) ---------- */
 .rv.rv-headbar{display:flex;align-items:center;background:transparent;margin-inline-end:8px}
 .rv.rv-headbar .rv-actions{flex-wrap:nowrap}
+/* an Excel file being prepared on the server */
+.rv-xjob{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--tx-2);white-space:nowrap}
+.rv-xjob[hidden]{display:none}
+.rv-xspin{width:14px;height:14px;border-radius:50%;border:2px solid var(--line-2);border-top-color:var(--pri);animation:rvxspin .8s linear infinite;flex:none}
+@keyframes rvxspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.rv-xspin{animation-duration:2.4s}}
 
 /* ---------- report filters: Frappe controls as the design's fields ---------- */
 /* Field titles show inside the empty field and as a tooltip (as on query-report); the

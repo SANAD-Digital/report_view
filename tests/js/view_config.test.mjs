@@ -85,7 +85,7 @@ test("tree depth and explicit expansion become engine filters on the ancestor co
 	assert.deepEqual(to_view_config(state({ tree: { depth: null, expanded: all } }), report).config.filter, []);
 });
 
-test("user grouping: facts table, fact rows as the last level, collator order of the groups", () => {
+test("user grouping: a view of the groups only, the facts in a flat view sorted by their groups", () => {
 	const report = load("accounts_receivable_frappe_total");
 	const { table, config, post } = to_view_config(
 		state({ group: { by: ["party", "gone"], subtotals: true, expanded: "all" }, sort: [{ key: "party", dir: "desc" }, { key: "paid", dir: "desc" }, { key: "voucher_no", dir: "asc" }] }),
@@ -93,29 +93,56 @@ test("user grouping: facts table, fact rows as the last level, collator order of
 	);
 	assert.equal(table, "facts");
 	assert.equal(post.shape, "group");
-	assert.deepEqual(config.group_by, ["party", "__rid"]);
-	assert.deepEqual(config.sort, [
+	// no node per fact in the engine: the groups only
+	assert.deepEqual(config.group_by, ["party"]);
+	assert.deepEqual(config.sort, [["__sort__party", "desc"]]);
+	// the facts of a group are one run of the flat view, in the order of the groups
+	assert.equal(post.leaves.table, "facts");
+	assert.deepEqual(post.leaves.config.sort, [
 		["__sort__party", "desc"],
 		["paid", "desc"],
 		["__sort__voucher_no", "asc"],
 		["__rid", "asc"],
 	]);
+	assert.deepEqual(post.leaves.config.filter, config.filter);
+	assert.equal(post.leaves.index.__rid, 0);
+	for (const [name] of post.leaves.config.sort) assert.ok(post.leaves.config.columns.includes(name), name);
 	assert.equal(config.aggregates.paid, "sum");
-	assert.equal(config.aggregates.party, "unique");
-	assert.equal(config.aggregates.posting_date, "unique");
+	// columns a group row does not show are not aggregated (nor part of the view)
+	assert.equal(config.aggregates.party, undefined);
+	assert.equal(config.aggregates.posting_date, undefined);
+	assert.ok(!config.columns.includes("posting_date"));
+	assert.ok(!config.columns.includes("voucher_no"));
+	for (const key of post.measures) assert.ok(config.columns.includes(key), key);
 	assert.equal(config.aggregates.__kind, "count");
 	assert.equal(config.aggregates.__sort__party, "min");
 	assert.equal(config.aggregates.__curn__currency, "distinct count");
 	assert.deepEqual(config.expressions, { __curn__currency: '"currency"' });
 	// every sort column is a view column too (Perspective mis-windows hidden sort columns)
 	for (const [name] of config.sort) assert.ok(config.columns.includes(name), name);
-	assert.deepEqual(config.columns.slice(0, post.keys.length), post.keys);
+	assert.deepEqual(Object.keys(post.index), config.columns);
+	assert.deepEqual(post.keys.slice(0, 1), [post.label_key]);
 	assert.equal(post.row_offset, 1);
 	assert.equal(post.leaf_depth, 2);
 	assert.equal(post.depth, 1);
-	assert.deepEqual(post.total, { source: "row0" });
+	assert.equal(post.total.source, "row0");
+	// without the grouped view open (pivot, charts) the totals and the count come from it
+	assert.equal(post.total.view.table, "facts");
+	assert.equal(post.total.view.config.aggregates.__kind, "count");
 	assert.deepEqual(post.groups.config.group_by, ["party"]);
 	assert.equal(to_view_config(state({ group: { by: ["party"], expanded: "none" } }), report).post.depth, 0);
+});
+
+test("re-grouped tree (levels): only the totalled and technical columns are in the view", () => {
+	const report = load("trial_balance_fy2026");
+	const { config, post } = to_view_config(state({ filters: [{ key: "account", type: "text", op: "contains", value: " - SA" }] }), report);
+	assert.equal(post.shape, "levels");
+	assert.equal(config.group_by.at(-1), "__rid");
+	for (const key of post.measures) assert.ok(config.columns.includes(key), key);
+	assert.ok(!config.columns.includes("account"));
+	for (const name of Object.keys(config.aggregates)) assert.ok(config.columns.includes(name), name);
+	assert.ok(Number.isInteger(post.index.__levels));
+	assert.equal(post.leaves, null);
 });
 
 test("flat: facts table, sort through the collator keys, totals from a temporary view", () => {
@@ -268,7 +295,7 @@ test("report summary rows: pinned and the reference total without a browser filt
 	// grouping reads the facts only: nothing pinned, the total is the view's row 0
 	const grouped = to_view_config(state({ group: { by: ["account"], subtotals: true, expanded: "all" } }), report).post;
 	assert.deepEqual(grouped.pinned_rows, { top: [], bottom: [] });
-	assert.deepEqual(grouped.total, { source: "row0" });
+	assert.equal(grouped.total.source, "row0");
 	assert.deepEqual(grouped.notices, []);
 });
 
@@ -327,7 +354,7 @@ test("rows as reported: a filter, a grouping or a sort of the user reads the fac
 	assert.equal(grouped.table, "facts");
 	assert.equal(grouped.post.shape, "group");
 	assert.deepEqual(grouped.post.pinned_rows, { top: [], bottom: [] });
-	assert.deepEqual(grouped.post.total, { source: "row0" });
+	assert.equal(grouped.post.total.source, "row0");
 	assert.deepEqual(grouped.post.notices, hidden);
 
 	// a sort on an unknown column is no sort

@@ -176,10 +176,35 @@ export const api = {
 			if (res.ok && body?.message?.status === "queued") return { queued: body.message };
 			throw to_error(body, res.status);
 		}
-		const blob = await res.blob();
-		const disposition = res.headers.get("content-disposition") || "";
-		const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
-		const filename = match ? decodeURIComponent(match[1]) : `${report_name}.xlsx`;
-		return { blob, filename };
+		return read_file(res, report_name);
+	},
+
+	// A queued export (export_jobs): its state, then its file (once; the server removes it).
+	export_xlsx_status: (job) => message(call("report_view.api.export_xlsx_status", { job })),
+
+	async export_xlsx_download(job, report_name) {
+		const res = await fetch(`/api/method/report_view.api.export_xlsx_download?${new URLSearchParams({ job })}`, {
+			headers: { Accept: "application/json, application/octet-stream", "X-Frappe-CSRF-Token": frappe.csrf_token },
+		});
+		const ctype = res.headers.get("content-type") || "";
+		if (!res.ok || ctype.includes("application/json")) {
+			let body = null;
+			try {
+				body = await res.json();
+			} catch {
+				body = null;
+			}
+			throw to_error(body, res.status);
+		}
+		return read_file(res, report_name);
 	},
 };
+
+// A file answered by the server: its content, and its name from Content-Disposition.
+async function read_file(res, report_name) {
+	const blob = await res.blob();
+	const disposition = res.headers.get("content-disposition") || "";
+	const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+	const filename = match ? decodeURIComponent(match[1]) : `${report_name}.xlsx`;
+	return { blob, filename };
+}

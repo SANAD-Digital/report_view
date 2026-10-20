@@ -7,10 +7,11 @@
 // we own its handle (terminate() is the only way to give WASM memory back).
 
 import perspective from "@finos/perspective";
-import { build_table_input_async, batches, yield_to_main, perspective_type, KIND, RID } from "./schema.js";
+import { build_table_input_async, batches, yield_to_main, make_ticker, perspective_type, KIND, RID } from "./schema.js";
 import { build_nodes, build_facts } from "./tree_nodes.js";
 import { build_report_rows } from "./report_rows.js";
 import { to_view_config, CURRENCY_COUNT_PREFIX } from "./view_config.js";
+import { GroupFold } from "./group_fold.js";
 import { to_card_config, dashboard_terms, level_of } from "./chart_config.js";
 import { to_pivot_config, drill_config, resolve_column_paths } from "./pivot_config.js";
 import * as queries from "./queries.js";
@@ -99,14 +100,25 @@ export class EngineHandles {
 	 * newest result is returned, an older one is deleted and gives null.
 	 */
 	async latest_view(slot, table, config, label) {
-		const generation = (this.latest.get(slot) || 0) + 1;
-		this.latest.set(slot, generation);
+		const generation = this.claim(slot);
 		const view = await this.view(table, config, label);
-		if (this.latest.get(slot) !== generation) {
+		if (!this.is_latest(slot, generation)) {
 			await this.delete(view);
 			return null;
 		}
 		return view;
+	}
+
+	/** A new request for a slot: the requests before it are superseded. */
+	claim(slot) {
+		const generation = (this.latest.get(slot) || 0) + 1;
+		this.latest.set(slot, generation);
+		return generation;
+	}
+
+	/** True while no newer request claimed the slot. */
+	is_latest(slot, generation) {
+		return this.latest.get(slot) === generation;
 	}
 
 	is_alive(handle) {
@@ -323,6 +335,10 @@ export class ReportSession {
 	// loaded in batches: the client encodes one batch while the worker ingests the previous.
 	async _load_table(label, rows, extras) {
 		const input = await build_table_input_async(this.normalized.columns, rows, { locale: this.locale, extras });
+		await this._load_input(label, input);
+	}
+
+	async _load_input(label, input) {
 		const table = await this.handles.table(input.schema, label);
 		this.tables[label] = table;
 		this.sizes[label] = input.size;
@@ -343,11 +359,29 @@ export class ReportSession {
 			const facts = build_facts(this.normalized);
 			this.level_rids = facts.level_rids;
 			await this._load_table("facts", facts.rows, facts.extras);
-		} else {
-			await this._load_table("facts", this.normalized.facts, []);
-			const reported = build_report_rows(this.normalized);
-			if (reported) await this._load_table("rows", reported.rows, []);
+			return;
 		}
+		const reported = build_report_rows(this.normalized);
+		if (!reported) {
+			await this._load_table("facts", this.normalized.facts, []);
+			return;
+		}
+		// The facts are the data rows of the rows table: its columns are converted and its sort
+		// keys ranked once, and the facts take their part of them (ranks keep their order on
+		// a subset, and the engine only compares them).
+		const input = await build_table_input_async(this.normalized.columns, reported.rows, { locale: this.locale });
+		const keep = [];
+		reported.rows.forEach((r, i) => r.__kind === "data" && keep.push(i));
+		const facts = { schema: input.schema, data: {}, size: keep.length };
+		const tick = make_ticker();
+		for (const [name, values] of Object.entries(input.data)) {
+			const out = new Array(keep.length);
+			for (let j = 0; j < keep.length; j++) out[j] = values[keep[j]];
+			facts.data[name] = out;
+			await tick();
+		}
+		await this._load_input("facts", facts);
+		await this._load_input("rows", input);
 	}
 
 	_reference_totals(post) {
@@ -377,58 +411,196 @@ export class ReportSession {
 		return { values, currencies, mixed };
 	}
 
+	/** The view config of a view state (engine/view_config.js) for open() and summarize(). */
+	spec_of(view_state) {
+		return to_view_config(view_state, this.normalized, "grid", { quick_filters: this.quick_filters });
+	}
+
+	/**
+	 * What an opened view stands for in the engine: two specs with the same key give the same
+	 * rows, numbers and counts, so the page keeps the view it has (a change of mode, density or
+	 * subtotals). The fold of a grouping of the user is not part of it: it is placement only.
+	 */
+	view_key(spec) {
+		const { post } = spec;
+		const fold = post.shape === "group" ? null : { depth: post.depth, expanded: post.expanded, tree: post.tree };
+		return JSON.stringify({
+			table: spec.table,
+			config: spec.config,
+			leaves: post.leaves?.config || null,
+			total: post.total,
+			groups: post.groups,
+			fact_filter: post.fact_filter,
+			fold,
+		});
+	}
+
+	/**
+	 * An opened view takes the post of a spec with the same key (view_key): what the engine
+	 * does not compute (columns shown, subtotals) and the fold of a grouping of the user.
+	 */
+	adopt(opened, spec) {
+		opened.spec = spec;
+		opened.post = spec.post;
+		if (opened.fold) {
+			opened.fold.apply(spec.post);
+			opened.depths = opened.fold.depths;
+			opened.body_rows = opened.fold.depths.length;
+		}
+		return opened;
+	}
+
+	/** Requests of the main slot started before this are superseded (they stop and give null). */
+	supersede() {
+		this.handles.claim(this.slot);
+	}
+
 	/**
 	 * Opens the main view of a view state.
-	 * @returns {Promise<object|null>} null when a newer open() superseded this one.
+	 * @param {object} [spec] its spec_of(), when the caller has it
+	 * @returns {Promise<object|null>} null when a newer open() or summarize() superseded this one.
 	 */
-	async open(view_state, mode = "grid") {
-		const spec = to_view_config(view_state, this.normalized, mode, { quick_filters: this.quick_filters });
+	async open(view_state, mode = "grid", spec = null) {
+		spec = spec || this.spec_of(view_state);
 		const { post } = spec;
-		const table = this.tables[spec.table];
-		const view = await this.handles.latest_view(this.slot, table, spec.config, post.shape);
-		if (!view) return null;
+		const generation = this.handles.claim(this.slot);
+		const stale = () => !this.handles.is_latest(this.slot, generation);
+		if (post.leaves) return this._open_groups(spec, generation, stale);
+		const view = await this.handles.view(this.tables[spec.table], spec.config, post.shape);
 		try {
+			if (stale()) return await this._drop(view);
 			if (post.depth !== null) await queries.set_depth(view, post, this.level_rids);
-			const facts = this.tables.facts;
-			const [body_rows, structure, totals, fact_rows, groups] = await Promise.all([
+			if (stale()) return await this._drop(view);
+			const [body_rows, structure, total, groups] = await Promise.all([
 				queries.body_rows(view, post),
 				queries.row_depths(view, post),
 				this._totals(view, post),
-				post.fact_filter.length
-					? queries.count_rows(this.handles, facts, post.fact_filter, post.filter_expressions)
-					: this.sizes.facts,
 				this._groups(post),
 			]);
-			return {
-				spec,
-				post,
-				view,
-				body_rows,
-				depths: structure.depths,
-				paths: structure.paths,
-				totals,
-				// Rows = the facts of the report (leaves of a tree), everywhere: the status bar
-				// and the badge of the grand total. "shown" are the facts that pass the browser
-				// filters; folding a group or a parent hides rows but filters nothing.
-				counts: { shown: fact_rows, total: this.sizes.facts, facts: fact_rows, groups },
-				// What the server compares before it builds a file (§8أ.6): the facts that pass
-				// the filters, and the grand total as shown (the report's reference row when it
-				// is the one shown, else the engine's total).
-				expected: { row_count: fact_rows, totals: numeric_totals(totals.values, totals.mixed) },
-			};
+			if (stale()) return await this._drop(view);
+			// The facts that pass the filters: the rows of a flat view, row 0 of a grouped one.
+			let fact_rows = this.sizes.facts;
+			if (post.fact_filter.length) {
+				if (post.shape === "flat") fact_rows = body_rows;
+				else fact_rows = total.count ?? (await queries.count_rows(this.handles, this.tables.facts, post.fact_filter, post.filter_expressions));
+			}
+			return this._opened(spec, { view, body_rows, depths: structure.depths, paths: structure.paths, totals: total.totals, fact_rows, groups });
 		} catch (e) {
 			if (this.handles.is_alive(view)) await this.handles.delete(view);
 			throw e;
 		}
 	}
 
+	async _drop(...views) {
+		for (const v of views) if (v && this.handles.is_alive(v)) await this.handles.delete(v);
+		return null;
+	}
+
+	_opened(spec, { view, leaves = null, fold = null, body_rows, depths, paths, totals, fact_rows, groups }) {
+		return {
+			spec,
+			post: spec.post,
+			key: this.view_key(spec),
+			view,
+			leaves,
+			fold,
+			body_rows,
+			depths,
+			paths,
+			totals,
+			// Rows = the facts of the report (leaves of a tree), everywhere: the status bar
+			// and the badge of the grand total. "shown" are the facts that pass the browser
+			// filters; folding a group or a parent hides rows but filters nothing.
+			counts: { shown: fact_rows, total: this.sizes.facts, facts: fact_rows, groups },
+			// What the server compares before it builds a file (§8أ.6): the facts that pass
+			// the filters, and the grand total as shown (the report's reference row when it
+			// is the one shown, else the engine's total).
+			expected: { row_count: fact_rows, totals: numeric_totals(totals.values, totals.mixed) },
+		};
+	}
+
+	/**
+	 * A grouping of the user (shape "group"): the view of the groups (row 0 = the grand total)
+	 * and the flat view of the facts in the order of the groups; every group, its count and
+	 * its currency are read once, the fold is engine/group_fold.js.
+	 */
+	async _open_groups(spec, generation, stale) {
+		const { post } = spec;
+		const facts = this.tables.facts;
+		const made = await Promise.allSettled([
+			this.handles.view(facts, spec.config, "groups"),
+			this.handles.view(facts, post.leaves.config, "leaves"),
+		]);
+		const [view, leaves] = made.map((m) => (m.status === "fulfilled" ? m.value : null));
+		const failed = made.find((m) => m.status === "rejected");
+		if (failed) {
+			await this._drop(view, leaves);
+			throw failed.reason;
+		}
+		try {
+			if (stale()) return await this._drop(view, leaves);
+			const wanted = [KIND, ...post.currency_keys, ...post.currency_keys.map((k) => CURRENCY_COUNT_PREFIX + k)];
+			const [cols, total_row, leaf_rows] = await Promise.all([
+				queries.read_columns(view, post.index, wanted, 1),
+				queries.read_total_row(view),
+				leaves.num_rows(),
+			]);
+			if (stale()) return await this._drop(view, leaves);
+			const paths = cols[queries.ROW_PATH] || [];
+			const fold = new GroupFold(paths, cols[KIND] || [], post.group_keys.length);
+			if (fold.leaf_count !== leaf_rows) {
+				throw new Error(`report_view: the groups hold ${fold.leaf_count} facts, the flat view ${leaf_rows}`);
+			}
+			fold.columns = cols;
+			fold.apply(post);
+			const fact_rows = post.fact_filter.length ? total_row[KIND] ?? leaf_rows : this.sizes.facts;
+			return this._opened(spec, {
+				view,
+				leaves,
+				fold,
+				body_rows: fold.depths.length,
+				depths: fold.depths,
+				paths: null,
+				totals: this._engine_totals(post, total_row),
+				fact_rows,
+				groups: fold.size,
+			});
+		} catch (e) {
+			await this._drop(view, leaves);
+			throw e;
+		}
+	}
+
+	/**
+	 * What the page shows around a view without opening it (pivot and charts modes): the
+	 * totals, the counts and the notices of the view state, from small temporary views.
+	 * @returns {Promise<object|null>} null when a newer open() or summarize() superseded it
+	 */
+	async summarize(view_state, spec = null) {
+		spec = spec || this.spec_of(view_state);
+		const { post } = spec;
+		const generation = this.handles.claim(this.slot);
+		const total_view = post.total.source === "row0" ? { ...post.total, source: "view" } : post.total;
+		const [total, groups] = await Promise.all([this._totals(null, { ...post, total: total_view }), this._groups(post)]);
+		if (!this.handles.is_latest(this.slot, generation)) return null;
+		let fact_rows = this.sizes.facts;
+		if (post.fact_filter.length) {
+			fact_rows = total.count ?? (await queries.count_rows(this.handles, this.tables.facts, post.fact_filter, post.filter_expressions));
+		}
+		if (!this.handles.is_latest(this.slot, generation)) return null;
+		return this._opened(spec, { view: null, body_rows: 0, depths: null, paths: null, totals: total.totals, fact_rows, groups });
+	}
+
+	// The grand total shown, and the facts it counts when the engine computed it.
 	async _totals(view, post) {
 		const source = post.total.source;
-		if (source === "row" || source === "frappe_total") return this._reference_totals(post);
-		if (source === "row0") return this._engine_totals(post, await queries.read_total_row(view));
-		const target = post.total.view;
-		const row = await queries.totals(this.handles, this.tables[target.table], target.config);
-		return this._engine_totals(post, row);
+		if (source === "row" || source === "frappe_total") return { totals: this._reference_totals(post), count: null };
+		const row =
+			source === "row0"
+				? await queries.read_total_row(view)
+				: await queries.totals(this.handles, this.tables[post.total.view.table], post.total.view.config);
+		const count = post.total.view?.table === "facts" && typeof row[KIND] === "number" ? row[KIND] : null;
+		return { totals: this._engine_totals(post, row), count };
 	}
 
 	/**
@@ -489,6 +661,12 @@ export class ReportSession {
 	 * @returns {Promise<{depths: number[], paths: Array[]}>} the rows of the view after it
 	 */
 	async toggle_group(opened, view_row, open) {
+		if (opened.fold) {
+			// placement only: no engine call
+			opened.fold.toggle_row(view_row - opened.post.row_offset, open);
+			opened.depths = opened.fold.depths;
+			return { depths: opened.fold.depths, paths: null, expanded: opened.fold.expanded() };
+		}
 		await queries.toggle_group(opened.view, opened.post, view_row, open);
 		return queries.row_depths(opened.view, opened.post);
 	}
@@ -646,7 +824,8 @@ export class ReportSession {
 	}
 
 	async close_view(opened) {
-		if (opened && this.handles.is_alive(opened.view)) await this.handles.delete(opened.view);
+		if (!opened) return;
+		for (const v of [opened.view, opened.leaves]) if (v && this.handles.is_alive(v)) await this.handles.delete(v);
 	}
 
 	/** Views first, then the tables. */

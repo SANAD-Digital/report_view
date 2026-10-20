@@ -5,14 +5,18 @@
 // one card filters the others). Every number is the engine's; nothing is computed here.
 // A card is read only when it is on screen (IntersectionObserver) and again only when what
 // it shows changed; redraws are batched to one per frame.
-// Loaded on demand in report_view_charts.bundle.js.
+// Loaded on demand in report_view_charts.bundle.js; the modules it shares with the page come
+// from the page's bundle (views/charts_shared.js).
 
 import * as echarts from "echarts/core";
 import { BarChart, LineChart, PieChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import { SVGRenderer } from "echarts/renderers";
 
-import {
+import { chart_config, dashboard_state, popover, set_filter, icons_module } from "./charts_shared.js";
+import { chart_option } from "./chart_option.js";
+
+const {
 	MAX_SERIES,
 	chart_dimensions,
 	chart_measures,
@@ -22,12 +26,11 @@ import {
 	card_sort,
 	date_text,
 	level_of,
-} from "../engine/chart_config.js";
-import { CARD_TYPES, CARD_TOPS, CARD_AGGS, LIMIT_CARDS, LIMIT_SLICERS, new_card_id, sanitize_dashboard } from "../state/dashboard_state.js";
-import { chart_option } from "./chart_option.js";
-import { open_popover, close_popover, menu_content } from "../components/popover.js";
-import { open_set_filter } from "../components/set_filter.js";
-import { icons } from "../components/icons.js";
+} = chart_config;
+const { CARD_TYPES, CARD_TOPS, CARD_AGGS, LIMIT_CARDS, LIMIT_SLICERS, new_card_id, sanitize_dashboard } = dashboard_state;
+const { open_popover, close_popover, menu_content } = popover;
+const { open_set_filter } = set_filter;
+const { icons } = icons_module;
 
 echarts.use([BarChart, LineChart, PieChart, GridComponent, TooltipComponent, SVGRenderer]);
 

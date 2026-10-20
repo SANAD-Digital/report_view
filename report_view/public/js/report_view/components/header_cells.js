@@ -75,11 +75,19 @@ export class HeaderCells {
 			el.className = `rv-hcell${numeric ? " num" : ""}`;
 			el.dataset.col = key;
 			const label = esc(__("Column menu"));
-			el.innerHTML = `<span class="rv-hlabel"></span><span class="rv-hico" data-sort hidden></span>` +
+			// The title is the sort control: a click, or Enter / Space when it has the focus.
+			el.innerHTML = `<span class="rv-hlabel" role="button" tabindex="0"></span><span class="rv-hico" data-sort hidden></span>` +
 				`<span class="rv-hico" data-filtered hidden title="${esc(__("Active filter"))}">${icons.funnel_solid()}</span>` +
 				`<button type="button" class="rv-hmenu" aria-label="${label}" title="${label}">${icons.menu()}</button>`;
 			el.addEventListener("click", (e) => {
 				if (e.target.closest(".rv-hmenu")) return;
+				this.host.on_sort(key);
+			});
+			el.querySelector(".rv-hlabel").addEventListener("keydown", (e) => {
+				if (e.key !== "Enter" && e.key !== " ") return;
+				e.preventDefault();
+				// the grid draws the sorted view again: the focus comes back to this title
+				this.refocus = key;
 				this.host.on_sort(key);
 			});
 			el.querySelector(".rv-hmenu").addEventListener("click", (e) => {
@@ -105,6 +113,9 @@ export class HeaderCells {
 
 	paint_leaf(key, el) {
 		const sort = this.host.sort_of(key);
+		const label = el.querySelector(".rv-hlabel");
+		const hint = sort === "asc" ? __("Sorted ascending") : sort === "desc" ? __("Sorted descending") : __("Not sorted");
+		if (label.getAttribute("aria-description") !== hint) label.setAttribute("aria-description", hint);
 		const s = el.querySelector("[data-sort]");
 		s.hidden = !sort;
 		const want = sort === "desc" ? "desc" : sort === "asc" ? "asc" : "";
@@ -210,6 +221,20 @@ export class HeaderCells {
 			a.classList.toggle("on", lo !== null && lo !== undefined && lo !== "");
 			b.classList.toggle("on", hi !== null && hi !== undefined && hi !== "");
 		}
+	}
+
+	/** aria-sort of the header cell of a column: "ascending", "descending" or null. */
+	aria_sort(key) {
+		const sort = this.host.sort_of(key);
+		return sort === "asc" ? "ascending" : sort === "desc" ? "descending" : null;
+	}
+
+	/** After a sort from the keyboard, the focus goes back to the title of its column. */
+	restore_focus() {
+		const key = this.refocus;
+		this.refocus = null;
+		const label = key ? this.leaves.get(key)?.querySelector(".rv-hlabel") : null;
+		if (label && label.isConnected && document.activeElement !== label) label.focus();
 	}
 
 	/** Every cached cell follows the view state again. */

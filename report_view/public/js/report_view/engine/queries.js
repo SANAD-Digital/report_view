@@ -9,7 +9,36 @@ import { KIND, SORT_PREFIX, RID as RID_COL } from "./schema.js";
 import { DEPTH, LEVELS } from "./tree_nodes.js";
 
 export const MAX_UNIQUE_VALUES = 5000;
-const ROW_PATH = "__ROW_PATH__";
+export const ROW_PATH = "__ROW_PATH__";
+
+/**
+ * Runs of neighbouring view columns that hold some named columns: what one to_columns()
+ * call each reads. Names the view does not have are left out.
+ * @param {object} index {column: index in the view} (post.index)
+ * @returns {Array<[number, number]>} [start_col, end_col) pairs
+ */
+export function column_runs(index, names) {
+	const at = [...new Set(names.map((name) => index[name]).filter((i) => Number.isInteger(i)))].sort((a, b) => a - b);
+	const runs = [];
+	for (const i of at) {
+		const last = runs[runs.length - 1];
+		if (last && last[1] === i) last[1] = i + 1;
+		else runs.push([i, i + 1]);
+	}
+	return runs;
+}
+
+/**
+ * Some named columns of a view, from `start_row` to `end_row` (the end of the view when
+ * omitted), as one object {column: values}; a grouped view adds its __ROW_PATH__.
+ */
+export async function read_columns(view, index, names, start_row = 0, end_row = undefined) {
+	const runs = column_runs(index, names);
+	const window = (start_col, end_col) => (end_row === undefined ? { start_row, start_col, end_col } : { start_row, end_row, start_col, end_col });
+	if (!runs.length) return view.to_columns(window(0, 0));
+	const parts = await Promise.all(runs.map(([a, b]) => view.to_columns(window(a, b))));
+	return Object.assign({}, ...parts);
+}
 
 /** Row 0 of a grouped view (its grand total) as {column: value}. */
 export async function read_total_row(view) {

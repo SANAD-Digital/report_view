@@ -126,7 +126,7 @@ export function yield_to_main() {
 
 // A `tick` yields only once a budget of work has been spent since the last yield, so that
 // a run of small steps costs no extra tasks.
-function make_ticker(budget_ms = YIELD_BUDGET_MS) {
+export function make_ticker(budget_ms = YIELD_BUDGET_MS) {
 	let last = Date.now();
 	return async () => {
 		if (Date.now() - last < budget_ms) return;

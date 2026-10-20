@@ -304,12 +304,16 @@ export function to_view_config(view_state, normalized, mode = "grid", opts = {})
 		fact_filter: shape === "tree" ? [] : browser_filter,
 		filter_expressions: shape === "tree" ? {} : filter_expressions,
 		groups: null,
+		// shape "group": the flat view of the facts that holds the rows of the groups
+		leaves: null,
 		notices,
 	};
 
+	// A group row shows only the totalled columns (and its currency): the other columns are
+	// not part of a grouped view, so the engine aggregates nothing it would not show.
 	const grouped_aggregates = () => {
 		const out = {};
-		for (const c of visible) out[c.key] = aggregate_of(c, state) || "unique";
+		for (const c of totalled) out[c.key] = aggregate_of(c, state);
 		for (const k of currency_keys) if (!Object.hasOwn(out, k)) out[k] = "unique";
 		for (const k of currency_counts) out[k] = "distinct count";
 		return out;
@@ -318,11 +322,13 @@ export function to_view_config(view_state, normalized, mode = "grid", opts = {})
 		table,
 		config: {
 			group_by: [KIND],
-			columns: unique([...post.measures, ...currency_keys, ...currency_counts]),
+			// __kind counts the rows under the filter: the same view gives the number of facts.
+			columns: unique([...post.measures, ...currency_keys, ...currency_counts, KIND]),
 			aggregates: {
 				...Object.fromEntries(totalled.map((c) => [c.key, aggregate_of(c, state)])),
 				...Object.fromEntries(currency_keys.map((k) => [k, "unique"])),
 				...Object.fromEntries(currency_counts.map((k) => [k, "distinct count"])),
+				[KIND]: "count",
 			},
 			filter,
 			expressions: { ...currency_expressions, ...(filter.length ? filter_expressions : {}) },
@@ -365,11 +371,10 @@ export function to_view_config(view_state, normalized, mode = "grid", opts = {})
 		}
 		// A filter or a sort took the view off the rows as reported: said, not done in silence.
 		if (edges.inner) notices.push({ code: "REPORT_ROWS_HIDDEN", detail: edges.inner });
-	} else {
+	} else if (shape === "levels") {
 		// Fact rows are the last level (their __rid), so groups open down to the report rows.
-		const levels = shape === "levels" ? tree_index(normalized).max_depth : 0;
-		post.level_names = Array.from({ length: levels }, (_, i) => LEVEL_PREFIX + (i + 1));
-		post.group_keys = shape === "levels" ? post.level_names : group_keys;
+		post.level_names = Array.from({ length: tree_index(normalized).max_depth }, (_, i) => LEVEL_PREFIX + (i + 1));
+		post.group_keys = post.level_names;
 		config.group_by = [...post.group_keys, RID];
 		config.filter = browser_filter;
 		config.aggregates = grouped_aggregates();
@@ -378,49 +383,72 @@ export function to_view_config(view_state, normalized, mode = "grid", opts = {})
 		post.technical = [KIND, ...currency_keys, ...currency_counts];
 		post.row_offset = 1;
 		post.leaf_depth = post.group_keys.length + 1;
-		post.total = { source: "row0" };
-		if (shape === "levels") {
-			// Report order: every node sorts by the first of its leaves.
-			config.sort = [[PATH, "asc"], ...user_sort];
-			config.aggregates[RID] = "min";
-			config.aggregates[LEVELS] = "min";
-			post.technical.push(RID, LEVELS);
-			post.depth = Math.min(tree_depth(state, normalized), post.group_keys.length);
-			// The same fold as the "as is" tree: the open parents by __rid, once the user
-			// opened or closed one.
-			post.tree = { depth: tree_depth(state, normalized), expanded: state.tree?.expanded ?? null };
-		} else {
-			const dir = new Map((state.sort || []).map((s) => [s.key, s.dir === "desc" ? "desc" : "asc"]));
-			// Groups in the order of their key, then the user's sort; report order breaks ties.
-			config.sort = [
-				...group_keys.map((k) => [sort_column(k, by_key), dir.get(k) || "asc"]),
-				...user_sort,
-				[RID, "asc"],
-			];
-			const expanded = state.group?.expanded;
-			post.expanded = Array.isArray(expanded) ? expanded.filter(Array.isArray) : null;
-			post.depth = expanded === "none" || post.expanded ? 0 : post.group_keys.length;
-			post.groups = {
-				table: "facts",
-				config: {
-					group_by: group_keys,
-					columns: [KIND],
-					aggregates: { [KIND]: "count" },
-					filter: browser_filter,
-					expressions: filter_expressions,
-				},
-			};
-			if (edges.inner) notices.push({ code: "REPORT_ROWS_HIDDEN", detail: edges.inner });
-		}
+		// Row 0 of the view is the grand total; the totals view stands for it when no view is open.
+		post.total = { source: "row0", view: totals_view("facts", browser_filter) };
+		// Report order: every node sorts by the first of its leaves.
+		config.sort = [[PATH, "asc"], ...user_sort];
+		config.aggregates[RID] = "min";
+		config.aggregates[LEVELS] = "min";
+		post.technical.push(RID, LEVELS);
+		post.depth = Math.min(tree_depth(state, normalized), post.group_keys.length);
+		// The same fold as the "as is" tree: the open parents by __rid, once the user
+		// opened or closed one.
+		post.tree = { depth: tree_depth(state, normalized), expanded: state.tree?.expanded ?? null };
+	} else {
+		// A grouping of the user (AG Grid's row groups): the view holds the groups only, and the
+		// facts of a group are a run of a flat view of the facts sorted the same way (by the
+		// group keys first), so the grid places them under their group without a node per fact
+		// in the engine (engine/group_fold.js). Folding is placement only.
+		post.group_keys = group_keys;
+		config.group_by = [...group_keys];
+		config.filter = browser_filter;
+		config.aggregates = grouped_aggregates();
+		config.aggregates[KIND] = "count";
+		config.expressions = { ...currency_expressions, ...filter_expressions };
+		post.technical = [KIND, ...currency_keys, ...currency_counts];
+		post.row_offset = 1;
+		post.leaf_depth = group_keys.length + 1;
+		post.total = { source: "row0", view: totals_view("facts", browser_filter) };
+		const dir = new Map((state.sort || []).map((s) => [s.key, s.dir === "desc" ? "desc" : "asc"]));
+		// Groups in the order of their key; inside a group the user's sort, then report order.
+		const group_sort = group_keys.map((k) => [sort_column(k, by_key), dir.get(k) || "asc"]);
+		config.sort = group_sort;
+		const leaf_sort = [...group_sort, ...user_sort, [RID, "asc"]];
+		const leaf_columns = unique([RID, ...leaf_sort.map(([name]) => name)]);
+		post.leaves = {
+			table: "facts",
+			config: { columns: leaf_columns, filter: browser_filter, expressions: { ...filter_expressions }, sort: leaf_sort },
+			index: Object.fromEntries(leaf_columns.map((name, i) => [name, i])),
+		};
+		const expanded = state.group?.expanded;
+		post.expanded = Array.isArray(expanded) ? expanded.filter(Array.isArray) : null;
+		post.depth = expanded === "none" || post.expanded ? 0 : post.group_keys.length;
+		// The number of groups when no grouped view is open (pivot, charts).
+		post.groups = {
+			table: "facts",
+			config: {
+				group_by: group_keys,
+				columns: [KIND],
+				aggregates: { [KIND]: "count" },
+				filter: browser_filter,
+				expressions: filter_expressions,
+			},
+		};
+		if (edges.inner) notices.push({ code: "REPORT_ROWS_HIDDEN", detail: edges.inner });
 	}
 
 	// Perspective mis-windows a grouped view whose sort column is hidden: every sort column
 	// is also a (technical) view column.
 	const sort_columns = config.sort.map(([name]) => name);
-	post.technical = unique([...post.technical, ...sort_columns]).filter((name) => !keys.includes(name));
-	config.columns = [...keys, ...post.technical];
 	if (config.group_by.length) {
+		// A grouped view carries the totalled columns and the technical ones only (a group
+		// row shows nothing else): what the grid reads of it is named in post.index.
+		post.technical = unique([...post.technical, ...sort_columns]);
+		config.columns = unique([...post.measures, ...post.technical]);
 		for (const name of sort_columns) if (!Object.hasOwn(config.aggregates, name)) config.aggregates[name] = "min";
+	} else {
+		post.technical = unique([...post.technical, ...sort_columns]).filter((name) => !keys.includes(name));
+		config.columns = [...keys, ...post.technical];
 	}
 	post.index = Object.fromEntries(config.columns.map((name, i) => [name, i]));
 	return { table: { tree: "nodes", report: "rows" }[shape] || "facts", config, post };

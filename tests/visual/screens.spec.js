@@ -321,7 +321,8 @@ test("lifecycle: no view or table is left after 20 switches, re-runs and leaving
 			}, i % 4 ? [] : ["account__root_type"]);
 		}
 		await page.waitForFunction(() => window.rv_page.opened && window.rv_page.grid.current === window.rv_page.opened);
-		expect(await kinds(), `cycle ${i}`).toEqual(["table", "table", "view"]);
+		// a grouping holds two views: its groups and the flat view of their facts
+		expect(await kinds(), `cycle ${i}`).toEqual(i % 4 < 2 ? ["table", "table", "view", "view"] : ["table", "table", "view"]);
 	}
 	// leaving the page: every view and table is deleted
 	await page.evaluate(() => window.rv_page.hide());
@@ -788,7 +789,7 @@ test("rows as reported: a filter, a grouping or a sort reads the facts, and says
 	const steps = [{ state: { sort: [{ key: "credit", dir: "asc" }] } }, { state: { filters: [{ key: "credit", type: "range", min: 1, max: null }] } }, { by: ["voucher_type"] }, {}];
 	for (let i = 0; i < 20; i++) {
 		await set(steps[i % steps.length]);
-		expect(await kinds(), `change ${i}`).toEqual(["table", "table", "view"]);
+		expect(await kinds(), `change ${i}`).toEqual(steps[i % steps.length].by ? ["table", "table", "view", "view"] : ["table", "table", "view"]);
 	}
 	await page.evaluate(() => window.rv_page.hide());
 	await page.waitForFunction(() => window.rv_page.debug_handles().length === 0);
@@ -960,7 +961,7 @@ test("lifecycle: no handle is left after 20 changes of fold, subtotals, widths a
 	const problems = watch_console(page);
 	await open(page, "report=ar&lang=ar&group=party");
 	const kinds = () => page.evaluate(() => window.rv_page.debug_handles().map((h) => h.kind).sort());
-	expect(await kinds()).toEqual(["table", "view"]);
+	expect(await kinds()).toEqual(["table", "view", "view"]);
 	const tools = page.locator(".rv-gp-tools");
 	for (let i = 0; i < 20; i++) {
 		const step = i % 5;
@@ -972,7 +973,7 @@ test("lifecycle: no handle is left after 20 changes of fold, subtotals, widths a
 		await page.waitForTimeout(120);
 		await shown(page);
 		await settle(page);
-		expect(await kinds(), `change ${i}`).toEqual(["table", "view"]);
+		expect(await kinds(), `change ${i}`).toEqual(["table", "view", "view"]);
 	}
 	// a tree report, through its three shapes
 	await open(page, "report=tb&lang=ar");
@@ -1830,7 +1831,8 @@ test("dashboard lifecycle: no handle or chart left after 20 switches, slicer cha
 	// a re-run in the Charts view: the cards read the new result
 	await page.evaluate(() => window.rv_page.run());
 	await page.waitForFunction(() => window.rv_page.charts?.debug_cards().some((c) => c.loaded && c.drawn));
-	expect(await kinds()).toBe(grid_handles);
+	// a run in the Charts view opens no grid view: only the tables stay until the grid is shown again
+	expect(await kinds()).toBe("table,table");
 	await page.evaluate(() => window.rv_page.hide());
 	await page.waitForFunction(() => window.rv_page.debug_handles().length === 0);
 	expect(await page.evaluate(() => window.rv_page.charts.debug_instances())).toBe(0);
@@ -2932,4 +2934,377 @@ test("pages: in compact density the toolbar spans the pages, as in the comfortab
 		expect(w.toolbar).toBe(w.pages);
 	}
 	expect(problems).toEqual([]);
+});
+
+// ------------------------------------------------------------ production hardening (front end)
+
+test("a11y: a column title sorts with Enter and Space, keeps the focus, and aria-sort says the sort", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=ar&lang=en");
+	await settle(page);
+	const key = await page.evaluate(() => window.rv_page.grid.model.data[0].column.key);
+	const title = page.locator(`regular-table thead .rv-hcell[data-col="${key}"] .rv-hlabel`);
+	await expect(title).toHaveAttribute("role", "button");
+	await expect(title).toHaveAttribute("tabindex", "0");
+	const sort_of = () => page.evaluate((key) => ({
+		state: window.rv_page.state.sort.find((s) => s.key === key)?.dir || null,
+		aria: document.querySelector(`regular-table thead .rv-hcell[data-col="${key}"]`).closest("th").getAttribute("aria-sort"),
+		focused: document.activeElement?.classList.contains("rv-hlabel") && document.activeElement.closest(".rv-hcell")?.dataset.col === key,
+	}), key);
+	await title.focus();
+	await page.keyboard.press("Enter");
+	await page.waitForFunction((key) => window.rv_page.state.sort.some((s) => s.key === key) && window.rv_page.grid.current === window.rv_page.opened, key);
+	await settle(page);
+	expect(await sort_of()).toEqual({ state: "asc", aria: "ascending", focused: true });
+	await page.keyboard.press(" ");
+	await page.waitForFunction((key) => window.rv_page.state.sort.find((s) => s.key === key)?.dir === "desc", key);
+	await settle(page);
+	expect(await sort_of()).toEqual({ state: "desc", aria: "descending", focused: true });
+	expect(problems).toEqual([]);
+});
+
+test("Excel: the button is the table's; disabled with a note in the pivot, the charts and the pages", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=tb&lang=en");
+	await settle(page);
+	const button = page.locator('.rv-headbar [data-action="export"]');
+	await expect(button).toBeEnabled();
+	for (const mode of ["pivot", "charts", "pages"]) {
+		await page.locator(`.rv-views [data-mode="${mode}"]`).click();
+		await page.waitForFunction((mode) => window.rv_page.state.mode === mode, mode);
+		await expect(button).toBeDisabled();
+		await expect(button).toHaveAttribute("title", "Excel export is available in the Table view");
+	}
+	await to_grid(page);
+	await expect(button).toBeEnabled();
+	expect(problems).toEqual([]);
+});
+
+test("Excel: a quick filter (a Trial Balance preset) is exported with its definition; an unknown id is left out", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=tb&lang=en");
+	await settle(page);
+	let sent = null;
+	await page.route("**/api/method/report_view.api.export_xlsx", async (route) => {
+		sent = JSON.parse(route.request().postData());
+		await route.fulfill({ status: 200, headers: { "content-type": "application/octet-stream", "content-disposition": 'attachment; filename="tb.xlsx"' }, body: "PK" });
+	});
+	await page.evaluate(() => window.rv_page.change((s) => (s.quick_filters = ["debit_closing", "gone"])));
+	await page.waitForFunction(() => window.rv_page.grid.current === window.rv_page.opened && window.rv_page.opened.post.fact_filter.length > 0);
+	const download = page.waitForEvent("download");
+	await page.locator('.rv-headbar [data-action="export"]').click();
+	expect((await download).suggestedFilename()).toBe("tb.xlsx");
+	expect(sent.export_model.view_state.quick_filters).toEqual(["debit_closing"]);
+	expect(sent.export_model.view_state.mode).toBe("grid");
+	const defs = sent.export_model.quick_filters;
+	expect(defs.map((q) => q.id)).toEqual(["moving", "non_zero", "debit_closing", "credit_closing"]);
+	expect(defs.every((q) => Object.keys(q).sort().join() === "expression,id")).toBe(true);
+	expect(sent.export_model.expected.row_count).toBe(await page.evaluate(() => window.rv_page.opened.counts.shown));
+	expect(problems.filter((p) => !/QUICK_FILTER_UNKNOWN|gone/.test(p))).toEqual([]);
+});
+
+test("Excel: a large export is a server job: its state is shown, it can be stopped, the file downloads when done", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=gl&lang=en");
+	await settle(page);
+	await page.route("**/api/method/report_view.api.export_xlsx", (route) =>
+		route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ message: { status: "queued", job: "0123456789abcdef", row_count: 25000 } }) })
+	);
+	await page.route("**/api/method/report_view.api.export_xlsx_download?*", (route) =>
+		route.fulfill({ status: 200, headers: { "content-type": "application/octet-stream", "content-disposition": 'attachment; filename="gl.xlsx"' }, body: "PK" })
+	);
+	// the status: queued, running, then done
+	await page.evaluate(() => {
+		const server = window.RV_SERVER;
+		window.rv_job_calls = [];
+		window.RV_SERVER = (method, args) => {
+			if (method !== "report_view.api.export_xlsx_status") return server(method, args);
+			window.rv_job_calls.push(args.job);
+			const n = window.rv_job_calls.length;
+			return { state: window.rv_job_hold ? "running" : n < 2 ? "queued" : n < 3 ? "running" : "done", row_count: 25000, error: null };
+		};
+	});
+	const job = page.locator(".rv-headbar .rv-xjob");
+	const button = page.locator('.rv-headbar [data-action="export"]');
+	const download = page.waitForEvent("download");
+	await button.click();
+	await expect(job).toBeVisible();
+	await expect(job).toHaveAttribute("role", "status");
+	await expect(job.locator(".txt")).toContainText("25,000");
+	await expect(button).toBeDisabled();
+	expect((await download).suggestedFilename()).toBe("gl.xlsx");
+	await expect(job).toBeHidden();
+	await expect(button).toBeEnabled();
+	expect(await page.evaluate(() => [...new Set(window.rv_job_calls)])).toEqual(["0123456789abcdef"]);
+
+	// stopping: the indicator goes, no file, the button is back
+	await page.evaluate(() => {
+		window.rv_job_calls = [];
+		window.rv_job_hold = true;
+	});
+	await button.click();
+	await expect(job).toBeVisible();
+	await page.waitForFunction(() => window.rv_job_calls.length >= 1);
+	await job.locator('[data-action="export-stop"]').click();
+	await expect(job).toBeHidden();
+	await expect(button).toBeEnabled();
+	const calls = await page.evaluate(() => window.rv_job_calls.length);
+	await page.waitForTimeout(2000);
+	expect(await page.evaluate(() => window.rv_job_calls.length)).toBe(calls);
+	expect(problems).toEqual([]);
+});
+
+test("pages: the Pages view is made the first time it is used, not with the page", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=ar&lang=en");
+	await settle(page);
+	expect(await page.evaluate(() => window.rv_page.pages_view)).toBeNull();
+	await page.locator('.rv-views [data-mode="pages"]').click();
+	await page.waitForFunction(() => window.rv_page.pages_view && window.rv_page.pages.pages?.length > 0);
+	await to_grid(page);
+	expect(problems).toEqual([]);
+});
+
+test("grouping: a change of density, of subtotals or of mode keeps the grid's views; a fold reads nothing", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=ar&lang=en&group=party");
+	await settle(page);
+	const kept = () => page.evaluate(() => {
+		const p = window.rv_page;
+		const same = p.opened === window.rv_kept && p.grid.current === p.opened;
+		window.rv_kept = p.opened;
+		return same;
+	});
+	await kept();
+	await page.evaluate(() => window.rv_page.set_density("compact"));
+	await settle(page);
+	expect(await kept()).toBe(true);
+	await page.evaluate(() => window.rv_page.set_subtotals(false));
+	await settle(page);
+	expect(await kept()).toBe(true);
+	await to_pivot(page);
+	await page.locator('.rv-views [data-mode="grid"]').click();
+	await grid_back(page);
+	expect(await kept()).toBe(true);
+	// the fold of a group: placement only, the grid keeps its view
+	const reads = await page.evaluate(async () => {
+		const p = window.rv_page;
+		const before = p.grid.body_rows;
+		await p.grid.toggle_group(0, false);
+		return { before, after: p.grid.body_rows, kept: p.grid.current === p.opened };
+	});
+	expect(reads.kept).toBe(true);
+	expect(reads.after).toBeLessThan(reads.before);
+	await page.evaluate(() => window.rv_page.set_density("comfortable"));
+	expect(problems).toEqual([]);
+});
+
+// ---------------------------------------------------------------- print engine (prod-hardening)
+// A Jinja format of 300 rows, as the server would render it (the harness has no formats).
+const fake_format = (page) =>
+	page.evaluate(async () => {
+		const v = window.rv_page.pages;
+		const css = ".fmt-t{width:100%;border-collapse:collapse}.fmt-t td,.fmt-t th{border:1px solid var(--pp-line);padding:3px 7px}.fmt-mark{letter-spacing:3px}";
+		const rows = Array.from({ length: 300 }, (_, i) => `<tr><td class="fmt-mark">${i + 1}</td><td>Item ${i}</td><td>${(i * 13.7).toFixed(2)}</td></tr>`).join("");
+		v.options.print_formats = ["Big"];
+		v.options.print_format_types = { Big: "Jinja" };
+		v.host.pages_format = async () => ({ type: "Jinja", html: `<div class="print-format"><h2>Invoice</h2><table class="fmt-t"><thead><tr><th>#</th><th>Item</th><th>Amount</th></tr></thead><tbody>${rows}</tbody></table></div>`, css });
+		v.update({ template: "Big" });
+		await v.ready;
+		await window.rv_settle();
+	});
+
+test("pages: a print format's styles stand once beside the sheets, are printed with them and go once into the PDF", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=gl&lang=en&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await settle(page);
+	await fake_format(page);
+	const out = await page.evaluate(async () => {
+		const v = window.rv_page.pages;
+		const cell = document.querySelector('.rv-print-sheets .rv-page[data-page="0"] .fmt-mark');
+		const shown = { pages: v.pages.length, in_sheets: v.sheets.querySelectorAll("style").length, shared: v.fmt_css.querySelectorAll("style").length, spacing: getComputedStyle(cell).letterSpacing };
+		const restore = await v.prepare_print();
+		const root = document.querySelector("body > .rv-print-root");
+		const printed = { first: root.firstElementChild === v.fmt_css, filled: v.filled.size };
+		const html = await v.print_document(v.print_root);
+		restore();
+		return {
+			shown,
+			printed,
+			// core/pdf.py splits the sheets at the paper's <style> right after them
+			split_mark: html.includes("</div><style>@page{"),
+			copies: html.split(".fmt-mark{letter-spacing:3px}").length - 1,
+			back: v.stage.contains(v.fmt_css) && v.fmt_css.nextElementSibling === v.sheets,
+		};
+	});
+	expect(out.shown.pages).toBeGreaterThan(3);
+	expect(out.shown.in_sheets).toBe(0);
+	expect(out.shown.shared).toBeGreaterThan(0);
+	expect(out.shown.spacing).toBe("3px");
+	expect(out.printed).toEqual({ first: true, filled: out.shown.pages });
+	expect(out.split_mark).toBe(true);
+	expect(out.copies).toBe(1);
+	expect(out.back).toBe(true);
+	// back to the standard template: the format's styles leave the page
+	await page.evaluate(async () => {
+		const v = window.rv_page.pages;
+		v.update({ template: "" });
+		await v.ready;
+	});
+	expect(await page.evaluate(() => window.rv_page.pages.fmt_css.childElementCount)).toBe(0);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: a report longer than the print limit mounts the pages that can print and says how many more there are; far sheets are skipped by the browser", async ({ page }) => {
+	const problems = watch_console(page);
+	await page.addInitScript(() => (window.RV_PRINT_DEFAULTS = {}));
+	await open(page, `report=gl&lang=ar&rows=40000&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await settle(page);
+	const out = await page.evaluate(() => {
+		const v = window.rv_page.pages;
+		const max = v.max_pages();
+		return {
+			pages: v.pages.length,
+			max,
+			sheets: v.sheets.querySelectorAll(":scope > .rv-page").length,
+			more: document.querySelector(".rv-print-sheets > .rv-print-more")?.textContent || "",
+			thumbs: v.thumbs.children.length,
+			visibility: getComputedStyle(v.sheets.querySelector(".rv-page")).contentVisibility,
+			thumb_visibility: getComputedStyle(v.thumbs.querySelector("button")).contentVisibility,
+		};
+	});
+	expect(out.pages).toBeGreaterThan(out.max);
+	expect(out.sheets).toBe(out.max);
+	expect(out.thumbs).toBe(out.max);
+	expect(out.more).toContain("Excel");
+	expect(out.visibility).toBe("auto");
+	expect(out.thumb_visibility).toBe("auto");
+	// the end of the stage: the last page fills, the card stays a card
+	await page.evaluate(() => {
+		const stage = document.querySelector(".rv-print-stage");
+		stage.scrollTop = stage.scrollHeight;
+	});
+	await page.waitForTimeout(400);
+	await settle(page);
+	expect(await page.evaluate(() => window.rv_page.pages.filled.has(window.rv_page.pages.max_pages() - 1))).toBe(true);
+	await shot3(page, "pages-gl-over-the-limit-rtl");
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: print fills the pages in runs read at once, then gives the far ones back; printed sheets are all drawn", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=gl&lang=ar&rows=2500&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await settle(page);
+	const out = await page.evaluate(async () => {
+		const v = window.rv_page.pages;
+		let reads = 0;
+		const read = v.rows.read_values.bind(v.rows);
+		v.rows.read_values = (...a) => ((reads += 1), read(...a));
+		const t0 = performance.now();
+		const restore = await v.prepare_print();
+		const ms = performance.now() - t0;
+		const sheets = [...document.querySelectorAll("body > .rv-print-root .rv-page")];
+		const empty = sheets.filter((s) => !s.querySelector(".rv-pt tbody tr")).length;
+		const visibility = getComputedStyle(sheets.at(-1)).contentVisibility;
+		restore();
+		return { pages: v.pages.length, reads, ms, empty, visibility, filled_after: v.filled.size };
+	});
+	expect(out.pages).toBeGreaterThan(40);
+	expect(out.empty).toBe(0);
+	// a read per run of pages, not one per page
+	expect(out.reads).toBeLessThan(out.pages / 4);
+	expect(out.visibility).toBe("visible");
+	expect(out.filled_after).toBeLessThanOrEqual(16);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: the default colours of the rules, border and watermark are the paper's tokens; a chosen colour is kept as chosen", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=gl&lang=en&rv=${PAGES}${pages_settings({ orientation: "portrait", pb_on: true, wm_type: "text", wm_text: "DRAFT", head_line_w: 1 })}`);
+	await settle(page);
+	const out = await page.evaluate(() => {
+		const v = window.rv_page.pages;
+		const root = document.querySelector(".rv-pages").closest(".rv");
+		const tok = (n) => getComputedStyle(root).getPropertyValue(n).trim().toLowerCase();
+		const page0 = document.querySelector('.rv-print-sheets .rv-page[data-page="0"]');
+		return {
+			settings: [v.settings.pb_c, v.settings.wm_color, v.settings.head_line_c],
+			tokens: { line: tok("--pp-line"), tx: tok("--pp-tx"), mark: tok("--pp-mark") },
+			pb: root.style.getPropertyValue("--pp-pb").toLowerCase(),
+			head: root.style.getPropertyValue("--pp-head-line").toLowerCase(),
+			wm: root.style.getPropertyValue("--pp-wm-color").toLowerCase(),
+			border: getComputedStyle(page0.querySelector(".rv-page-border")).borderTopColor,
+		};
+	});
+	expect(out.settings).toEqual(["", "", ""]);
+	expect(out.pb).toContain(out.tokens.tx);
+	expect(out.head).toBe(`1px solid ${out.tokens.line}`);
+	expect(out.wm).toBe(out.tokens.mark);
+	expect(out.border).toBe("rgb(27, 31, 29)");
+	await page.evaluate(() => window.rv_page.pages.update({ pb_c: "#2d5c93" }));
+	expect(await page.evaluate(() => document.querySelector(".rv-pages").closest(".rv").style.getPropertyValue("--pp-pb"))).toContain("#2d5c93");
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: a tool's menu listens to the document only while it is open; leaving the pages stops every listener", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=tb&lang=en&rv=${PAGES}`);
+	await settle(page);
+	const listening = () => page.evaluate(() => Boolean(window.rv_page.pages.listening));
+	expect(await listening()).toBe(false);
+	await page.click('details[data-sec="paper"] > summary');
+	expect(await listening()).toBe(true);
+	await page.mouse.click(700, 600);
+	expect(await page.locator(".rv-print-pop").count()).toBe(0);
+	expect(await listening()).toBe(false);
+	await page.click('details[data-sec="paper"] > summary');
+	await page.click('.rv-views [data-mode="grid"]');
+	await page.waitForFunction(() => window.rv_page.state.mode === "grid" && window.rv_page.grid.rt);
+	expect(await listening()).toBe(false);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: a PDF job tells waiting from printing, can be cancelled, and stops when the server cancels or fails it", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=tb&lang=en&rv=${PAGES}`);
+	await settle(page);
+	const out = await page.evaluate(async () => {
+		const v = window.rv_page.pages;
+		const answers = [
+			{ state: "queued", stage: "queued", done: 0, total: 50, cancellable: true },
+			{ state: "queued", stage: "waiting", done: 0, total: 50, cancellable: true },
+			{ state: "running", stage: "rendering", done: 20, total: 50, cancellable: true },
+		];
+		const calls = [];
+		const seen = [];
+		const real = window.fetch;
+		window.fetch = async (url, init) => {
+			calls.push(String(url).split("?")[0]);
+			if (String(url).includes("pages_pdf_status")) {
+				const a = answers.shift() || { state: "failed", stage: "cancelled", error_code: "cancelled", cancellable: false };
+				return new Response(JSON.stringify({ message: a }), { status: 200, headers: { "Content-Type": "application/json" } });
+			}
+			return new Response(JSON.stringify({ message: {} }), { status: 200, headers: { "Content-Type": "application/json" } });
+		};
+		const spy = setInterval(() => {
+			const btn = v.busy_el.querySelector('[data-action="pdf-cancel"]');
+			seen.push(`${v.busy_el.querySelector(".txt").textContent}|${btn.hidden ? "" : "cancel"}`);
+		}, 250);
+		// the server cancels: the wait ends
+		await v.wait_pdf_job("abcdef0123456789", 50, "x");
+		// the person cancels: the cancel endpoint is asked, the wait ends
+		answers.push({ state: "running", stage: "rendering", done: 5, total: 50, cancellable: true });
+		const second = v.wait_pdf_job("abcdef0123456789", 50, "x");
+		setTimeout(() => v.busy_el.querySelector('[data-action="pdf-cancel"]').click(), 1500);
+		await second;
+		clearInterval(spy);
+		window.fetch = real;
+		return { calls, seen: [...new Set(seen)], job: v.pdf_job };
+	});
+	expect(out.seen.some((s) => s.startsWith("Waiting for the server") && s.endsWith("|cancel"))).toBe(true);
+	expect(out.seen.some((s) => /20 of 50/.test(s))).toBe(true);
+	expect(out.calls.filter((c) => c.endsWith("pages_pdf_cancel")).length).toBe(1);
+	expect(out.calls.some((c) => c.endsWith("pages_pdf_download"))).toBe(false);
+	expect(out.job).toBe(null);
+	expect(problems, "console errors/warnings").toEqual([]);
 });

@@ -2342,3 +2342,111 @@ msgstr "العلامات"
 
 msgid "Page {0}"
 msgstr "الصفحة {0}"
+
+msgid "The report could not run. The error was logged."
+msgstr "تعذّر تشغيل التقرير. سُجّل الخطأ."
+
+msgid "An Excel export is already being prepared. Wait until it is ready."
+msgstr "يجري إعداد ملف Excel آخر. انتظر حتى يجهز."
+
+msgid "The Excel file could not be made"
+msgstr "تعذّر إنشاء ملف Excel"
+
+msgid "The Excel file is not ready yet"
+msgstr "ملف Excel لم يجهز بعد"
+
+msgid "Export job {0} not found"
+msgstr "مهمة التصدير {0} غير موجودة"
+
+msgid "Invalid export job"
+msgstr "مهمة تصدير غير صالحة"
+
+msgid "The report has {0} rows; at most {1} rows can be printed with a print format"
+msgstr "في التقرير {0} صفاً؛ أقصى ما يُطبع بتنسيق طباعة {1} صف"
+
+msgid "Excel export is available in the Table view"
+msgstr "تصدير Excel متاح في عرض الجدول"
+
+msgid "Sorted ascending"
+msgstr "مرتّب تصاعدياً"
+
+msgid "Sorted descending"
+msgstr "مرتّب تنازلياً"
+
+msgid "Not sorted"
+msgstr "غير مرتّب"
+
+msgid "Stop waiting"
+msgstr "إيقاف الانتظار"
+
+msgid "Building the Excel file"
+msgstr "يجري إنشاء ملف Excel"
+
+msgid "The Excel file is queued"
+msgstr "ملف Excel في قائمة الانتظار"
+
+msgid "Downloading the Excel file"
+msgstr "يجري تنزيل ملف Excel"
+
+msgid "The Excel file is taking longer than expected. Try again in a few minutes."
+msgstr "يستغرق إعداد ملف Excel وقتاً أطول من المتوقع. حاول مرة أخرى بعد دقائق."
+
+msgid "The Excel file could not be prepared."
+msgstr "تعذّر إعداد ملف Excel."
+
+msgid "Invalid quick filters"
+msgstr "الفلاتر السريعة غير صالحة"
+
+msgid "Quick filter {0} cannot be exported: {1}"
+msgstr "تعذّر تصدير الفلتر السريع {0}: {1}"
+
+msgid "Quick filters without a definition: {0}"
+msgstr "فلاتر سريعة بلا تعريف: {0}"
+
+msgid "Quick filter {0} refers to unknown columns: {1}"
+msgstr "الفلتر السريع {0} يشير إلى أعمدة غير معروفة: {1}"
+
+msgid "Quick filter {0} compares columns that are not numbers: {1}"
+msgstr "الفلتر السريع {0} يقارن أعمدة ليست أرقاماً: {1}"
+
+msgid "{0} pivot columns could not be matched to their values and are not shown."
+msgstr "تعذّرت مطابقة {0} من أعمدة الجدول المحوري مع قيمها فلم تُعرض."
+
+msgid "Content type"
+msgstr "نوع المحتوى"
+
+msgid "Waiting for the server to start the PDF…"
+msgstr "بانتظار أن يبدأ الخادم إنشاء ملف PDF…"
+
+msgid "The server did not start the PDF within {0} minutes. Try again later or print fewer pages."
+msgstr "لم يبدأ الخادم إنشاء ملف PDF خلال {0} دقائق. حاول لاحقاً أو اطبع صفحات أقل."
+
+msgid "The PDF took longer than {0} minutes and was stopped. Print fewer pages."
+msgstr "استغرق إنشاء ملف PDF أكثر من {0} دقيقة فأُوقف. اطبع صفحات أقل."
+
+msgid "The server could not be reached: {0}"
+msgstr "تعذّر الوصول إلى الخادم: {0}"
+
+msgid "The PDF was cancelled"
+msgstr "أُلغي إنشاء ملف PDF"
+
+msgid "{0} more pages are not shown: no more than {1} pages print at once. Narrow the filters, fold groups or export to Excel."
+msgstr "{0} صفحة أخرى لا تظهر: لا يُطبع أكثر من {1} صفحة في المرة الواحدة. ضيّق الفلاتر أو اطوِ المجموعات أو صدّر إلى Excel."
+
+msgid "The printed pages have no pages to print"
+msgstr "لا توجد في الصفحات المرسلة صفحات للطباعة"
+
+msgid "The PDF engine is busy with other PDFs. Try again in a minute."
+msgstr "محرك PDF مشغول بملفات أخرى. حاول مرة أخرى بعد دقيقة."
+
+msgid "The PDF is no longer available. Make it again."
+msgstr "ملف PDF لم يعد متاحاً. أنشئه مرة أخرى."
+
+msgid "Creating the PDF stopped unexpectedly. Try again."
+msgstr "توقف إنشاء ملف PDF على نحو غير متوقع. حاول مرة أخرى."
+
+msgid "No background worker is running for PDFs. Ask your administrator."
+msgstr "لا توجد عملية خلفية تعمل لملفات PDF. راجع مسؤول النظام."
+
+msgid "A PDF of yours is still being made. Wait for it to finish, or cancel it."
+msgstr "ما زال ملف PDF سابق لك قيد الإنشاء. انتظر حتى ينتهي أو ألغِه."

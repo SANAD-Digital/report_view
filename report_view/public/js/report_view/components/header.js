@@ -28,6 +28,7 @@ export class Header {
 				</div>
 				<button type="button" class="rv-btn icon ghost" data-action="theme"></button>
 				<button type="button" class="rv-btn" data-action="export" hidden>${icons.sheet()}<span>${esc(__("Excel"))}</span></button>
+				<div class="rv-xjob" role="status" aria-live="polite" hidden><span class="rv-xspin" aria-hidden="true"></span><span class="txt"></span><button type="button" class="rv-btn icon ghost" data-action="export-stop" aria-label="${esc(__("Stop waiting"))}" title="${esc(__("Stop waiting"))}">${icons.close()}</button></div>
 				<button type="button" class="rv-btn" data-action="print" hidden>${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
 			</div>`;
 		parent.prepend(el);
@@ -40,6 +41,20 @@ export class Header {
 		this.$('[data-action="theme"]').addEventListener("click", () => on_theme());
 		this.$('[data-action="export"]').addEventListener("click", () => on_export());
 		this.$('[data-action="print"]').addEventListener("click", () => on_print && on_print());
+		this.$('[data-action="export-stop"]').addEventListener("click", () => this.on_export_stop && this.on_export_stop());
+	}
+
+	/**
+	 * The state of an Excel file the server prepares in the background, next to the button;
+	 * null hides it.
+	 * @param {{text: string, on_stop: () => void}|null} job
+	 */
+	set_export_job(job) {
+		const el = this.$(".rv-xjob");
+		el.hidden = !job;
+		this.on_export_stop = job?.on_stop || null;
+		const txt = el.querySelector(".txt");
+		if (txt.textContent !== (job?.text || "")) txt.textContent = job?.text || "";
 	}
 
 	get export_button() {
@@ -52,9 +67,31 @@ export class Header {
 		this.$('[data-action="print"]').hidden = !can_print;
 	}
 
-	/** The Print action shows the current mode: pressed while the pages are on screen. */
+	/**
+	 * The Print action shows the current mode: pressed while the pages are on screen. The
+	 * Excel file is the table's (the server exports the grid view only): in the other views
+	 * the button is disabled and says so.
+	 */
 	set_mode(mode) {
 		this.$('[data-action="print"]').classList.toggle("on", mode === "pages");
+		this.mode = mode;
+		this.paint_export();
+	}
+
+	/** An export in progress keeps the button disabled. */
+	set_exporting(on) {
+		this.exporting = on;
+		this.paint_export();
+	}
+
+	paint_export() {
+		const b = this.export_button;
+		const table = !this.mode || this.mode === "grid";
+		b.disabled = Boolean(this.exporting) || !table;
+		const note = table ? "" : __("Excel export is available in the Table view");
+		b.title = note;
+		if (note) b.setAttribute("aria-description", note);
+		else b.removeAttribute("aria-description");
 	}
 
 	set_density(density) {

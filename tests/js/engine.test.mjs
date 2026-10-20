@@ -190,11 +190,13 @@ test("(b) grouping by a dimension: group sums = manual sums of the facts; fact r
 	await with_session(report, async (session) => {
 		const opened = await session.open(state({ group: { by: ["party"], subtotals: true, expanded: "all" } }));
 		assert.equal(opened.post.shape, "group");
+		// the group view holds the groups only; the facts are the flat view, a run per group
 		const cols = await opened.view.to_columns();
 		const paths = cols.__ROW_PATH__;
 		const parties = [...new Set(report.facts.map((f) => f.party))];
 		assert.equal(paths.filter((p) => p.length === 1).length, parties.length);
-		assert.equal(paths.filter((p) => p.length === 2).length, report.facts.length);
+		assert.equal(paths.length, parties.length + 1);
+		assert.equal(await opened.leaves.num_rows(), report.facts.length);
 		assert.equal(opened.counts.groups, parties.length);
 		assert.equal(opened.body_rows, parties.length + report.facts.length);
 		assert.deepEqual(opened.counts, { shown: 66, total: 66, facts: 66, groups: parties.length });
@@ -208,18 +210,66 @@ test("(b) grouping by a dimension: group sums = manual sums of the facts; fact r
 		const names = paths.filter((p) => p.length === 1).map((p) => p[0]);
 		const collator = new Intl.Collator("ar", { numeric: true, sensitivity: "base" });
 		assert.deepEqual(names, [...names].sort(collator.compare));
-		const first = paths.findIndex((p) => p.length === 1);
-		const inside = [];
-		for (let i = first + 1; i < paths.length && paths[i].length === 2; i++) inside.push(paths[i][1]);
-		assert.deepEqual(inside, [...inside].sort((a, b) => a - b));
+		const rows = await body(opened, []);
+		for (const party of names) {
+			const inside = rows.filter((r) => r.rid !== null && r.path[0] === party).map((r) => r.rid);
+			// every fact of the group, under it, in report order
+			assert.deepEqual(inside, report.facts.filter((f) => f.party === party).map((f) => f.__rid));
+		}
 		for (const c of sums) close(opened.totals.values[c.key], report.facts.reduce((s, f) => s + (f[c.key] || 0), 0), c.key);
 		await session.close_view(opened);
 
 		const folded = await session.open(state({ group: { by: ["party"], subtotals: true, expanded: "none" } }));
 		assert.equal(folded.body_rows, parties.length);
-		await queries.toggle_group(folded.view, folded.post, 1, true);
-		assert.ok((await queries.body_rows(folded.view, folded.post)) > parties.length);
+		const after = await session.toggle_group(folded, 1, true);
+		assert.equal(after.depths.length, parties.length + report.facts.filter((f) => f.party === names[0]).length);
+		assert.deepEqual(after.expanded, [[names[0]]]);
 		await session.close_view(folded);
+	});
+	await no_leak();
+});
+
+test("user grouping, two levels and a sort: the facts under every group are the group's, in the user's order", async () => {
+	const report = load("general_ledger_consolidated");
+	const keys = ["account", "voucher_type"];
+	await with_session(report, async (session) => {
+		const opened = await session.open(state({ group: { by: keys, subtotals: true, expanded: "all" }, sort: [{ key: "debit", dir: "desc" }] }));
+		const rows = await body(opened, ["debit"]);
+		const by_rid = new Map(report.facts.map((f) => [f.__rid, f]));
+		let seen = 0;
+		let group = null;
+		for (const r of rows) {
+			if (r.kind === "foot") continue;
+			if (r.rid === null) {
+				group = r.path;
+				continue;
+			}
+			seen += 1;
+			const fact = by_rid.get(r.rid);
+			assert.equal(group.length, 2);
+			assert.deepEqual([fact.account ?? null, fact.voucher_type ?? null], group, `fact ${r.rid}`);
+		}
+		assert.equal(seen, report.facts.length);
+		// the deepest groups: their sums are the sums of the facts shown under them
+		for (let i = 0; i < rows.length; i++) {
+			if (rows[i].rid !== null || rows[i].kind !== "row" || rows[i].path.length !== 2) continue;
+			let sum = 0;
+			const debits = [];
+			for (let j = i + 1; j < rows.length && rows[j].rid !== null; j++) {
+				sum += by_rid.get(rows[j].rid).debit || 0;
+				debits.push(by_rid.get(rows[j].rid).debit ?? null);
+			}
+			close(rows[i].values.debit, sum, rows[i].path.join("/"));
+			assert.deepEqual(debits, [...debits].sort((a, b) => (b ?? -Infinity) - (a ?? -Infinity)));
+		}
+		// a closed parent closes its children; opening it again opens it alone (as Perspective)
+		const first = rows.findIndex((r) => r.path.length === 1);
+		let fold = await session.toggle_group(opened, 1 + first, false);
+		assert.ok(fold.depths.length < opened.fold.leaf_count);
+		fold = await session.toggle_group(opened, 1 + first, true);
+		assert.equal(fold.depths[first + 1], 2);
+		assert.notEqual(fold.depths[first + 2], 3);
+		await session.close_view(opened);
 	});
 	await no_leak();
 });
@@ -410,9 +460,33 @@ test("(d) lifecycle: nothing is left after 20 switches between two reports", asy
 // The rows of the grid body as views/grid_view.js places them: every display row with the
 // values of its view row (a subtotal row reads the row of its group).
 async function body(opened, measures) {
+	const layout = build_layout(opened.depths, { subtotals: opened.post.subtotals });
+	if (opened.fold) {
+		// a grouping of the user: groups from the group view, facts from the flat view
+		const groups = await opened.view.to_columns();
+		const leaves = await opened.leaves.to_columns();
+		const { fold } = opened;
+		const path_of = [];
+		let last = [];
+		for (let i = 0; i < opened.depths.length; i++) {
+			if (fold.group_at[i] >= 0) last = fold.paths[fold.group_at[i]];
+			path_of.push(fold.group_at[i] >= 0 ? last : [...last.slice(0, opened.post.group_keys.length), leaves.__rid[fold.leaf_at[i]]]);
+		}
+		return Array.from({ length: layout.size }, (_, y) => {
+			const entry = entry_at(layout, y);
+			const g = fold.group_at[entry.row];
+			return {
+				kind: entry.kind,
+				row: entry.row,
+				open: Boolean(layout.open[entry.row]),
+				path: path_of[entry.row],
+				rid: g >= 0 ? null : leaves.__rid[fold.leaf_at[entry.row]],
+				values: Object.fromEntries(measures.map((k) => [k, g >= 0 ? groups[k][1 + g] : null])),
+			};
+		});
+	}
 	const cols = await opened.view.to_columns();
 	const off = opened.post.row_offset;
-	const layout = build_layout(opened.depths, { subtotals: opened.post.subtotals });
 	return Array.from({ length: layout.size }, (_, y) => {
 		const entry = entry_at(layout, y);
 		const at = off + entry.row;
@@ -513,21 +587,25 @@ test("fold from the view state: the listed groups open, the view gives the same 
 		const wanted = [[parties[0]], [parties[2]], ["no such party"]];
 		const opened = await session.open(state({ group: { by: ["party"], subtotals: true, expanded: wanted } }));
 		assert.equal(opened.body_rows, parties.length + count(parties[0]) + count(parties[2]));
-		const back = expanded_from_paths(opened.paths, opened.post.leaf_depth);
+		const back = opened.fold.expanded();
 		assert.deepEqual(new Set(back.map((p) => p[0])), new Set([parties[0], parties[2]]));
 
 		// closing one through the view, as a click does
-		const row = opened.paths.findIndex((p) => p.length === 1 && p[0] === parties[0]);
+		const row = [...opened.fold.group_at].findIndex((g) => g >= 0 && opened.fold.paths[g][0] === parties[0]);
 		const after = await session.toggle_group(opened, 1 + row, false);
-		assert.deepEqual(expanded_from_paths(after.paths, opened.post.leaf_depth), [[parties[2]]]);
+		assert.deepEqual(after.expanded, [[parties[2]]]);
 		assert.equal(after.depths.length, parties.length + count(parties[2]));
+		// the same fold given again to the view (a change of mode or density keeps the view)
+		session.adopt(opened, session.spec_of(state({ group: { by: ["party"], subtotals: false, expanded: after.expanded } })));
+		assert.equal(opened.depths.length, parties.length + count(parties[2]));
+		assert.equal(opened.post.subtotals, false);
 		await session.close_view(opened);
 
 		const all = await session.open(state({ group: { by: ["party"], subtotals: true, expanded: "all" } }));
-		assert.equal(expanded_from_paths(all.paths, all.post.leaf_depth), "all");
+		assert.equal(all.fold.expanded(), "all");
 		await session.close_view(all);
 		const none = await session.open(state({ group: { by: ["party"], subtotals: true, expanded: "none" } }));
-		assert.equal(expanded_from_paths(none.paths, none.post.leaf_depth), "none");
+		assert.equal(none.fold.expanded(), "none");
 		await session.close_view(none);
 	});
 	await no_leak();
@@ -739,7 +817,8 @@ test("rows as reported: a filter, a grouping or a sort moves the view to the fac
 			const next = await session.open(states[i % states.length]);
 			if (previous) await session.close_view(previous);
 			previous = next;
-			assert.equal(views(), 1, `change ${i}`);
+			// a grouping of the user: its group view and its flat view of the facts
+			assert.equal(views(), next.leaves ? 2 : 1, `change ${i}`);
 			assert.equal(tables(), 2, `change ${i}`);
 		}
 	});

@@ -61,6 +61,7 @@
 .rv-hcell .rv-hmenu{margin-inline-start:auto}
 .rv-hcell.num .rv-hmenu{margin-inline-start:2px}
 .rv-hcell.dragging{opacity:.5}
+.rv-hcell .rv-hlabel:focus-visible{outline-offset:-2px;border-radius:3px}
 .rv regular-table thead th.rv-hd:hover .rv-hmenu,.rv-hmenu:focus-visible{opacity:1}
 /* floating filters (.rv-fcell) */
 .rv regular-table thead th.rv-hf{height:var(--fh);padding:0 calc(var(--cp) - 4px);border-top:1px solid var(--line);font-weight:400;background:var(--hdr)}

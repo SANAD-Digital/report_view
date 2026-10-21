@@ -1,0 +1,24 @@
+[
+ {
+  "doctype": "Print Format",
+  "name": "Report View Table",
+  "print_format_for": "Custom",
+  "custom_format": 1,
+  "standard": "No",
+  "print_format_type": "Jinja",
+  "module": "Report View",
+  "disabled": 0,
+  "raw_printing": 0,
+  "html": "{#- Report View Table (ADR-019): any table, printed with no template work.\n  data = {\n    \"columns\": [{\"label\": \"Item\", \"fieldname\": \"item\", \"fieldtype\": \"Data\"},\n                {\"label\": \"Amount\", \"fieldname\": \"amount\", \"fieldtype\": \"Currency\", \"options\": \"SAR\"}],\n    \"rows\": [{\"item\": \"A\", \"amount\": 10}, [\"B\", 20]],     rows as objects or as lists\n    \"totals\": true,                                       or {\"amount\": 30}: the totals as given\n    \"subtitle\": \"…\", \"note\": \"…\"                          optional, plain text\n  }\n  report_view.print_table({title, columns, rows, totals}) sends exactly this. -#}\n{%- set cols = data.columns or [] if data is mapping else [] -%}\n{%- set numeric = [\"Int\", \"Float\", \"Currency\", \"Percent\"] -%}\n{%- set summed = [\"Int\", \"Float\", \"Currency\"] -%}\n<div class=\"rvt-print\">\n{%- if data.subtitle %}<p class=\"rvt-sub\">{{ data.subtitle }}</p>{% endif %}\n{%- if not cols %}<p class=\"rvt-empty\">{{ _(\"No columns to print\") }}</p>{% else %}\n<table class=\"rvt\">\n<thead><tr>\n{%- for c in cols %}<th class=\"{{ 'num' if c.fieldtype in numeric else '' }}\"{% if c.width %} style=\"width:{{ c.width|int }}px\"{% endif %}>{{ _(c.label or c.fieldname) }}</th>{% endfor -%}\n</tr></thead>\n<tbody>\n{%- for row in rows %}<tr>\n{%- for c in cols %}{% set v = row[c.fieldname] if row is mapping else (row[loop.index0] if loop.index0 < row|length else none) %}<td class=\"{{ 'num' if c.fieldtype in numeric else '' }}\">{{ frappe.format(v, c) if v is not none else \"\" }}</td>{% endfor -%}\n</tr>{% else %}<tr><td class=\"rvt-none\" colspan=\"{{ cols|length }}\">{{ _(\"No rows\") }}</td></tr>{% endfor -%}\n</tbody>\n{%- if data.totals and rows %}\n<tfoot><tr>\n{%- for c in cols %}{% set ci = loop.index0 %}\n{%- if data.totals is mapping %}{% set t = data.totals[c.fieldname] %}\n{%- elif c.fieldtype in summed %}{% set ns = namespace(t=0) %}{% for r in rows %}{% set ns.t = ns.t + frappe.utils.flt(r[c.fieldname] if r is mapping else (r[ci] if ci < r|length else 0)) %}{% endfor %}{% set t = ns.t %}\n{%- else %}{% set t = none %}{% endif %}\n<td class=\"{{ 'num' if c.fieldtype in numeric else '' }}\">{% if t is not none %}{{ frappe.format(t, c) }}{% elif loop.first %}{{ _(\"Total\") }}{% endif %}</td>\n{%- endfor -%}\n</tr></tfoot>\n{%- endif %}\n</table>\n{%- endif %}\n{%- if data.note %}<p class=\"rvt-note\">{{ data.note }}</p>{% endif %}\n</div>",
+  "css": "/* the colours of the paper (Report View's page palette), currentColor where a page has none */\n.rvt-print{font-size:inherit;color:var(--pp-tx,currentColor)}\n.rvt-sub{margin:0 0 3mm;color:var(--pp-tx-2,currentColor)}\n.rvt-note{margin:3mm 0 0;font-size:.92em;color:var(--pp-tx-3,currentColor)}\n.rvt-empty{margin:0}\ntable.rvt{width:100%;border-collapse:collapse;border-spacing:0;font-size:inherit}\n.rvt th,.rvt td{padding:1.2mm .55em;text-align:start;vertical-align:top;overflow-wrap:anywhere}\n.rvt thead th{font-weight:700;font-size:.92em;background:var(--pp-head,transparent);border-top:1.2px solid var(--pp-tx,currentColor);border-bottom:1px solid var(--pp-tx,currentColor);vertical-align:bottom}\n.rvt tbody td{border-bottom:.5px solid var(--pp-line,currentColor)}\n.rvt tbody tr:nth-child(even) > td{background:var(--pp-zebra,transparent)}\n.rvt .num{text-align:end;font-variant-numeric:tabular-nums;white-space:nowrap}\n.rvt tfoot td{font-weight:700;border-top:1.2px solid var(--pp-tx,currentColor);border-bottom:3px double var(--pp-tx,currentColor);background:var(--pp-head,transparent)}\n.rvt td.rvt-none{text-align:center;color:var(--pp-tx-3,currentColor)}",
+  "margin_top": 15.0,
+  "margin_bottom": 15.0,
+  "margin_left": 15.0,
+  "margin_right": 15.0,
+  "font_size": 0,
+  "page_number": "Hide",
+  "pdf_generator": "wkhtmltopdf",
+  "modified": "2026-10-21 10:00:00.000000",
+  "docstatus": 0
+ }
+]

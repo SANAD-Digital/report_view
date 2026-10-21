@@ -1,0 +1,16 @@
+[
+ {
+  "doctype": "Property Setter",
+  "name": "Print Format-print_format_for-options",
+  "doc_type": "Print Format",
+  "doctype_or_field": "DocField",
+  "field_name": "print_format_for",
+  "property": "options",
+  "property_type": "Text",
+  "value": "DocType\nReport\nCustom",
+  "is_system_generated": 0,
+  "module": "Report View",
+  "modified": "2026-10-21 10:00:00.000000",
+  "docstatus": 0
+ }
+]

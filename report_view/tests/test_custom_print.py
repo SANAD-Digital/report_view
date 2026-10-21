@@ -448,3 +448,24 @@ class TestCustomPrint(RVTestCase):
 			self.assertTrue(frappe.local.response.filecontent.startswith(b"%PDF"))
 			self.assertEqual(frappe.local.response.filename, "Sent template.pdf")
 
+
+
+class TestOpenIn(RVTestCase):
+	"""Where report_view.print() opens a print by default: in the boot, from the settings."""
+
+	def test_boot_default(self):
+		from report_view.core import settings
+
+		gs = frappe.get_single("Report View Global Settings")
+		old = gs.custom_print_open_in
+		try:
+			for value, expected in (("Same tab", "same"), ("New tab", "tab")):
+				gs.custom_print_open_in = value
+				gs.save()
+				frappe.clear_document_cache("Report View Global Settings", "Report View Global Settings")
+				boot = frappe._dict()
+				settings.boot_session(boot)
+				self.assertEqual(boot.report_view, {"custom_print_open_in": expected})
+		finally:
+			gs.custom_print_open_in = old
+			gs.save()

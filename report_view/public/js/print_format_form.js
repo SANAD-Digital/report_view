@@ -107,7 +107,7 @@ function help_html(frm) {
 		<h6>${__("What the template reads")}</h6>
 		<table class="rv-cp-vars"><tbody>${rows}</tbody></table>
 		<h6>${__("From a page, with the data")}</h6>
-		${code(`report_view.print({\n\tprint_format: ${n},\n\tdata: { customer: "Acme", rows: [{ item: "A", qty: 2 }] },\n\ttitle: "Delivery list",\n\t// letter_head, heading, signature, lang, new_window: true\n});`)}
+		${code(`report_view.print({\n\tprint_format: ${n},\n\tdata: { customer: "Acme", rows: [{ item: "A", qty: 2 }] },\n\ttitle: "Delivery list",\n\t// letter_head, heading, signature, lang, open_in: "same" | "tab"\n});`)}
 		<h6>${__("From a page, with a method that returns the data")}</h6>
 		${code(`report_view.print({\n\tprint_format: ${n},\n\tmethod: "my_app.api.get_rows", // @frappe.whitelist(methods=["GET"])\n\targs: { from_date: "2026-01-01" },\n});`)}
 		<h6>${__("As an address (keeps the data live)")}</h6>
@@ -173,7 +173,7 @@ function preview(frm) {
 				frappe.msgprint(__("The data is not valid JSON: {0}", [e.message]));
 				return;
 			}
-			report_view.print({ print_format: frm.doc.name, data, title: values.title || null, new_window: true }).then(() => dialog.hide());
+			report_view.print({ print_format: frm.doc.name, data, title: values.title || null, open_in: "tab" }).then(() => dialog.hide());
 		},
 	});
 	dialog.show();

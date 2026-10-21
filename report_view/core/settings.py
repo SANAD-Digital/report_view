@@ -142,6 +142,14 @@ def get_print_max_pages() -> int:
 	return min(frappe.utils.cint(gs and gs.print_max_pages) or DEFAULT_PRINT_MAX_PAGES, HARD_PRINT_MAX_PAGES)
 
 
+def boot_session(bootinfo) -> None:
+	"""Hook ``extend_bootinfo`` (ADR-019): what a page needs before any request, here where
+	report_view.print() opens a Custom print. It must be known at the click: a tab opened
+	after a request is blocked by the browser."""
+	gs = global_settings()
+	bootinfo.report_view = {"custom_print_open_in": "tab" if gs and gs.get("custom_print_open_in") == "New tab" else "same"}
+
+
 # The labels of the single's Select fields, as the Pages view keys them.
 _PAGES = {"Every page": "all", "First page": "first", "All but the first": "rest", "Last page": "last"}
 _STYLES = {"Classic": "classic", "Modern": "modern", "Accounting grid": "ledger", "Compact": "compact", "Ink saving": "minimal"}

@@ -3658,3 +3658,18 @@ msgstr "هذه الطباعة بالقالب الذي أُرسل معها؛ ول
 
 msgid "A page may also send its own template instead: {0}. It reads only the data sent; a template that looks records up is saved here."
 msgstr "ويمكن للصفحة أن ترسل قالبها بدلاً من ذلك: {0}. يقرأ البيانات المرسلة فقط؛ والقالب الذي يقرأ سجلات يُحفظ هنا."
+
+msgid "Custom print"
+msgstr "الطباعة المخصصة"
+
+msgid "Open a custom print in"
+msgstr "فتح الطباعة المخصصة في"
+
+msgid "Same tab"
+msgstr "نفس التبويب"
+
+msgid "New tab"
+msgstr "تبويب جديد"
+
+msgid "Where report_view.print() opens the print page when the call does not say (open_in: \"same\" or \"tab\")."
+msgstr "أين تفتح report_view.print() صفحة الطباعة حين لا يحدد الاستدعاء ذلك (open_in: \"same\" أو \"tab\")."

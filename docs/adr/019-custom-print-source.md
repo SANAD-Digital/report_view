@@ -75,10 +75,15 @@ doctype_js = {..., "Print Format": "public/js/print_format_form.js"}
 
 بقية الدوال تقبل `token` بدل `print_format` لطباعة بقالب مرسل.
 
-في المتصفح: `report_view.print(opts) → Promise<url>` (`opts`: `print_format` أو `html` + `css`)، `report_view.print_table(opts)`، `report_view.print_url({print_format, method, args, …})`، `report_view.open_print(url, {new_window})`. في بايثون: `report_view.core.custom_print.print_url(print_format=None, data=None, title=None, method=None, args=None, absolute=False, html=None, css=None, **options)`.
+في المتصفح: `report_view.print(opts) → Promise<url>` (`opts`: `print_format` أو `html` + `css`)، `report_view.print_table(opts)`، `report_view.print_url({print_format, method, args, …})`، `report_view.open_print(url, {open_in})`. في بايثون: `report_view.core.custom_print.print_url(print_format=None, data=None, title=None, method=None, args=None, absolute=False, html=None, css=None, **options)`.
 
 ## العواقب
 - أي صفحة أو تطبيق يطبع بياناته بقالب واحد مكتوب مرة، بكل ما في محرك الصفحات وPDF نفسه، بلا كود طباعة خاص.
 - دالة البيانات يجب أن تقبل GET (`@frappe.whitelist(methods=["GET"])` مستحسن)؛ دالة مقيدة بـ POST لا تصلح مصدراً للرابط. دالة تقبل كل الطرق وتعدّل البيانات ثم تُثبّت بنفسها (`frappe.db.commit`) خطأ في تلك الدالة، لا في هذا المصدر.
 - البيانات المرحّلة في redis ساعة واحدة؛ رابط الرمز لا يُشارك (لمالكه فقط). الرابط القابل للمشاركة هو رابط الدالة.
 - `select` على Print Format يكفي للطباعة بقالب مخصص؛ تقييد قالب بأدوار يحتاج قراراً لاحقاً (مثلاً حقل أدوار بـ Custom Field).
+
+## تعديل (2026-10-21): مكان فتح الطباعة
+- خيار `open_in: "same" | "tab"` في `print` و `print_table` و `open_print` (و `new_window: true` القديم = `"tab"`).
+- الافتراضي حقل جديد في `Report View Global Settings`: `custom_print_open_in` (Same tab / New tab، الافتراضي Same tab).
+- يجب أن يُعرف الافتراضي عند الضغطة نفسها (المتصفح يمنع تبويباً يُفتح بعد طلب)، فيصل في بيانات الإقلاع: hook جديد `extend_bootinfo = "report_view.core.settings.boot_session"` يضيف `frappe.boot.report_view = {custom_print_open_in}` فقط.

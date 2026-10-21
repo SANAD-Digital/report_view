@@ -62,7 +62,7 @@ report_view.print({
 	print_format: "Delivery List",
 	data: { customer: "Acme", date: "2026-10-21", rows: [{ item: "Paper", amount: 125 }] },
 	title: __("Delivery list"),
-	// اختياري: letter_head, heading, signature, lang ("ar" / "en"), new_window: true
+	// اختياري: letter_head, heading, signature, lang ("ar" / "en"), open_in: "same" | "tab"
 });
 ```
 تُحفظ البيانات على الخادم ساعة واحدة لك وحدك (حتى 5 ميغابايت)، وتُفتح `/desk/rv-print/Custom/<token>`.
@@ -156,3 +156,10 @@ frappe.call("my_app.api.print_open_tasks").then((r) => report_view.open_print(r.
 - يطبع بالقالب كل مستخدم Desk (صلاحية select على Print Format)، والقالب يجب أن يكون مخصصاً وغير معطّل.
 - ما تجلبه دالة البيانات أو القالب بنفسه يخضع لصلاحيات المستخدم.
 - PDF: زر PDF في صفحة الطباعة (`report_view.api.pdf.pages_pdf_custom`) بالآلية نفسها لبقية الطباعة.
+
+## أين تُفتح الطباعة
+- `open_in: "same"`: في الصفحة نفسها (زر «رجوع» في صفحة الطباعة يعيدك إلى صفحتك).
+- `open_in: "tab"`: في تبويب جديد، وصفحتك تبقى كما هي.
+- بلا `open_in`: الافتراضي من **Report View Global Settings → فتح الطباعة المخصصة في** (الافتراضي «نفس التبويب»).
+- `new_window: true` القديم يبقى يعمل ويعني `open_in: "tab"`.
+- يعمل الخيار نفسه في `report_view.print` و `report_view.print_table` و `report_view.open_print(url, { open_in })`.

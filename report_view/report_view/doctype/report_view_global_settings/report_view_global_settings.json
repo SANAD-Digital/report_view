@@ -39,7 +39,9 @@
   "column_break_content",
   "include_filters",
   "include_total",
-  "printed_on"
+  "printed_on",
+  "custom_print_section",
+  "custom_print_open_in"
  ],
  "fields": [
   {
@@ -274,11 +276,24 @@
    "fieldtype": "Check",
    "label": "Print date and user",
    "default": "1"
+  },
+  {
+   "fieldname": "custom_print_section",
+   "fieldtype": "Section Break",
+   "label": "Custom print"
+  },
+  {
+   "fieldname": "custom_print_open_in",
+   "fieldtype": "Select",
+   "label": "Open a custom print in",
+   "options": "Same tab\nNew tab",
+   "default": "Same tab",
+   "description": "Where report_view.print() opens the print page when the call does not say (open_in: \"same\" or \"tab\")."
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-12 12:00:00.000000",
+ "modified": "2026-10-21 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "Report View",
  "name": "Report View Global Settings",

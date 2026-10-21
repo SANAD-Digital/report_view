@@ -165,6 +165,9 @@ has_permission = {"Print Preset": "report_view.core.print_presets.has_permission
 # ---------------
 # Hook on document methods and events
 
+# where a Custom print opens by default, known before any request (ADR-019)
+extend_bootinfo = "report_view.core.settings.boot_session"
+
 # a Custom print format is HTML and CSS only (ADR-019)
 doc_events = {
 	"Print Format": {"before_validate": "report_view.core.custom_print.before_validate_print_format"},

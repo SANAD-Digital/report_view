@@ -8,7 +8,7 @@
 //   report_view.open_print(url)                                  the address a server method returned
 //
 // Options of both: letter_head, lang, heading, signature (names; the pages' defaults
-// otherwise) and new_window (a tab of its own). Inline data is staged on the server for an
+// otherwise) and open_in ("same" | "tab", the site's default otherwise). Inline data is staged on the server for an
 // hour, for this user only; a method is called by the print page itself (with GET), so its
 // own whitelist and permission checks apply and the address can be kept.
 //
@@ -59,11 +59,13 @@ function print_url({ print_format, method, html, ...opts }) {
  * @param {string} [opts.method] or a whitelisted method that returns it (called with GET)
  * @param {object} [opts.args] the method's arguments
  * @param {string} [opts.title] the title of the print (the format's name otherwise)
- * @param {boolean} [opts.new_window] open the print in a tab of its own
+ * @param {"same"|"tab"} [opts.open_in] where the print opens: this tab or a tab of its own
+ *   (the site's default otherwise, Report View Global Settings); `new_window: true` = "tab"
  * @returns {Promise<string>} the address of the print page
  */
 async function print(opts = {}) {
-	const { print_format, html, css, method, new_window } = opts;
+	const { print_format, html, css, method } = opts;
+	const new_window = in_new_tab(opts);
 	check_source(opts);
 	if (method && !METHOD.test(method)) throw new Error(__("Invalid data method"));
 	// a tab is opened at the click (a browser blocks one opened after a request)
@@ -102,13 +104,20 @@ async function print(opts = {}) {
 	}
 }
 
+/** Whether a print opens in a tab of its own: the call's `open_in` (or `new_window`), else the site's default. */
+function in_new_tab(opts = {}) {
+	if (opts.open_in === "tab" || opts.open_in === "same") return opts.open_in === "tab";
+	if (typeof opts.new_window === "boolean") return opts.new_window;
+	return frappe.boot?.report_view?.custom_print_open_in === "tab";
+}
+
 /**
  * Opens the address a server method returned (report_view.core.custom_print.print_url):
  * in this tab through Desk's router, or in a tab of its own.
  */
-function open_print(url, { new_window = false } = {}) {
+function open_print(url, opts = {}) {
 	const u = new URL(url, window.location.origin);
-	if (new_window || u.origin !== window.location.origin) return window.open(u.href, "_blank");
+	if (in_new_tab(opts) || u.origin !== window.location.origin) return window.open(u.href, "_blank");
 	const parts = u.pathname.replace(/^\/desk\//, "").split("/").map(decodeURIComponent);
 	const query = Object.fromEntries(u.searchParams.entries());
 	if (Object.keys(query).length) frappe.route_options = query;

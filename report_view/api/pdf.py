@@ -20,6 +20,7 @@ import zlib
 import frappe
 from frappe import _
 
+from report_view.core.custom_print import guard_custom_format
 from report_view.core.errors import RVInvalidInput, RVLimitExceeded
 from report_view.core.guard import guard_print, guard_report
 from report_view.core.pdf import (
@@ -70,6 +71,14 @@ def pages_pdf_document(doctype: str, name: str, html: str | None = None, title: 
 	"""PDF of a document's printed pages; needs ``print`` on the document itself."""
 	_check_document_print(doctype, name)
 	return _pdf(_html(html), title or name)
+
+
+@frappe.whitelist(methods=["POST"])
+def pages_pdf_custom(print_format: str, html: str | None = None, title: str | None = None):
+	"""PDF of a Custom print's pages (ADR-019); needs the Custom format to be one the user
+	may print with (``custom_print.guard_custom_format``)."""
+	pf = guard_custom_format(print_format)
+	return _pdf(_html(html), title or pf.name)
 
 
 @frappe.whitelist(methods=["GET"])

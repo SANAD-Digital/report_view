@@ -2450,3 +2450,1187 @@ msgstr "لا توجد عملية خلفية تعمل لملفات PDF. راجع 
 
 msgid "A PDF of yours is still being made. Wait for it to finish, or cancel it."
 msgstr "ما زال ملف PDF سابق لك قيد الإنشاء. انتظر حتى ينتهي أو ألغِه."
+
+msgid "A print format is required"
+msgstr "قالب الطباعة مطلوب"
+
+msgid "Not permitted to print with {0}"
+msgstr "غير مسموح لك بالطباعة بالقالب {0}"
+
+msgid "Custom print format {0} not found"
+msgstr "قالب الطباعة المخصص {0} غير موجود"
+
+msgid "The data to print is required"
+msgstr "البيانات المطلوب طباعتها مطلوبة"
+
+msgid "The data to print is not valid JSON"
+msgstr "البيانات المطلوب طباعتها ليست JSON صالحاً"
+
+msgid "The data to print must be an object or a list"
+msgstr "البيانات المطلوب طباعتها يجب أن تكون كائناً أو قائمة"
+
+msgid "The data to print is larger than {0} MB"
+msgstr "البيانات المطلوب طباعتها أكبر من {0} ميغابايت"
+
+msgid "Invalid value for {0}"
+msgstr "قيمة غير صالحة لـ {0}"
+
+msgid "Invalid print link"
+msgstr "رابط طباعة غير صالح"
+
+msgid "This print has expired. Print it again from where it came from."
+msgstr "انتهت صلاحية هذه الطباعة. اطبعها من جديد من المكان الذي جاءت منه."
+
+msgid "Give the data to print or the method that returns it"
+msgstr "أرسل البيانات المطلوب طباعتها أو الدالة التي تعيدها"
+
+msgid "Invalid data method"
+msgstr "دالة البيانات غير صالحة"
+
+msgid "The print format {0} could not be rendered. Ask the person who wrote it to check it."
+msgstr "تعذّر عرض قالب الطباعة {0}. اطلب من كاتبه مراجعته."
+
+msgid "Line {0}"
+msgstr "السطر {0}"
+
+msgid "Print Signature {0} is not available for this print"
+msgstr "التوقيع {0} غير متاح لهذه الطباعة"
+
+msgid "Edit the print format"
+msgstr "تعديل قالب الطباعة"
+
+msgid "Loading the data to print…"
+msgstr "جارٍ تحميل البيانات المطلوب طباعتها…"
+
+msgid "The data to print could not be loaded"
+msgstr "تعذّر تحميل البيانات المطلوب طباعتها"
+
+msgid "Name the print format to print with."
+msgstr "حدّد قالب الطباعة الذي تُطبع به."
+
+msgid "The arguments of the data method are not valid JSON"
+msgstr "مُعاملات دالة البيانات ليست JSON صالحاً"
+
+msgid "Give the print format and the method that returns the data"
+msgstr "حدّد قالب الطباعة والدالة التي تعيد البيانات"
+
+msgid "Give the print format to print with"
+msgstr "حدّد قالب الطباعة الذي تُطبع به"
+
+msgid "Give the columns of the table"
+msgstr "حدّد أعمدة الجدول"
+
+msgid "The data as it was sent (an object or a list)"
+msgstr "البيانات كما أُرسلت (كائن أو قائمة)"
+
+msgid "The data when it is an object: {0}"
+msgstr "البيانات حين تكون كائناً: {0}"
+
+msgid "The data when it is a list, or its «rows»"
+msgstr "البيانات حين تكون قائمة، أو حقلها «rows»"
+
+msgid "The title of the print"
+msgstr "عنوان الطباعة"
+
+msgid "The data's company, else the user's default company"
+msgstr "شركة البيانات، وإلا الشركة الافتراضية للمستخدم"
+
+msgid "Who prints and when"
+msgstr "من يطبع ومتى"
+
+msgid "The language of the pages"
+msgstr "لغة الصفحات"
+
+msgid "Frappe's Jinja, as in every print format"
+msgstr "Jinja الخاص بـ Frappe كما في كل قالب طباعة"
+
+msgid "A Custom print format"
+msgstr "قالب طباعة مخصص"
+
+msgid "Its data does not come from a document or a report: the page or the method that prints sends it. The print page adds the paper, the letter head, the heading, the signature, the page numbers and the PDF."
+msgstr "بياناته لا تأتي من مستند ولا من تقرير: ترسلها الصفحة أو الدالة التي تطبع. وصفحة الطباعة تضيف الورق والترويسة ورأس الطباعة والتوقيع وترقيم الصفحات وPDF."
+
+msgid "Text in the data prints HTML-escaped. The template is written once; any page can print with it."
+msgstr "النصوص في البيانات تُطبع بعد تهريب HTML. يُكتب القالب مرة واحدة، وتطبع به أي صفحة."
+
+msgid "What the template reads"
+msgstr "ما يقرؤه القالب"
+
+msgid "From a page, with the data"
+msgstr "من صفحة، مع البيانات"
+
+msgid "From a page, with a method that returns the data"
+msgstr "من صفحة، بدالة تعيد البيانات"
+
+msgid "As an address (keeps the data live)"
+msgstr "كرابط (البيانات تبقى حيّة)"
+
+msgid "From Python"
+msgstr "من بايثون"
+
+msgid "Any table, without a template"
+msgstr "أي جدول، بلا قالب"
+
+msgid "Save the print format first, then preview it."
+msgstr "احفظ قالب الطباعة أولاً، ثم عاينه."
+
+msgid "Preview with sample data"
+msgstr "معاينة ببيانات تجريبية"
+
+msgid "Data (JSON)"
+msgstr "البيانات (JSON)"
+
+msgid "Paste the data a page would send; the print opens in a new tab."
+msgstr "الصق البيانات التي سترسلها الصفحة؛ تُفتح الطباعة في تبويب جديد."
+
+msgid "The data is not valid JSON: {0}"
+msgstr "البيانات ليست JSON صالحاً: {0}"
+
+msgid "No columns to print"
+msgstr "لا أعمدة للطباعة"
+
+msgid "No rows"
+msgstr "لا صفوف"
+
+msgid "It is HTML and CSS only: the HTML (with Jinja for the data) in the HTML field, the styles in the CSS field. The CSS reaches the printed content only, on screen and in the PDF."
+msgstr "هو HTML و CSS فقط: الـ HTML (مع Jinja للبيانات) في حقل HTML، والأنماط في حقل CSS. أنماط CSS تصل إلى المحتوى المطبوع وحده، على الشاشة وفي PDF."
+
+msgid "Letter Head Layout"
+msgstr "تخطيط ورق الشركة"
+
+msgid "Layout Version"
+msgstr "إصدار التخطيط"
+
+msgid "Generated Hash"
+msgstr "بصمة التوليد"
+
+msgid "Template"
+msgstr "النمط"
+
+msgid "Layout"
+msgstr "التخطيط"
+
+msgid "Empty: the company of the printed document, else the default company"
+msgstr "فارغ: شركة المستند المطبوع، وإلا الشركة الافتراضية"
+
+msgid "The style the design started from"
+msgstr "النمط الذي بدأ منه التصميم"
+
+msgid "The letter head's HTML as the builder last wrote it; a different hash means it was edited by hand"
+msgstr "بصمة HTML ورق الشركة كما كتبه المنشئ آخر مرة؛ اختلافها يعني أنه عُدّل يدوياً"
+
+msgid "Company Name (Arabic)"
+msgstr "اسم الشركة (عربي)"
+
+msgid "Choose the company of the letter head"
+msgstr "اختر شركة ورق الشركة"
+
+msgid "Company {0} not found"
+msgstr "الشركة {0} غير موجودة"
+
+msgid "Duplicate element id {0}"
+msgstr "معرّف العنصر {0} مكرر"
+
+msgid "Element {0} is in a closed slot and is not printed"
+msgstr "العنصر {0} في خانة مغلقة فلا يُطبع"
+
+msgid "Element {0} is outside the {1}"
+msgstr "العنصر {0} خارج {1}"
+
+msgid "Element {0}: the QR code has no text"
+msgstr "العنصر {0}: رمز QR بلا نص"
+
+msgid "Font {0} is not available"
+msgstr "الخط {0} غير متاح"
+
+msgid "Invalid QR code text"
+msgstr "نص رمز QR غير صالح"
+
+msgid "Invalid colour {0} for {1}"
+msgstr "لون غير صالح {0} في {1}"
+
+msgid "Invalid colours of the layout"
+msgstr "ألوان التخطيط غير صالحة"
+
+msgid "Invalid company"
+msgstr "شركة غير صالحة"
+
+msgid "Invalid element id {0}"
+msgstr "معرّف عنصر غير صالح {0}"
+
+msgid "Invalid element in the {0}"
+msgstr "عنصر غير صالح في {0}"
+
+msgid "Invalid elements of the {0}"
+msgstr "عناصر {0} غير صالحة"
+
+msgid "Invalid letter head layout"
+msgstr "تخطيط ورق الشركة غير صالح"
+
+msgid "Invalid properties of {0}"
+msgstr "خصائص {0} غير صالحة"
+
+msgid "Invalid slot {0} of {1}"
+msgstr "خانة غير صالحة {0} في {1}"
+
+msgid "Invalid slots of the {0}"
+msgstr "خانات {0} غير صالحة"
+
+msgid "Invalid style of {0}"
+msgstr "تنسيق {0} غير صالح"
+
+msgid "Invalid template"
+msgstr "نمط غير صالح"
+
+msgid "Invalid value {0} for {1}"
+msgstr "قيمة غير صالحة {0} في {1}"
+
+msgid "Invalid {0} in the layout"
+msgstr "{0} غير صالح في التخطيط"
+
+msgid "Letter Head {0} already exists"
+msgstr "ورق الشركة {0} موجود مسبقاً"
+
+msgid "Letter Head {0} was edited by hand. Saving the design replaces its HTML."
+msgstr "عُدّل ورق الشركة {0} يدوياً. حفظ التصميم يستبدل HTML الخاص به."
+
+msgid "Name the letter head"
+msgstr "سمِّ ورق الشركة"
+
+msgid "Not permitted to change the default letter head of the company"
+msgstr "غير مسموح لك بتغيير ورق الشركة الافتراضي للشركة"
+
+msgid "Not permitted to design letter heads"
+msgstr "غير مسموح لك بتصميم ورق الشركة"
+
+msgid "Not permitted to save letter heads"
+msgstr "غير مسموح لك بحفظ ورق الشركة"
+
+msgid "The company has no logo"
+msgstr "الشركة بلا شعار"
+
+msgid "The company has no website: the QR code is not printed"
+msgstr "الشركة بلا موقع إلكتروني: لا يُطبع رمز QR"
+
+msgid "The company logo is a private file: it is not printed. Make the file public."
+msgstr "شعار الشركة ملف خاص فلا يُطبع. اجعل الملف عاماً."
+
+msgid "The image of {0} must be a public file (/files/…) or an asset (/assets/…)"
+msgstr "صورة {0} يجب أن تكون ملفاً عاماً (/files/…) أو من الأصول (/assets/…)"
+
+msgid "The layout is larger than {0} KB"
+msgstr "التخطيط أكبر من {0} كيلوبايت"
+
+msgid "The layout is not valid JSON"
+msgstr "التخطيط ليس JSON صالحاً"
+
+msgid "The slots of the {0} are wider than 100%"
+msgstr "خانات {0} أعرض من 100%"
+
+msgid "The {0} has more than {1} elements"
+msgstr "في {0} أكثر من {1} عنصراً"
+
+msgid "Unknown element type {0}"
+msgstr "نوع عنصر غير معروف {0}"
+
+msgid "Unknown field {0} in {1}"
+msgstr "حقل غير معروف {0} في {1}"
+
+msgid "Unknown key {0} in {1}"
+msgstr "مفتاح غير معروف {0} في {1}"
+
+msgid "Unsupported layout version {0}"
+msgstr "إصدار التخطيط {0} غير مدعوم"
+
+msgid "element {0}"
+msgstr "العنصر {0}"
+
+msgid "the colours"
+msgstr "الألوان"
+
+msgid "the layout"
+msgstr "التخطيط"
+
+msgid "{0} is longer than {1} characters"
+msgstr "{0} أطول من {1} حرفاً"
+
+msgid "{0} must be a number"
+msgstr "{0} يجب أن يكون رقماً"
+
+msgid "{0} must be a text"
+msgstr "{0} يجب أن يكون نصاً"
+
+msgid "Registration Details"
+msgstr "تفاصيل التسجيل"
+
+msgid "Tax ID"
+msgstr "الرقم الضريبي"
+
+msgid "A band holds at most {0} elements."
+msgstr "الشريط يحمل {0} عنصراً على الأكثر."
+
+msgid "A text"
+msgstr "نص"
+
+msgid "A4 page"
+msgstr "صفحة A4"
+
+msgid "Abbreviation"
+msgstr "الاختصار"
+
+msgid "Add {0}"
+msgstr "إضافة {0}"
+
+msgid "Add {0}: {1}"
+msgstr "إضافة {0}: {1}"
+
+msgid "Address (all lines)"
+msgstr "العنوان (كل الأسطر)"
+
+msgid "Address line"
+msgstr "سطر العنوان"
+
+msgid "Align centre"
+msgstr "وسط"
+
+msgid "Align end"
+msgstr "نهاية"
+
+msgid "Align start"
+msgstr "بداية"
+
+msgid "Alignment guides"
+msgstr "أدلة المحاذاة"
+
+msgid "Alt: no snapping"
+msgstr "Alt: بلا التقاط"
+
+msgid "Another colour"
+msgstr "لون آخر"
+
+msgid "Applying a style replaces the current design (you can undo)."
+msgstr "تطبيق نمط يستبدل التصميم الحالي (ويمكن التراجع)."
+
+msgid "Band"
+msgstr "الشريط"
+
+msgid "Blank page"
+msgstr "ورقة فارغة"
+
+msgid "Bold"
+msgstr "عريض"
+
+msgid "Both"
+msgstr "كلاهما"
+
+msgid "Canvas"
+msgstr "اللوحة"
+
+msgid "Centre (slot)"
+msgstr "الوسط"
+
+msgid "Centre only"
+msgstr "وسط فقط"
+
+msgid "Change the colours and the font on the next step."
+msgstr "غيّر الألوان والخط في الخطوة التالية."
+
+msgid "Choose a public file: a private file does not show in the PDF."
+msgstr "اختر ملفاً عاماً: الملف الخاص لا يظهر في PDF."
+
+msgid "Choose a style"
+msgstr "اختر نمطاً"
+
+msgid "City"
+msgstr "المدينة"
+
+msgid "Colour band"
+msgstr "شريط لون"
+
+msgid "Company"
+msgstr "الشركة"
+
+msgid "Company data"
+msgstr "بيانات الشركة"
+
+msgid "Company field"
+msgstr "حقل من الشركة"
+
+msgid "Company name"
+msgstr "اسم الشركة"
+
+msgid "Company name (Arabic)"
+msgstr "اسم الشركة (عربي)"
+
+msgid "Copy"
+msgstr "نسخ"
+
+msgid "Corner radius"
+msgstr "استدارة الزوايا"
+
+msgid "Could not open the builder"
+msgstr "تعذّر فتح المنشئ"
+
+msgid "Country"
+msgstr "الدولة"
+
+msgid "Delete"
+msgstr "حذف"
+
+msgid "Design elements"
+msgstr "عناصر التصميم"
+
+msgid "Design with the builder"
+msgstr "تصميم بالمنشئ"
+
+msgid "Direction"
+msgstr "الاتجاه"
+
+msgid "Drag onto a slot or anywhere on a band, or click to add."
+msgstr "اسحب إلى خانة أو إلى أي مكان في الشريط، أو انقر للإضافة."
+
+msgid "Each company with its own logo and data"
+msgstr "كل شركة بشعارها وبياناتها"
+
+msgid "Elements"
+msgstr "العناصر"
+
+msgid "Email"
+msgstr "البريد"
+
+msgid "Empty"
+msgstr "فارغ"
+
+msgid "Empty in the company"
+msgstr "فارغ في سجل الشركة"
+
+msgid "Empty in the company record: {0}. Fill them there and they appear by themselves; until then they are left out, never made up."
+msgstr "فارغ في سجل الشركة: {0}. أكملها هناك لتظهر تلقائياً؛ وحتى ذلك الحين تُترك ولا تُختلق."
+
+msgid "Fax"
+msgstr "الفاكس"
+
+msgid "Field"
+msgstr "الحقل"
+
+msgid "Fill"
+msgstr "التعبئة"
+
+msgid "Fill it in the company record"
+msgstr "أكمله في سجل الشركة"
+
+msgid "Fill the box"
+msgstr "ملء الإطار"
+
+msgid "Find a field or an element"
+msgstr "ابحث عن حقل أو عنصر"
+
+msgid "Fine-tune on the page"
+msgstr "ضبط دقيق على الورقة"
+
+msgid "Fit the page"
+msgstr "ملاءمة الصفحة"
+
+msgid "Font"
+msgstr "الخط"
+
+msgid "Font and colours"
+msgstr "الخط والألوان"
+
+msgid "Footer band"
+msgstr "التذييل"
+
+msgid "Format"
+msgstr "الصيغة"
+
+msgid "Frappe's print and print formats"
+msgstr "طباعة Frappe وقوالب الطباعة"
+
+msgid "Free (element)"
+msgstr "حر"
+
+msgid "From left"
+msgstr "من اليسار"
+
+msgid "From the company record"
+msgstr "من سجل الشركة"
+
+msgid "From the company's data"
+msgstr "من بيانات الشركة"
+
+msgid "From top"
+msgstr "من الأعلى"
+
+msgid "Gap"
+msgstr "المسافة"
+
+msgid "Grid 1 mm"
+msgstr "الشبكة 1 مم"
+
+msgid "Header band"
+msgstr "الترويسة"
+
+msgid "Height 0 = no footer."
+msgstr "الارتفاع 0 = بلا تذييل."
+
+msgid "Height of the {0} (mm)"
+msgstr "ارتفاع {0} (مم)"
+
+msgid "Hide the line when the value is empty"
+msgstr "يُخفى السطر إذا كانت القيمة فارغة"
+
+msgid "History"
+msgstr "السجل"
+
+msgid "In a slot the text follows the slot: right is right-aligned, left is left-aligned."
+msgstr "في الخانة يتبع النص خانته: اليمنى محاذاة يمين، واليسرى محاذاة يسار."
+
+msgid "Label before the value"
+msgstr "عنوان قبل القيمة"
+
+msgid "Layers"
+msgstr "الطبقات"
+
+msgid "Left (slot)"
+msgstr "يسار"
+
+msgid "Left out because empty: {0}"
+msgstr "مُسقَط لأنه فارغ: {0}"
+
+msgid "Left to right"
+msgstr "من اليسار لليمين"
+
+msgid "Length"
+msgstr "الطول"
+
+msgid "Letter Head Builder"
+msgstr "منشئ ورق الشركة"
+
+msgid "Letter head name"
+msgstr "اسم ورق الشركة"
+
+msgid "Library"
+msgstr "المكتبة"
+
+msgid "Live value"
+msgstr "القيمة الحية"
+
+msgid "Loading the company's data…"
+msgstr "جارٍ تحميل بيانات الشركة…"
+
+msgid "Logo"
+msgstr "الشعار"
+
+msgid "Logo right"
+msgstr "شعار يمين"
+
+msgid "Make it the company's default"
+msgstr "اجعله الافتراضي للشركة"
+
+msgid "Medium"
+msgstr "متوسط"
+
+msgid "Move {0} down"
+msgstr "نقل {0} للأسفل"
+
+msgid "Move {0} up"
+msgstr "نقل {0} للأعلى"
+
+msgid "Muted colour"
+msgstr "اللون الخافت"
+
+msgid "New letter head"
+msgstr "ورق شركة جديد"
+
+msgid "No Arabic name yet: add a Translation of the company name and it shows on the right."
+msgstr "لا يوجد اسم عربي بعد: أضف ترجمة لاسم الشركة فيظهر في اليمين."
+
+msgid "No footer: drag up to add one"
+msgstr "بلا تذييل: اسحب للأعلى لإضافته"
+
+msgid "Not saved yet"
+msgstr "لم يُحفظ بعد"
+
+msgid "Nothing selected"
+msgstr "لا شيء محدد"
+
+msgid "On the page"
+msgstr "على الورقة"
+
+msgid "On the paper"
+msgstr "ما يظهر في الورق"
+
+msgid "Only a System Manager can save letter heads."
+msgstr "حفظ ورق الشركة لمدير النظام فقط."
+
+msgid "Open the company"
+msgstr "فتح سجل الشركة"
+
+msgid "Other"
+msgstr "آخر"
+
+msgid "PDF from the server"
+msgstr "ملف PDF من الخادم"
+
+msgid "PDF with wkhtmltopdf"
+msgstr "PDF بمحرك wkhtmltopdf"
+
+msgid "Page number"
+msgstr "رقم الصفحة"
+
+msgid "Panels"
+msgstr "اللوحات"
+
+msgid "Paper settings"
+msgstr "إعدادات الورق"
+
+msgid "Phone"
+msgstr "الهاتف"
+
+msgid "Position and size (mm)"
+msgstr "الموضع والحجم (مم)"
+
+msgid "Preview of the selected style"
+msgstr "معاينة النمط المحدد"
+
+msgid "Preview with the data of"
+msgstr "معاينة ببيانات"
+
+msgid "Primary colour"
+msgstr "اللون الأساسي"
+
+msgid "Properties"
+msgstr "الخصائص"
+
+msgid "Public files only: a private file does not show in the PDF."
+msgstr "ملفات عامة فقط: الملف الخاص لا يظهر في PDF."
+
+msgid "QR code"
+msgstr "رمز QR"
+
+msgid "QR text"
+msgstr "نص رمز QR"
+
+msgid "Real preview"
+msgstr "معاينة حقيقية"
+
+msgid "Redo"
+msgstr "إعادة"
+
+msgid "Registration details"
+msgstr "السجل التجاري"
+
+msgid "Regular"
+msgstr "عادي"
+
+msgid "Rendered by the server"
+msgstr "مولَّد من الخادم"
+
+msgid "Replace the current design with the style «{0}»? You can undo it."
+msgstr "استبدال التصميم الحالي بنمط «{0}»؟ يمكنك التراجع."
+
+msgid "Replace the image"
+msgstr "استبدال الصورة"
+
+msgid "Report View pages"
+msgstr "صفحات Report View"
+
+msgid "Right (slot)"
+msgstr "يمين"
+
+msgid "Right to left"
+msgstr "من اليمين لليسار"
+
+msgid "Save"
+msgstr "حفظ"
+
+msgid "Save to the letter heads"
+msgstr "حفظ في ورق الشركة"
+
+msgid "Saved"
+msgstr "محفوظ"
+
+msgid "Saved in the letter head «{0}»"
+msgstr "حُفظ في ورق الشركة «{0}»"
+
+msgid "Saving the letter head…"
+msgstr "جارٍ حفظ ورق الشركة…"
+
+msgid "Select an element on the page to edit it."
+msgstr "حدد عنصراً على الورقة لتعديله."
+
+msgid "Selected"
+msgstr "محدد"
+
+msgid "Selected element"
+msgstr "العنصر المحدد"
+
+msgid "Semibold"
+msgstr "شبه عريض"
+
+msgid "Six styles drawn with your company's data"
+msgstr "ستة أنماط مرسومة ببيانات شركتك"
+
+msgid "Size"
+msgstr "الحجم"
+
+msgid "Size (mm)"
+msgstr "الحجم (مم)"
+
+msgid "Slot layout"
+msgstr "توزيع الخانات"
+
+msgid "Slots (% of the width)"
+msgstr "الخانات (% من العرض)"
+
+msgid "Space after it"
+msgstr "المسافة بعده"
+
+msgid "Start with this style"
+msgstr "ابدأ بهذا النمط"
+
+msgid "Steps"
+msgstr "الخطوات"
+
+msgid "Style applied"
+msgstr "طُبّق النمط"
+
+msgid "Styles"
+msgstr "الأنماط"
+
+msgid "Tap to add to the page."
+msgstr "انقر للإضافة إلى الورقة."
+
+msgid "Text colour"
+msgstr "لون النص"
+
+msgid "The English name from the company record, the Arabic one from its Translation."
+msgstr "الاسم الإنجليزي من سجل الشركة، والعربي من ترجمته."
+
+msgid "The builder could not load the company's data."
+msgstr "تعذّر على المنشئ تحميل بيانات الشركة."
+
+msgid "The colour comes from the logo; change it on the next step."
+msgstr "اللون مأخوذ من الشعار، ويمكن تغييره في الخطوة التالية."
+
+msgid "The company has no logo: add one in the company record."
+msgstr "لا يوجد شعار للشركة: أضفه في سجل الشركة."
+
+msgid "The company has no website"
+msgstr "لا يوجد موقع للشركة"
+
+msgid "The company's website"
+msgstr "موقع الشركة"
+
+msgid "The content of «{0}» was edited by hand after the builder made it. Overwrite it with this design?"
+msgstr "محتوى «{0}» عُدّل يدوياً بعد أن ولّده المنشئ. هل تريد الكتابة فوقه بهذا التصميم؟"
+
+msgid "The default letter head of {0}"
+msgstr "ورق الشركة الافتراضي لـ {0}"
+
+msgid "The design is too large to save (over 64 KB). Remove some elements."
+msgstr "التصميم أكبر من أن يُحفظ (أكثر من 64KB). احذف بعض العناصر."
+
+msgid "The document's content is not edited here"
+msgstr "محتوى المستند لا يُعدَّل هنا"
+
+msgid "The logo of the company record, kept within the size above."
+msgstr "شعار سجل الشركة، محتوى داخل الحجم أعلاه."
+
+msgid "The name in two languages"
+msgstr "الاسم بلغتين"
+
+msgid "The page: header, body and footer"
+msgstr "الورقة: الترويسة والمتن والتذييل"
+
+msgid "The server could not render the preview."
+msgstr "تعذّر على الخادم توليد المعاينة."
+
+msgid "The server is rendering the letter head…"
+msgstr "الخادم يولّد ورق الشركة…"
+
+msgid "There is no letter head «{0}»."
+msgstr "لا يوجد ورق شركة باسم «{0}»."
+
+msgid "This is the HTML saved in the letter head, rendered for {0}, as Frappe's print, the PDF and the Report View pages show it."
+msgstr "هذا هو HTML المحفوظ في ورق الشركة، مولَّداً لـ {0}، كما تعرضه طباعة Frappe وملف PDF وصفحات Report View."
+
+msgid "Three slots"
+msgstr "ثلاث خانات"
+
+msgid "Together {0}% of 100%; 0 closes a slot."
+msgstr "المجموع {0}% من 100%؛ والصفر يغلق الخانة."
+
+msgid "Top of the first page"
+msgstr "أعلى الصفحة الأولى"
+
+msgid "Top padding"
+msgstr "الهامش العلوي"
+
+msgid "Two slots"
+msgstr "خانتان"
+
+msgid "Undo"
+msgstr "تراجع"
+
+msgid "Unsaved changes"
+msgstr "تغييرات غير محفوظة"
+
+msgid "Website"
+msgstr "الموقع"
+
+msgid "Weight"
+msgstr "السماكة"
+
+msgid "White"
+msgstr "أبيض"
+
+msgid "Whole image"
+msgstr "الصورة كاملة"
+
+msgid "Width"
+msgstr "العرض"
+
+msgid "With «Repeat header and footer», wkhtmltopdf does not measure the header: add this line to the CSS of the print format so the body starts under it. The Chrome engine measures it by itself."
+msgstr "مع «تكرار الترويسة والتذييل» لا يقيس wkhtmltopdf الترويسة: أضف هذا السطر إلى CSS قالب الطباعة ليبدأ المتن تحتها. محرك Chrome يقيسها بنفسه."
+
+msgid "Works in"
+msgstr "يعمل في"
+
+msgid "Write a text"
+msgstr "اكتب نصاً"
+
+msgid "Zoom {0}%, fitted to the page"
+msgstr "التكبير {0}%، ملائم للصفحة"
+
+msgid "Zoom {0}%: fit the page"
+msgstr "التكبير {0}%: ملاءمة الصفحة"
+
+msgid "auto"
+msgstr "تلقائي"
+
+msgid "e.g. Tel:"
+msgstr "مثل: هاتف:"
+
+msgid "empty"
+msgstr "فارغ"
+
+msgid "free, {0} mm from the left and {1} mm from the top"
+msgstr "حر، {0} مم من اليسار و{1} مم من الأعلى"
+
+msgid "header {0} mm"
+msgstr "ترويسة {0} مم"
+
+msgid "hidden in print"
+msgstr "يُخفى في الطباعة"
+
+msgid "in the slot: {0}"
+msgstr "في الخانة: {0}"
+
+msgid "slot"
+msgstr "الخانة"
+
+msgid "{0} element(s) sit in a closed slot and are not printed."
+msgstr "{0} عنصر في خانة مغلقة ولا تُطبع."
+
+msgid "{0} mm"
+msgstr "{0} مم"
+
+msgid "{0} warning(s): see «Real preview»"
+msgstr "{0} تحذير: انظر «معاينة حقيقية»"
+
+msgid "{0}: empty, hidden in print"
+msgstr "{0}: فارغ، يُخفى في الطباعة"
+
+msgid "«{0}» was not made with the builder. Start from a style: its current content stays until you save."
+msgstr "«{0}» لم يُصنع بالمنشئ. ابدأ من نمط: محتواه الحالي يبقى حتى تحفظ."
+
+msgid "Classic bilingual"
+msgstr "كلاسيكي بلغتين"
+
+msgid "Top colour band"
+msgstr "شريط علوي"
+
+msgid "Centred logo"
+msgstr "شعار في الوسط"
+
+msgid "Simple, logo and contacts"
+msgstr "بسيط، شعار وبيانات اتصال"
+
+msgid "Formal, double rule"
+msgstr "رسمي بخط مزدوج"
+
+msgid "Colour corner"
+msgstr "زاوية لونية"
+
+msgid "Edit in the letter head builder"
+msgstr "تعديله في منشئ ورق الشركة"
+
+msgid "Design a new letter head"
+msgstr "تصميم ورق شركة جديد"
+
+msgid "Sans serif"
+msgstr "بلا زوائد"
+
+msgid "Naskh"
+msgstr "نسخ"
+
+msgid "Kufi"
+msgstr "كوفي"
+
+msgid "Serif"
+msgstr "بزوائد"
+
+msgid "Display"
+msgstr "عناوين"
+
+msgid "Monospace"
+msgstr "ثابت العرض"
+
+msgid "Arabic"
+msgstr "عربي"
+
+msgid "Latin"
+msgstr "لاتيني"
+
+msgid "Search fonts"
+msgstr "ابحث في الخطوط"
+
+msgid "No font matches"
+msgstr "لا خط يطابق البحث"
+
+msgid "The template's font"
+msgstr "خط القالب"
+
+msgid "A preset for every target keeps the columns and the print format of each one as they are."
+msgstr "الإعداد العام يُبقي أعمدة كل تقرير وقالب طباعته كما هي."
+
+msgid "All Custom formats"
+msgstr "كل القوالب المخصصة"
+
+msgid "All document types"
+msgstr "كل أنواع المستندات"
+
+msgid "All reports"
+msgstr "كل التقارير"
+
+msgid "Applied when the pages open with no settings of the user's own"
+msgstr "يُطبَّق عند فتح الصفحات لمن ليس له إعدادات محفوظة"
+
+msgid "Choose a preset of your own first, or save these settings as a new one"
+msgstr "اختر أحد إعداداتك أولاً، أو احفظ هذه الإعدادات كنسخة جديدة"
+
+msgid "Delete the preset «{0}»?"
+msgstr "حذف الإعداد «{0}»؟"
+
+msgid "Delete the public preset «{0}»? Every user loses it."
+msgstr "حذف الإعداد العام «{0}»؟ سيختفي عند كل المستخدمين."
+
+msgid "Edit the preset «{0}»"
+msgstr "تعديل الإعداد «{0}»"
+
+msgctxt "Print preset"
+msgid "Edit…"
+msgstr "تعديل…"
+
+msgid "Every Custom print format"
+msgstr "كل قوالب الطباعة المخصصة"
+
+msgid "Every document type"
+msgstr "كل أنواع المستندات"
+
+msgid "Every report"
+msgstr "كل التقارير"
+
+msgid "Make it the default"
+msgstr "اجعله الافتراضي"
+
+msgid "My presets"
+msgstr "إعداداتي"
+
+msgid "No change to save"
+msgstr "لا تغيير للحفظ"
+
+msgid "No public presets yet."
+msgstr "لا إعدادات عامة بعد."
+
+msgid "None yet: «Save as new» keeps the current settings under a name."
+msgstr "لا شيء بعد: «حفظ كنسخة جديدة» يحفظ الإعدادات الحالية باسم."
+
+msgid "Offered for"
+msgstr "متاح لـ"
+
+msgid "Only its owner, or a System Manager or Report Manager for a public preset, can change it"
+msgstr "لا يعدّله إلا صاحبه، أو مدير النظام أو مدير التقارير إن كان عاماً"
+
+msgid "Only this document type ({0})"
+msgstr "لهذا النوع فقط ({0})"
+
+msgid "Only this print format ({0})"
+msgstr "لهذا القالب فقط ({0})"
+
+msgid "Only this report ({0})"
+msgstr "لهذا التقرير فقط ({0})"
+
+msgid "Preset «{0}» applied"
+msgstr "طُبِّق الإعداد «{0}»"
+
+msgid "Preset «{0}» deleted"
+msgstr "حُذف الإعداد «{0}»"
+
+msgid "Preset «{0}» saved"
+msgstr "حُفظ الإعداد «{0}»"
+
+msgid "Preset: {0} (changed since it was applied)"
+msgstr "الإعداد: {0} (تغيّر منذ تطبيقه)"
+
+msgid "Preset: {0}"
+msgstr "الإعداد: {0}"
+
+msgid "Preset:"
+msgstr "الإعداد:"
+
+msgid "Print presets"
+msgstr "إعدادات الطباعة المحفوظة"
+
+msgctxt "Print preset"
+msgid "Private"
+msgstr "خاص"
+
+msgid "Private: only me"
+msgstr "خاص: لي وحدي"
+
+msgid "Public presets"
+msgstr "إعدادات عامة"
+
+msgctxt "Print preset"
+msgid "Public"
+msgstr "عام"
+
+msgid "Public: every user"
+msgstr "عام: لكل المستخدمين"
+
+msgid "Save as new…"
+msgstr "حفظ كنسخة جديدة…"
+
+msgid "Save the current settings into «{0}»"
+msgstr "حفظ الإعدادات الحالية في «{0}»"
+
+msgid "Save the print settings as a new preset"
+msgstr "حفظ إعدادات الطباعة كنسخة جديدة"
+
+msgctxt "Print preset"
+msgid "Save"
+msgstr "حفظ"
+
+msgid "Settings saved under a name, applied in one click"
+msgstr "إعدادات محفوظة باسم، تُطبَّق بنقرة واحدة"
+
+msgctxt "Print preset"
+msgid "Standard"
+msgstr "الافتراضي"
+
+msgid "The default: applied when the pages open with no settings of your own"
+msgstr "الافتراضي: يُطبَّق عند فتح الصفحات إن لم تكن لك إعدادات محفوظة"
+
+msgid "The site's standard print settings"
+msgstr "إعدادات الطباعة القياسية للموقع"
+
+msgid "This document type"
+msgstr "هذا النوع"
+
+msgid "This print format"
+msgstr "هذا القالب"
+
+msgid "This report"
+msgstr "هذا التقرير"
+
+msgid "Use as the default"
+msgstr "اجعله الافتراضي"
+
+msgid "Who sees it"
+msgstr "من يراه"
+
+msgid "{0} (copy)"
+msgstr "{0} (نسخة)"
+
+msgid "Print Preset"
+msgstr "إعداد طباعة محفوظ"
+
+msgid "Prints"
+msgstr "يطبع"
+
+msgid "For User"
+msgstr "للمستخدم"
+
+msgid "Empty: public, offered to every user. Set: private, seen and edited by this user only"
+msgstr "فارغ: عام لكل المستخدمين. محدد: خاص، لا يراه ولا يعدّله إلا هذا المستخدم"
+
+msgid "Applied when the pages open with no settings of the user: for its owner when private, for everyone when public"
+msgstr "يُطبَّق عند فتح الصفحات لمن ليس له إعدادات: لصاحبه إن كان خاصاً، وللجميع إن كان عاماً"
+
+msgid "Empty: offered for every document type"
+msgstr "فارغ: متاح لكل أنواع المستندات"
+
+msgid "Empty: offered for every Custom print format"
+msgstr "فارغ: متاح لكل قوالب الطباعة المخصصة"
+
+msgid "The settings of the print pages, as the print toolbar saves them"
+msgstr "إعدادات صفحات الطباعة كما يحفظها شريط أدوات الطباعة"
+
+msgid "Saved settings of the print pages (paper, letter head, heading, footer, numbering, marks), private to their owner or public (ADR-020)"
+msgstr "إعدادات صفحات الطباعة المحفوظة (الورق، الترويسة، رأس الطباعة، التذييل، الترقيم، العلامات)، خاصة بصاحبها أو عامة (ADR-020)"
+
+msgid "The print setting {0} has an invalid value"
+msgstr "قيمة إعداد الطباعة {0} غير صالحة"
+
+msgid "The print setting {0} is too long"
+msgstr "إعداد الطباعة {0} طويل جداً"
+
+msgid "The print settings are too large"
+msgstr "إعدادات الطباعة كبيرة جداً"
+
+msgid "The print settings are not valid JSON"
+msgstr "إعدادات الطباعة ليست JSON صالحاً"
+
+msgid "The print settings must be an object"
+msgstr "يجب أن تكون إعدادات الطباعة كائناً"
+
+msgid "Unknown print settings: {0}"
+msgstr "إعدادات طباعة غير معروفة: {0}"
+
+msgid "Name the print preset"
+msgstr "اكتب اسماً للإعداد المحفوظ"
+
+msgid "The name of the print preset is too long"
+msgstr "اسم الإعداد المحفوظ طويل جداً"
+
+msgid "Invalid print preset type"
+msgstr "نوع الإعداد المحفوظ غير صالح"
+
+msgid "{0} is not a Custom print format"
+msgstr "{0} ليس قالب طباعة مخصصاً"
+
+msgid "A private print preset belongs to the user who made it"
+msgstr "الإعداد الخاص ملك لمن أنشأه"
+
+msgid "Only the user who made a public print preset can make it private"
+msgstr "لا يجعل الإعداد العام خاصاً إلا من أنشأه"
+
+msgid "Only a System Manager or a Report Manager can make a print preset public"
+msgstr "لا يجعل الإعداد عاماً إلا مدير النظام أو مدير التقارير"
+
+msgid "A print preset named {0} already exists here"
+msgstr "يوجد إعداد محفوظ باسم {0} هنا"
+
+msgid "The print target is required"
+msgstr "هدف الطباعة مطلوب"
+
+msgid "This print preset is for another kind of print"
+msgstr "هذا الإعداد المحفوظ لنوع طباعة آخر"
+
+msgid "Name the print preset and send its settings"
+msgstr "اكتب اسماً للإعداد وأرسل إعداداته"
+
+msgid "Not permitted to print {0}"
+msgstr "لا يُسمح لك بطباعة {0}"

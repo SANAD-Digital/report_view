@@ -75,9 +75,23 @@ class Dialog {
 		for (const f of fields || []) {
 			const w = document.createElement("div");
 			body.appendChild(w);
-			this.fields_dict[f.fieldname] = { $wrapper: $(w) };
+			if (f.fieldtype === "HTML" || !f.fieldtype) {
+				this.fields_dict[f.fieldname] = { $wrapper: $(w) };
+				continue;
+			}
+			// a field of a form dialog (the print presets' dialogs): its label and Frappe's control
+			if (f.fieldtype !== "Check") w.insertAdjacentHTML("beforeend", `<label class="control-label">${esc(f.label || "")}</label>`);
+			const control = new Control({ df: f, parent: w });
+			control.make_input();
+			if (f.default !== undefined) control.set_input(f.default);
+			this.fields_dict[f.fieldname] = control;
 		}
-		el.querySelector(".btn-modal-primary").addEventListener("click", () => primary_action());
+		this.get_values = () => {
+			const out = {};
+			for (const [k, c] of Object.entries(this.fields_dict)) if (c.get_value) out[k] = c.get_value();
+			return out;
+		};
+		el.querySelector(".btn-modal-primary").addEventListener("click", () => primary_action(this.get_values()));
 		el.querySelector(".btn-modal-secondary").addEventListener("click", () => secondary_action());
 	}
 	show() {
@@ -120,8 +134,8 @@ class Control {
 			this.$input = $('<input type="checkbox" autocomplete="off" class="input-with-feedback">').prependTo(this.input_area);
 			this.$input.on("change", () => this.changed(this.$input.prop("checked") ? 1 : 0));
 		} else if (ft === "Select") {
-			const opts = String(this.df.options || "").split("\n");
-			this.$input = $(`<select class="${cls} ellipsis">${opts.map((o) => `<option value="${esc(o)}">${esc(__(o))}</option>`).join("")}</select>`).prependTo(this.input_area);
+			const opts = Array.isArray(this.df.options) ? this.df.options : String(this.df.options || "").split("\n").map((o) => ({ value: o, label: __(o) }));
+			this.$input = $(`<select class="${cls} ellipsis">${opts.map((o) => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join("")}</select>`).prependTo(this.input_area);
 			this.$wrapper.append(`<div class="select-icon xs"><svg class="icon icon-xs" style=""><use href="#icon-select"></use></svg></div>`);
 			this.$placeholder = $(`<div class="placeholder ellipsis text-extra-muted xs"><span>${esc(__(this.df.placeholder || ""))}</span></div>`).appendTo(this.$wrapper);
 			this.$input.on("change", () => this.changed(this.$input.val()));
@@ -266,6 +280,11 @@ window.frappe = {
 			);
 	},
 	show_alert() {},
+	// frappe.confirm: the harness answers yes at once
+	confirm(message, yes) {
+		window.rv_confirmed = message;
+		yes && yes();
+	},
 	msgprint() {},
 	breadcrumbs: { add() {} },
 	csrf_token: "",

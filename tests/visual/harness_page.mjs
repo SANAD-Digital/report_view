@@ -6,7 +6,9 @@
 // pref=light|dark (the page's own theme button), group=<column key>[,<column key>],
 // rows=N (repeat the report's rows up to about N, for performance checks), pipe=1 (the first
 // voucher type of the general ledger gets a "|" in its name: Perspective's column path separator),
-// pages=<JSON> (saved settings of the Pages view, e.g. {"orientation":"landscape"}).
+// pages=<JSON> (saved settings of the Pages view, e.g. {"orientation":"landscape"}),
+// presets=<JSON> (print presets on the "server", ADR-020: [{name, preset_name, public, is_default,
+// target, settings, owner}]), publish=0 (the user may not make presets public).
 
 const params = new URLSearchParams(window.location.search);
 const which = params.get("report") || "tb";
@@ -202,7 +204,75 @@ async function main() {
 			};
 			return { rows, fields, dropped_fields: [] };
 		}
+		if (method.startsWith("report_view.api.print_presets.")) return preset_server(method.split(".").pop(), args);
 		throw new Error(`harness: no stub for ${method}`);
+	};
+
+	// ADR-020: the print presets as report_view.api.print_presets answers (privacy, defaults)
+	const me = frappe.session.user;
+	const can_publish = params.get("publish") !== "0";
+	window.RV_PRESETS = JSON.parse(params.get("presets") || "[]").map((r, i) => ({ name: `pp-${i}`, owner: me, public: false, is_default: false, target: null, description: "", settings: {}, ...r }));
+	let preset_seq = window.RV_PRESETS.length;
+	const preset_row = (r) => ({
+		name: r.name,
+		preset_name: r.preset_name,
+		public: r.public,
+		is_default: r.is_default,
+		context: "Report",
+		target: r.target,
+		specific: Boolean(r.target),
+		description: r.description || "",
+		settings: JSON.parse(JSON.stringify(r.settings)),
+		can_edit: r.public ? can_publish : r.owner === me,
+		owner_name: r.owner,
+	});
+	const preset_server = (fn, a) => {
+		const store = window.RV_PRESETS;
+		window.RV_PRESET_CALLS = [...(window.RV_PRESET_CALLS || []), { fn, args: a }];
+		const visible = (r) => r.public || r.owner === me;
+		const find = (name) => {
+			const r = store.find((x) => x.name === name && visible(x));
+			if (!r) throw new Error("harness: no such preset");
+			return r;
+		};
+		const clear_defaults = (r) => {
+			if (!r.is_default) return;
+			for (const o of store) if (o !== r && o.is_default && o.public === r.public && (r.public || o.owner === r.owner) && o.target === r.target) o.is_default = false;
+		};
+		if (fn === "list") {
+			const rows = store.filter((r) => visible(r) && (!r.target || r.target === a.target)).map(preset_row);
+			rows.sort((x, y) => Number(y.specific) - Number(x.specific) || x.preset_name.localeCompare(y.preset_name));
+			return { mine: rows.filter((r) => !r.public), public: rows.filter((r) => r.public), can_publish };
+		}
+		if (fn === "save") {
+			let r;
+			if (a.name && !Number(a.as_new)) {
+				r = find(a.name);
+				if (!preset_row(r).can_edit) throw new Error("harness: not permitted");
+			} else {
+				r = { name: `pp-${preset_seq++}`, owner: me, public: false, is_default: false, target: Number(a.for_all) ? null : a.target, description: "", settings: {} };
+				store.push(r);
+			}
+			if (a.preset_name !== undefined) r.preset_name = a.preset_name;
+			if (a.settings !== undefined) r.settings = JSON.parse(a.settings);
+			if (a.public !== undefined) r.public = Boolean(Number(a.public)) && can_publish;
+			if (a.description !== undefined) r.description = a.description;
+			if (a.is_default !== undefined) r.is_default = Boolean(Number(a.is_default));
+			clear_defaults(r);
+			return preset_row(r);
+		}
+		if (fn === "delete") {
+			const r = find(a.name);
+			store.splice(store.indexOf(r), 1);
+			return { name: a.name };
+		}
+		if (fn === "set_default") {
+			const r = find(a.name);
+			r.is_default = Boolean(Number(a.value));
+			clear_defaults(r);
+			return preset_row(r);
+		}
+		throw new Error(`harness: no preset stub for ${fn}`);
 	};
 
 	const wrapper = document.getElementById("page-report-view");

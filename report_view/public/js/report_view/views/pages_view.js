@@ -20,6 +20,10 @@ import { ordered_columns } from "../engine/view_config.js";
 import { page_box, fit_columns, paginate, preset_margins, PAGE_SIZES, MARGINS, PAGE_FONT, SCREEN_FONT } from "../engine/page_layout.js";
 import { icons } from "../components/icons.js";
 import { esc } from "../util.js";
+import { PresetControl } from "./print_presets.js";
+import "../fonts_registry.js";
+import { font_info, font_stack } from "../fonts.js";
+import { font_picker_html, bind_font_picker } from "../components/font_picker.js";
 
 export const PRINT_MAX_PAGES = 600;
 // Room kept under the rows of a page (px): what a page drawn at another zoom or font may add.
@@ -59,6 +63,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	template: "",
 	// the look of Report View's own template (rv_pages.css .ps-<style>)
 	style: "classic",
+	// the font of the pages: a family of the font library (report_view/fonts.json), "" = the template's
+	font: "",
 	letter_head: "",
 	// a Print Heading (rendered by the server with the report and its filters): on which
 	// pages, instead of the report's title or above it, alignment, size, margins, a rule
@@ -298,6 +304,14 @@ function foot_height(foot) {
 	return foot.getBoundingClientRect().height + (first ? Math.max(0, parseFloat(getComputedStyle(first).marginTop) || 0) : 0);
 }
 
+// A letter head's footer numbers its pages the way Frappe's PDF does: empty `.page` and
+// `.topage` spans (the letter head builder writes them, ADR-018), filled for each page.
+function page_spans(html, n, total) {
+	if (!html.includes('class="page"') && !html.includes('class="topage"')) return html;
+	const num = (v) => esc(frappe.format(v, { fieldtype: "Int" }, { inline: true }));
+	return html.replace(/<span class="page"><\/span>/g, `<span class="page">${num(n)}</span>`).replace(/<span class="topage"><\/span>/g, `<span class="topage">${num(total)}</span>`);
+}
+
 // A turn of the browser between two pieces of long work: the window stays responsive, a
 // newer change of the settings can take over.
 const breathe = () => new Promise((r) => setTimeout(r, 0));
@@ -418,6 +432,7 @@ export function sanitize_settings(raw, base = DEFAULT_SETTINGS) {
 		if (v !== null) out[k] = v;
 	}
 	if (PAGE_STYLES.some((st) => st.id === raw.style)) out.style = raw.style;
+	if (raw.font === "" || (typeof raw.font === "string" && font_info(raw.font))) out.font = raw.font;
 	if (NUMBER_POS.includes(raw.number_pos)) out.number_pos = raw.number_pos;
 	if (NUMBER_FORMATS.includes(raw.number_format)) out.number_format = raw.number_format;
 	if (ALIGN.includes(raw.lh_align)) out.lh_align = raw.lh_align;
@@ -449,7 +464,8 @@ export class PagesView {
 	 * @param {boolean} o.rtl direction of the page (the session's)
 	 * @param {object} o.host the page: pages_options(company), pages_letterhead(name),
 	 *   pages_format(name), pages_part(kind, name, lang), pages_translations(lang, messages), pages_run_lang(lang),
-	 *   pages_settings_load(), pages_settings_save(settings), pages_context()
+	 *   pages_settings_load(), pages_settings_save(settings), pages_context(),
+	 *   pages_preset_target() → {context, target} of the print presets (optional, ADR-020)
 	 */
 	constructor({ parent, root, rtl, host }) {
 		this.root = root;
@@ -481,6 +497,8 @@ export class PagesView {
 		this.pdf_job = null;
 		this.el = parent;
 		this.make_dom();
+		// saved settings under a name (ADR-020), in the head of the toolbar
+		this.presets = new PresetControl(this, { sanitize: sanitize_settings, defaults: DEFAULT_SETTINGS });
 	}
 
 	make_dom() {
@@ -584,7 +602,9 @@ export class PagesView {
 		this.prefetched = ctx.report_name;
 		const settings_p = this.host.pages_settings_load().catch(() => null);
 		const options_p = this.host.pages_options(ctx.company);
-		this.pending = { report: ctx.report_name, settings_p, options_p };
+		// the print presets of this target (null where there are none; never fails)
+		const presets_p = this.presets.load();
+		this.pending = { report: ctx.report_name, settings_p, options_p, presets_p };
 		// the letter head the pages will show first (the saved one, else the company's)
 		Promise.all([settings_p, options_p])
 			.then(([saved, options]) => {
@@ -665,7 +685,7 @@ export class PagesView {
 		this.skeleton();
 		this.busy(__("Loading the print settings…"));
 		if (this.pending?.report !== name) this.prefetch();
-		const { settings_p, options_p } = this.pending;
+		const { settings_p, options_p, presets_p } = this.pending;
 		let saved = null;
 		try {
 			[saved, this.options] = await Promise.all([settings_p, options_p]);
@@ -673,12 +693,19 @@ export class PagesView {
 			this.options = { letter_heads: [], default_letter_head: null, print_formats: [], print_format_types: {}, print_headings: [], print_signatures: [], languages: [], lang: frappe.boot.lang };
 			this.note(e.message || String(e), true);
 		}
+		const presets = await presets_p;
 		if (token !== this.token) return false;
 		// the site's standard settings (Report View Global Settings) under the user's own
 		this.base = sanitize_settings(this.options.defaults || null);
 		if (this.settings_report !== name) {
 			this.settings = sanitize_settings(saved, this.base);
 			this.unsaved = !saved;
+			// the preset the settings were saved with; none saved: the default preset (ADR-020)
+			const first = this.presets.setup(saved, presets);
+			if (first) {
+				this.settings = this.presets.settings_of(first);
+				this.unsaved = false;
+			}
 		}
 		this.settings_report = name;
 		this.options_report = name;
@@ -692,6 +719,7 @@ export class PagesView {
 		if (!this.settings.letter_head && this.options.default_letter_head && this.settings.letter_head !== null) {
 			this.settings.letter_head = this.options.default_letter_head;
 		}
+		this.presets.refresh();
 		return true;
 	}
 
@@ -724,6 +752,7 @@ export class PagesView {
 		// nothing of the pages listens while they are not shown (show observes the stage again)
 		this.open_secs = new Set();
 		this.menu_listeners(false);
+		this.presets.destroy();
 		this.resize_observer.disconnect();
 	}
 
@@ -768,13 +797,13 @@ export class PagesView {
 		Object.assign(this.settings, patch);
 		this.unsaved = false;
 		if (changed.length && changed.every((k) => PAINT_KEYS.has(k)) && this.pages.length && !this.el.classList.contains("is-busy")) {
-			this.host.pages_settings_save({ ...this.settings });
+			this.save_settings();
 			if (panel) this.render_panel();
 			this.apply_vars(this.settings);
 			return;
 		}
 		if (!panel) {
-			this.host.pages_settings_save({ ...this.settings });
+			this.save_settings();
 			this.apply_vars(this.settings);
 			clearTimeout(this._typed);
 			this._typed = setTimeout(() => {
@@ -782,9 +811,15 @@ export class PagesView {
 			}, wait);
 			return;
 		}
-		this.host.pages_settings_save({ ...this.settings });
+		this.save_settings();
 		this.render_panel();
 		if (this.current) this.ready = this.relayout(++this.token);
+	}
+
+	/** The user's settings saved, with the print preset they come from (ADR-020). */
+	save_settings() {
+		this.host.pages_settings_save({ ...this.settings, preset: this.presets.name() });
+		this.presets.refresh();
 	}
 
 	/** Pages printed at once: the site's limit (Report View Global Settings), else 600. */
@@ -860,6 +895,8 @@ export class PagesView {
 
 	/** Back to the default settings of the pages (the zoom and the columns shown stay). */
 	reset() {
+		// the standard settings: no preset applied any more
+		this.presets.clear();
 		const keep = { zoom: this.settings.zoom };
 		const fresh = sanitize_settings(null, this.base);
 		if (this.options?.default_letter_head) fresh.letter_head = this.options.default_letter_head;
@@ -924,6 +961,11 @@ export class PagesView {
 		const columns = model ? [...model.pinned, ...model.data] : [];
 		const hidden = new Set(s.hidden);
 		const no_lh = `<p class="rv-zone-empty">${esc(__("Choose a letter head in «Template and language» to set its size, place and pages."))}</p>`;
+		// the letter head builder (ADR-018), for those who may write letter heads: a new
+		// design, or the chosen one opened in it; in a new tab, this print stays as it is
+		const lh_builder = frappe.user?.has_role?.("System Manager")
+			? `<a class="rv-btn sm ghost rv-print-lhb" target="_blank" rel="noopener" href="/desk/rv-letterhead${s.letter_head ? `/${encodeURIComponent(s.letter_head)}` : ""}"><span>${esc(s.letter_head ? __("Edit in the letter head builder") : __("Design a new letter head"))}</span></a>`
+			: "";
 		const pos_label = {
 			"bottom-end": __("Bottom, at the end"),
 			"bottom-center": __("Bottom, centred"),
@@ -947,7 +989,7 @@ export class PagesView {
 			cols: ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/>'),
 		};
 		const paper_sum = `${s.size} · ${s.orientation === "landscape" ? __("Landscape", null, "Report View") : __("Portrait", null, "Report View")} · ${[pm.top, pm.end, pm.bottom, pm.start].join("/")} ${mm}`;
-		const tpl_sum = [s.template || PAGE_STYLES.find((x) => x.id === s.style)?.label(), s.lang ? o.languages.find((l) => l.name === s.lang)?.label : ""].filter(Boolean).join(" · ");
+		const tpl_sum = [s.template || PAGE_STYLES.find((x) => x.id === s.style)?.label(), s.font, s.lang ? o.languages.find((l) => l.name === s.lang)?.label : ""].filter(Boolean).join(" · ");
 		const scope_label = { all: __("Every page"), first: __("First page"), rest: __("All but the first"), last: __("Last page") };
 		// four choices do not fit one line: two by two
 		const scopes = (key, list) => seg(key, __("Apply to"), list.map((v) => [v, scope_label[v]])).replace("rv-print-seg", `rv-print-seg${list.length > 3 ? " grid2" : ""}`);
@@ -986,6 +1028,7 @@ export class PagesView {
 				tpl_sum,
 				`${link("template", __("Print template"))}
 				${select("style", __("Print style"), PAGE_STYLES.map((st) => [st.id, st.label()]))}
+				<div class="rv-field"><span>${esc(__("Font"))}</span>${font_picker_html({ value: s.font, key: "font", label: __("Font"), empty: __("The template's font") })}</div>
 				${link("letter_head", __("Letter Head", null, "Report View"))}
 				${link("heading", __("Print Heading", null, "Report View"))}
 				${link("lang", __("Language", null, "Report View"))}`
@@ -1000,8 +1043,9 @@ export class PagesView {
 					<div class="rv-print-row">${num("lh_height", __("Height", null, "Report View"), mm)}${seg("lh_fit", __("Shape"), [["contain", __("As designed")], ["wide", __("Page width")]])}</div>
 					${seg("lh_align", __("Alignment"), align3)}
 					${box("lh_m", __("Letter head margins"))}
-					${rule("head_line", __("Rule under the letter head"))}`
-					: no_lh
+					${rule("head_line", __("Rule under the letter head"))}
+					${lh_builder}`
+					: no_lh + lh_builder
 			),
 			section(
 				"heading",
@@ -1387,6 +1431,7 @@ export class PagesView {
 
 	bind_panel() {
 		const bd = this.bd;
+		bind_font_picker(bd, (key, family) => this.update({ [key]: family }));
 		this.mount_links();
 		for (const summary of bd.querySelectorAll("details[data-sec] > summary")) {
 			summary.addEventListener("click", (e) => {
@@ -1594,6 +1639,8 @@ export class PagesView {
 		const block = (b) => `${b.top}mm ${b.bottom}mm`;
 		const inline = (b) => `${b.start}mm ${b.end}mm`;
 		const flex = { start: "flex-start", center: "center", end: "flex-end" };
+		if (s.font && font_info(s.font)) set("--pp-font", font_stack(s.font));
+		else this.root.style.removeProperty("--pp-font");
 		set("--pp-lh-h", `${s.lh_height}mm`);
 		set("--pp-lhf-h", `${s.foot_height}mm`);
 		set("--pp-lh-align", flex[s.lh_align] || "center");
@@ -1888,7 +1935,7 @@ export class PagesView {
 		}
 		const band = number || name ? `<div class="rv-page-foot-line${number ? " has-num" : ""}"><span class="st">${slots.start}</span><span class="ce">${slots.center}</span><span class="en">${slots.end}</span></div>` : "";
 		// `measure`: the probe page takes the footer wherever it may print (the tallest foot)
-		const lhf = letterhead?.footer && s.foot_height && (measure || on_page(s.foot_pages, n, total)) ? `<div class="rv-page-lhf">${letterhead.footer}</div>` : "";
+		const lhf = letterhead?.footer && s.foot_height && (measure || on_page(s.foot_pages, n, total)) ? `<div class="rv-page-lhf">${page_spans(letterhead.footer, n, total)}</div>` : "";
 		// a signature on pages other than the last only: above the footer
 		const sig = s.signatures && !this.sig_in_tail() && (measure || on_page(this.sig_pages(), n, total)) ? this.signatures_html() : "";
 		// the number closes the page: under the footer (whose rule stands above it)
@@ -2299,7 +2346,7 @@ export class PagesView {
 		// width, language and look. A change of the head, the foot, the signature in the foot or
 		// the margins above and below keeps the blocks measured, only the room changes.
 		this.custom_styles = "";
-		const flow_key = `${box.inner_w}|${dir}|${this.settings.style}|${html}`;
+		const flow_key = `${box.inner_w}|${dir}|${this.settings.style}|${this.settings.font}|${html}`;
 		const known = this.flow_cache?.key === flow_key ? this.flow_cache : null;
 		// The pages carry the letter head as the standard template does: in full on the first
 		// page, a slim line naming the report on the others (or the letter head on every page).
@@ -2738,7 +2785,7 @@ export class PagesView {
 			else next = [...steps].reverse().find((v) => v < z - 0.01) ?? steps[0];
 			this.settings.zoom = next;
 		}
-		this.host.pages_settings_save({ ...this.settings });
+		this.save_settings();
 		this.apply_zoom();
 	}
 

@@ -394,3 +394,27 @@
 .rv[dir=ltr] .rv-ff-input.num,.rv[dir=ltr] .rv-dlegend .p{text-align:right}
 .rv[dir=ltr] .rv-gsep svg,.rv[dir=ltr] .rv-flip svg{transform:scaleX(-1)}
 .rv[dir=ltr] .rv-caret:not(.open) svg{transform:rotate(180deg)}
+
+/* ---------- font picker (components/font_picker.js): the font library, each family in itself ---------- */
+.rv-fontpick{position:relative;min-width:0}
+.rv-fontpick-btn{display:flex;align-items:center;gap:8px;width:100%;min-height:var(--ctl);padding:4px 10px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);color:var(--tx);cursor:pointer;text-align:start}
+.rv-fontpick-btn:hover{border-color:var(--line-3)}
+.rv-fontpick-btn:focus-visible,.rv-fontpick-opt:focus-visible{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft)}
+.rv-fontpick-btn[aria-expanded=true]{border-color:var(--pri)}
+/* each family drawn in itself, whatever font a site puts on every element */
+.rv-fontpick-btn *,.rv-fontpick-opt *{font-family:inherit}
+.rv-fontpick .n{font-size:13px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv-fontpick .s{margin-inline-start:auto;font-size:13px;line-height:1.3;color:var(--tx-3);white-space:nowrap}
+.rv-fontpick-btn .cv{flex:none;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--tx-3)}
+.rv-fontpick-btn[aria-expanded=true] .cv{border-top:0;border-bottom:5px solid var(--tx-3)}
+.rv-fontpick-pop{margin-top:4px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);box-shadow:var(--sh-pop);padding:6px}
+.rv-fontpick-pop[hidden],.rv-fontpick-g[hidden],.rv-fontpick-opt[hidden],.rv-fontpick-none[hidden]{display:none}
+.rv-fontpick-q{width:100%;margin-bottom:6px}
+.rv-fontpick-list{max-height:300px;overflow-y:auto;overscroll-behavior:contain}
+.rv-fontpick-gh{position:sticky;top:0;z-index:1;background:var(--surface);padding:6px 6px 3px;font-family:var(--font);font-size:10.5px;font-weight:600;color:var(--tx-4);letter-spacing:.02em}
+.rv-fontpick-opt{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border:1px solid transparent;border-radius:var(--r-sm);background:none;color:var(--tx);cursor:pointer;text-align:start}
+.rv-fontpick-opt:hover{background:var(--hover)}
+.rv-fontpick-opt[aria-selected=true]{background:var(--pri-soft);color:var(--pri-tx)}
+.rv-fontpick-opt .n{font-size:13.5px}
+.rv-fontpick-opt .s{font-size:15px}
+.rv-fontpick-none{margin:0;padding:10px 8px;font-size:var(--fs-xs);color:var(--tx-3)}

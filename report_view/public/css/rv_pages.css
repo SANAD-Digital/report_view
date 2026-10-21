@@ -43,8 +43,11 @@
 .rv-print-probe:empty{display:none}
 
 /* ---------- a page (paper) ---------- */
-.rv-page{isolation:isolate;background:var(--pp-bg);color:var(--pp-tx);box-shadow:var(--pp-shadow);display:flex;flex-direction:column;flex:none;position:relative;overflow:hidden;box-sizing:border-box;font-size:var(--pp-fs,12px);line-height:1.35;letter-spacing:0;font-family:var(--font);-webkit-font-smoothing:antialiased}
+.rv-page{isolation:isolate;background:var(--pp-bg);color:var(--pp-tx);box-shadow:var(--pp-shadow);display:flex;flex-direction:column;flex:none;position:relative;overflow:hidden;box-sizing:border-box;font-size:var(--pp-fs,12px);line-height:1.35;letter-spacing:0;font-family:var(--pp-font,var(--font));-webkit-font-smoothing:antialiased}
 .rv-page *{box-sizing:border-box}
+/* the font of the pages (--pp-font, «الخط») reaches every element: a site-wide «* { font-family }» has the
+   same (zero) specificity and loads earlier; a print format's own rules still win */
+:where(.rv-page) *{font-family:inherit}
 .rv-page-ph{position:absolute;inset:0;display:grid;place-items:center;font-size:28px;font-weight:600;color:var(--pp-line);font-variant-numeric:tabular-nums}
 .rv-page-top{flex:none}
 .rv-page .sep{display:inline-block;margin:0 .55em;color:var(--pp-line-2)}
@@ -63,6 +66,12 @@
 .rv-page-lh *{max-height:calc(var(--pp-lh-h,26mm) + 4mm)}
 .rv-page-lhf{max-height:calc(var(--pp-lhf-h,11mm) + 3mm);margin-block:var(--pp-foot-mb,1.5mm);margin-inline:var(--pp-foot-mi,0);border-top:var(--pp-foot-line,0 solid transparent);padding-top:1.2mm;display:flex;flex-direction:column;align-items:var(--pp-lhf-align,center)}
 .rv-page-lhf img{max-width:100%;max-height:var(--pp-lhf-h,11mm);width:auto;height:auto;object-fit:contain}
+/* a letter head of the builder (ADR-018, .rvlh) is a fixed design: its band is its own height
+   and its parts keep the sizes it gives them; the panel's height and shape do not apply */
+.rv-page-lh:has(> .rvlh),.rv-page-lhf:has(> .rvlh){max-height:none;display:block;padding-bottom:0;padding-top:0}
+.rv-page-lh:has(> .rvlh){border-bottom:0}
+.rv-page-lh .rvlh *,.rv-page-lhf .rvlh *{max-height:none}
+.rv-page-lh .rvlh img,.rv-page-lhf .rvlh img{width:auto;height:auto;object-fit:initial}
 
 /* title block of the first page: centred, as a formal statement */
 .rv-page-hd{text-align:center;padding:1mm 0 2.5mm}
@@ -331,6 +340,8 @@
 .rv-psec-bd .rv-setlist{border:1px solid var(--line);border-radius:var(--r-sm);padding:2px}
 .rv-psec-bd .rv-setitem{min-height:28px;font-size:var(--fs-xs)}
 .rv-psec-bd .rv-zone-empty{margin:0;line-height:1.5}
+/* the letter head builder (ADR-018), under the letter head settings */
+.rv-print-lhb{align-self:flex-start;text-decoration:none;color:var(--pri-tx)}
 
 /* paper: the size and the orientation side by side */
 .rv-paper-row{grid-template-columns:84px 1fr}
@@ -487,3 +498,56 @@
 .rv-print-more{flex:none;box-sizing:border-box;width:var(--pp-w,794px);max-width:100%;padding:18px 22px;border:1px dashed var(--line-3);border-radius:var(--r);background:var(--surface);color:var(--tx-2);font-size:var(--fs-sm);line-height:1.6;text-align:center}
 /* a PDF job of the server can be cancelled from the line that follows it */
 .rv-print-busy .rv-btn{height:24px;padding:0 10px;margin-inline-end:-6px}
+
+/* ---------- print presets (ADR-020): the control in the head of the toolbar and its menu ---------- */
+.rv-preset{min-width:0;flex:0 1 auto;margin-inline-start:auto}
+.rv-preset[hidden]{display:none}
+.rv-preset-btn{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:260px;height:28px;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);color:var(--tx);font:inherit;font-size:var(--fs-xs);cursor:pointer}
+.rv-preset-btn:hover{background:var(--hover);border-color:var(--line-3)}
+.rv-preset-btn[aria-expanded="true"]{background:var(--pri-soft);border-color:var(--pri);color:var(--pri-tx)}
+.rv-preset-btn:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
+.rv-preset-btn .lbl{flex:none;color:var(--tx-3)}
+.rv-preset-btn .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.rv-preset-btn .dot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.rv-preset-btn .dot[hidden]{display:none}
+.rv-preset-btn svg{flex:none;color:var(--tx-3)}
+.rv-preset-pop .rv-preset-body{display:flex;flex-direction:column;gap:2px;padding:4px 8px 8px}
+.rv-preset-grp{margin:10px 6px 2px;font-size:10.5px;font-weight:600;color:var(--tx-3)}
+.rv-preset-ul{display:flex;flex-direction:column;gap:1px;margin:0;padding:0;list-style:none}
+.rv-preset-item{display:flex;align-items:center;gap:2px;border-radius:var(--r-sm)}
+.rv-preset-item:hover{background:var(--hover)}
+.rv-preset-item.on{background:var(--pri-soft)}
+.rv-preset-row{flex:1;min-width:0;display:flex;align-items:center;gap:8px;min-height:36px;padding:4px 6px;border:0;border-radius:var(--r-sm);background:none;color:var(--tx);font:inherit;text-align:start;cursor:pointer}
+.rv-preset-row:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
+.rv-preset-row .ck{flex:none;width:15px;height:15px;display:grid;place-items:center;color:var(--pri-tx)}
+.rv-preset-row .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.rv-preset-row .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-xs);font-weight:500}
+.rv-preset-item.on .rv-preset-row .nm{font-weight:600;color:var(--pri-tx)}
+.rv-preset-row .meta{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px;color:var(--tx-3)}
+.rv-preset-row .meta:empty{display:none}
+.rv-preset-badge{flex:none;padding:0 7px;border-radius:999px;font-size:10px;font-weight:600;line-height:17px}
+.rv-preset-badge.priv{background:var(--neu-soft);color:var(--neu)}
+.rv-preset-badge.pub{background:var(--ok-soft);color:var(--ok)}
+.rv-preset-star{flex:none;width:28px;height:28px;display:grid;place-items:center;padding:0;border:0;border-radius:var(--r-sm);background:none;color:var(--tx-3)}
+button.rv-preset-star{cursor:pointer}
+button.rv-preset-star:hover{background:var(--hover);color:var(--tx)}
+button.rv-preset-star:focus-visible{outline:2px solid var(--pri);outline-offset:-2px}
+.rv-preset-star svg{width:14px;height:14px}
+.rv-preset-star.on{color:var(--warn)}
+.rv-preset-star.on svg{fill:currentColor}
+.rv-preset-empty{margin:2px 6px 4px;font-size:11px;line-height:1.5;color:var(--tx-3)}
+.rv-preset-acts{position:sticky;bottom:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:auto;padding:10px 12px;border-top:1px solid var(--line);background:var(--surface)}
+.rv-preset-acts .sp{flex:1}
+.rv-print-hd .rv-preset-acts .rv-btn{height:28px;color:var(--tx)}
+.rv-print-hd .rv-preset-acts .rv-btn.primary{color:var(--on-pri)}
+.rv-print-hd .rv-preset-acts .rv-btn.ghost{color:var(--tx-2)}
+.rv-print-hd .rv-preset-acts .rv-preset-del:not(:disabled){color:var(--err)}
+.rv-preset-acts .rv-btn:disabled{opacity:.5;cursor:default}
+@media (max-width:900px){
+  .rv-preset-btn{max-width:48vw;height:32px}
+  .rv-preset-btn .lbl{display:none}
+  .rv-preset-row{min-height:44px}
+  .rv-preset-star{width:40px;height:40px}
+  .rv-print-hd .rv-preset-acts .rv-btn{height:36px}
+  .rv-preset-acts{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+}

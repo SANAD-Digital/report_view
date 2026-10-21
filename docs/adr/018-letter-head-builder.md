@@ -47,7 +47,7 @@
   "footer": {"h": 15, "pad_top": 3, "slots": {"right": 40, "center": 20, "left": 40}, "elements": []}
 }
 ```
-- `font`: من القائمة `["IBM Plex Sans Arabic", "DejaVu Sans"]` (المثبتتان على خادم PDF، فالمعاينة والـPDF بالخط نفسه).
+- `font`: اسم عائلة من **مكتبة الخطوط** (`report_view/fonts.json`، القسم «الخطوط» أدناه)؛ أي اسم آخر يُرفض في الخادم، والمتصفح يعيده إلى الافتراضي `IBM Plex Sans Arabic`.
 - `colors.*`: `#RRGGBB`.
 - `h`: الترويسة 10–80mm، التذييل 0–50mm (0 = بلا تذييل). `pad_top` 0–20mm. `slots.<s>`: عرض الخانة بنسبة مئوية من عرض الشريط 0–70 (0 = خانة مغلقة)، والمجموع ≤ 100.
 - **العنصر**:
@@ -85,9 +85,19 @@
 </div>
 ```
 - الشركة: `company` ثابت في التخطيط، وإلا `doc.company` إن كان `doc` معرّفاً، وإلا `Global Defaults.default_company`. القيم بـ `frappe.get_cached_doc` و `frappe.db.get_value` (globals Frappe الأساسية فقط، بلا دالة من Report View). كل قيمة `|e`. الأرقام والبريد والموقع داخل `<bdi dir="ltr">`.
-- بلا JavaScript، بلا grid ولا flex ولا متغيرات CSS ولا transform. كل التنسيق inline. الخانة اليمنى `dir="rtl"`، اليسرى `dir="ltr"`، الوسطى `dir="auto"`.
+- بلا JavaScript، بلا grid ولا flex ولا متغيرات CSS ولا transform. كل التنسيق inline، إلا `<style>` واحداً في أول كل شريط (القسم «الخطوط»). الخانة اليمنى `dir="rtl"`، اليسرى `dir="ltr"`، الوسطى `dir="auto"`.
 - رقم الصفحة: `<span class="page"></span>` و `<span class="topage"></span>` (عرف Frappe في PDF)، وصفحات Report View تملؤهما.
 - الصورة والشعار: رابط نسبي عام (`/files/…`)؛ الخاص يُرفض مع تحذير (لا يظهر في PDF).
+
+### الخطوط (2026-10-21)
+- **مكتبة خطوط تُشحن مع التطبيق** في `report_view/public/fonts/<slug>/` (كل مجلد بترخيصه)، وسجلّها الوحيد `report_view/fonts.json`: `{family, slug, scripts, category, weights: {"400": {woff2, ttf}, …}, licence, source}`. يقرؤه بايثون (`core/fonts.py`) والمتصفح (`fonts_registry.js` يستورد الملف نفسه في الحزمة)، و `scripts/build_fonts.py` يتحقق منه ويولّد `public/css/rv_fonts.css` و `public/fonts/README.md` (القائمة والتراخيص والمستبعد).
+- **ما يُشحن**: خطوط SIL OFL من مستودع google/fonts الرسمي (عربية ولاتينية، 400 و 700، و 500/600 لـ Cairo و IBM Plex Sans Arabic و Readex Pro و Inter و 500 لـ Tajawal)، وخطوط FarsiWeb (GPL أو «توزيع بلا تعديل») و FreeFarsi (GPL) من frappe_jodit_editor. **لا يُشحن** ما لا يُسمح بتوزيعه: سلسلة «B …» (Borna Rayaneh)، DecoType Naskh Variants، PT Bold Heading، Iranian Sans. DejaVu Sans يبقى خطاً مثبتاً على الخادم بلا ملف.
+- **الصيغة**: كل وجه woff2 ثم TrueType (`src: url(…woff2) format('woff2'), url(…ttf) format('truetype')`): المتصفحات تأخذ woff2، و wkhtmltopdf (QtWebKit لا يقرأ woff2) يتخطاه إلى TrueType — مُقاس. الخطوط التي يمنع ترخيصها أي تعديل تُشحن ملفها الأصلي فقط.
+- **Desk**: `app_include_css = ["/assets/report_view/css/rv_fonts.css"]` (hook جديد): `@font-face` لكل وجه، والملف لا يُحمَّل إلا حين تُستعمل عائلته. صفحة `/printview` في Frappe بلا hook للأنماط، فالورق يحمل خطه بنفسه:
+- **الورق**: أول كل شريط `<style>` فيه `@font-face` **لخط التخطيط وحده**، للأوزان التي تستعملها عناصره فقط، بروابط **مطلقة** من Jinja: `{{ frappe.utils.get_url('/assets/report_view/fonts/')|e }}`، ثم القاعدة `.rvlh[data-rv-lh] *{font-family:inherit}` (نمط طباعة للموقع قد يضع خطاً على `.letter-head *`). خط الخادم (DejaVu Sans) بلا `@font-face`.
+- **wkhtmltopdf لا يفرّق بين 400 و 500**: إن عُرّف الوجهان طبع كل نص عادي بوجه 500. لذلك لا يعرّف الورق وجه 500 مع 400 (نص 500 يُطبع عادياً)، والوزن غير الموجود يأخذ أقرب وجه بقواعد CSS (`core/fonts.py print_weights`).
+- **مُقاس على acc.dev** (`frappe.get_print(..., as_pdf=True)`، قيد `ACC-JV-2026-00015`): wkhtmltopdf يضمّن Cairo-Regular/Bold و Nazli/Nazli-Bold و Roya و Titr-Bold و IBMPlexSansArabic؛ Chrome (مولّد Frappe) يرسم الترويسة بالخط نفسه (يضمّنه Type 3 في PDF الترويسة)؛ محرك PDF في Report View يخدم woff2 من القرص ويضمّن الخط (`/assets/` مسموح من أي مضيف).
+- **صفحات Report View**: «الخط» في «القالب واللغة» (`font` في الإعدادات، فارغ = خط القالب، ويُنقّى بالسجل) يضع `--pp-font` على الصفحات.
 
 ### الدخول
 - زر «تصميم بالمنشئ» في نموذج Letter Head (`doctype_js`)، وصفحة Desk جديدة `rv-letterhead` (`/desk/rv-letterhead[/<letter head>]`)، ورابط «تصميم ورق جديد» بجانب اختيار الترويسة في الصفحات.
@@ -100,3 +110,20 @@
 - DocType جديد وصفحة جديدة تُثبَّتان بـ `bench migrate` أو `reload-doc`.
 - wkhtmltopdf مع «تكرار الترويسة والتذييل» لا يقيس الترويسة: قالب الطباعة يحتاج `.print-format{margin-top: <h+5>mm}`. المنشئ يعرض هذا السطر جاهزاً للنسخ مع ارتفاع التصميم. مولّد Chrome يقيس الترويسة بنفسه.
 - مكتبات جديدة: لا. السحب بـ Pointer Events، و QR بـ pyqrcode (تابع لـ Frappe).
+- hook جديد: `app_include_css = ["/assets/report_view/css/rv_fonts.css"]` (مكتبة الخطوط). حجم المكتبة نحو 24MB على القرص؛ لا يُحمَّل منها في المتصفح إلا ما يُستعمل.
+- إزالة Report View تُبقي الورق يعمل لكن بخط بديل (روابط الخطوط من `/assets/report_view/`).
+
+## ملاحظات الخادم (2026-10-21)
+- الملفات: `core/letterhead.py` (التحقق والتوليد)، `api/letterhead.py` (الواجهة)، DocType `Letter Head Layout`، والاختبارات `tests/test_letterhead.py`.
+- **التحقق صارم**: أي مفتاح غير معروف في أي مستوى يُرفض (لا يُتجاهل)؛ الأرقام تُقصّ إلى حدودها؛ مجموع الخانات > 100 يُرفض. العنصر الحر بعرض 0 يأخذ باقي الشريط (`180 - x`).
+- **رمز QR ثابت** يُرسم عند الحفظ: النص، أو موقع الشركة الثابتة، وإلا موقع شركة المعاينة (`preview_company` في `save`)، وإلا الشركة الافتراضية. حجمه `h` وإلا `w` (مربع).
+- **الشعار يُطبع إن كان عاماً فقط** (`/files/` أو `/assets/`)، وإلا لا يظهر ويحذّر المنشئ — القاعدة نفسها للصورة، فالمعاينة وكل PDF متطابقة.
+- الاحتواء بـ `max-width`/`max-height` (QtWebKit بلا `object-fit`)، والتغطية بخلفية `background-size:cover`.
+- ورق كُتب يدوياً ولم يكتبه المنشئ قط (بلا `Letter Head Layout`) وفيه HTML يُعدّ «معدّلاً يدوياً»: لا يُستبدل إلا بـ `overwrite=1`. الرفض بخطأ `RVLetterHeadEdited` (HTTP 409).
+- كلمات رقم الصفحة («صفحة … من …» / "Page … of …") ثابتة حسب `format` لا تمر بـ `_()`: الورق ثنائي اللغة لا يتغير بلغة الطباعة.
+- عند إنشاء ورق جديد يُحذف تنبيه Frappe «أرفق صورة» الصادر من `before_insert`، لأن المصدر يصير HTML مباشرة بعده.
+
+### wkhtmltopdf (مُقاس على acc.dev، Frappe 16، قيد `ACC-JV-2026-00015`)
+- **«تكرار الترويسة والتذييل» مفعّل**: Frappe يستخرج `#header-html`/`#footer-html` إلى `--header-html`/`--footer-html` ولا يضع `margin-top` إطلاقاً (افتراضي wkhtmltopdf ≈ 10mm)، فترويسة 35mm تُقصّ من أعلاها. الترويسة تُرسم ملتصقة بأسفل الهامش، وصفحتها تضيف 15mm (حشوة قالب Frappe). المطلوب في قالب الطباعة: `.print-format { margin-top: <h+15>mm; margin-bottom: <f+10>mm; }` (التذييل يضيف سطر رقم الصفحة الخاص بـ Frappe). جُرّب 40mm ← اسم الشركة مقصوص؛ 50mm ← سليم. لذا `print_format_css` يعيد `h+15` لا `h+5`. أرقام الصفحات (`.page`/`.topage`) تُملأ في التذييل.
+- **التكرار معطّل**: الترويسة جزء من متن الصفحة الأولى فقط، والهامش 15mm، والتذييل يأتي بعد المتن مباشرة (لا في أسفل الصفحة) وأرقام الصفحات فارغة.
+- **`<style>.print-format{margin-top:…}</style>` داخل محتوى الورق**: مع التكرار المفعّل **لا يصل** (يُستخرج مع `#header-html` قبل قراءة الأنماط، فلا يُضبط الهامش)؛ مع التكرار المعطّل **يصل** لكنه يدفع المتن كله بما فيه الورق نفسه، فلا فائدة. لذلك لا يضعه المولّد، ويبقى في قالب الطباعة كما في «العواقب».

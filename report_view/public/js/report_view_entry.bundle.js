@@ -6,6 +6,8 @@
 // ahead, while the browser is idle: opening Report View then finds them in the cache.
 
 import { SERVER_WASM, CLIENT_WASM, WORKER_JS } from "./report_view/engine/assets.js";
+// report_view.print / print_table (ADR-019): a few lines, so any Desk page can print its data
+import "./report_view/custom_print.js";
 
 const entry_states = {};
 const WAIT_STEP = 200;

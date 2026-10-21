@@ -1144,6 +1144,11 @@ export class ReportViewPage {
 		return { method: "report_view.api.pdf.pages_pdf_report", args: { report_name: this.report_name } };
 	}
 
+	/** The print presets of the pages (ADR-020): those of this report and of every report. */
+	pages_preset_target() {
+		return { context: "Report", target: this.report_name };
+	}
+
 		pages_translations(lang, messages) {
 		return api.get_translations(this.report_name, lang, messages);
 	}

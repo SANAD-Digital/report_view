@@ -30,6 +30,8 @@ required_apps = ["erpnext"]
 # app_include_css = "/assets/report_view/css/report_view.css"
 # Entry button on the query-report page (ADR-007)
 app_include_js = ["report_view_entry.bundle.js"]
+# the @font-face rules of the font library (public/fonts, ADR-018): a file loads only when a font is used
+app_include_css = ["/assets/report_view/css/rv_fonts.css"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/report_view/css/report_view.css"
@@ -47,6 +49,8 @@ app_include_js = ["report_view_entry.bundle.js"]
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
+# The "Design with the builder" button of the Letter Head form (ADR-018)
+doctype_js = {"Letter Head": "public/js/letter_head_form.js", "Print Format": "public/js/print_format_form.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -89,6 +93,9 @@ jinja = {"methods": ["report_view.core.printing.report_view_signature"]}
 fixtures = [
 	{"dt": "Print Heading", "filters": [["name", "in", ["Financial Statement", "Account Statement", "Confidential Report", "Draft Report", "Board Report"]]]},
 	{"dt": "Print Signature", "filters": [["name", "in", ["Prepared, Reviewed, Approved", "Accountant and Finance Manager", "Audit Committee", "Treasury and Payments", "Inventory Count Committee", "Signature and Company Stamp", "Authorized Signatory", "Balance Confirmation", "Signature Grid", "Issued by and Received by"]]]},
+	# the Custom print source (ADR-019): the option of print_format_for and its table format
+	{"dt": "Property Setter", "filters": [["name", "in", ["Print Format-print_format_for-options"]]]},
+	{"dt": "Print Format", "filters": [["name", "in", ["Report View Table"]]]},
 ]
 # jinja = {
 # 	"methods": "report_view.utils.jinja_methods",
@@ -139,6 +146,10 @@ fixtures = [
 # -----------
 # Permissions evaluated in scripted ways
 
+# print presets (ADR-020): a private preset is its user's only; a public one is written by a publisher
+permission_query_conditions = {"Print Preset": "report_view.core.print_presets.permission_query_conditions"}
+has_permission = {"Print Preset": "report_view.core.print_presets.has_permission"}
+
 # permission_query_conditions = {
 # 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
 # }
@@ -150,6 +161,11 @@ fixtures = [
 # Document Events
 # ---------------
 # Hook on document methods and events
+
+# a Custom print format is HTML and CSS only (ADR-019)
+doc_events = {
+	"Print Format": {"before_validate": "report_view.core.custom_print.before_validate_print_format"},
+}
 
 # doc_events = {
 # 	"*": {

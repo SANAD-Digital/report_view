@@ -1,0 +1,102 @@
+{
+ "actions": [],
+ "autoname": "field:letter_head",
+ "creation": "2026-10-21 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "letter_head",
+  "company",
+  "column_break_main",
+  "template",
+  "layout_version",
+  "generated_hash",
+  "layout_section",
+  "layout"
+ ],
+ "fields": [
+  {
+   "fieldname": "letter_head",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Letter Head",
+   "options": "Letter Head",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "Empty: the company of the printed document, else the default company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The style the design started from",
+   "fieldname": "template",
+   "fieldtype": "Data",
+   "label": "Template"
+  },
+  {
+   "default": "1",
+   "fieldname": "layout_version",
+   "fieldtype": "Int",
+   "label": "Layout Version",
+   "read_only": 1
+  },
+  {
+   "description": "The letter head's HTML as the builder last wrote it; a different hash means it was edited by hand",
+   "fieldname": "generated_hash",
+   "fieldtype": "Data",
+   "label": "Generated Hash",
+   "read_only": 1
+  },
+  {
+   "fieldname": "layout_section",
+   "fieldtype": "Section Break",
+   "label": "Layout"
+  },
+  {
+   "fieldname": "layout",
+   "fieldtype": "JSON",
+   "label": "Layout",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-21 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Report View",
+ "name": "Letter Head Layout",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Desk User"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "letter_head",
+ "track_changes": 1
+}

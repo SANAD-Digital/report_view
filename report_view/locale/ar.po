@@ -3673,3 +3673,21 @@ msgstr "تبويب جديد"
 
 msgid "Where report_view.print() opens the print page when the call does not say (open_in: \"same\" or \"tab\")."
 msgstr "أين تفتح report_view.print() صفحة الطباعة حين لا يحدد الاستدعاء ذلك (open_in: \"same\" أو \"tab\")."
+
+msgid "Top left corner"
+msgstr "الزاوية العليا اليسرى"
+
+msgid "Top right corner"
+msgstr "الزاوية العليا اليمنى"
+
+msgid "Bottom left corner"
+msgstr "الزاوية السفلى اليسرى"
+
+msgid "Bottom right corner"
+msgstr "الزاوية السفلى اليمنى"
+
+msgid "Invalid corners in {0}"
+msgstr "زوايا غير صالحة في {0}"
+
+msgid "Corners to round"
+msgstr "الزوايا المستديرة"

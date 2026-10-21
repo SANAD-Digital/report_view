@@ -85,6 +85,22 @@ export const SLOT_PRESETS = Object.freeze({
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const num = (v, d) => (typeof v === "number" && Number.isFinite(v) ? v : typeof v === "string" && v.trim() !== "" && Number.isFinite(+v) ? +v : d);
 /** A number within [lo, hi], rounded to a tenth of a millimetre (or to `step`). */
+/** The rounded corners of a colour band, as the server keeps them: "all" or some of tl, tr, br, bl. */
+export const CORNERS = ["tl", "tr", "br", "bl"];
+export function band_corners(v) {
+	const parts = typeof v === "string" && v !== "all" ? v.split(",") : CORNERS;
+	const picked = CORNERS.filter((c) => parts.includes(c));
+	return !picked.length || picked.length === 4 ? "all" : picked.join(",");
+}
+
+/** The CSS border-radius of a colour band: its radius on its rounded corners only. */
+export function band_radius(props) {
+	const r = `${+(+props.radius || 0).toFixed(2)}mm`;
+	if (!props.corners || props.corners === "all") return r;
+	const on = props.corners.split(",");
+	return CORNERS.map((c) => (on.includes(c) ? r : "0")).join(" ");
+}
+
 export function clamp(v, lo, hi, d = lo, step = 0.1) {
 	const n = Math.min(hi, Math.max(lo, num(v, d)));
 	return +(Math.round(n / step) * step).toFixed(2);
@@ -119,7 +135,7 @@ export function element_defaults(type) {
 		case "line":
 			return { w: 0, h: 0, style: { ...style, color: "primary", gap: 1.5 }, props: { thick: 0.6, style: "solid" } };
 		case "band":
-			return { w: 180, h: 8, style: { ...style, color: "primary" }, props: { fill: "primary", radius: 0 } };
+			return { w: 180, h: 8, style: { ...style, color: "primary" }, props: { fill: "primary", radius: 0, corners: "all" } };
 		case "qr":
 			return { w: 18, h: 18, style, props: { source: "website", text: "" } };
 		case "page":
@@ -146,7 +162,7 @@ function clamp_props(type, p = {}) {
 		case "line":
 			return { thick: clamp(p.thick, ...LIMITS.thick, 0.6), style: one_of(p.style, ["solid", "dashed", "double"], "solid") };
 		case "band":
-			return { fill: color(p.fill, "primary"), radius: clamp(p.radius, ...LIMITS.radius, 0) };
+			return { fill: color(p.fill, "primary"), radius: clamp(p.radius, ...LIMITS.radius, 0), corners: band_corners(p.corners) };
 		case "qr":
 			return { source: one_of(p.source, ["website", "text"], "website"), text: str(p.text, LIMITS.qr_text) };
 		case "page":

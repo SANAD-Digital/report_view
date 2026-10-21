@@ -453,3 +453,23 @@ class TestPdfMargins(RVTestCase):
 		# a format with its own top margin keeps it
 		own = self.render(builder, body="<style>.print-format{margin-top:20mm}</style><div class='print-format'>x</div>")
 		self.assertEqual(own.count("margin-top"), 1)
+
+
+class TestBandCorners(RVTestCase):
+	def band(self, corners):
+		layout = copy.deepcopy(lh.validate_layout({"v": 1}))
+		layout["header"]["elements"] = [{"id": "b1", "type": "band", "slot": None, "x": 0, "y": 0, "w": 50, "h": 20, "props": {"fill": "primary", "radius": 10, **({"corners": corners} if corners is not None else {})}}]
+		return lh.validate_layout(layout)
+
+	def test_corners_normalised_and_drawn(self):
+		self.assertEqual(self.band(None)["header"]["elements"][0]["props"]["corners"], "all")
+		self.assertEqual(self.band("br,tl")["header"]["elements"][0]["props"]["corners"], "tl,br")
+		self.assertEqual(self.band("tl,tr,br,bl")["header"]["elements"][0]["props"]["corners"], "all")
+		html = lh.generate(self.band("br"), company=COMPANY)["header"]
+		self.assertIn("border-radius:0 0 10mm 0", html)
+		self.assertIn("border-radius:10mm", lh.generate(self.band(None), company=COMPANY)["header"])
+
+	def test_bad_corners_refused(self):
+		for bad in ("top", "tl;br", ["tl"]):
+			with self.assertRaises(RVInvalidInput):
+				self.band(bad)

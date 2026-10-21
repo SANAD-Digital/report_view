@@ -3,7 +3,7 @@
 // elements, dragged onto the page or added with a click/tap) and the inspector at the inline
 // end (the selected element, or the band when nothing is selected, then the layers).
 
-import { TOKENS, SLOTS, BANDS, WEIGHTS, COLOR_NAMES, LIMITS, SLOT_PRESETS, BOXED, TEXTUAL, find, is_hex, slot_elements, move_to_slot, make_free, reorder, set_band_height } from "./model.js";
+import { TOKENS, SLOTS, BANDS, WEIGHTS, COLOR_NAMES, LIMITS, SLOT_PRESETS, BOXED, TEXTUAL, find, is_hex, slot_elements, move_to_slot, make_free, reorder, set_band_height, CORNERS, band_corners } from "./model.js";
 import { PRESETS } from "./presets.js";
 import { render_band, field_value, esc } from "./render.js";
 import { token_label, type_label, slot_label, band_label, color_label, element_name } from "./labels.js";
@@ -164,6 +164,14 @@ const seg = (k, value, options, { label, disabled = () => false } = {}) =>
 		.map(([v, text]) => `<button type="button" data-k="${k}" data-v="${esc(v)}" class="${String(v) === String(value) ? "on" : ""}" aria-pressed="${String(v) === String(value)}"${disabled(v) ? " disabled" : ""}>${esc(text)}</button>`)
 		.join("")}</div>`;
 
+// the rounded corners of a colour band, laid out as on the paper (left stays left in Arabic)
+const CORNER_LABELS = { tl: () => __("Top left corner"), tr: () => __("Top right corner"), bl: () => __("Bottom left corner"), br: () => __("Bottom right corner") };
+function corners_html(p) {
+	const on = p.corners === "all" ? CORNERS : p.corners.split(",");
+	const btn = (c) => `<button type="button" class="rvlb-corner rvlb-corner-${c}" data-corner="${c}" aria-pressed="${on.includes(c)}" aria-label="${esc(CORNER_LABELS[c]())}" title="${esc(CORNER_LABELS[c]())}"></button>`;
+	return `<div class="rvlb-lbl">${esc(__("Corners to round"))}</div><div class="rvlb-corners" dir="ltr" role="group" aria-label="${esc(__("Corners to round"))}">${["tl", "tr", "bl", "br"].map(btn).join("")}</div>`;
+}
+
 const section = (title, body) => `<section class="rvlb-sec"><h3 class="rvlb-h3">${esc(title)}</h3>${body}</section>`;
 
 export class Inspector {
@@ -288,7 +296,7 @@ export class Inspector {
 					${seg(k("style"), p.style, [["solid", __("Solid")], ["dashed", __("Dashed")], ["double", __("Double")]], { label: __("Line style") })}`,
 				);
 			case "band":
-				return section(__("Colour band"), `<div class="rvlb-lbl">${esc(__("Fill"))}</div>${this.colors_html(k("fill"), p.fill, __("Fill"))}<div class="rvlb-row">${num_input(k("radius"), p.radius, { label: __("Corner radius"), min: 0, max: 10, step: 0.5, unit: __("mm") })}</div>`);
+				return section(__("Colour band"), `<div class="rvlb-lbl">${esc(__("Fill"))}</div>${this.colors_html(k("fill"), p.fill, __("Fill"))}<div class="rvlb-row">${num_input(k("radius"), p.radius, { label: __("Corner radius"), min: 0, max: 10, step: 0.5, unit: __("mm") })}</div>${corners_html(p)}`);
 			case "qr":
 				return section(
 					__("QR code"),
@@ -427,6 +435,15 @@ export class Inspector {
 		if (act === "duplicate") return this.host.canvas.duplicate(id);
 		if (act === "deselect") return store.select(null);
 		if (act === "pick-image") return this.host.pick_image(id);
+		const corner = e.target.closest("button[data-corner]");
+		if (corner) {
+			// a corner on or off; all four off is "all" again with a radius of its own
+			const f = find(store.layout, id);
+			const on = new Set(f.el.props.corners === "all" ? CORNERS : f.el.props.corners.split(","));
+			on.has(corner.dataset.corner) ? on.delete(corner.dataset.corner) : on.add(corner.dataset.corner);
+			this.set("el.props.corners", band_corners([...on].join(",")), false);
+			return this.render();
+		}
 		const b = e.target.closest("button[data-k]");
 		if (!b || b.disabled) return;
 		const k = b.dataset.k;

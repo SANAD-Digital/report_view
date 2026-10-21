@@ -325,3 +325,19 @@
 @media (prefers-reduced-motion:reduce){.rvlb-slot,.rvlb-edge span,.rvlb-card{transition:none}}
 /* the band's font on every element, as the printed letter head keeps it (core/letterhead.py FONT_INHERIT) */
 .rvlh[data-rv-lh] *{font-family:inherit}
+
+/* the rounded corners of a colour band: four buttons placed as the corners of the paper */
+.rvlb-corners{display:grid;grid-template-columns:repeat(2,28px);gap:6px;margin-top:4px}
+.rvlb-corner{width:28px;height:28px;padding:0;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);cursor:pointer;position:relative}
+.rvlb-corner::after{content:"";position:absolute;width:10px;height:10px;border:2px solid var(--tx-3)}
+.rvlb-corner-tl::after{top:6px;left:6px;border-right:0;border-bottom:0}
+.rvlb-corner-tr::after{top:6px;right:6px;border-left:0;border-bottom:0}
+.rvlb-corner-bl::after{bottom:6px;left:6px;border-right:0;border-top:0}
+.rvlb-corner-br::after{bottom:6px;right:6px;border-left:0;border-top:0}
+.rvlb-corner[aria-pressed="true"]{border-color:var(--pri);background:var(--pri-soft)}
+.rvlb-corner[aria-pressed="true"]::after{border-color:var(--pri-tx);border-radius:0}
+.rvlb-corner-tl[aria-pressed="true"]::after{border-top-left-radius:8px}
+.rvlb-corner-tr[aria-pressed="true"]::after{border-top-right-radius:8px}
+.rvlb-corner-bl[aria-pressed="true"]::after{border-bottom-left-radius:8px}
+.rvlb-corner-br[aria-pressed="true"]::after{border-bottom-right-radius:8px}
+.rvlb-corner:focus-visible{outline:2px solid var(--pri);outline-offset:1px}

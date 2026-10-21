@@ -6,7 +6,7 @@
 // a field whose value is empty is drawn as a hint instead of disappearing.
 // Pure: tested in node (tests/js/letterhead_render.test.mjs).
 
-import { REF_W, SLOTS, LTR_TOKENS, BOXED, slot_box } from "./model.js";
+import { REF_W, SLOTS, LTR_TOKENS, BOXED, slot_box, band_radius } from "./model.js";
 import { font_stack, font_face_css, print_weights } from "../fonts.js";
 
 export const FONT_INHERIT = ".rvlh[data-rv-lh] *{font-family:inherit}";
@@ -118,7 +118,7 @@ function inner(layout, el, ctx, opts, free) {
 		case "band": {
 			const fill = resolve_color(layout, p.fill);
 			if (free) return "";
-			return `<span style="display:inline-block;vertical-align:top;width:${el.w ? mm(el.w) : "100%"};height:${mm(el.h)};background:${fill};border-radius:${mm(p.radius)}"></span>`;
+			return `<span style="display:inline-block;vertical-align:top;width:${el.w ? mm(el.w) : "100%"};height:${mm(el.h)};background:${fill};border-radius:${band_radius(p)}"></span>`;
 		}
 		default:
 			return "";
@@ -148,7 +148,7 @@ function free(layout, el, ctx, opts) {
 	if (!body && el.type !== "band" && !opts.editor) return "";
 	let style = `position:absolute;left:${pct(el.x)};top:${mm(el.y)};width:${pct(el.w)}`;
 	if (el.type === "band") {
-		style += `;height:${mm(el.h)};background:${resolve_color(layout, el.props.fill)};border-radius:${mm(el.props.radius)}`;
+		style += `;height:${mm(el.h)};background:${resolve_color(layout, el.props.fill)};border-radius:${band_radius(el.props)}`;
 	} else if (BOXED.has(el.type)) {
 		style += `;height:${mm(el.h)}`;
 	} else if (el.type === "line") {

@@ -128,7 +128,8 @@ const BUILDERS = {
 			pad_top: 5,
 			slots: { right: 56, center: 0, left: 0 },
 			elements: [
-				band({ x: 0, y: 0, w: 52, h: 24, props: { radius: 10 } }),
+				// the corner of the page: square on the paper's edges, rounded towards the page
+				band({ x: 0, y: 0, w: 52, h: 24, props: { radius: 10, corners: "br" } }),
 				band({ x: 8, y: 4, w: 20, h: 16, props: { fill: "#FFFFFF", radius: 2 } }),
 				logo(null, 18, 14, { x: 9, y: 5 }),
 				name_ar("right", 15),

@@ -249,3 +249,15 @@ test("a band made lower keeps its free elements inside it; slotted ones are not 
 	assert.equal(l.header.elements[1].y, 22);
 	assert.equal(l.header.elements[2].y, 0);
 });
+
+test("colour band corners: kept as the server keeps them, drawn on the chosen corners only", async () => {
+	const { band_corners, band_radius, clamp_layout } = await import("../../report_view/public/js/report_view/letterhead/model.js");
+	assert.equal(band_corners(undefined), "all");
+	assert.equal(band_corners("br,tl"), "tl,br");
+	assert.equal(band_corners("tl,tr,br,bl"), "all");
+	assert.equal(band_corners("xx"), "all");
+	assert.equal(band_radius({ radius: 10, corners: "br" }), "0 0 10mm 0");
+	assert.equal(band_radius({ radius: 3, corners: "all" }), "3mm");
+	const l = clamp_layout({ v: 1, header: { h: 30, elements: [{ id: "b", type: "band", slot: null, x: 0, y: 0, w: 50, h: 20, props: { fill: "primary", radius: 10, corners: "br" } }] } });
+	assert.equal(l.header.elements[0].props.corners, "br");
+});

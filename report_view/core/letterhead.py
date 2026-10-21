@@ -180,8 +180,12 @@ def _props(etype: str, props, where: str) -> dict:
 			"style": _choice(props.get("style"), ("solid", "dashed", "double"), where, "solid"),
 		}
 	if etype == "band":
-		_only_keys(props, {"fill", "radius"}, where)
-		return {"fill": _color(props.get("fill"), where, "primary"), "radius": _num(props.get("radius"), 0, 10, where, 0)}
+		_only_keys(props, {"fill", "radius", "corners"}, where)
+		return {
+			"fill": _color(props.get("fill"), where, "primary"),
+			"radius": _num(props.get("radius"), 0, 10, where, 0),
+			"corners": _corners(props.get("corners"), where),
+		}
 	if etype == "qr":
 		_only_keys(props, {"source", "text"}, where)
 		return {
@@ -318,6 +322,29 @@ def validate_layout(layout) -> dict:
 
 
 # ---------------------------------------------------------------------------- generation
+
+
+CORNERS = ("tl", "tr", "br", "bl")
+
+
+def _corners(value, where: str) -> str:
+	"""The rounded corners of a colour band: "all", or some of tl, tr, br, bl (physical,
+	the band is placed by left/right) in that order, comma separated."""
+	if value in (None, "", "all"):
+		return "all"
+	parts = value.split(",") if isinstance(value, str) else None
+	if not parts or any(p not in CORNERS for p in parts):
+		frappe.throw(_("Invalid corners in {0}").format(where), RVInvalidInput)
+	picked = [c for c in CORNERS if c in parts]
+	return "all" if len(picked) == 4 else ",".join(picked)
+
+
+def _band_radius(props: dict) -> str:
+	r = f"{_n(props['radius'])}mm"
+	if props["corners"] == "all":
+		return r
+	on = props["corners"].split(",")
+	return " ".join(r if c in on else "0" for c in CORNERS)
 
 
 def _n(value: float) -> str:
@@ -522,7 +549,7 @@ def _element_html(el: dict, colors: dict, free: bool, qr_website: str | None) ->
 		return f'<div {attrs} style="{";".join(css)}"><div style="display:inline-block;vertical-align:top;width:{width};height:0;{border}"></div></div>'
 	if etype == "band":
 		fill = f"background-color:{_rgb(props['fill'], colors)}"
-		radius = f";border-radius:{_n(props['radius'])}mm" if props["radius"] else ""
+		radius = f";border-radius:{_band_radius(props)}" if props["radius"] else ""
 		if free:
 			return f'<div {attrs} style="{";".join(css)};height:{_n(el["h"])}mm;{fill}{radius}"></div>'
 		width = f"{_n(el['w'])}mm" if el["w"] else "100%"

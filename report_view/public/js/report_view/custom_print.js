@@ -3,6 +3,7 @@
 //
 //   report_view.print({ print_format, data, title })            the data as it is
 //   report_view.print({ print_format, method, args, title })    the data of a whitelisted method
+//   report_view.print({ html, css, data | method, title })      a template sent with the data
 //   report_view.print_table({ title, columns, rows, totals })    any table, no template needed
 //   report_view.open_print(url)                                  the address a server method returned
 //
@@ -10,6 +11,11 @@
 // otherwise) and new_window (a tab of its own). Inline data is staged on the server for an
 // hour, for this user only; a method is called by the print page itself (with GET), so its
 // own whitelist and permission checks apply and the address can be kept.
+//
+// The template is EITHER a saved Custom format (print_format) OR html + css sent with the
+// print. A sent template is staged with its data (its method is called here, by this page),
+// and is rendered in a sandbox: it reads only the data sent (no database); for lookups,
+// save it as a Custom format.
 
 const ROUTE = "rv-print";
 const CUSTOM = "Custom";
@@ -30,17 +36,25 @@ function query_of(opts) {
 	return { ...q, ...choices(opts) };
 }
 
+/** Either a saved format or a sent template: one of the two. */
+function check_source({ print_format, html }) {
+	if (Boolean(print_format) === Boolean(html)) throw new Error(__("Give either a print format or an HTML template, not both"));
+}
+
 /** The address of a Custom print by a method (bookmarkable): /desk/rv-print/Custom/<format>?method=… */
-function print_url({ print_format, method, ...opts }) {
+function print_url({ print_format, method, html, ...opts }) {
+	if (html) throw new Error(__("An HTML template is sent with its data: an address with a method cannot carry it"));
 	if (!print_format || !METHOD.test(method || "")) throw new Error(__("Give the print format and the method that returns the data"));
 	const q = new URLSearchParams(query_of({ method, ...opts }));
 	return `/desk/${ROUTE}/${CUSTOM}/${encodeURIComponent(print_format)}?${q}`;
 }
 
 /**
- * Opens the print page with a Custom print format.
+ * Opens the print page with a Custom print format, or with a template sent with the data.
  * @param {object} opts
- * @param {string} opts.print_format a Custom print format
+ * @param {string} [opts.print_format] a saved Custom print format, or:
+ * @param {string} [opts.html] the template: HTML with Jinja for the data (at most 200 KB)
+ * @param {string} [opts.css] its styles (at most 100 KB), kept to the printed content
  * @param {object|Array} [opts.data] the data (an object or a list, at most 5 MB as JSON)
  * @param {string} [opts.method] or a whitelisted method that returns it (called with GET)
  * @param {object} [opts.args] the method's arguments
@@ -49,12 +63,16 @@ function print_url({ print_format, method, ...opts }) {
  * @returns {Promise<string>} the address of the print page
  */
 async function print(opts = {}) {
-	const { print_format, data, method, new_window } = opts;
-	if (!print_format) throw new Error(__("Give the print format to print with"));
+	const { print_format, html, css, method, new_window } = opts;
+	check_source(opts);
+	if (method && !METHOD.test(method)) throw new Error(__("Invalid data method"));
 	// a tab is opened at the click (a browser blocks one opened after a request)
 	const tab = new_window ? window.open("", "_blank") : null;
 	try {
-		if (method) {
+		let data = opts.data;
+		// a sent template travels with its data: the method is called here (GET, its own checks)
+		if (method && html) data = (await frappe.call({ method, args: typeof opts.args === "string" ? JSON.parse(opts.args) : opts.args || {}, type: "GET" })).message;
+		else if (method) {
 			const url = print_url(opts);
 			if (tab) tab.location.href = url;
 			else {
@@ -66,7 +84,12 @@ async function print(opts = {}) {
 		const r = await frappe.call({
 			method: "report_view.api.custom_print.stage",
 			type: "POST",
-			args: { print_format, data: JSON.stringify(data ?? {}), ...(opts.title ? { title: String(opts.title) } : {}), ...choices(opts) },
+			args: {
+				...(print_format ? { print_format } : { html: String(html), ...(css ? { css: String(css) } : {}) }),
+				data: JSON.stringify(data ?? {}),
+				...(opts.title ? { title: String(opts.title) } : {}),
+				...choices(opts),
+			},
 			freeze: !tab,
 		});
 		const { token, route } = r.message;
@@ -110,7 +133,8 @@ function print_table({ title, columns, rows, totals, subtitle, note, print_forma
 	if (totals) data.totals = totals;
 	if (subtitle) data.subtitle = subtitle;
 	if (note) data.note = note;
-	return print({ ...opts, print_format: print_format || TABLE_FORMAT, data, title });
+	// the shipped table format, unless a template of the caller's reads the same data
+	return print({ ...opts, ...(opts.html ? {} : { print_format: print_format || TABLE_FORMAT }), data, title });
 }
 
 frappe.provide("report_view");

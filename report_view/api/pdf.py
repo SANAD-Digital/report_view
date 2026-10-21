@@ -20,7 +20,7 @@ import zlib
 import frappe
 from frappe import _
 
-from report_view.core.custom_print import guard_custom_format
+from report_view.core.custom_print import resolve as resolve_custom
 from report_view.core.errors import RVInvalidInput, RVLimitExceeded
 from report_view.core.guard import guard_print, guard_report
 from report_view.core.pdf import (
@@ -74,11 +74,14 @@ def pages_pdf_document(doctype: str, name: str, html: str | None = None, title: 
 
 
 @frappe.whitelist(methods=["POST"])
-def pages_pdf_custom(print_format: str, html: str | None = None, title: str | None = None):
-	"""PDF of a Custom print's pages (ADR-019); needs the Custom format to be one the user
-	may print with (``custom_print.guard_custom_format``)."""
-	pf = guard_custom_format(print_format)
-	return _pdf(_html(html), title or pf.name)
+def pages_pdf_custom(
+	print_format: str | None = None, html: str | None = None, title: str | None = None, token: str | None = None
+):
+	"""PDF of a Custom print's pages (ADR-019): the Custom format must be one the user may
+	print with (``guard_custom_format``); a print with an inline template names its staged
+	``token`` instead, which is its user's only."""
+	pf, _payload = resolve_custom(print_format, token)
+	return _pdf(_html(html), title or (pf.name if pf else _("Sent template")))
 
 
 @frappe.whitelist(methods=["GET"])

@@ -3634,3 +3634,27 @@ msgstr "اكتب اسماً للإعداد وأرسل إعداداته"
 
 msgid "Not permitted to print {0}"
 msgstr "لا يُسمح لك بطباعة {0}"
+
+msgid "Sent template"
+msgstr "القالب المرسل"
+
+msgid "Not permitted to print"
+msgstr "غير مسموح لك بالطباعة"
+
+msgid "Give either a print format or an HTML template, not both"
+msgstr "حدّد قالب طباعة أو قالب HTML، واحداً منهما فقط"
+
+msgid "The HTML template is required"
+msgstr "قالب HTML مطلوب"
+
+msgid "The {0} of the template is larger than {1} KB"
+msgstr "{0} القالب أكبر من {1} كيلوبايت"
+
+msgid "An HTML template is sent with its data: an address with a method cannot carry it"
+msgstr "قالب HTML يُرسل مع بياناته: رابط الدالة لا يحمله"
+
+msgid "This print uses the template it was sent with; it is not a saved print format."
+msgstr "هذه الطباعة بالقالب الذي أُرسل معها؛ وليس قالب طباعة محفوظاً."
+
+msgid "A page may also send its own template instead: {0}. It reads only the data sent; a template that looks records up is saved here."
+msgstr "ويمكن للصفحة أن ترسل قالبها بدلاً من ذلك: {0}. يقرأ البيانات المرسلة فقط؛ والقالب الذي يقرأ سجلات يُحفظ هنا."

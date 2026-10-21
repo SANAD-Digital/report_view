@@ -7,7 +7,8 @@
 // The same page prints a Custom print format with the caller's data (ADR-019):
 // /desk/rv-print/Custom/<token> (data staged by report_view.print) or
 // /desk/rv-print/Custom/<format>?method=…&args=… (the data of a whitelisted method, called
-// here from the browser, so its own checks apply).
+// here from the browser, so its own checks apply). The template is a saved Custom format,
+// or one sent with the data (html + css, staged with it: «Sent template»).
 
 import { PagesView } from "./views/pages_view.js";
 
@@ -53,7 +54,11 @@ class DocPrintPage {
 		if (kind === "custom") {
 			this.page.set_secondary_action(__("Back"), () => (window.history.length > 1 ? window.history.back() : frappe.set_route("")), "arrow-left");
 			if (frappe.model.can_write("Print Format")) {
-				this.page.add_menu_item(__("Edit the print format"), () => this.custom.format && frappe.set_route("Form", "Print Format", this.custom.current_format()));
+				this.page.add_menu_item(__("Edit the print format"), () => {
+					const name = this.custom.current_format();
+					if (name) frappe.set_route("Form", "Print Format", name);
+					else frappe.msgprint(__("This print uses the template it was sent with; it is not a saved print format."));
+				});
 			}
 			return;
 		}
@@ -243,12 +248,15 @@ class CustomPrintHost {
 	/** The data of the print, staged once: every render then reads it by its token. */
 	async load({ token, format, method, args, title, options }) {
 		this.token = this.format = this.company = this.options = null;
+		this.inline = false;
 		this.choices = {};
 		if (token) {
 			const r = await call("report_view.api.custom_print.staged", { token });
 			this.token = token;
-			this.format = r.print_format;
-			this.title = r.title || __(r.print_format);
+			// a sent template (r.inline) has no format: "" of the picker is it
+			this.format = r.print_format || null;
+			this.inline = Boolean(r.inline);
+			this.title = r.title || (this.format ? __(this.format) : __("Sent template"));
 			this.choices = r.options || {};
 			this.company = company_of(r.data);
 			return;
@@ -274,9 +282,14 @@ class CustomPrintHost {
 		this.company = company_of(data);
 	}
 
-	/** The format chosen on the panel, else the caller's. */
+	/** The format chosen on the panel, else the caller's (null: the sent template). */
 	current_format() {
 		return this.page.pages?.settings?.template || this.format;
+	}
+
+	/** What the server renders with: a saved format, and the staged print's token. */
+	source(name = this.current_format()) {
+		return { ...(name ? { print_format: name } : {}), token: this.token };
 	}
 
 	pages_context() {
@@ -291,28 +304,28 @@ class CustomPrintHost {
 	}
 
 	async pages_options(company) {
-		this.options = await call("report_view.api.custom_print.get_options", { print_format: this.format, ...(company ? { company } : {}) });
+		this.options = await call("report_view.api.custom_print.get_options", { ...this.source(this.format), ...(company ? { company } : {}) });
 		return this.options;
 	}
 
 	pages_letterhead(name) {
 		const company = this.company || this.options?.company;
-		return call("report_view.api.custom_print.render_letterhead", { print_format: this.format, letterhead: name, ...(company ? { company } : {}) });
+		return call("report_view.api.custom_print.render_letterhead", { ...this.source(this.format), letterhead: name, ...(company ? { company } : {}) });
 	}
 
-	/** The format ("" = the caller's) rendered with the data, in the language of the pages. */
+	/** The format ("" = the caller's, or the sent template) rendered with the data, in the language of the pages. */
 	pages_format(name, lang = null) {
-		return call("report_view.api.custom_print.render", { print_format: name || this.format, token: this.token, title: this.title, ...(lang ? { lang } : {}) }, "POST");
+		return call("report_view.api.custom_print.render", { ...this.source(name || this.format), title: this.title, ...(lang ? { lang } : {}) }, "POST");
 	}
 
 	pages_part(kind, name, lang = null) {
-		const args = { print_format: this.current_format(), token: this.token, title: this.title, ...(lang ? { lang } : {}) };
+		const args = { ...this.source(), title: this.title, ...(lang ? { lang } : {}) };
 		if (kind === "heading") return call("report_view.api.custom_print.render_heading", { ...args, heading: name }, "POST");
 		return call("report_view.api.custom_print.render_signature", { ...args, signature: name }, "POST");
 	}
 
 	pages_translations(lang, messages) {
-		return call("report_view.api.custom_print.get_translations", { print_format: this.format, lang, messages }, "POST");
+		return call("report_view.api.custom_print.get_translations", { ...this.source(this.format), lang, messages }, "POST");
 	}
 
 	pages_run_lang() {
@@ -320,17 +333,20 @@ class CustomPrintHost {
 	}
 
 	pages_pdf_target() {
-		return { method: "report_view.api.pdf.pages_pdf_custom", args: { print_format: this.current_format() } };
+		// a sent template: its token (its user's only) is the PDF's guard
+		const name = this.current_format();
+		return { method: "report_view.api.pdf.pages_pdf_custom", args: name ? { print_format: name } : { token: this.token } };
 	}
 
-	/** The print presets (ADR-020): those of the caller's Custom format and of every one. */
+	/** The print presets (ADR-020): those of the caller's Custom format and of every one
+	 * (a sent template: an empty target, the general presets). */
 	pages_preset_target() {
-		return { context: "Custom", target: this.format };
+		return { context: "Custom", target: this.format || "" };
 	}
 
 	// settings: one set per user and Custom format; the caller's format and choices first
 	settings_key() {
-		return `Report View Print:${CUSTOM}:${this.format}`;
+		return `Report View Print:${CUSTOM}:${this.format || "Sent template"}`;
 	}
 
 	async pages_settings_load() {

@@ -3,7 +3,8 @@
 // list of Custom formats only, another format on the same data, escaping, language), the
 // data of a method (bookmarkable address), a token of nobody, document mode still there,
 // and the PDF (RV_PDF=1, after the server restart that loads pages_pdf_custom).
-// RV_PW=… [RV_SHORT_DOC=<a Journal Entry>] [RV_PDF=1] node tests/site/custom_print.cjs
+// RV_PW=… [RV_SHORT_DOC=<a Journal Entry>] [RV_PDF=1] [RV_SKIP_INLINE=1] node tests/site/custom_print.cjs
+// (RV_SKIP_INLINE: the server runs code without the sent template yet)
 const { chromium } = require("playwright");
 const BASE = process.env.RV_SITE || "https://acc.dev.sanad.digital";
 const results = [];
@@ -107,6 +108,48 @@ const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", nam
 	await settle();
 	s = await state();
 	check("report_view.print with a method routes in-app with a bookmarkable address", s.title === "Again" && s.url.includes("method=frappe.client.get_list"), s.url);
+
+	// 7b. a template sent with the data (html + css): sandboxed render, the picker's own
+	// choice, a saved format on the same data and back, its PDF by its token
+	if (!process.env.RV_SKIP_INLINE) {
+		await page.evaluate(() => report_view.print({
+			html: "<h4 class='inl'>{{ title }}</h4><table class='it'>{% for r in rows %}<tr><td>{{ r.name }}</td><td>{{ format_value(r.amount, 'Currency') }}</td></tr>{% endfor %}</table><p class='leak'>{{ frappe }}</p>",
+			css: ".it td{font-weight:700} .inl{letter-spacing:1px}",
+			data: { rows: [{ name: "<b>bold?</b>", amount: 12.5 }, { name: "Two", amount: 3 }] },
+			title: "Sent one",
+		}));
+		await settle();
+		s = await state();
+		const inl = await page.evaluate((g) => {
+			const v = eval(g);
+			const td = v.sheets.querySelector(".rv-page-flow table.it td");
+			const lh_td = v.sheets.querySelector(".rv-page-lh td");
+			return {
+				rows: v.sheets.querySelectorAll(".rv-page-flow table.it tr").length,
+				bold: td && getComputedStyle(td).fontWeight,
+				lh_bold: lh_td ? getComputedStyle(lh_td).fontWeight : null,
+				escaped: v.sheets.querySelector(".rv-page-flow table.it td")?.textContent,
+				leak: v.sheets.querySelector(".rv-page-flow .leak")?.textContent,
+				placeholder: v.options?.default_print_format, inline: v.options?.inline,
+			};
+		}, V);
+		check("a sent template prints its data, escaped, with its CSS kept to the content", s.kind === "custom" && inl.rows === 2 && inl.escaped === "<b>bold?</b>" && inl.bold === "700" && inl.lh_bold !== "700" && s.title === "Sent one", JSON.stringify(inl));
+		check("the sandbox: no frappe in a sent template", inl.leak === "", inl.leak);
+		check("the picker offers the sent template and the saved formats", inl.inline === true && Boolean(inl.placeholder) && s.formats.includes("Report View Table"), `${inl.placeholder} ${s.formats}`);
+		await page.evaluate((g) => eval(g).update({ template: "Report View Table" }), V); await settle();
+		s = await state();
+		check("a saved format on the sent data", /No columns|لا أعمدة/.test(s.text), s.note);
+		await page.evaluate((g) => eval(g).update({ template: "" }), V); await settle();
+		check("back to the sent template", await page.evaluate((g) => eval(g).sheets.querySelectorAll(".rv-page-flow table.it tr").length, V) === 2);
+		const both = await page.evaluate(() => report_view.print({ print_format: "Report View Table", html: "<p></p>", data: {} }).then(() => "ok", (e) => e.message));
+		check("print_format and html together are refused", both !== "ok", both);
+		if (process.env.RV_PDF) {
+			const dl = page.waitForEvent("download", { timeout: 120000 });
+			await page.evaluate((g) => eval(g).pdf(), V);
+			const file = await dl.catch(() => null);
+			check("PDF of a sent template (guard: its token)", Boolean(file), file?.suggestedFilename());
+		}
+	}
 
 	// 8. a token nobody staged
 	await page.goto(`${BASE}/desk/rv-print/Custom/${"0".repeat(24)}`);

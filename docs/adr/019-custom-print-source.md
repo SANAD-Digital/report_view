@@ -49,12 +49,22 @@ doctype_js = {..., "Print Format": "public/js/print_format_form.js"}
 ```
 ويستورد `report_view_entry.bundle.js` (المحمّل في كل Desk) ملف `custom_print.js` الصغير ليوجد `report_view.print` في كل صفحة.
 
+## تعديل (2026-10-21): قالب مرسل مع البيانات (html + css)
+- طلب صاحب المشروع: «أضف html و css إلى `report_view.print({...})`: الخيار إمّا قالب (`print_format`) أو html + css».
+- **إمّا أو**: `print_format` و`html` لا يجتمعان ولا يغيبان معاً (رسالة مترجمة) في `report_view.print`، `report_view.print_url`، و`core.custom_print.print_url(..., html=None, css=None)`.
+- **الترحيل**: القالب المرسل يُرحَّل مع بياناته (`stage(html=…, css=…)`: html ≤ 200 KB و css ≤ 100 KB، ويُترجم مرة عند الترحيل فيُعرف خطؤه مبكراً). رابط الدالة لا يحمل قالباً مرسلاً: مع `method` تستدعي الصفحة المتصلة الدالة بنفسها (GET) ثم ترحّل القالب والبيانات وتفتح رابط الرمز.
+- **الأمان — بيئة معزولة خاصة**: القالب المرسل يأتي من المتصفح، فلا يُرندر ببيئة Jinja الخاصة بـ Frappe (فيها `frappe.db.get_value` وأمثالها تقرأ أي سجل بلا فحص صلاحية). يُرندر في `jinja2.sandbox.ImmutableSandboxedEnvironment` بلا loader (فـ `include`/`import`/`extends` تفشل) وبلا أي globals؛ السياق وحده: `data`، `doc`، `rows`، `title`، `company` (اسم)، `printed_by`، `printed_on`، `lang`، `_()` (الترجمة)، `format_value(value, fieldtype, options)` (تنسيق Frappe على حقل عادي: أرقام وتواريخ وعملة برمز من ثلاثة أحرف، بلا مستند ولا بحث روابط)، و`range()` (مجموع عناصره في الرندرة الواحدة ≤ 100000)، مع مرشّحات Jinja القياسية. لا `frappe` ولا قاعدة بيانات ولا `get_doc`/`get_list`؛ السمات الخاصة (`__class__` …) يمنعها الصندوق، و`.__` في القالب مرفوض، والبيئة الثابتة تمنع تعديل القوائم والقواميس. `None` يُطبع فارغاً. نصوص البيانات تبقى `Text` (مهرّبة). أخطاء القالب كما في القوالب المحفوظة: رسالة مترجمة، والتفاصيل في developer_mode فقط.
+- القوالب **المحفوظة** تبقى ببيئة Frappe كما هي (يكتبها من يملك write على Print Format).
+- **الصلاحية**: أي مستخدم Desk (System User) يطبع قالباً مرسلاً بلا صلاحية على Print Format؛ الرمز لمالكه فقط؛ حدود المعدل كما في `stage`/`render`.
+- **الواجهات**: `resolve(print_format, token)` أول سطر في كل دالة: قالب محفوظ مسمّى، وإلا قالب الطباعة المرحّلة (محفوظ أو مرسل). لذلك `print_format` صار اختيارياً في `get_options`، `render`، `render_letterhead`، `render_heading`، `render_signature`، `get_translations`، ومعها `token`. `staged` يعيد `inline: true` و`print_format: null` (القالب نفسه لا يعود للمتصفح). `render` لقالب مرسل يعيد `{name: "", type, html, css (محصور), title, inline: true}`. `pages_pdf_custom(print_format=None, html, title, token=None)`: حارسه القالب المحفوظ، أو الرمز لمالكه للقالب المرسل.
+- **صفحة الطباعة**: منتقي القوالب يعرض القالب المرسل اختياراً حالياً («القالب المرسل»، القيمة الفارغة)، ويمكن الانتقال إلى قالب مخصص محفوظ (البيانات نفسها) والعودة. الإعدادات تحت `Report View Print:Custom:Sent template`. الإعدادات المسبقة (ADR-020): السياق Custom بهدف فارغ (العامة) — يحتاج `print_presets.js`/`api/print_presets.py` قبول الهدف الفارغ لـ Custom (خارج ملفات هذا العمل)، وإلى ذلك لا تظهر قائمة الإعدادات المسبقة للقالب المرسل.
+
 ## عقد الواجهة (API)
 | الدالة | الطريقة | المعاملات | يعيد |
 |---|---|---|---|
 | `report_view.api.custom_print.formats` | GET | — | `[name]` القوالب المخصصة المتاحة |
-| `report_view.api.custom_print.stage` | POST | `print_format`, `data` (JSON ≤ 5MB)، `title`, `letter_head`, `lang`, `heading`, `signature` | `{token, route}` |
-| `report_view.api.custom_print.staged` | GET | `token` | `{print_format, data, title, options}` (لمالكه فقط) |
+| `report_view.api.custom_print.stage` | POST | `print_format` **أو** `html` (≤ 200KB) + `css` (≤ 100KB)، `data` (JSON ≤ 5MB)، `title`, `letter_head`, `lang`, `heading`, `signature` | `{token, route}` |
+| `report_view.api.custom_print.staged` | GET | `token` | `{print_format, inline, data, title, options}` (لمالكه فقط) |
 | `report_view.api.custom_print.get_options` | GET | `print_format`, `company` | خيارات الصفحات (القوالب، الترويسات، رؤوس الطباعة، التوقيعات، اللغات، الافتراضيات، الحدود، الشركة) |
 | `report_view.api.custom_print.render` | POST | `print_format`, `data` أو `token`, `title`, `lang` | `{name, type: "Jinja", html, css, title}` |
 | `report_view.api.custom_print.render_letterhead` | GET | `print_format`, `letterhead`, `company` | `{header, footer}` |
@@ -63,7 +73,9 @@ doctype_js = {..., "Print Format": "public/js/print_format_form.js"}
 | `report_view.api.custom_print.get_translations` | POST | `print_format`, `lang`, `messages` | `{msgid: ترجمة}` |
 | `report_view.api.pdf.pages_pdf_custom` | POST | `print_format`, `html` أو `html_gz`, `title` | ملف PDF أو `{job, total}` |
 
-في المتصفح: `report_view.print(opts) → Promise<url>`، `report_view.print_table(opts)`، `report_view.print_url({print_format, method, args, …})`، `report_view.open_print(url, {new_window})`. في بايثون: `report_view.core.custom_print.print_url(print_format, data=None, title=None, method=None, args=None, absolute=False, **options)`.
+بقية الدوال تقبل `token` بدل `print_format` لطباعة بقالب مرسل.
+
+في المتصفح: `report_view.print(opts) → Promise<url>` (`opts`: `print_format` أو `html` + `css`)، `report_view.print_table(opts)`، `report_view.print_url({print_format, method, args, …})`، `report_view.open_print(url, {new_window})`. في بايثون: `report_view.core.custom_print.print_url(print_format=None, data=None, title=None, method=None, args=None, absolute=False, html=None, css=None, **options)`.
 
 ## العواقب
 - أي صفحة أو تطبيق يطبع بياناته بقالب واحد مكتوب مرة، بكل ما في محرك الصفحات وPDF نفسه، بلا كود طباعة خاص.

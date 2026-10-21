@@ -91,6 +91,27 @@ def delivery_rows(from_date: str) -> dict:
 /desk/rv-print/Custom/Delivery%20List?method=my_app.api.delivery_rows&args={"from_date":"2026-10-01"}&title=Deliveries
 ```
 
+### قالب مرسل مع البيانات (بلا قالب محفوظ)
+بدل `print_format` أرسل `html` و `css` (أحدهما فقط: القالب المحفوظ أو المرسل):
+
+```js
+report_view.print({
+	html: `<h3>{{ title }}</h3>
+	<table class="lines">
+	{% for r in rows %}<tr><td>{{ r.item }}</td><td>{{ format_value(r.amount, "Currency", "SAR") }}</td></tr>{% endfor %}
+	</table>`,
+	css: ".lines td { padding: 2mm; border-bottom: 1px solid #ccc }",
+	data: { rows: [{ item: "Paper", amount: 125 }] },
+	title: __("Quick list"),
+	// أو method + args: تستدعي صفحتك الدالة (GET) ثم ترسل القالب مع نتيجتها
+});
+```
+
+- يُحفظ مع بياناته ساعة لك وحدك (HTML حتى 200 KB و CSS حتى 100 KB)، ولا يُحمل في رابط دالة.
+- **الفرق المهم**: القالب المرسل يُرندر في صندوق معزول: يقرأ **البيانات المرسلة فقط** و`_()` و`format_value(value, fieldtype, options)` و`range()` ومرشّحات Jinja. لا `frappe` ولا قاعدة بيانات ولا `include`. إن احتجت قراءة سجلات (`frappe.db.get_value`…) فاحفظ القالب كـ Print Format مخصص.
+- في صفحة الطباعة يظهر «القالب المرسل» في منتقي القوالب، ويمكن تجربة قالب محفوظ على البيانات نفسها ثم العودة.
+- من بايثون: `print_url(html="<p>{{ doc.x }}</p>", css="…", data={"x": 1})`.
+
 ### أي جدول بلا قالب
 ```js
 report_view.print_table({

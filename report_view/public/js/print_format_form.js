@@ -34,6 +34,16 @@ const NOT_FOR_CUSTOM = [
 	"font_size",
 	"page_number",
 	"pdf_generator",
+	// other apps' fields on Print Format (SND Print, SND Data Hub): page setup and defaults of
+	// their own print, not of the print page a Custom format opens in
+	"page_size",
+	"page_layout",
+	"disable_pagination",
+	"with_letterhead",
+	"is_default",
+	"preview_image",
+	"section_break_custom",
+	"col_break_custom",
 ];
 
 const SAMPLE = {
@@ -93,6 +103,7 @@ function help_html(frm) {
 		<p><b>${__("It is HTML and CSS only: the HTML (with Jinja for the data) in the HTML field, the styles in the CSS field. The CSS reaches the printed content only, on screen and in the PDF.")}</b></p>
 		<p>${__("Its data does not come from a document or a report: the page or the method that prints sends it. The print page adds the paper, the letter head, the heading, the signature, the page numbers and the PDF.")}</p>
 		<p>${__("Text in the data prints HTML-escaped. The template is written once; any page can print with it.")}</p>
+		<p>${__("A page may also send its own template instead: {0}. It reads only the data sent; a template that looks records up is saved here.", ["<code>report_view.print({ html, css, data })</code>"])}</p>
 		<h6>${__("What the template reads")}</h6>
 		<table class="rv-cp-vars"><tbody>${rows}</tbody></table>
 		<h6>${__("From a page, with the data")}</h6>
@@ -182,7 +193,12 @@ function apply(frm) {
 }
 
 frappe.ui.form.on("Print Format", {
-	refresh(frm) {
+	async refresh(frm) {
+		// a Custom format saved before the server set its flags (or by a script): Frappe shows
+		// the HTML section only with custom_format on, so the form sets them here too
+		if (is_custom(frm) && !frm.doc.custom_format) {
+			await frm.set_value({ custom_format: 1, standard: "No", print_format_type: "Jinja", raw_printing: 0 });
+		}
 		apply(frm);
 	},
 	async print_format_for(frm) {

@@ -15,6 +15,11 @@ The data is rendered here with the format's template (``render_format``): every 
 it is a ``printing.Text`` (printed HTML-escaped). The pages around it (paper, letter head,
 heading, signature, numbering…) are the Pages view's, as for a document (ADR-017).
 
+A print may also bring its own template (**inline**: ``html`` and ``css`` staged with the
+data, ``stage(html=…)``). It comes from the browser, so it is rendered in a sandbox of its
+own (``render_inline``): the data and a few helpers, no ``frappe``, no database, no
+includes. Any Desk user may print one; its token is its user's only.
+
 Who may print with a format: a user who may select it (``select`` on Print Format, which
 Frappe gives to every Desk User, as the document print formats are offered to them), read
 with ``frappe.get_list`` so a disabled or a non-Custom format does not exist for them.
@@ -43,6 +48,11 @@ _TOKEN = re.compile(r"^[a-f0-9]{24}$")
 _METHOD = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$")
 _OPTION_KEYS = ("letter_head", "lang", "heading", "signature")
 MAX_TITLE = 140
+# an inline template (ADR-019, «قالب مرسل»), as UTF-8
+MAX_INLINE_HTML = 200 * 1024
+MAX_INLINE_CSS = 100 * 1024
+# items all the range() calls of one inline render may give, together
+INLINE_RANGE_BUDGET = 100_000
 
 
 # ---------------------------------------------------------------- the Print Format
@@ -158,12 +168,56 @@ def _key(token: str) -> str:
 	return f"report_view:custom_print:{token}"
 
 
-def stage(print_format: str, data, title: str | None = None, **options) -> str:
-	"""Keeps the data of a print for an hour, for this user; the token of the print page."""
-	pf = guard_custom_format(print_format)
+def guard_inline() -> None:
+	"""An inline template may be printed by any Desk user (a System User signed in)."""
+	user = frappe.session.user
+	if user == "Guest" or frappe.get_cached_value("User", user, "user_type") != "System User":
+		frappe.throw(_("Not permitted to print"), frappe.PermissionError)
+
+
+def _one_source(print_format, html) -> None:
+	given = [x for x in (print_format, html) if x not in (None, "")]
+	if len(given) != 1:
+		frappe.throw(_("Give either a print format or an HTML template, not both"), RVInvalidInput)
+
+
+def _inline_text(value, name: str, limit: int, required: bool) -> str:
+	if value is None or value == "":
+		if required:
+			frappe.throw(_("The HTML template is required"), RVInvalidInput)
+		return ""
+	if not isinstance(value, str):
+		frappe.throw(_("{0} has an invalid type").format(name), RVInvalidInput)
+	if len(value.encode("utf-8")) > limit:
+		frappe.throw(_("The {0} of the template is larger than {1} KB").format(name, limit // 1024), RVInvalidInput)
+	return value
+
+
+def stage(
+	print_format: str | None = None,
+	data=None,
+	title: str | None = None,
+	html: str | None = None,
+	css: str | None = None,
+	**options,
+) -> str:
+	"""Keeps the data of a print for an hour, for this user; the token of the print page.
+	The template is a saved Custom format (``print_format``) or sent with the data
+	(``html`` and ``css``): one of the two."""
+	_one_source(print_format, html)
+	if print_format:
+		pf = guard_custom_format(print_format)
+		source = {"print_format": pf.name}
+	else:
+		guard_inline()
+		html = _inline_text(html, "HTML", MAX_INLINE_HTML, True)
+		css = _inline_text(css, "CSS", MAX_INLINE_CSS, False)
+		# a broken template is told now, not on the print page
+		compile_inline(html)
+		source = {"print_format": None, "html": html, "css": css}
 	payload = {
 		"owner": frappe.session.user,
-		"print_format": pf.name,
+		**source,
 		"data": parse_data(data, allow_none=False),
 		"title": _title(title),
 		"options": _options(options),
@@ -183,6 +237,26 @@ def staged(token: str) -> dict:
 	return payload
 
 
+def resolve(print_format: str | None = None, token: str | None = None):
+	"""What a call prints with: ``(format, payload)``. A saved Custom format named by the
+	call (``guard_custom_format``), else the staged print's own (its saved format, or its
+	inline template: ``format`` None, ``guard_inline``). ``payload`` is the staged print
+	(its user's only), or None without a token."""
+	payload = staged(token) if token else None
+	if print_format:
+		return guard_custom_format(print_format), payload
+	if not payload:
+		frappe.throw(_("A print format is required"), RVInvalidInput)
+	if payload.get("html"):
+		guard_inline()
+		return None, payload
+	return guard_custom_format(payload["print_format"]), payload
+
+
+def is_inline(payload) -> bool:
+	return bool(payload and payload.get("html"))
+
+
 def data_of(data=None, token: str | None = None):
 	"""The data to render: the staged print's (``token``; any Custom format may print it)
 	or ``data`` as sent."""
@@ -196,23 +270,30 @@ def route(token_or_format: str) -> str:
 
 
 def print_url(
-	print_format: str,
+	print_format: str | None = None,
 	data=None,
 	title: str | None = None,
 	method: str | None = None,
 	args: dict | None = None,
 	absolute: bool = False,
+	html: str | None = None,
+	css: str | None = None,
 	**options,
 ) -> str:
 	"""The address of the print page for a server method to return to the browser.
 
-	With ``data``: the data is staged for this user (an hour) and the address carries its
-	token. With ``method`` (and its ``args``): the address names the format and the method,
-	which the print page calls from the browser (bookmarkable, live data)."""
+	The template: a saved Custom format (``print_format``) or ``html`` and ``css`` (one of
+	the two). With ``data``: the data (and an inline template) is staged for this user (an
+	hour) and the address carries its token. With ``method`` (and its ``args``): the address
+	names the format and the method, which the print page calls from the browser
+	(bookmarkable, live data); an inline template cannot travel in an address."""
+	_one_source(print_format, html)
+	if html and data is None:
+		frappe.throw(_("An HTML template is sent with its data: an address with a method cannot carry it"), RVInvalidInput)
 	if data is None and not method:
 		frappe.throw(_("Give the data to print or the method that returns it"), RVInvalidInput)
 	if data is not None:
-		path = route(stage(print_format, data, title, **options))
+		path = route(stage(print_format, data, title, html=html, css=css, **options))
 	else:
 		pf = guard_custom_format(print_format)
 		check_method(method)
@@ -243,6 +324,7 @@ def default_company(data) -> str | None:
 
 
 def context(pf, data, title: str | None = None) -> dict:
+	# ``pf``: the saved format, or None for an inline template
 	"""What a Custom format reads: ``data`` (as sent; its strings print escaped), ``doc``
 	(the data when it is an object: ``doc.total``), ``rows`` (the data when it is a list, or
 	its ``rows``), ``title``, ``company``, ``printed_by``, ``printed_on``, ``lang``,
@@ -253,8 +335,8 @@ def context(pf, data, title: str | None = None) -> dict:
 		"data": safe,
 		"doc": safe if isinstance(safe, dict) else frappe._dict(),
 		"rows": rows if isinstance(rows, list) else [],
-		"title": printing.Text(_title(title) or _(pf.name)),
-		"print_format": pf.name,
+		"title": printing.Text(_title(title) or (_(pf.name) if pf else _("Sent template"))),
+		"print_format": pf.name if pf else "",
 		"company": printing.escaped(default_company(data)),
 		"printed_by": printing.Text(get_fullname()),
 		"printed_on": now_datetime(),
@@ -285,7 +367,6 @@ def render_jinja(template: str, ctx: dict, what: str) -> str:
 	author's problem: the user reads a translated message, the Error Log keeps the details,
 	and the template's line is told in developer mode only."""
 	from frappe.utils.jinja import get_jenv, safe_render_flags
-	from jinja2 import TemplateSyntaxError
 
 	if not template:
 		return ""
@@ -298,15 +379,121 @@ def render_jinja(template: str, ctx: dict, what: str) -> str:
 	except (frappe.ValidationError, frappe.PermissionError, frappe.DoesNotExistError):
 		raise
 	except Exception as e:
-		line = e.lineno if isinstance(e, TemplateSyntaxError) else _template_line(sys.exc_info()[2])
-		frappe.log_error(title=f"Report View custom print: {what}")
-		message = _("The print format {0} could not be rendered. Ask the person who wrote it to check it.").format(what)
-		if frappe.conf.get("developer_mode"):
-			detail = f"{type(e).__name__}: {e}"
-			if line:
-				detail = _("Line {0}").format(line) + f" · {detail}"
-			message += f"<br><code>{frappe.utils.escape_html(detail)}</code>"
-		frappe.throw(message, RVInvalidInput)
+		_broken(e, what)
+
+
+def _broken(e, what: str) -> None:
+	from jinja2 import TemplateSyntaxError
+
+	line = e.lineno if isinstance(e, TemplateSyntaxError) else _template_line(sys.exc_info()[2])
+	frappe.log_error(title=f"Report View custom print: {what}")
+	message = _("The print format {0} could not be rendered. Ask the person who wrote it to check it.").format(what)
+	if frappe.conf.get("developer_mode"):
+		detail = f"{type(e).__name__}: {e}"
+		if line:
+			detail = _("Line {0}").format(line) + f" · {detail}"
+		message += f"<br><code>{frappe.utils.escape_html(detail)}</code>"
+	frappe.throw(message, RVInvalidInput)
+
+
+# ---------------------------------------------------------------- an inline template
+
+_INLINE_TEXT_TYPES = {"Data", "Small Text", "Text", "Long Text"}
+_INLINE_FORMATTED = {"Int", "Float", "Currency", "Percent", "Date", "Datetime", "Time", "Check", "Duration", "Rating"}
+_CURRENCY = re.compile(r"^[A-Z]{3}$")
+_inline_env = None
+
+
+def inline_env():
+	"""The environment of an inline template: Jinja's immutable sandbox with no loader (no
+	include, import or extends) and no globals at all; the context gives the few helpers."""
+	global _inline_env
+	if _inline_env is None:
+		from jinja2.sandbox import ImmutableSandboxedEnvironment
+
+		# None prints nothing (a field the data does not have)
+		env = ImmutableSandboxedEnvironment(loader=None, autoescape=False, finalize=lambda v: "" if v is None else v)
+		env.globals.clear()
+		_inline_env = env
+	return _inline_env
+
+
+def compile_inline(html: str):
+	"""The inline template compiled (a syntax error is a translated message)."""
+	if ".__" in html:
+		frappe.throw(_("Illegal template"), RVInvalidInput)
+	try:
+		return inline_env().from_string(html)
+	except Exception as e:
+		_broken(e, _("Sent template"))
+
+
+def _raw(value):
+	return str.__str__(value) if isinstance(value, printing.Text) else value
+
+
+def inline_translate(msg, context=None):
+	"""``_()`` of an inline template: a text of the data stays escaped when printed."""
+	out = frappe._(str(_raw(msg)), context=_raw(context) if isinstance(context, str) else None)
+	return printing.Text(out) if isinstance(msg, printing.Text) else out
+
+
+def inline_format_value(value, fieldtype="Data", options=None):
+	"""``format_value(value, fieldtype, options)`` of an inline template: Frappe's number,
+	date and money formats on a plain field (no document, no link lookups). Text prints
+	escaped."""
+	fieldtype = _raw(fieldtype) if isinstance(fieldtype, str) else "Data"
+	if value is None:
+		return ""
+	if fieldtype not in _INLINE_FORMATTED:
+		return value
+	raw = _raw(value)
+	if fieldtype == "Currency":
+		currency = _raw(options) if isinstance(options, str) and _CURRENCY.match(_raw(options)) else None
+		out = frappe.utils.fmt_money(frappe.utils.flt(raw), currency=currency)
+	else:
+		out = frappe.format_value(raw, frappe._dict(fieldtype=fieldtype))
+	return printing.Text(out) if isinstance(out, str) else out
+
+
+def _budget_range():
+	left = [INLINE_RANGE_BUDGET]
+
+	def inline_range(*args):
+		from jinja2.exceptions import SecurityError
+
+		r = range(*args)
+		if len(r) > left[0]:
+			raise SecurityError("range() is limited in a sent template")
+		left[0] -= len(r)
+		return r
+
+	return inline_range
+
+
+def render_inline(payload: dict, data, title: str | None = None) -> dict:
+	"""The staged inline template (``html``, ``css``) rendered with the data in its sandbox:
+	``{name: "", type, html, css (scoped), title, inline: True}``. What it reads: ``data``,
+	``doc``, ``rows``, ``title``, ``company`` (a name), ``printed_by``, ``printed_on``,
+	``lang``, ``_()``, ``format_value()``, ``range()`` and Jinja's filters."""
+	ctx = context(None, data, title)
+	safe = {k: ctx[k] for k in ("data", "doc", "rows", "title", "company", "printed_by", "printed_on", "lang")}
+	safe.update({"_": inline_translate, "format_value": inline_format_value, "range": _budget_range()})
+	compiled = compile_inline(payload.get("html") or "")
+	try:
+		html = compiled.render(safe)
+	except (frappe.ValidationError, frappe.PermissionError, frappe.DoesNotExistError):
+		raise
+	except Exception as e:
+		_broken(e, _("Sent template"))
+	return {
+		"name": "",
+		"type": "Jinja",
+		"html": html,
+		"css": scoped_css(payload.get("css")),
+		"title": str.__str__(ctx["title"]),
+		"inline": True,
+	}
 
 
 def _template_line(tb) -> int | None:

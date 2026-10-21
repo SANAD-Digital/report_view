@@ -232,7 +232,7 @@ class TestCustomPrint(RVTestCase):
 			out = api.stage("RV Custom Test", data=json.dumps({"customer": "C1"}), title="T1", letter_head="LH", heading="", signature="S")
 			self.assertEqual(out["route"], f"/desk/rv-print/Custom/{out['token']}")
 			back = api.staged(out["token"])
-			self.assertEqual(back, {"print_format": "RV Custom Test", "data": {"customer": "C1"}, "title": "T1", "options": {"letter_head": "LH", "signature": "S"}})
+			self.assertEqual(back, {"print_format": "RV Custom Test", "inline": False, "data": {"customer": "C1"}, "title": "T1", "options": {"letter_head": "LH", "signature": "S"}})
 			# rendered by its token (with any Custom format)
 			self.assertIn("<p>C1</p>", api.render("RV Custom Test", token=out["token"])["html"])
 			self.assertIn("rvt-empty", api.render(TABLE, token=out["token"])["html"])
@@ -314,3 +314,137 @@ class TestCustomPrint(RVTestCase):
 			pages_pdf_custom("RV Custom Test", _pages_html())
 			self.assertEqual(frappe.local.response.filename, "RV Custom Test.pdf")
 			self.assertTrue(frappe.local.response.filecontent.startswith(b"%PDF"))
+
+	# ------------------------------------------------------------ an inline template
+
+	def _inline(self, html, data=None, css=None, **kw):
+		return api.stage(html=html, css=css, data=json.dumps(data if data is not None else {}), **kw)["token"]
+
+	def test_inline_template_render(self):
+		html = (
+			"<h2>{{ title }}</h2><p>{{ doc.customer }}</p><p>{{ company }}</p><p>{{ printed_by }}</p>"
+			"{% for r in rows %}<i>{{ r.x }}</i>{% endfor %}<b>{{ _('Total') }}</b>"
+			"<u>{{ format_value(1234.5, 'Currency', 'USD') }}</u><s>{{ format_value(doc.customer, 'Data') }}</s>"
+			"{% for i in range(3) %}{{ i }}{% endfor %}<em>{{ doc.rows|length }}</em>"
+		)
+		data = {"customer": "A <b>", "company": "Co <c>", "rows": [{"x": "<script>x()</script>"}, {"x": 2}]}
+		with self.as_user("accountant"):
+			token = self._inline(html, data, css=".k{color:inherit}", title="Inl <t>", letter_head="LH")
+			back = api.staged(token)
+			self.assertEqual((back["print_format"], back["inline"], back["title"]), (None, True, "Inl <t>"))
+			self.assertNotIn("html", back)
+			out = api.render(token=token, lang="ar")
+		self.assertEqual((out["name"], out["inline"], out["css"]), ("", True, ".rv-page-flow{.k{color:inherit}}"))
+		h = out["html"]
+		self.assertIn("<h2>Inl &lt;t&gt;</h2>", h)
+		self.assertIn("<p>A &lt;b&gt;</p>", h)
+		self.assertIn("<p>Co &lt;c&gt;</p>", h)
+		self.assertNotIn("<script>", h)
+		self.assertIn("<b>الإجمالي</b>", h)
+		self.assertIn("1,234.50", h)
+		self.assertIn("<s>A &lt;b&gt;</s>", h)
+		self.assertIn("012", h)
+		self.assertIn("<em>2</em>", h)
+
+	def test_print_format_or_html_one_of_them(self):
+		with self.as_user("accountant"):
+			for kw in ({}, {"print_format": "RV Custom Test", "html": "<p>x</p>"}):
+				with self.assertRaises(RVInvalidInput):
+					api.stage(data="{}", **kw)
+				with self.assertRaises(RVInvalidInput):
+					cp.print_url(data={}, **kw)
+			with self.assertRaises(RVInvalidInput):
+				cp.print_url(html="<p>x</p>", method="a.b")
+			url = cp.print_url(html="<p>{{ doc.a }}</p>", data={"a": "z"})
+			self.assertIn("<p>z</p>", api.render(token=url.rsplit("/", 1)[1])["html"])
+			with patch.object(cp, "MAX_INLINE_HTML", 10), self.assertRaises(RVInvalidInput):
+				self._inline("<p>" + "x" * 20 + "</p>")
+			with patch.object(cp, "MAX_INLINE_CSS", 10), self.assertRaises(RVInvalidInput):
+				self._inline("<p>x</p>", css="a{}" * 10)
+			# a broken template is told when it is sent
+			with self.assertRaises(RVInvalidInput):
+				self._inline("<p>{% if %}</p>")
+
+	def test_the_sandbox_of_an_inline_template(self):
+		blocked = (
+			"{{ frappe.db.get_value('User', 'Administrator', 'api_key') }}",
+			"{{ frappe.get_list('User') }}",
+			"{{ ''.__class__ }}",
+			"{{ (''|attr('\\x5f\\x5fclass\\x5f\\x5f')).__mro__ }}",
+			"{{ ''|attr('__class__') }}",
+			"{{ data|attr('__init__') }}",
+			"{% include 'templates/print_formats/standard.html' %}",
+			"{% import 'x.html' as y %}",
+			"{% extends 'x.html' %}",
+			"{{ lipsum() }}{{ cycler(1) }}",
+			"{% for i in range(60000) %}{% endfor %}{% for i in range(60000) %}{% endfor %}",
+			"{{ data.update({'a': 1}) }}",
+			"{{ get_doc('User', 'Administrator') }}",
+		)
+		with self.as_user("accountant"):
+			for html in blocked:
+				with self.subTest(html=html):
+					try:
+						token = self._inline(html, {"a": 1})
+					except RVInvalidInput:
+						continue
+					# refused, or an unsafe attribute is Undefined and prints nothing
+					try:
+						out = api.render(token=token)["html"]
+					except RVInvalidInput:
+						continue
+					self.assertEqual(out, "")
+			# what is not defined prints nothing (Jinja's Undefined), and leaks nothing
+			token = self._inline("<p>{{ frappe }}|{{ db }}|{{ doc.nothing }}</p>")
+			self.assertEqual(api.render(token=token)["html"], "<p>||</p>")
+
+	def test_inline_token_is_its_users_only_and_a_saved_format_on_its_data(self):
+		with self.as_user("accountant"):
+			token = self._inline("<p>{{ doc.customer }}</p>", {"customer": "Mine", "rows": []})
+			# the same data with a saved Custom format, and back
+			self.assertIn("<p>Mine</p>", api.render("RV Custom Test", token=token)["html"])
+			self.assertIn("<p>Mine</p>", api.render(token=token)["html"])
+			opts = api.get_options(token=token)
+			self.assertEqual((opts["print_format"], opts["inline"]), (None, True))
+			self.assertIn("RV Custom Test", opts["print_formats"])
+			self.assertTrue(opts["default_print_format"])
+			self.assertEqual(api.get_translations(lang="ar", messages=json.dumps(["Total"]), token=token), {"Total": "الإجمالي"})
+		with self.as_user("admin"):
+			for call in (
+				lambda: api.render(token=token),
+				lambda: api.staged(token),
+				lambda: api.get_options(token=token),
+				lambda: pages_pdf_custom(token=token, html="<html></html>"),
+			):
+				with self.assertRaises(frappe.DoesNotExistError):
+					call()
+			with self.assertRaises(RVInvalidInput):
+				api.render()
+
+	def test_inline_needs_a_desk_user(self):
+		# a user with no desk role is a Website User
+		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
+			api.stage(html="<p>x</p>", data="{}")
+		with self.as_user("accountant"), patch.object(cp.frappe, "get_cached_value", return_value="Website User"):
+			with self.assertRaises(frappe.PermissionError):
+				api.stage(html="<p>x</p>", data="{}")
+		with self.set_user("Guest"), self.assertRaises(frappe.PermissionError):
+			cp.guard_inline()
+
+	def test_inline_heading_signature_letter_head_and_pdf(self):
+		from report_view.tests.test_pdf import _pages_html
+
+		heading = frappe.get_doc(
+			{"doctype": "Print Heading", "print_heading": "RV Inline Heading", "description": "{{ title }}:{{ doc.customer }}"}
+		).insert(ignore_if_duplicate=True)
+		frappe.get_doc(
+			{"doctype": "Print Signature", "signature_name": "RV Inline Sig", "signature_for": "Document", "content_type": "HTML", "html": "<p>{{ doc.customer }}</p>"}
+		).insert()
+		with self.as_user("accountant"):
+			token = self._inline("<p>x</p>", {"customer": "Cu <1>"}, title="Ti")
+			self.assertIn("Ti:Cu &lt;1&gt;", api.render_heading(heading=heading.name, token=token, title="Ti")["html"])
+			self.assertIn("<p>Cu &lt;1&gt;</p>", api.render_signature(signature="RV Inline Sig", token=token)["html"])
+			pages_pdf_custom(token=token, html=_pages_html())
+			self.assertTrue(frappe.local.response.filecontent.startswith(b"%PDF"))
+			self.assertEqual(frappe.local.response.filename, "Sent template.pdf")
+

@@ -47,7 +47,7 @@
   "footer": {"h": 15, "pad_top": 3, "slots": {"right": 40, "center": 20, "left": 40}, "elements": []}
 }
 ```
-- `font`: من القائمة `["IBM Plex Sans Arabic", "DejaVu Sans", "Tajawal"]` (الأولى والثانية مثبتتان على خادم PDF؛ الثالثة إن وُجدت).
+- `font`: من القائمة `["IBM Plex Sans Arabic", "DejaVu Sans"]` (المثبتتان على خادم PDF، فالمعاينة والـPDF بالخط نفسه).
 - `colors.*`: `#RRGGBB`.
 - `h`: الترويسة 10–80mm، التذييل 0–50mm (0 = بلا تذييل). `pad_top` 0–20mm. `slots.<s>`: عرض الخانة بنسبة مئوية من عرض الشريط 0–70 (0 = خانة مغلقة)، والمجموع ≤ 100.
 - **العنصر**:

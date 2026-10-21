@@ -1,0 +1,913 @@
+[
+	{
+		"family": "Cairo",
+		"slug": "cairo",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "cairo/cairo-400.woff2",
+				"ttf": "cairo/cairo-400.ttf"
+			},
+			"500": {
+				"woff2": "cairo/cairo-500.woff2",
+				"ttf": "cairo/cairo-500.ttf"
+			},
+			"600": {
+				"woff2": "cairo/cairo-600.woff2",
+				"ttf": "cairo/cairo-600.ttf"
+			},
+			"700": {
+				"woff2": "cairo/cairo-700.woff2",
+				"ttf": "cairo/cairo-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/cairo"
+	},
+	{
+		"family": "Tajawal",
+		"slug": "tajawal",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "tajawal/tajawal-400.woff2",
+				"ttf": "tajawal/tajawal-400.ttf"
+			},
+			"500": {
+				"woff2": "tajawal/tajawal-500.woff2",
+				"ttf": "tajawal/tajawal-500.ttf"
+			},
+			"700": {
+				"woff2": "tajawal/tajawal-700.woff2",
+				"ttf": "tajawal/tajawal-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/tajawal"
+	},
+	{
+		"family": "Almarai",
+		"slug": "almarai",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "almarai/almarai-400.woff2",
+				"ttf": "almarai/almarai-400.ttf"
+			},
+			"700": {
+				"woff2": "almarai/almarai-700.woff2",
+				"ttf": "almarai/almarai-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/almarai"
+	},
+	{
+		"family": "IBM Plex Sans Arabic",
+		"slug": "ibm-plex-sans-arabic",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "ibm-plex-sans-arabic/ibm-plex-sans-arabic-400.woff2",
+				"ttf": "ibm-plex-sans-arabic/ibm-plex-sans-arabic-400.ttf"
+			},
+			"500": {
+				"woff2": "ibm-plex-sans-arabic/ibm-plex-sans-arabic-500.woff2",
+				"ttf": "ibm-plex-sans-arabic/ibm-plex-sans-arabic-500.ttf"
+			},
+			"600": {
+				"woff2": "ibm-plex-sans-arabic/ibm-plex-sans-arabic-600.woff2",
+				"ttf": "ibm-plex-sans-arabic/ibm-plex-sans-arabic-600.ttf"
+			},
+			"700": {
+				"woff2": "ibm-plex-sans-arabic/ibm-plex-sans-arabic-700.woff2",
+				"ttf": "ibm-plex-sans-arabic/ibm-plex-sans-arabic-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/ibmplexsansarabic"
+	},
+	{
+		"family": "Noto Sans Arabic",
+		"slug": "noto-sans-arabic",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "noto-sans-arabic/noto-sans-arabic-400.woff2",
+				"ttf": "noto-sans-arabic/noto-sans-arabic-400.ttf"
+			},
+			"700": {
+				"woff2": "noto-sans-arabic/noto-sans-arabic-700.woff2",
+				"ttf": "noto-sans-arabic/noto-sans-arabic-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/notosansarabic"
+	},
+	{
+		"family": "Readex Pro",
+		"slug": "readex-pro",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "readex-pro/readex-pro-400.woff2",
+				"ttf": "readex-pro/readex-pro-400.ttf"
+			},
+			"500": {
+				"woff2": "readex-pro/readex-pro-500.woff2",
+				"ttf": "readex-pro/readex-pro-500.ttf"
+			},
+			"600": {
+				"woff2": "readex-pro/readex-pro-600.woff2",
+				"ttf": "readex-pro/readex-pro-600.ttf"
+			},
+			"700": {
+				"woff2": "readex-pro/readex-pro-700.woff2",
+				"ttf": "readex-pro/readex-pro-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/readexpro"
+	},
+	{
+		"family": "Alexandria",
+		"slug": "alexandria",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "alexandria/alexandria-400.woff2",
+				"ttf": "alexandria/alexandria-400.ttf"
+			},
+			"700": {
+				"woff2": "alexandria/alexandria-700.woff2",
+				"ttf": "alexandria/alexandria-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/alexandria"
+	},
+	{
+		"family": "Vazirmatn",
+		"slug": "vazirmatn",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "vazirmatn/vazirmatn-400.woff2",
+				"ttf": "vazirmatn/vazirmatn-400.ttf"
+			},
+			"700": {
+				"woff2": "vazirmatn/vazirmatn-700.woff2",
+				"ttf": "vazirmatn/vazirmatn-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/vazirmatn"
+	},
+	{
+		"family": "Mada",
+		"slug": "mada",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "mada/mada-400.woff2",
+				"ttf": "mada/mada-400.ttf"
+			},
+			"700": {
+				"woff2": "mada/mada-700.woff2",
+				"ttf": "mada/mada-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/mada"
+	},
+	{
+		"family": "Amiri",
+		"slug": "amiri",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "naskh",
+		"weights": {
+			"400": {
+				"woff2": "amiri/amiri-400.woff2",
+				"ttf": "amiri/amiri-400.ttf"
+			},
+			"700": {
+				"woff2": "amiri/amiri-700.woff2",
+				"ttf": "amiri/amiri-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/amiri"
+	},
+	{
+		"family": "Noto Naskh Arabic",
+		"slug": "noto-naskh-arabic",
+		"scripts": [
+			"arabic"
+		],
+		"category": "naskh",
+		"weights": {
+			"400": {
+				"woff2": "noto-naskh-arabic/noto-naskh-arabic-400.woff2",
+				"ttf": "noto-naskh-arabic/noto-naskh-arabic-400.ttf"
+			},
+			"700": {
+				"woff2": "noto-naskh-arabic/noto-naskh-arabic-700.woff2",
+				"ttf": "noto-naskh-arabic/noto-naskh-arabic-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/notonaskharabic"
+	},
+	{
+		"family": "Lateef",
+		"slug": "lateef",
+		"scripts": [
+			"arabic"
+		],
+		"category": "naskh",
+		"weights": {
+			"400": {
+				"woff2": "lateef/lateef-400.woff2",
+				"ttf": "lateef/lateef-400.ttf"
+			},
+			"700": {
+				"woff2": "lateef/lateef-700.woff2",
+				"ttf": "lateef/lateef-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/lateef"
+	},
+	{
+		"family": "Scheherazade New",
+		"slug": "scheherazade-new",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "naskh",
+		"weights": {
+			"400": {
+				"woff2": "scheherazade-new/scheherazade-new-400.woff2",
+				"ttf": "scheherazade-new/scheherazade-new-400.ttf"
+			},
+			"700": {
+				"woff2": "scheherazade-new/scheherazade-new-700.woff2",
+				"ttf": "scheherazade-new/scheherazade-new-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/scheherazadenew"
+	},
+	{
+		"family": "Harmattan",
+		"slug": "harmattan",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "naskh",
+		"weights": {
+			"400": {
+				"woff2": "harmattan/harmattan-400.woff2",
+				"ttf": "harmattan/harmattan-400.ttf"
+			},
+			"700": {
+				"woff2": "harmattan/harmattan-700.woff2",
+				"ttf": "harmattan/harmattan-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/harmattan"
+	},
+	{
+		"family": "Markazi Text",
+		"slug": "markazi-text",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "naskh",
+		"weights": {
+			"400": {
+				"woff2": "markazi-text/markazi-text-400.woff2",
+				"ttf": "markazi-text/markazi-text-400.ttf"
+			},
+			"700": {
+				"woff2": "markazi-text/markazi-text-700.woff2",
+				"ttf": "markazi-text/markazi-text-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/markazitext"
+	},
+	{
+		"family": "Mirza",
+		"slug": "mirza",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "naskh",
+		"weights": {
+			"400": {
+				"woff2": "mirza/mirza-400.woff2",
+				"ttf": "mirza/mirza-400.ttf"
+			},
+			"700": {
+				"woff2": "mirza/mirza-700.woff2",
+				"ttf": "mirza/mirza-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/mirza"
+	},
+	{
+		"family": "Noto Kufi Arabic",
+		"slug": "noto-kufi-arabic",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "kufi",
+		"weights": {
+			"400": {
+				"woff2": "noto-kufi-arabic/noto-kufi-arabic-400.woff2",
+				"ttf": "noto-kufi-arabic/noto-kufi-arabic-400.ttf"
+			},
+			"700": {
+				"woff2": "noto-kufi-arabic/noto-kufi-arabic-700.woff2",
+				"ttf": "noto-kufi-arabic/noto-kufi-arabic-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/notokufiarabic"
+	},
+	{
+		"family": "Reem Kufi",
+		"slug": "reem-kufi",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "kufi",
+		"weights": {
+			"400": {
+				"woff2": "reem-kufi/reem-kufi-400.woff2",
+				"ttf": "reem-kufi/reem-kufi-400.ttf"
+			},
+			"700": {
+				"woff2": "reem-kufi/reem-kufi-700.woff2",
+				"ttf": "reem-kufi/reem-kufi-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/reemkufi"
+	},
+	{
+		"family": "Kufam",
+		"slug": "kufam",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "kufi",
+		"weights": {
+			"400": {
+				"woff2": "kufam/kufam-400.woff2",
+				"ttf": "kufam/kufam-400.ttf"
+			},
+			"700": {
+				"woff2": "kufam/kufam-700.woff2",
+				"ttf": "kufam/kufam-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/kufam"
+	},
+	{
+		"family": "Changa",
+		"slug": "changa",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "kufi",
+		"weights": {
+			"400": {
+				"woff2": "changa/changa-400.woff2",
+				"ttf": "changa/changa-400.ttf"
+			},
+			"700": {
+				"woff2": "changa/changa-700.woff2",
+				"ttf": "changa/changa-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/changa"
+	},
+	{
+		"family": "El Messiri",
+		"slug": "el-messiri",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "display",
+		"weights": {
+			"400": {
+				"woff2": "el-messiri/el-messiri-400.woff2",
+				"ttf": "el-messiri/el-messiri-400.ttf"
+			},
+			"700": {
+				"woff2": "el-messiri/el-messiri-700.woff2",
+				"ttf": "el-messiri/el-messiri-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/elmessiri"
+	},
+	{
+		"family": "Lalezar",
+		"slug": "lalezar",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "display",
+		"weights": {
+			"400": {
+				"woff2": "lalezar/lalezar-400.woff2",
+				"ttf": "lalezar/lalezar-400.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/lalezar"
+	},
+	{
+		"family": "Aref Ruqaa",
+		"slug": "aref-ruqaa",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "display",
+		"weights": {
+			"400": {
+				"woff2": "aref-ruqaa/aref-ruqaa-400.woff2",
+				"ttf": "aref-ruqaa/aref-ruqaa-400.ttf"
+			},
+			"700": {
+				"woff2": "aref-ruqaa/aref-ruqaa-700.woff2",
+				"ttf": "aref-ruqaa/aref-ruqaa-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/arefruqaa"
+	},
+	{
+		"family": "Rakkas",
+		"slug": "rakkas",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "display",
+		"weights": {
+			"400": {
+				"woff2": "rakkas/rakkas-400.woff2",
+				"ttf": "rakkas/rakkas-400.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/rakkas"
+	},
+	{
+		"family": "Lemonada",
+		"slug": "lemonada",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "display",
+		"weights": {
+			"400": {
+				"woff2": "lemonada/lemonada-400.woff2",
+				"ttf": "lemonada/lemonada-400.ttf"
+			},
+			"700": {
+				"woff2": "lemonada/lemonada-700.woff2",
+				"ttf": "lemonada/lemonada-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/lemonada"
+	},
+	{
+		"family": "Baloo Bhaijaan 2",
+		"slug": "baloo-bhaijaan-2",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "display",
+		"weights": {
+			"400": {
+				"woff2": "baloo-bhaijaan-2/baloo-bhaijaan-2-400.woff2",
+				"ttf": "baloo-bhaijaan-2/baloo-bhaijaan-2-400.ttf"
+			},
+			"700": {
+				"woff2": "baloo-bhaijaan-2/baloo-bhaijaan-2-700.woff2",
+				"ttf": "baloo-bhaijaan-2/baloo-bhaijaan-2-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/baloobhaijaan2"
+	},
+	{
+		"family": "Inter",
+		"slug": "inter",
+		"scripts": [
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "inter/inter-400.woff2",
+				"ttf": "inter/inter-400.ttf"
+			},
+			"500": {
+				"woff2": "inter/inter-500.woff2",
+				"ttf": "inter/inter-500.ttf"
+			},
+			"600": {
+				"woff2": "inter/inter-600.woff2",
+				"ttf": "inter/inter-600.ttf"
+			},
+			"700": {
+				"woff2": "inter/inter-700.woff2",
+				"ttf": "inter/inter-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/inter"
+	},
+	{
+		"family": "Roboto",
+		"slug": "roboto",
+		"scripts": [
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "roboto/roboto-400.woff2",
+				"ttf": "roboto/roboto-400.ttf"
+			},
+			"700": {
+				"woff2": "roboto/roboto-700.woff2",
+				"ttf": "roboto/roboto-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/roboto"
+	},
+	{
+		"family": "Open Sans",
+		"slug": "open-sans",
+		"scripts": [
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "open-sans/open-sans-400.woff2",
+				"ttf": "open-sans/open-sans-400.ttf"
+			},
+			"700": {
+				"woff2": "open-sans/open-sans-700.woff2",
+				"ttf": "open-sans/open-sans-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/opensans"
+	},
+	{
+		"family": "Lato",
+		"slug": "lato",
+		"scripts": [
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "lato/lato-400.woff2",
+				"ttf": "lato/lato-400.ttf"
+			},
+			"700": {
+				"woff2": "lato/lato-700.woff2",
+				"ttf": "lato/lato-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/lato"
+	},
+	{
+		"family": "Montserrat",
+		"slug": "montserrat",
+		"scripts": [
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "montserrat/montserrat-400.woff2",
+				"ttf": "montserrat/montserrat-400.ttf"
+			},
+			"700": {
+				"woff2": "montserrat/montserrat-700.woff2",
+				"ttf": "montserrat/montserrat-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/montserrat"
+	},
+	{
+		"family": "Noto Sans",
+		"slug": "noto-sans",
+		"scripts": [
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "noto-sans/noto-sans-400.woff2",
+				"ttf": "noto-sans/noto-sans-400.ttf"
+			},
+			"700": {
+				"woff2": "noto-sans/noto-sans-700.woff2",
+				"ttf": "noto-sans/noto-sans-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/main/ofl/notosans"
+	},
+	{
+		"family": "Source Serif 4",
+		"slug": "source-serif-4",
+		"scripts": [
+			"latin"
+		],
+		"category": "serif",
+		"weights": {
+			"400": {
+				"woff2": "source-serif-4/source-serif-4-400.woff2",
+				"ttf": "source-serif-4/source-serif-4-400.ttf"
+			},
+			"700": {
+				"woff2": "source-serif-4/source-serif-4-700.woff2",
+				"ttf": "source-serif-4/source-serif-4-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/adobe-fonts/source-serif/tree/release/TTF (static; the variable font is in https://github.com/google/fonts/tree/main/ofl/sourceserif4)"
+	},
+	{
+		"family": "Merriweather",
+		"slug": "merriweather",
+		"scripts": [
+			"latin"
+		],
+		"category": "serif",
+		"weights": {
+			"400": {
+				"woff2": "merriweather/merriweather-400.woff2",
+				"ttf": "merriweather/merriweather-400.ttf"
+			},
+			"700": {
+				"woff2": "merriweather/merriweather-700.woff2",
+				"ttf": "merriweather/merriweather-700.ttf"
+			}
+		},
+		"licence": "OFL-1.1",
+		"source": "https://github.com/google/fonts/tree/b848f42f0bc0a8bc53588c3688ca37890e1db0bd/ofl/merriweather (static v2.002)"
+	},
+	{
+		"family": "Elham",
+		"slug": "elham",
+		"scripts": [
+			"arabic"
+		],
+		"category": "display",
+		"weights": {
+			"400": {
+				"ttf": "elham/elham-400.ttf"
+			}
+		},
+		"licence": "FarsiWeb (redistribute unchanged)",
+		"source": "frappe_jodit_editor/public/fonts (Sharif FarsiWeb FarsiFonts 0.4)"
+	},
+	{
+		"family": "Homa",
+		"slug": "homa",
+		"scripts": [
+			"arabic"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "homa/homa-400.woff2",
+				"ttf": "homa/homa-400.ttf"
+			}
+		},
+		"licence": "GPL-2.0",
+		"source": "frappe_jodit_editor/public/fonts (Sharif FarsiWeb FarsiFonts 0.4)"
+	},
+	{
+		"family": "Koodak",
+		"slug": "koodak",
+		"scripts": [
+			"arabic"
+		],
+		"category": "display",
+		"weights": {
+			"400": {
+				"ttf": "koodak/koodak-400.ttf"
+			}
+		},
+		"licence": "FarsiWeb (redistribute unchanged) + Bitstream Vera",
+		"source": "frappe_jodit_editor/public/fonts (Sharif FarsiWeb FarsiFonts 0.4)"
+	},
+	{
+		"family": "Nazli",
+		"slug": "nazli",
+		"scripts": [
+			"arabic"
+		],
+		"category": "naskh",
+		"weights": {
+			"400": {
+				"woff2": "nazli/nazli-400.woff2",
+				"ttf": "nazli/nazli-400.ttf"
+			},
+			"700": {
+				"woff2": "nazli/nazli-700.woff2",
+				"ttf": "nazli/nazli-700.ttf"
+			}
+		},
+		"licence": "GPL-2.0",
+		"source": "frappe_jodit_editor/public/fonts (Sharif FarsiWeb FarsiFonts 0.4)"
+	},
+	{
+		"family": "Roya",
+		"slug": "roya",
+		"scripts": [
+			"arabic"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"ttf": "roya/roya-400.ttf"
+			},
+			"700": {
+				"ttf": "roya/roya-700.ttf"
+			}
+		},
+		"licence": "FarsiWeb (redistribute unchanged) + Bitstream Vera",
+		"source": "frappe_jodit_editor/public/fonts (Sharif FarsiWeb FarsiFonts 0.4)"
+	},
+	{
+		"family": "Terafik",
+		"slug": "terafik",
+		"scripts": [
+			"arabic"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"ttf": "terafik/terafik-400.ttf"
+			},
+			"700": {
+				"ttf": "terafik/terafik-700.ttf"
+			}
+		},
+		"licence": "FarsiWeb (redistribute unchanged) + Bitstream Vera",
+		"source": "frappe_jodit_editor/public/fonts (Sharif FarsiWeb FarsiFonts 0.4)"
+	},
+	{
+		"family": "Titr",
+		"slug": "titr",
+		"scripts": [
+			"arabic"
+		],
+		"category": "display",
+		"weights": {
+			"700": {
+				"woff2": "titr/titr-700.woff2",
+				"ttf": "titr/titr-700.ttf"
+			}
+		},
+		"licence": "GPL-2.0",
+		"source": "frappe_jodit_editor/public/fonts (Sharif FarsiWeb FarsiFonts 0.4)"
+	},
+	{
+		"family": "FreeFarsi",
+		"slug": "freefarsi",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "sans",
+		"weights": {
+			"400": {
+				"woff2": "freefarsi/freefarsi-400.woff2",
+				"ttf": "freefarsi/freefarsi-400.ttf"
+			},
+			"700": {
+				"woff2": "freefarsi/freefarsi-700.woff2",
+				"ttf": "freefarsi/freefarsi-700.ttf"
+			}
+		},
+		"licence": "GPL-2.0-or-later",
+		"source": "frappe_jodit_editor/public/fonts (Sharif FarsiWeb FarsiFonts 0.4; FreeFarsi by Abbas Izad)",
+		"italic": {
+			"400": {
+				"woff2": "freefarsi/freefarsi-400-italic.woff2",
+				"ttf": "freefarsi/freefarsi-400-italic.ttf"
+			},
+			"700": {
+				"woff2": "freefarsi/freefarsi-700-italic.woff2",
+				"ttf": "freefarsi/freefarsi-700-italic.ttf"
+			}
+		}
+	},
+	{
+		"family": "FreeFarsi Monospace",
+		"slug": "freefarsi-mono",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "mono",
+		"weights": {
+			"400": {
+				"woff2": "freefarsi-mono/freefarsi-mono-400.woff2",
+				"ttf": "freefarsi-mono/freefarsi-mono-400.ttf"
+			}
+		},
+		"licence": "GPL-2.0-or-later",
+		"source": "frappe_jodit_editor/public/fonts (Sharif FarsiWeb FarsiFonts 0.4; FreeFarsi by Abbas Izad)"
+	},
+	{
+		"family": "DejaVu Sans",
+		"slug": "dejavu-sans",
+		"scripts": [
+			"arabic",
+			"latin"
+		],
+		"category": "sans",
+		"weights": {},
+		"licence": "Bitstream Vera + public domain",
+		"source": "installed on the server (fonts-dejavu); not shipped",
+		"system": true
+	}
+]

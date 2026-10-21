@@ -186,3 +186,14 @@ class TestPrintPresets(RVTestCase):
 				api.save(context="Document", target="Journal Entry", name=first["name"], preset_name="x")
 			api.delete(first["name"])
 			self.assertFalse(frappe.db.exists("Print Preset", first["name"]))
+
+	def test_a_sent_template_offers_the_general_custom_presets(self):
+		"""A sent template (ADR-019) has no Custom format: it lists and saves the presets of
+		every Custom format, as any Desk user who may print."""
+		with self.as_user("accountant"):
+			row = api.save(context="Custom", target="", preset_name="Sent template wide", settings=json.dumps({"orientation": "landscape"}), for_all=1)
+			self.assertFalse(row["specific"])
+			self.assertIn(row["name"], _names(api.list("Custom", ""), "mine"))
+		with self.as_user("none"):
+			with self.assertRaises(frappe.PermissionError):
+				api.list("Custom", "")

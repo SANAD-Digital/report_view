@@ -153,7 +153,8 @@ export class PresetControl {
 	/** The presets of the host's target ({context, target}), or null where it has none. */
 	load() {
 		const t = this.view.host.pages_preset_target?.();
-		this.target = t && t.context && t.target ? t : null;
+		// a sent template (Custom, no format) offers the presets of every Custom format
+		this.target = t && t.context && (t.target || t.context === "Custom") ? t : null;
 		if (!this.target) return Promise.resolve(null);
 		return call("list", { context: this.target.context, target: this.target.target }).catch(() => null);
 	}
@@ -433,11 +434,13 @@ export class PresetControl {
 					fieldname: "scope",
 					fieldtype: "Select",
 					label: __("Offered for"),
+					// a sent template has no target of its own: its presets are for every format
+					hidden: this.target.target ? 0 : 1,
 					options: [
 						{ value: "target", label: sw.only(target_label) },
 						{ value: "all", label: sw.every() },
 					],
-					default: a && !a.specific ? "all" : "target",
+					default: !this.target.target || (a && !a.specific) ? "all" : "target",
 					description: __("A preset for every target keeps the columns and the print format of each one as they are."),
 				},
 				{ fieldname: "description", fieldtype: "Small Text", label: __("Description") },

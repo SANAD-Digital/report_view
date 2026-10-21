@@ -11,7 +11,7 @@ from frappe import _
 
 from report_view.api import _rate_limit
 from report_view.core import print_presets as pp
-from report_view.core.custom_print import guard_custom_format
+from report_view.core.custom_print import guard_custom_format, guard_inline
 from report_view.core.errors import RVInvalidInput
 from report_view.core.guard import guard_print, guard_report
 
@@ -21,6 +21,10 @@ def guard_target(context: str, target: str | None) -> str:
 	``guard_print``), a document type (``print`` on it) or a Custom print format."""
 	if context not in pp.CONTEXTS:
 		frappe.throw(_("Invalid print preset type"), RVInvalidInput)
+	# a sent template (ADR-019) has no format of its own: the general Custom presets
+	if context == "Custom" and target in (None, ""):
+		guard_inline()
+		return ""
 	if not isinstance(target, str) or not target.strip():
 		frappe.throw(_("The print target is required"), RVInvalidInput)
 	if context == "Report":

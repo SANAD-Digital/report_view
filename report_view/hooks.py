@@ -109,7 +109,9 @@ fixtures = [
 # ------------
 
 # before_install = "report_view.install.before_install"
-# after_install = "report_view.install.after_install"
+# Report View's own Chromium for PDFs (ADR-016): downloaded outside the app when missing
+after_install = "report_view.install.after_install"
+after_migrate = "report_view.install.after_migrate"
 
 # Uninstallation
 # ------------

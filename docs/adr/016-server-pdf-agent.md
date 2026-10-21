@@ -99,3 +99,10 @@
 - **Chromium الاحتياطي**: لا نستعمل `ChromePDFGenerator` ولا دواله الخاصة بعد الآن: إن غاب `chromium-rv` يؤخذ مسار Chromium الخاص بـ Frappe بدالته العامة `find_or_download_chromium_executable` ويُشغَّل بالطريقة نفسها أعلاه، مع تحذير في `logs/report_view.log` مرة لكل عملية. الاعتماد الوحيد الباقي على Frappe هو `CDPSocketClient`.
 - **التثبيت**: `apps/report_view/scripts/install_chromium.sh` ينزّل Chrome for Testing `chrome-headless-shell` ‏153.0.8010.12 (مثبت بـ SHA-256 للأرشيف وللملف) إلى `<bench>/chromium-rv`، ويتحقق منه، ويطبع حزم apt المطلوبة؛ لا يفعل شيئاً إن كانت النسخة نفسها موجودة، ولا يستبدل نسخة أخرى إلا بـ `--force`.
 - **ما بقي**: `--no-sandbox` باقٍ (`kernel.apparmor_restrict_unprivileged_userns = 1`): حذفه يحتاج ملف AppArmor لـ `chrome-headless-shell` أو تشغيل المحرك بمستخدم نظام لا يقرأ `site_config.json`.
+
+## تعديل (2026-10-21): تثبيت Chromium مع التطبيق
+- Chromium الخاص بنا (Chrome for Testing «chrome-headless-shell»، نحو 260MB، Linux x86-64 فقط) **لا يُخزَّن في المستودع**، بل يُنزَّل مع التثبيت إلى `<bench>/chromium-rv` بالسكربت المثبَّت الإصدار والبصمة `scripts/install_chromium.sh` (مصدر رقم الإصدار الوحيد).
+- hooks جديدة: `after_install` و `after_migrate` → `report_view.install` → `core/chromium.ensure()`: يثبّته إن غاب أو كان إصدار آخر، ولا يُفشل التثبيت أبداً (يسجّل تحذيراً، ويبقى PDF على Chromium الخاص بـ Frappe). مسار يحدده الموقع (`report_view_chromium_path`) يُترك كما هو. التثبيت واحد في كل مرة على الـbench (قفل ملف).
+- أمر bench: `bench report-view-install-chromium [--force]` (لا يحتاج `--site`).
+- في `Report View Global Settings`: قسم «محرك PDF» يعرض الحالة (مثبت بالإصدار المعتمد / إصدار آخر / غير مثبت والبديل مستعمل) وزر تثبيت يعمل في الخلفية على طابور `long` (System Manager فقط، `api/chromium.py`).
+- حزم النظام (libnss3 وغيرها) لا تُثبَّت تلقائياً (تحتاج sudo)؛ السكربت يطبع أمر `apt-get` كاملاً.

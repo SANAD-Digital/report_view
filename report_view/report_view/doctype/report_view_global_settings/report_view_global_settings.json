@@ -41,7 +41,9 @@
   "include_total",
   "printed_on",
   "custom_print_section",
-  "custom_print_open_in"
+  "custom_print_open_in",
+  "pdf_engine_section",
+  "pdf_engine_status"
  ],
  "fields": [
   {
@@ -289,11 +291,21 @@
    "options": "Same tab\nNew tab",
    "default": "Same tab",
    "description": "Where report_view.print() opens the print page when the call does not say (open_in: \"same\" or \"tab\")."
+  },
+  {
+   "fieldname": "pdf_engine_section",
+   "fieldtype": "Section Break",
+   "label": "PDF engine"
+  },
+  {
+   "fieldname": "pdf_engine_status",
+   "fieldtype": "HTML",
+   "label": "PDF engine status"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-21 20:00:00.000000",
+ "modified": "2026-10-21 22:30:00.000000",
  "modified_by": "Administrator",
  "module": "Report View",
  "name": "Report View Global Settings",

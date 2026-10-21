@@ -3691,3 +3691,42 @@ msgstr "زوايا غير صالحة في {0}"
 
 msgid "Corners to round"
 msgstr "الزوايا المستديرة"
+
+msgid "PDF engine"
+msgstr "محرك PDF"
+
+msgid "PDF engine status"
+msgstr "حالة محرك PDF"
+
+msgid "Installing… this takes a few minutes"
+msgstr "جارٍ التثبيت… يستغرق بضع دقائق"
+
+msgid "Report View's Chromium {0} is installed: PDFs print as the browser does"
+msgstr "Chromium الخاص بـReport View (الإصدار {0}) مثبت: ملفات PDF تُطبع كما يطبعها المتصفح"
+
+msgid "Chromium {0} is installed; Report View pins {1}"
+msgstr "Chromium {0} مثبت، وReport View يعتمد الإصدار {1}"
+
+msgid "Report View's Chromium is not installed: PDFs use Frappe's Chromium and may differ slightly from the browser's print"
+msgstr "Chromium الخاص بـReport View غير مثبت: ملفات PDF تستعمل Chromium الخاص بـFrappe وقد تختلف قليلاً عن طباعة المتصفح"
+
+msgid "Last install failed: {0}"
+msgstr "فشل آخر تثبيت: {0}"
+
+msgid "Folder: {0}"
+msgstr "المجلد: {0}"
+
+msgid "Install version {0}"
+msgstr "تثبيت الإصدار {0}"
+
+msgid "Install Chromium"
+msgstr "تثبيت Chromium"
+
+msgid "Chrome for Testing has no build for this server's system"
+msgstr "لا توجد نسخة Chrome for Testing لنظام هذا الخادم"
+
+msgid "From a terminal: bench report-view-install-chromium"
+msgstr "من الطرفية: bench report-view-install-chromium"
+
+msgid "The install started in the background"
+msgstr "بدأ التثبيت في الخلفية"

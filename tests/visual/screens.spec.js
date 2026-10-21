@@ -2862,6 +2862,8 @@ test("pages: on a phone the toolbar stays on top and a tool's menu opens as a sh
 	expect(s.thumbs).toBe("none");
 	expect(s.hscroll).toBe(false);
 	await page.locator('details[data-sec="paper"] > summary').click();
+	// the sheet slides in: measured once its animation is over
+	await page.evaluate(() => Promise.all(document.querySelector(".rv-print-pop").getAnimations().map((a) => a.finished)));
 	s = await st();
 	expect(s.menu.bottom).toBe(844);
 	expect(s.menu.w).toBe(390);
@@ -3307,4 +3309,39 @@ test("pages: a PDF job tells waiting from printing, can be cancelled, and stops 
 	expect(out.calls.some((c) => c.endsWith("pages_pdf_download"))).toBe(false);
 	expect(out.job).toBe(null);
 	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: on a phone the sheet has a scrim and a close button, and no field takes the focus (no keyboard, no list)", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=tb&lang=ar&rv=${PAGES}`);
+	await settle(page);
+	await page.setViewportSize({ width: 440, height: 956 });
+	await page.waitForTimeout(300);
+	const st = () =>
+		page.evaluate(() => {
+			const m = document.querySelector(".rv-print-pop");
+			const s = document.querySelector(".rv-print-scrim");
+			const r = m?.getBoundingClientRect();
+			const sr = s?.getBoundingClientRect();
+			// the sheet is drawn, not clipped by the toolbar it belongs to: its centre is itself
+			const hit = r && document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+			return {
+				open: Boolean(m),
+				drawn: Boolean(hit && m.contains(hit)),
+				scrim: sr ? Math.round(sr.width) === innerWidth && Math.round(sr.height) === innerHeight : false,
+				focus: document.activeElement === m,
+				list: Boolean(document.querySelector(".rv-print-pop .awesomplete > ul:not([hidden])")),
+				close: Boolean(m?.querySelector(".rv-pop-x[aria-label]")),
+			};
+		});
+	await page.locator('details[data-sec="tpl"] > summary').click();
+	let s = await st();
+	expect(s).toEqual({ open: true, drawn: true, scrim: true, focus: true, list: false, close: true });
+	await page.locator(".rv-pop-x").click();
+	expect((await st()).open).toBe(false);
+	await page.locator('details[data-sec="tpl"] > summary').click();
+	// a tap on the dimmed pages closes the sheet
+	await page.mouse.click(220, 120);
+	expect((await st()).open).toBe(false);
+	expect(problems).toEqual([]);
 });

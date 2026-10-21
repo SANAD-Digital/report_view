@@ -1196,8 +1196,14 @@ export class PagesView {
 		const open = [...bd.querySelectorAll("details[data-sec][open]")];
 		this.menu_listeners(open.length > 0);
 		if (!open.length) return;
+		// on a phone the menu is a sheet over the pages: a scrim under it closes it
+		const scrim = document.createElement("div");
+		scrim.className = "rv-print-scrim";
+		scrim.setAttribute("aria-hidden", "true");
+		scrim.addEventListener("click", () => this.close_menu());
 		const menu = document.createElement("div");
 		menu.className = "rv-print-pop";
+		menu.tabIndex = -1;
 		menu.setAttribute("role", "dialog");
 		menu.setAttribute("aria-label", open.map((d) => d.querySelector(".tt")?.textContent || "").join(" · "));
 		for (const d of open) {
@@ -1210,7 +1216,14 @@ export class PagesView {
 			sec.append(hd, d.querySelector(":scope > .rv-psec-bd"));
 			menu.append(sec);
 		}
-		bd.append(menu);
+		const close = document.createElement("button");
+		close.type = "button";
+		close.className = "rv-pop-x";
+		close.setAttribute("aria-label", __("Close"));
+		close.innerHTML = icons.close();
+		close.addEventListener("click", () => this.close_menu());
+		menu.querySelector(".rv-pop-hd")?.append(close);
+		bd.append(scrim, menu);
 		menu.addEventListener("scroll", () => (this.menu_scroll = { id: [...this.open_secs].join(), top: menu.scrollTop }), { passive: true });
 		this.place_menu();
 	}
@@ -1253,7 +1266,12 @@ export class PagesView {
 		this.menu_anchor = id;
 		this.menu_scroll = null;
 		this.render_panel();
-		if (!only) this.bd.querySelector(".rv-print-pop input:not([type=hidden]), .rv-print-pop select, .rv-print-pop button")?.focus({ preventScroll: true });
+		if (only) return;
+		// on a phone a focused field opens the keyboard and its list over the sheet: the
+		// sheet itself takes the focus there
+		const menu = this.bd.querySelector(".rv-print-pop");
+		const sheet = window.matchMedia("(max-width: 900px), (pointer: coarse)").matches;
+		(sheet ? menu : menu?.querySelector("input:not([type=hidden]), select, button:not(.rv-pop-x)"))?.focus({ preventScroll: true });
 	}
 
 	close_menu() {

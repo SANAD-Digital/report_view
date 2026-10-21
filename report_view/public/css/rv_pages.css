@@ -410,7 +410,12 @@
 /* the menu of the open tool */
 .rv-print-pop{text-align:start;position:fixed;z-index:1040;display:flex;flex-direction:column;overflow:auto;overscroll-behavior:contain;background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-lg);box-shadow:var(--sh-2),0 12px 32px rgba(17,24,20,.14);scrollbar-width:thin}
 .rv-pop-sec + .rv-pop-sec{border-top:1px solid var(--line)}
-.rv-pop-hd{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:12px 14px 2px;text-align:start}
+.rv-pop-hd{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:12px 44px 2px 14px;padding-inline:14px 44px;text-align:start}
+.rv-print-pop:focus{outline:0}
+.rv-pop-x{position:absolute;top:6px;inset-inline-end:6px;width:30px;height:30px;display:grid;place-items:center;padding:0;border:0;border-radius:var(--r-sm);background:none;color:var(--tx-3);cursor:pointer}
+.rv-pop-x:hover{background:var(--hover);color:var(--tx)}
+.rv-pop-x:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
+.rv-print-scrim{display:none}
 .rv-pop-hd strong{font-size:var(--fs-sm);font-weight:600;color:var(--tx)}
 .rv-pop-hd span{font-size:11px;color:var(--tx-3)}
 .rv-pop-hd span:empty{display:none}
@@ -455,8 +460,23 @@
   .rv-print-acts .rv-print-pdf{flex:0 0 auto}
   .rv-print-thumbs{display:none}
   .rv-print-sheets{padding:12px;gap:12px}
-  .rv-print-pop{inset:auto 0 0 0!important;width:auto!important;max-height:72vh!important;border-radius:14px 14px 0 0;padding-bottom:env(safe-area-inset-bottom)}
+  .rv-print-pop{inset:auto 0 0 0!important;width:auto!important;max-height:min(78dvh,640px)!important;border-width:1px 0 0;border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom);animation:rv-sheet-in .18s ease-out}
+  .rv-print-pop::before{content:"";flex:none;align-self:center;width:36px;height:4px;margin-top:8px;border-radius:2px;background:var(--line-3)}
+  .rv-pop-hd{padding-top:6px}
+  .rv-pop-hd strong{font-size:var(--fs-md, 15px)}
+  .rv-pop-x{top:2px;width:40px;height:40px}
+  .rv-print-pop .rv-psec-bd .rv-input,.rv-print-pop [data-link] .form-control{height:36px;font-size:16px}
+  .rv-print-scrim{display:block;position:fixed;inset:0;z-index:1039;background:var(--scrim);animation:rv-fade-in .18s ease-out}
+  /* the tools: one line that scrolls sideways; a shadow shows at an end while there is more
+     past it (scroll shadows: no mask, which would clip the menu and the scrim inside it) */
+  .rv-print-side .bd{padding:4px 10px;scroll-snap-type:x proximity;background:linear-gradient(90deg,var(--surface) 30%,transparent) left center/32px 100% no-repeat local,linear-gradient(270deg,var(--surface) 30%,transparent) right center/32px 100% no-repeat local,radial-gradient(farthest-side at 0 50%,color-mix(in srgb,var(--tx) 18%,transparent),transparent) left center/12px 100% no-repeat scroll,radial-gradient(farthest-side at 100% 50%,color-mix(in srgb,var(--tx) 18%,transparent),transparent) right center/12px 100% no-repeat scroll,var(--surface)}
+  .rv-print-side .rv-rg{scroll-snap-align:start;padding-block:4px}
+  .rv-rg-name{display:none}
+  .rv-print-side .rv-rg .rv-psec > summary{min-height:36px}
 }
+@keyframes rv-sheet-in{from{transform:translateY(24px);opacity:.4}}
+@keyframes rv-fade-in{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.rv-print-pop,.rv-print-scrim{animation:none}}
 
 /* ---------- long reports: the browser lays out only what is near the viewport ---------- */
 /* a sheet far from the viewport is skipped (its size is its own: width and height are set on

@@ -1925,7 +1925,12 @@ export class PagesView {
 		const ctx = this.ctx;
 		const t = (m, a) => this.t(m, a);
 		const [where, side] = s.number_pos.split("-");
-		const number = where === "bottom" ? this.number_html(n, total) : "";
+		// `measure`: the probe page takes the footer wherever it may print (the tallest foot)
+		const lhf = letterhead?.footer && s.foot_height && (measure || on_page(s.foot_pages, n, total)) ? `<div class="rv-page-lhf">${page_spans(letterhead.footer, n, total)}</div>` : "";
+		// a letter head footer that numbers its pages (the builder's, ADR-018) is the number of
+		// this page: the band does not repeat it (the probe keeps both, the tallest foot)
+		const lh_numbers = Boolean(lhf) && !measure && /class="(?:page|topage)"/.test(letterhead.footer);
+		const number = where === "bottom" && !lh_numbers ? this.number_html(n, total) : "";
 		const name = s.number_caption ? `<span class="nm">${[esc(t(ctx.report_name)), ctx.company ? esc(ctx.company) : ""].filter(Boolean).join(" · ")}</span>` : "";
 		const slots = { start: "", center: "", end: "" };
 		if (number) slots[side] = number;
@@ -1934,8 +1939,6 @@ export class PagesView {
 			else if (!slots.end) slots.end = name;
 		}
 		const band = number || name ? `<div class="rv-page-foot-line${number ? " has-num" : ""}"><span class="st">${slots.start}</span><span class="ce">${slots.center}</span><span class="en">${slots.end}</span></div>` : "";
-		// `measure`: the probe page takes the footer wherever it may print (the tallest foot)
-		const lhf = letterhead?.footer && s.foot_height && (measure || on_page(s.foot_pages, n, total)) ? `<div class="rv-page-lhf">${page_spans(letterhead.footer, n, total)}</div>` : "";
 		// a signature on pages other than the last only: above the footer
 		const sig = s.signatures && !this.sig_in_tail() && (measure || on_page(this.sig_pages(), n, total)) ? this.signatures_html() : "";
 		// the number closes the page: under the footer (whose rule stands above it)

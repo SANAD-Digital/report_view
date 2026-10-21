@@ -420,3 +420,36 @@ class TestLetterHeadApi(RVTestCase):
 			for bad in ("", "x" * 301):
 				with self.assertRaises(RVInvalidInput):
 					api.qr_svg(bad)
+
+
+class TestPdfMargins(RVTestCase):
+	"""Hook pdf_body_html: wkhtmltopdf with repeated header and footer gets the margins of a
+	builder letter head (it does not measure the header itself)."""
+
+	def render(self, letter_head, footer="", generator="wkhtmltopdf", repeat=1, body="<div class='print-format'>x</div>"):
+		from jinja2 import Template
+
+		old = frappe.local.form_dict.get("pdf_generator")
+		frappe.local.form_dict.pdf_generator = generator
+		try:
+			return lh.pdf_body_html(
+				jenv=None,
+				template=Template(body),
+				print_format=None,
+				args={"letter_head": letter_head, "footer": footer, "no_letterhead": 0, "print_settings": frappe._dict(repeat_header_footer=repeat)},
+			)
+		finally:
+			frappe.local.form_dict.pdf_generator = old
+
+	def test_builder_letter_head_gets_margins(self):
+		html = self.render('<div class="rvlh" data-rv-lh="header" data-h="35">', '<div class="rvlh" data-rv-lh="footer" data-h="14">')
+		self.assertIn(".print-format { margin-top: 50mm; margin-bottom: 24mm; }", html)
+
+	def test_left_alone(self):
+		builder = '<div class="rvlh" data-rv-lh="header" data-h="35">'
+		self.assertNotIn("margin-top", self.render("<div>a hand made letter head</div>"))
+		self.assertNotIn("margin-top", self.render(builder, generator="chrome"))
+		self.assertNotIn("margin-top", self.render(builder, repeat=0))
+		# a format with its own top margin keeps it
+		own = self.render(builder, body="<style>.print-format{margin-top:20mm}</style><div class='print-format'>x</div>")
+		self.assertEqual(own.count("margin-top"), 1)

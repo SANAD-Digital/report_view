@@ -70,7 +70,7 @@
    and its parts keep the sizes it gives them; the panel's height and shape do not apply */
 .rv-page-lh:has(> .rvlh),.rv-page-lhf:has(> .rvlh){max-height:none;display:block;padding-bottom:0;padding-top:0}
 .rv-page-lh:has(> .rvlh){border-bottom:0}
-.rv-page-lh .rvlh *,.rv-page-lhf .rvlh *{max-height:none}
+.rv-page-lh .rvlh,.rv-page-lhf .rvlh,.rv-page-lh .rvlh *,.rv-page-lhf .rvlh *{max-height:none}
 .rv-page-lh .rvlh img,.rv-page-lhf .rvlh img{width:auto;height:auto;object-fit:initial}
 
 /* title block of the first page: centred, as a formal statement */

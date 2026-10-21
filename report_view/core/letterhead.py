@@ -661,3 +661,34 @@ def print_format_css(layout: dict) -> str:
 	if layout["footer"]["h"]:
 		css += f" margin-bottom: {_n(layout['footer']['h'] + 10)}mm;"
 	return css + " }"
+
+
+BAND_HEIGHT = re.compile(r'data-rv-lh="(header|footer)" data-h="([0-9.]+)"')
+FORMAT_MARGIN = re.compile(r"\.print-format\s*\{[^}]*margin-(top|bottom)", re.I)
+
+
+def pdf_body_html(jenv, template, print_format, args):
+	"""Hook `pdf_body_html` (ADR-018): the print page as Frappe renders it, plus, for a PDF
+	made by wkhtmltopdf with "Repeat Header and Footer", the page margins a builder letter
+	head needs. wkhtmltopdf does not measure the header; it reads the margins from a
+	`.print-format` rule of the page (frappe/utils/pdf.py, read_options_from_html). A format
+	that sets its own margin keeps it; a letter head not made by the builder is left alone."""
+	hooks = frappe.get_hooks("pdf_body_html")
+	mine = "report_view.core.letterhead.pdf_body_html"
+	previous = [h for h in hooks if h != mine][-1]
+	html = frappe.get_attr(previous)(jenv=jenv, template=template, print_format=print_format, args=args)
+	if frappe.local.form_dict.get("pdf_generator") != "wkhtmltopdf" or args.get("no_letterhead"):
+		return html
+	settings = args.get("print_settings") or {}
+	if not settings.get("repeat_header_footer"):
+		return html
+	heights = dict(BAND_HEIGHT.findall((args.get("letter_head") or "") + (args.get("footer") or "")))
+	if not heights:
+		return html
+	taken = {side.lower() for side in FORMAT_MARGIN.findall(html)}
+	rules = []
+	if "header" in heights and "top" not in taken:
+		rules.append(f"margin-top: {_n(float(heights['header']) + 15)}mm")
+	if float(heights.get("footer") or 0) and "bottom" not in taken:
+		rules.append(f"margin-bottom: {_n(float(heights['footer']) + 10)}mm")
+	return html + (f"<style>.print-format {{ {'; '.join(rules)}; }}</style>" if rules else "")

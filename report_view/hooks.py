@@ -51,6 +51,9 @@ app_include_css = ["/assets/report_view/css/rv_fonts.css"]
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 # The "Design with the builder" button of the Letter Head form (ADR-018)
 doctype_js = {"Letter Head": "public/js/letter_head_form.js", "Print Format": "public/js/print_format_form.js"}
+
+# a builder letter head (ADR-018) gets the page margins wkhtmltopdf needs to repeat it
+pdf_body_html = "report_view.core.letterhead.pdf_body_html"
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}

@@ -1,0 +1,146 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-10-21 12:00:00.000000",
+ "description": "Saved settings of the print pages (paper, letter head, heading, footer, numbering, marks), private to their owner or public (ADR-020)",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "preset_name",
+  "for_user",
+  "is_default",
+  "column_break_main",
+  "context",
+  "report",
+  "reference_doctype",
+  "print_format",
+  "section_settings",
+  "settings",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "preset_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name",
+   "length": 140,
+   "reqd": 1
+  },
+  {
+   "description": "Empty: public, offered to every user. Set: private, seen and edited by this user only",
+   "fieldname": "for_user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "For User",
+   "options": "User",
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "description": "Applied when the pages open with no settings of the user: for its owner when private, for everyone when public",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "label": "Default"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Report",
+   "fieldname": "context",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Prints",
+   "options": "Report\nDocument\nCustom",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.context==='Report'",
+   "description": "Empty: offered for every report",
+   "fieldname": "report",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Report",
+   "options": "Report"
+  },
+  {
+   "depends_on": "eval:doc.context==='Document'",
+   "description": "Empty: offered for every document type",
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Document Type",
+   "options": "DocType"
+  },
+  {
+   "depends_on": "eval:doc.context==='Custom'",
+   "description": "Empty: offered for every Custom print format",
+   "fieldname": "print_format",
+   "fieldtype": "Link",
+   "label": "Print Format",
+   "options": "Print Format"
+  },
+  {
+   "fieldname": "section_settings",
+   "fieldtype": "Section Break",
+   "label": "Settings"
+  },
+  {
+   "description": "The settings of the print pages, as the print toolbar saves them",
+   "fieldname": "settings",
+   "fieldtype": "JSON",
+   "label": "Settings",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-21 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Report View",
+ "name": "Print Preset",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "Report Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Desk User"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "if_owner": 1,
+   "read": 1,
+   "role": "Desk User",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "preset_name",
+ "show_title_field_in_link": 1
+}

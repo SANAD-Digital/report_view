@@ -3,8 +3,9 @@
 // document: the control in the head, «Save as new» through Frappe's dialog, the changed
 // dot, «Save», the preset shown again after a reload, «Delete». A second user
 // (RV_USER2/RV_PW2, e.g. rv_restricted) checks the privacy of the private preset.
-// RV_PW=… [RV_USER=…] [RV_USER2=… RV_PW2=…] node tests/site/print_presets.cjs
+// [RV_USER=… RV_PW=…] [RV_USER2=… RV_PW2=…] node tests/site/print_presets.cjs
 const { chromium, request } = require("playwright");
+const password = require("./_password.cjs");
 const BASE = process.env.RV_SITE || "https://acc.dev.sanad.digital";
 const results = [];
 const check = (name, ok, info = "") => {
@@ -31,7 +32,7 @@ async function api_client(user, pwd) {
 
 (async () => {
 	const user = process.env.RV_USER || "rv_accountant@rv.test";
-	const a = await api_client(user, process.env.RV_PW);
+	const a = await api_client(user, password("RV_PW", "RV_ACCOUNTANT_PASSWORD"));
 	const created = [];
 	// 1. the API is live (a server restart loads report_view.api.print_presets)
 	const first = await a.get("list", { context: "Report", target: "Trial Balance" });
@@ -83,7 +84,7 @@ async function api_client(user, pwd) {
 	page.on("console", (m) => {
 		if (m.type() === "error" && !/CORS|ERR_FAILED|dev-acc|status of 4\d\d/.test(m.text())) problems.push(m.text());
 	});
-	await page.request.post(`${BASE}/api/method/login`, { form: { usr: user, pwd: process.env.RV_PW } });
+	await page.request.post(`${BASE}/api/method/login`, { form: { usr: user, pwd: password("RV_PW", "RV_ACCOUNTANT_PASSWORD") } });
 	const V = "frappe.pages['rv-print'].rv_print.pages";
 	const settle = async () => {
 		await page.waitForFunction((g) => { try { const v = eval(g); return v.pages.length && v.filled.size && !v.el.classList.contains("is-busy"); } catch { return false; } }, V, { timeout: 60000 });

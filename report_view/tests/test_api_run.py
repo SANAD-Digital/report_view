@@ -10,6 +10,7 @@ from report_view.core.errors import RVInvalidInput, RVReportError
 from report_view.core.settings import load_settings
 from report_view.tests.utils import (
 	COMPANY,
+	COMPANY_ABBR,
 	OTHER_COMPANY,
 	TB_FILTERS,
 	TB_JS_FILTERS,
@@ -88,13 +89,13 @@ class TestApiRun(RVTestCase):
 					api.run("Trial Balance", TB_FILTERS, js_filters)
 
 	def test_restricted_user_own_company(self):
-		if not frappe.db.exists("Company", OTHER_COMPANY):
-			self.skipTest(f"{OTHER_COMPANY} missing")
 		with self.as_user("restricted"):
 			response = api.run("Trial Balance", dict(TB_FILTERS, company=OTHER_COMPANY), TB_JS_FILTERS)
 		self.assertEqual(response["status"], "ok")
 		accounts = [r.get("account") for r in response["raw"]["result"]]
-		self.assertFalse([a for a in accounts if a and a.endswith(" - SA")], "rows of SND Accounting leaked")
+		self.assertFalse(
+			[a for a in accounts if a and a.endswith(f" - {COMPANY_ABBR}")], f"rows of {COMPANY} leaked"
+		)
 
 	def test_invalid_filters(self):
 		with self.as_user("accountant"):
@@ -150,9 +151,15 @@ class TestRunHardening(RVTestCase):
 		from report_view.api import _rate_limit
 
 		calls = []
-		limited = _rate_limit(2, seconds=5)(lambda: calls.append(1))
+
+		def counted():
+			calls.append(1)
+
+		limited = _rate_limit(2, seconds=5)(counted)
+		# the counter is per function (module and qualified name) and per user
+		name = f"{counted.__module__}.{counted.__qualname__}"
 		keys = [
-			frappe.cache.make_key(f"report_view:rl:<lambda>:{self.users[k]}:5")
+			frappe.cache.make_key(f"report_view:rl:{name}:{self.users[k]}:{5}")
 			for k in ("accountant", "admin")
 		]
 		try:
@@ -174,6 +181,34 @@ class TestRunHardening(RVTestCase):
 			for _i in range(3):
 				limited()
 		self.assertEqual(len(calls), 6)
+
+	def test_two_functions_of_one_name_count_apart(self):
+		"""``save`` of api.letterhead and of api.print_presets are two counters."""
+		from report_view.api import _rate_limit
+
+		def save():
+			return 1
+
+		def other_save():
+			return 2
+
+		other_save.__name__ = "save"
+		other_save.__qualname__ = save.__qualname__
+		other_save.__module__ = "report_view.api.print_presets"
+		first, second = _rate_limit(1, seconds=5)(save), _rate_limit(1, seconds=5)(other_save)
+		user = self.users["accountant"]
+		keys = [
+			frappe.cache.make_key(f"report_view:rl:{m}.{save.__qualname__}:{user}:5")
+			for m in (save.__module__, "report_view.api.print_presets")
+		]
+		try:
+			with patch.object(frappe.local, "request", True, create=True), self.as_user("accountant"):
+				self.assertEqual((first(), second()), (1, 2))
+				with self.assertRaises(frappe.RateLimitExceededError):
+					first()
+		finally:
+			for key in keys:
+				frappe.cache.delete(key)
 
 	def test_the_report_is_checked_once_per_request(self):
 		from report_view.api import _guard

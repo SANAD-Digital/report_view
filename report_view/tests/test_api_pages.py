@@ -8,7 +8,7 @@ from frappe.translate import get_all_languages
 
 from report_view import api
 from report_view.core.errors import RVInvalidInput, RVNoPrint
-from report_view.tests.utils import COMPANY, RVTestCase
+from report_view.tests.utils import COMPANY, RVTestCase, report_print_format
 
 
 class TestApiPages(RVTestCase):
@@ -57,20 +57,22 @@ class TestApiPages(RVTestCase):
 			with self.set_user(self.users["accountant"]):
 				report = frappe.get_doc("Report", "Trial Balance")
 		# Auditor may read GL Entry reports in ERPNext but has no print on GL Entry
-		if frappe.has_permission(report.ref_doctype, "print", user=self.users["auditor"], ignore_share_permissions=True):
+		if frappe.has_permission(
+			report.ref_doctype, "print", user=self.users["auditor"], ignore_share_permissions=True
+		):
 			self.skipTest("the auditor role may print GL Entry on this site")
 		with self.as_user("auditor"):
 			try:
 				api.get_print_options("Trial Balance")
-			except (RVNoPrint, frappe.PermissionError):
+			except RVNoPrint, frappe.PermissionError:
 				return
 		self.fail("get_print_options answered a user without the print permission")
 
 	def test_print_format_is_read_for_its_report_only(self):
+		report_print_format("Accounts Receivable")
 		with self.as_user("accountant"):
 			options = api.get_print_options("Accounts Receivable", COMPANY)
-			if not options["print_formats"]:
-				self.skipTest("no report print format for Accounts Receivable on this site")
+			self.assertTrue(options["print_formats"])
 			name = options["print_formats"][0]
 			out = api.get_print_format("Accounts Receivable", name)
 			self.assertEqual(out["name"], name)
@@ -83,7 +85,9 @@ class TestApiPages(RVTestCase):
 
 	def test_translations_of_an_enabled_language(self):
 		with self.as_user("accountant"):
-			out = api.get_translations("Trial Balance", "ar", ["Grand Total", "Page {0} of {1}", "no such message xyz"])
+			out = api.get_translations(
+				"Trial Balance", "ar", ["Grand Total", "Page {0} of {1}", "no such message xyz"]
+			)
 		self.assertEqual(out.get("Grand Total"), "الإجمالي العام")
 		self.assertIn("Page {0} of {1}", out)
 		self.assertNotIn("no such message xyz", out)
@@ -112,6 +116,7 @@ class TestApiPages(RVTestCase):
 			arabic = api.run("Trial Balance", TB_FILTERS, TB_JS_FILTERS)
 			frappe.local.lang = "en"
 			english = api.run("Trial Balance", TB_FILTERS, TB_JS_FILTERS)
+
 		def labels(r):
 			return [c["label"] if isinstance(c, dict) else str(c) for c in r["raw"]["columns"]]
 
@@ -122,28 +127,27 @@ class TestApiPages(RVTestCase):
 
 class TestJinjaPrintFormat(RVTestCase):
 	def test_jinja_and_js_formats_of_the_report_are_offered(self):
+		report_print_format("Trial Balance")
 		with self.as_user("accountant"):
 			options = api.get_print_options("Trial Balance", COMPANY)
-		types = {n: frappe.db.get_value("Print Format", n, "print_format_type") for n in options["print_formats"]}
+		types = {
+			n: frappe.db.get_value("Print Format", n, "print_format_type") for n in options["print_formats"]
+		}
 		self.assertTrue(set(types.values()) <= {"JS", "Jinja"})
-		if "Jinja" not in types.values():
-			self.skipTest("no Jinja report print format for Trial Balance on this site")
+		self.assertIn("Jinja", types.values())
 
 	def test_a_jinja_format_is_rendered_with_the_report_rows(self):
 		from report_view.tests.utils import TB_FILTERS, TB_JS_FILTERS
 
-		name = frappe.db.get_value(
-			"Print Format",
-			{"report": "Trial Balance", "print_format_type": "Jinja", "disabled": 0, "print_format_for": "Report"},
-			"name",
-		)
-		if not name:
-			self.skipTest("no Jinja report print format for Trial Balance on this site")
+		name = report_print_format("Trial Balance")
 		meta = [{"fieldname": "company", "label": "Company", "fieldtype": "Link"}]
 		with self.as_user("accountant"):
 			out = api.render_print_format("Trial Balance", name, TB_FILTERS, TB_JS_FILTERS, meta)
+			rows = api.run("Trial Balance", TB_FILTERS, TB_JS_FILTERS)["raw"]["result"]
 			# a JS format is not rendered here
-			js = frappe.db.get_value("Print Format", {"report": "Trial Balance", "print_format_type": "JS"}, "name")
+			js = frappe.db.get_value(
+				"Print Format", {"report": "Trial Balance", "print_format_type": "JS"}, "name"
+			)
 			if js:
 				with self.assertRaises(RVInvalidInput):
 					api.render_print_format("Trial Balance", js, TB_FILTERS, TB_JS_FILTERS, meta)
@@ -151,7 +155,8 @@ class TestJinjaPrintFormat(RVTestCase):
 		self.assertIn("<table", out["html"])
 		# the criteria and the report's rows are in it
 		self.assertIn(TB_FILTERS["to_date"], out["html"])
-		self.assertIn("1000", out["html"])
+		accounts = [r.get("account") for r in rows if isinstance(r, dict) and r.get("account")]
+		self.assertTrue(any(frappe.utils.escape_html(a) in out["html"] or a in out["html"] for a in accounts))
 		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
 			api.render_print_format("Trial Balance", name, TB_FILTERS, TB_JS_FILTERS, meta)
 
@@ -287,10 +292,17 @@ class TestPrintHeadingAndSignature(RVTestCase):
 
 	def test_signature_validation(self):
 		with self.assertRaises(frappe.ValidationError):
-			frappe.get_doc({"doctype": "Print Signature", "signature_name": "RV Test Empty", "content_type": "Table"}).insert()
+			frappe.get_doc(
+				{"doctype": "Print Signature", "signature_name": "RV Test Empty", "content_type": "Table"}
+			).insert()
 		with self.assertRaises(frappe.ValidationError):
 			frappe.get_doc(
-				{"doctype": "Print Signature", "signature_name": "RV Test Bad", "content_type": "HTML", "html": "{% if %}"}
+				{
+					"doctype": "Print Signature",
+					"signature_name": "RV Test Bad",
+					"content_type": "HTML",
+					"html": "{% if %}",
+				}
 			).insert()
 
 	def test_the_site_standard_settings_and_limits(self):
@@ -318,7 +330,16 @@ class TestPrintHeadingAndSignature(RVTestCase):
 		self.assertEqual(get_print_max_pages(), 77)
 		d = print_defaults()
 		self.assertEqual(
-			(d["size"], d["orientation"], d["margins"], d["page_m"]["top"], d["style"], d["heading_pages"], d["page_numbers"], d["number_format"]),
+			(
+				d["size"],
+				d["orientation"],
+				d["margins"],
+				d["page_m"]["top"],
+				d["style"],
+				d["heading_pages"],
+				d["page_numbers"],
+				d["number_format"],
+			),
 			("A3", "landscape", "custom", 20, "ledger", "all", False, "short"),
 		)
 		with self.as_user("accountant"):
@@ -347,8 +368,12 @@ class TestShippedHeadingsAndSignatures(RVTestCase):
 		cls.shipped = {}
 		for f in ("print_heading.json", "print_signature.json"):
 			path = os.path.join(folder, f)
-			import_doc(path)
-			cls.shipped[f] = json.load(open(path, encoding="utf-8"))
+			# import_doc commits after each file: inside the test transaction it must not,
+			# or the test users and the imported records outlive the rollback
+			with patch.object(frappe.db, "commit"):
+				import_doc(path)
+			with open(path, encoding="utf-8") as fixture:
+				cls.shipped[f] = json.load(fixture)
 
 	def render_all(self, lang):
 		from report_view.tests.utils import TB_FILTERS
@@ -362,7 +387,9 @@ class TestShippedHeadingsAndSignatures(RVTestCase):
 					out[d["name"]] = api.render_print_heading("Trial Balance", d["name"], TB_FILTERS, meta)
 				for d in self.shipped["print_signature.json"]:
 					if d["signature_for"] == "Report":
-						out[d["name"]] = api.render_print_signature("Trial Balance", d["name"], TB_FILTERS, meta)
+						out[d["name"]] = api.render_print_signature(
+							"Trial Balance", d["name"], TB_FILTERS, meta
+						)
 			finally:
 				frappe.local.lang = "en"
 		return out
@@ -437,7 +464,9 @@ class TestViewColumnsInTemplates(RVTestCase):
 			{"fieldname": "debit", "label": "<b>Debit</b>", "hidden": True},
 		]
 		with self.as_user("accountant"):
-			html = api.render_print_format("Trial Balance", fmt.name, TB_FILTERS, TB_JS_FILTERS, meta, None, view)["html"]
+			html = api.render_print_format(
+				"Trial Balance", fmt.name, TB_FILTERS, TB_JS_FILTERS, meta, None, view
+			)["html"]
 		shown = html.split("|SHOWN:")[1].split("|")[0].split(",")
 		# the view's order first, the view's hidden column hidden, the others after in the report's order
 		self.assertEqual(shown[:2], ["credit", "account"])
@@ -448,7 +477,9 @@ class TestViewColumnsInTemplates(RVTestCase):
 		self.assertIn("|ROW:True", html)
 		# without the view: the report's columns as returned
 		with self.as_user("accountant"):
-			plain = api.render_print_format("Trial Balance", fmt.name, TB_FILTERS, TB_JS_FILTERS, meta)["html"]
+			plain = api.render_print_format("Trial Balance", fmt.name, TB_FILTERS, TB_JS_FILTERS, meta)[
+				"html"
+			]
 		self.assertFalse(plain.startswith("ALL:credit,"))
 
 	def test_a_heading_reads_the_view_columns_and_bad_input_is_refused(self):
@@ -456,13 +487,24 @@ class TestViewColumnsInTemplates(RVTestCase):
 
 		report = frappe.get_doc("Report", "Trial Balance")
 		ctx = printing.report_context(
-			report, {"company": COMPANY}, None, [{"fieldname": "account", "label": "<i>Account</i>"}, {"fieldname": "debit", "label": "Debit", "hidden": 1}]
+			report,
+			{"company": COMPANY},
+			None,
+			[
+				{"fieldname": "account", "label": "<i>Account</i>"},
+				{"fieldname": "debit", "label": "Debit", "hidden": 1},
+			],
 		)
 		self.assertEqual([c.fieldname for c in ctx["columns"]], ["account", "debit"])
 		self.assertEqual([c.fieldname for c in ctx["visible_columns"]], ["account"])
 		self.assertEqual(ctx["columns"][0].label, "Account")
 		self.assertEqual(printing.report_context(report, {"company": COMPANY}, None)["columns"], [])
-		for bad in ([{"label": "x"}], ["account"], [{"fieldname": ""}], [{"fieldname": "a"}] * (printing.MAX_VIEW_COLUMNS + 1)):
+		for bad in (
+			[{"label": "x"}],
+			["account"],
+			[{"fieldname": ""}],
+			[{"fieldname": "a"}] * (printing.MAX_VIEW_COLUMNS + 1),
+		):
 			with self.assertRaises(RVInvalidInput):
 				printing.parse_view_columns(bad)
 
@@ -489,7 +531,11 @@ class TestPrintEscaping(RVTestCase):
 			}
 		).insert(ignore_if_duplicate=True)
 		cls.plain = frappe.get_doc(
-			{"doctype": "Print Heading", "print_heading": "RV Esc Plain", "description": "Note: {{ doc.rv_note }}"}
+			{
+				"doctype": "Print Heading",
+				"print_heading": "RV Esc Plain",
+				"description": "Note: {{ doc.rv_note }}",
+			}
 		).insert(ignore_if_duplicate=True)
 		cls.signature = frappe.get_doc(
 			{
@@ -510,7 +556,9 @@ class TestPrintEscaping(RVTestCase):
 		meta = [{"fieldname": "rv_note", "label": "<svg onload=alert(2)>", "fieldtype": "Data"}]
 		view = [{"fieldname": 'a"><img src=x onerror=alert(3)>', "label": "A"}]
 		with self.as_user("accountant"):
-			out = api.render_print_heading("Trial Balance", self.heading.name, self.filters(self.PAYLOAD), meta, view)
+			out = api.render_print_heading(
+				"Trial Balance", self.heading.name, self.filters(self.PAYLOAD), meta, view
+			)
 		html = out["html"]
 		self.assertNotIn("<img", html)
 		self.assertNotIn("<svg", html)
@@ -521,7 +569,9 @@ class TestPrintEscaping(RVTestCase):
 		self.assertIn("&lt;img src=x onerror=alert(3)&gt;", parts[3])
 		# the string methods, filters and operators of a template keep the escaping
 		self.assertEqual(parts[5], self.ESCAPED.upper().replace("&LT;", "&lt;").replace("&GT;", "&gt;"))
-		self.assertEqual(parts[6:11], [self.ESCAPED + "!", self.ESCAPED, self.ESCAPED, self.ESCAPED, "&lt;img"])
+		self.assertEqual(
+			parts[6:11], [self.ESCAPED + "!", self.ESCAPED, self.ESCAPED, self.ESCAPED, "&lt;img"]
+		)
 		# the title is text (the browser escapes it), never HTML-escaped twice
 		self.assertEqual(out["title"], f"RV Esc {self.PAYLOAD}")
 
@@ -598,13 +648,19 @@ class TestPrintEscaping(RVTestCase):
 	def test_an_escaped_value_still_finds_its_record(self):
 		from report_view.core.printing import Text
 
-		name = frappe.get_doc(
-			{"doctype": "Print Heading", "print_heading": "RV Esc & Co 'x'", "description": ""}
-		).insert(ignore_if_duplicate=True).name
+		name = (
+			frappe.get_doc(
+				{"doctype": "Print Heading", "print_heading": "RV Esc & Co 'x'", "description": ""}
+			)
+			.insert(ignore_if_duplicate=True)
+			.name
+		)
 		value = Text(name)
 		self.assertEqual(str(value), "RV Esc &amp; Co &apos;x&apos;")
 		self.assertEqual(frappe.db.get_value("Print Heading", value, "name"), name)
 		self.assertEqual(frappe.db.get_value("Print Heading", {"name": value}, "name"), name)
-		self.assertEqual(frappe.get_list("Print Heading", filters={"name": ["in", [value]]}, pluck="name"), [name])
+		self.assertEqual(
+			frappe.get_list("Print Heading", filters={"name": ["in", [value]]}, pluck="name"), [name]
+		)
 		self.assertEqual(frappe.get_doc("Print Heading", value).name, name)
 		self.assertEqual(frappe.as_json({"v": value}), frappe.as_json({"v": name}))

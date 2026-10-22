@@ -50,7 +50,10 @@ app_include_css = ["/assets/report_view/css/rv_fonts.css"]
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 # The "Design with the builder" button of the Letter Head form (ADR-018)
-doctype_js = {"Letter Head": "public/js/letter_head_form.js", "Print Format": "public/js/print_format_form.js"}
+doctype_js = {
+	"Letter Head": "public/js/letter_head_form.js",
+	"Print Format": "public/js/print_format_form.js",
+}
 
 # a builder letter head (ADR-018) gets the page margins wkhtmltopdf needs to repeat it
 pdf_body_html = "report_view.core.letterhead.pdf_body_html"
@@ -94,8 +97,46 @@ jinja = {"methods": ["report_view.core.printing.report_view_signature"]}
 # The standard print headings and signatures (ADR-015), synced on migrate; a record the
 # user edited stays as edited (its `modified` is newer than the file's).
 fixtures = [
-	{"dt": "Print Heading", "filters": [["name", "in", ["Financial Statement", "Account Statement", "Confidential Report", "Draft Report", "Board Report"]]]},
-	{"dt": "Print Signature", "filters": [["name", "in", ["Prepared, Reviewed, Approved", "Accountant and Finance Manager", "Audit Committee", "Treasury and Payments", "Inventory Count Committee", "Signature and Company Stamp", "Authorized Signatory", "Balance Confirmation", "Signature Grid", "Issued by and Received by"]]]},
+	{
+		"dt": "Print Heading",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"Financial Statement",
+					"Account Statement",
+					"Confidential Report",
+					"Draft Report",
+					"Board Report",
+				],
+			]
+		],
+	},
+	{
+		"dt": "Print Signature",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"Prepared, Reviewed, Approved",
+					"Accountant and Finance Manager",
+					"Audit Committee",
+					"Treasury and Payments",
+					"Inventory Count Committee",
+					"Signature and Company Stamp",
+					"Authorized Signatory",
+					"Balance Confirmation",
+					"Signature Grid",
+					"Issued by and Received by",
+					"Approval Steps",
+					"Accountant, Manager and Stamp",
+					"Receipt Acknowledgement",
+				],
+			]
+		],
+	},
 	# the Custom print source (ADR-019): the option of print_format_for and its table format
 	{"dt": "Property Setter", "filters": [["name", "in", ["Print Format-print_format_for-options"]]]},
 	{"dt": "Print Format", "filters": [["name", "in", ["Report View Table"]]]},
@@ -170,9 +211,14 @@ has_permission = {"Print Preset": "report_view.core.print_presets.has_permission
 # where a Custom print opens by default, known before any request (ADR-019)
 extend_bootinfo = "report_view.core.settings.boot_session"
 
-# a Custom print format is HTML and CSS only (ADR-019)
+# a Custom print format is HTML and CSS only (ADR-019); a builder letter head keeps its
+# source on insert and takes its layout with it when deleted (ADR-018)
 doc_events = {
 	"Print Format": {"before_validate": "report_view.core.custom_print.before_validate_print_format"},
+	"Letter Head": {
+		"before_insert": "report_view.core.letterhead.keep_builder_source",
+		"on_trash": "report_view.core.letterhead.delete_layout",
+	},
 }
 
 # doc_events = {
@@ -300,4 +346,3 @@ scheduler_events = {
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
-

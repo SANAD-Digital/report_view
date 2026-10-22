@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from io import BytesIO
 from unittest.mock import patch
 
@@ -569,6 +570,69 @@ class TestExportSafetyAndJobs(RVTestCase):
 			self.assertTrue(state["error"])
 			# the user may start another export
 			self.assertEqual(api.export_xlsx("Trial Balance", json.dumps(tb_model()))["status"], "queued")
+
+	def test_a_job_whose_worker_is_gone_fails_and_frees_the_user(self):
+		"""C16: a killed worker leaves the job ``running``; past its timeout it reads as lost."""
+		from report_view.core.export import jobs
+
+		with (
+			self.as_user("accountant"),
+			patch.object(jobs, "ASYNC_ROWS", 5),
+			patch("report_view.core.export.jobs.frappe.enqueue") as enqueue,
+		):
+			job = api.export_xlsx("Trial Balance", json.dumps(tb_model()))["job"]
+			self.assertEqual(enqueue.call_args.kwargs["job_id"], jobs.JOBS.rq_id(job))
+			state = jobs._get(job)
+			jobs._set(
+				job, {**state, "state": "running", "updated_at": time.time() - jobs.JOBS.stale_seconds - 5}
+			)
+			with patch("report_view.core.jobs.frappe.log_error") as log_error:
+				out = api.export_xlsx_status(job)
+			self.assertEqual((out["state"], out["error_code"], out["cancellable"]), ("failed", "lost", False))
+			self.assertTrue(out["error"])
+			log_error.assert_called_once()
+			self.assertEqual(api.export_xlsx("Trial Balance", json.dumps(tb_model()))["status"], "queued")
+
+	def test_a_job_is_cancelled_by_its_user_only(self):
+		from report_view.core.export import jobs
+
+		with (
+			self.as_user("accountant"),
+			patch.object(jobs, "ASYNC_ROWS", 5),
+			patch("report_view.core.export.jobs.frappe.enqueue"),
+		):
+			job = api.export_xlsx("Trial Balance", json.dumps(tb_model()))["job"]
+			self.assertTrue(api.export_xlsx_status(job)["cancellable"])
+		with self.as_user("admin"), self.assertRaises(frappe.DoesNotExistError):
+			api.export_xlsx_cancel(job)
+		with (
+			self.as_user("accountant"),
+			patch.object(jobs, "ASYNC_ROWS", 5),
+			patch("report_view.core.export.jobs.frappe.enqueue"),
+		):
+			out = api.export_xlsx_cancel(job)
+			self.assertEqual(
+				(out["state"], out["error_code"], out["cancellable"]), ("failed", "cancelled", False)
+			)
+			# a cancelled job that a worker picks up never runs, and keeps no file
+			with patch("report_view.core.export.jobs.runner.run") as run:
+				jobs.run_job(job)
+				run.assert_not_called()
+			self.assertFalse(os.path.exists(jobs._path(job)))
+			self.assertEqual(api.export_xlsx_status(job)["error_code"], "cancelled")
+			# the user may start another export
+			self.assertEqual(api.export_xlsx("Trial Balance", json.dumps(tb_model()))["status"], "queued")
+
+	def test_the_queue_comes_from_the_site_config(self):
+		from report_view.core.export import jobs
+
+		with patch.dict(frappe.conf, {"report_view_export_queue": "rv_xlsx_q"}):
+			self.assertEqual(jobs.JOBS.queue(), "long")
+			with patch(
+				"frappe.utils.background_jobs.get_queues_timeout",
+				return_value={"short": 300, "default": 300, "long": 1500, "rv_xlsx_q": 1500},
+			):
+				self.assertEqual(jobs.JOBS.queue(), "rv_xlsx_q")
 
 	def test_cleanup_removes_old_files_only(self):
 		from report_view.core.export import jobs

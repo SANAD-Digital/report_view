@@ -13,19 +13,22 @@
 
 ```
 apps/report_view/
-├── CLAUDE.md  START.md  README.md  package.json  playwright.config.js
+├── CLAUDE.md  START.md  README.md  package.json  yarn.lock  # مكتبات وقت التشغيل فقط
 ├── docs/                      # التوثيق (عربي). لا يُنشر كأصول.
 ├── reference/                 # التصميم والنموذج (لا يُنشر)
 ├── scripts/                   # سكربتات تطوير (setup_test_users.py، توليد بيانات)
 ├── tests/
+│   ├── package.json           # أدوات الاختبار (Playwright) بإصدار مثبّت ولها قفلها؛ لا تدخل node_modules التطبيق
+│   ├── playwright.config.js   # e2e على موقع
 │   ├── e2e/                   # Playwright
 │   └── js/                    # اختبارات node:test للمحوّل والمحرك (بلا مكتبة إضافية)
 └── report_view/               # حزمة بايثون
     ├── hooks.py               # السجل الكامل في ADR-007
     ├── install.py             # after_install: الدور Report View Manager + الإعدادات المشحونة
     ├── api/
-    │   ├── __init__.py        # run, get_meta, enrich, export_xlsx, export_pdf, get_entry_state
-    │   └── views.py           # list_views, get_view, save_view, delete_view, set_default
+    │   ├── __init__.py        # run, get_meta, enrich, export_xlsx(+status/cancel/download), get_entry_state، وضع «صفحات» (§2.10)
+    │   ├── document.py  pdf.py  letterhead.py  custom_print.py  print_presets.py  chromium.py   # ADR-016..020 (§2.10)
+    │   └── views.py           # «لم يُبنَ» (ADR-010)
     ├── core/
     │   ├── errors.py          # أصناف الأخطاء ورموزها (§2.0)
     │   ├── guard.py           # guard_report / guard_export / guard_print (§2.0)
@@ -35,35 +38,42 @@ apps/report_view/
     │   ├── expressions.py     # قواعد تعابير الفلاتر السريعة المغلقة للتصدير (ADR-013)
     │   ├── view_state.py      # المخطط والتحقق والترحيل (§7)
     │   ├── settings.py        # دمج الإعدادات (§5.3)
-    │   ├── enrich.py          # الإثراء (ADR-011)
+    │   ├── enrich.py          # «لم يُبنَ»: الإثراء في api.enrich نفسه (ADR-011)
+    │   ├── jobs.py  limits.py  # حالة الوظائف الخلفية (Excel و PDF) وحد الطلبات لكل مستخدم
+    │   ├── printing.py  pdf.py  chromium.py  letterhead.py  custom_print.py  print_presets.py  fonts.py   # الطباعة (ADR-014..020)
     │   └── export/
     │       ├── model.py       # التحقق من نموذج التصدير (§4)
     │       ├── xlsx.py        # openpyxl
-    │       └── pdf.py         # قالب Jinja + get_pdf (ADR-004)
+    │       ├── jobs.py        # التصدير في الخلفية (§2.4)
+    │       └── pdf.py         # «لم يُبنَ»: PDF من صفحات المتصفح بمحرك الخادم (ADR-016)
     ├── defaults/
     │   └── trial_balance.json # إعدادات ميزان المراجعة المشحونة
     ├── templates/report_view/
-    │   └── print.html         # قالب PDF
+    │   └── print.html         # قالب PDF — «لم يُبنَ» (ADR-016)
     ├── locale/ar.po           # الترجمة العربية (نظام .po في frappe 16)
     ├── report_view/           # وحدة Frappe
     │   ├── page/report_view/  # مستند Page "report-view" (ADR-005): report_view.json، report_view.js
     │   └── doctype/
     │       ├── report_view_global_settings/   # Single
-    │       ├── report_view_settings/          # سجل لكل تقرير
-    │       ├── report_view_column_rule/       # جدول فرعي
-    │       ├── report_view_enrich_rule/       # جدول فرعي
-    │       ├── report_view_drilldown/         # جدول فرعي
-    │       ├── report_view_balance_pair/      # جدول فرعي
-    │       ├── report_view_signature/         # جدول فرعي
-    │       ├── report_view_saved_view/
-    │       ├── report_view_saved_view_role/   # جدول فرعي (Table MultiSelect)
-    │       └── report_view_filter_def/        # جدول فرعي: تعريفات فلاتر خادمية (§2.1)
+    │       ├── report_view_settings/          # سجل لكل تقرير — «لم يُبنَ» (§5.2)
+    │       ├── report_view_column_rule/       # جدول فرعي — «لم يُبنَ»
+    │       ├── report_view_enrich_rule/       # جدول فرعي — «لم يُبنَ»
+    │       ├── report_view_drilldown/         # جدول فرعي — «لم يُبنَ»
+    │       ├── report_view_balance_pair/      # جدول فرعي — «لم يُبنَ»
+    │       ├── report_view_signature/         # جدول فرعي — «لم يُبنَ»
+    │       ├── report_view_saved_view/        # «لم يُبنَ» (§6)
+    │       ├── report_view_saved_view_role/   # جدول فرعي (Table MultiSelect) — «لم يُبنَ»
+    │       ├── report_view_filter_def/        # جدول فرعي: تعريفات فلاتر خادمية (§2.1) — «لم يُبنَ»: filter_defs في defaults/*.json
+    │       ├── print_signature/ print_signature_item/   # ADR-015
+    │       ├── letter_head_layout/            # ADR-018
+    │       └── print_preset/                  # ADR-020
     ├── tests/                 # اختبارات بايثون (bench run-tests --app report_view)
     │   ├── fixtures/normalize/*.json   # حالات مشتركة مع tests/js
     │   ├── test_guard.py  test_api_run.py  test_get_meta.py  test_enrich.py
-    │   ├── test_normalize.py  test_engine.py  test_export.py  test_saved_views.py
+    │   ├── test_normalize.py  test_engine.py  test_export.py  (test_saved_views.py «لم يُبنَ»)
+    │   ├── test_api_pages.py  test_api_document.py  test_pdf.py  test_letterhead.py  test_custom_print.py  test_print_presets.py  test_chromium.py  test_hooks.py
     └── public/
-        ├── fonts/NotoNaskhArabic-{Regular,Bold}.ttf   # ADR-004 (يحتاج موافقة)
+        ├── fonts/<slug>/              # مكتبة خطوط ورق الشركة بتراخيصها (ADR-018)؛ NotoNaskhArabic لـ ADR-004 «لم يُبنَ»
         ├── css/
         │   ├── rv_tokens.css          # رموز التصميم فقط (من rv.css: .rv / .rv.compact / .rv.dark)
         │   ├── rv_components.css      # بقية rv.css
@@ -92,7 +102,7 @@ apps/report_view/
 قواعد الهيكل:
 - `adapter/` و `engine/view_config.js` و `engine/schema.js` و `engine/tree_nodes.js` وحدات ES خالصة: لا `frappe` ولا DOM ولا Perspective. تُختبر في `node --test`. `engine/perspective_engine.js` و `queries.js` وحدهما يلمسان Perspective، ويُختبران في المتصفح (Playwright) وفي node عبر `@finos/perspective` لـ node.
 - `views/` و `components/` لا تحسب شيئاً؛ تستهلك مخرجات `view` فقط (قاعدة `frontend-dev`).
-- المكتبات عبر npm في `package.json` بإصدار مثبّت بالضبط: `@finos/perspective@3.8.0`، `regular-table@0.9.1`، و `echarts@5`. `@playwright/test` تطوير فقط. ممنوع `perspective-viewer` وإضافاته (ADR-012).
+- المكتبات عبر npm في `package.json` بإصدار مثبّت بالضبط: `@finos/perspective@3.8.0`، `regular-table@0.9.1`، `echarts@5.6.0`، و `yarn.lock` (bench يثبّت بـ yarn) بالإصدارات نفسها التي في `package-lock.json`. `node_modules` التطبيق يُنشر تحت `/assets/report_view/node_modules`، فلا تدخله أدوات الاختبار: `@playwright/test` و `playwright` في `tests/package.json` بقفلها (`npm --prefix tests ci`). `http-server` و `zx` يبقيان لأنهما من اعتماديات `@finos/perspective` نفسها (`pro_self_extracting_wasm`). ممنوع `perspective-viewer` وإضافاته (ADR-012).
 - لا منطق حساب خارج محرك Perspective في المتصفح: `views/` و `components/` تبني `view config` وتعرض ما يعيده `view`.
 
 ---
@@ -165,8 +175,8 @@ guard_report_quiet(report_name) -> Report | None
 | البند | المواصفة |
 |---|---|
 | الطريقة | GET |
-| الفحوص بالترتيب | (1) `guard_report`؛ (2) قراءة `Report View Global Settings` و `Report View Settings` لهذا التقرير بـ `frappe.get_doc` + `check_permission("read")` (القراءة مسموحة لكل مستخدمي Desk)؛ (3) حساب `perms` بـ `can_export` و `has_permission(..., "print", ignore_share_permissions=True)` دون رمي |
-| المخرجات | ```{"report": {"name", "report_type", "ref_doctype", "module", "is_standard", "prepared_report", "add_total_row", "reference_report"}, "script": <مخرج frappe.desk.query_report.get_script(report_name) كما هو: script, html_format, filters, custom_report_name, execution_time>, "perms": {"can_export": bool, "can_print": bool}, "settings": <الإعدادات الخادمية المدمجة §5.3>, "include_js": [bundle...] (من hook report_view_include_js), "limits": {"max_rows": int}, "defaults": {"saved_view": name \| null, "source": "user" \| "global" \| null}}``` — الافتراضي يُعاد فقط إن كان العرض مرئياً للمستخدم الآن (§6)، وإلا `null` |
+| الفحوص بالترتيب | (1) `guard_report`؛ (2) الإعدادات من `report_view/defaults/<scrub(report)>.json` وحدها (`core/settings.load_settings`)؛ قراءة `Report View Settings` «لم يُبنَ»؛ (3) حساب `perms` بـ `can_export` و `has_permission(..., "print", ignore_share_permissions=True)` دون رمي |
+| المخرجات | ```{"report": {"name", "report_type", "ref_doctype", "module", "is_standard", "prepared_report", "add_total_row", "reference_report"}, "script": <مخرج frappe.desk.query_report.get_script(report_name) كما هو: script, html_format, filters, custom_report_name, execution_time>, "perms": {"can_export": bool, "can_print": bool}, "settings": <الإعدادات الخادمية المدمجة §5.3>, "include_js": [bundle...] (من hook report_view_include_js), "limits": {"max_rows": int}, "defaults": {"saved_view": name \| null, "source": "user" \| "global" \| null}}``` — الافتراضي يُعاد فقط إن كان العرض مرئياً للمستخدم الآن (§6)، وإلا `null`. اليوم `defaults` دائماً `{saved_view: null, source: null}` لأن العروض المحفوظة «لم يُبنَ» |
 | الأخطاء | كما `guard_report` |
 | ملاحظات | `perms` للعرض فقط (إخفاء الأزرار). الفحص الحقيقي يتكرر في `export_xlsx` و `export_pdf`. `script` يُنفَّذ في المتصفح بـ `frappe.dom.eval` كما في الأصل (`QJ:425-427`). |
 
@@ -186,10 +196,12 @@ guard_report_quiet(report_name) -> Report | None
 |---|---|
 | الطريقة | POST |
 | الفحوص بالترتيب | (1) `guard_report`؛ (2) `guard_export`؛ (3) التحقق من `export_model` (§4.2)؛ (4) `runner.run(...)` بنفس مسار §2.1 (يعيد تشغيل التقرير)؛ (5) `normalize` ← `engine.apply(view_state)`؛ (6) مقارنة `expected_totals` (ADR-001)؛ (7) بناء الملف |
-| المخرجات | ملف ثنائي عبر `frappe.response.filename/filecontent/type="binary"`؛ أو فوق `export_background_threshold` صف: `{"status": "queued", "job_id"}` ويصل الملف كـ File خاص للمستخدم مع إشعار `frappe.publish_realtime("report_view_export_ready")` (المرحلة 6) |
+| المخرجات | ملف ثنائي عبر `frappe.response.filename/filecontent/type="binary"`؛ أو فوق `ASYNC_ROWS` (20,000) صف: `{"status": "queued", "job", "row_count"}` (`core/export/jobs.py`). الوظيفة على الطابور `report_view_export_queue` من إعداد الموقع (افتراضي `long`)، ووظيفة واحدة لكل مستخدم. المتصفح يسأل `export_xlsx_status(job)` (`{state, row_count, error, error_code, cancellable}`؛ عامل قُتل أو طابور بلا عامل يُقرأ `failed` بـ `error_code` = `lost` / `no_worker`)، ويلغي بـ `export_xlsx_cancel(job)`، وينزّل بـ `export_xlsx_download(job)` مرة واحدة (الملف خاص في `private/rv_xlsx` ويُحذف عند التنزيل أو بعد ساعة). حالة الوظيفة ومنطق الحياة مشتركان مع PDF في `core/jobs.py`. `publish_realtime` و File «لم يُبنَ» |
 | الأخطاء | `RVNoExport`، `RVInvalidInput`، `RVInvalidViewState`، `RVExportMismatch`، `RVLimitExceeded` (`too_large`) + أخطاء §2.1 |
 
-### 2.5 `report_view.api.export_pdf(report_name, export_model)`
+### 2.5 `report_view.api.export_pdf(report_name, export_model)` — «لم يُبنَ»
+
+> لم يُبنَ بهذا الشكل: PDF يُطبع من صفحات وضع «صفحات» في المتصفح بمحرك Chromium على الخادم (`report_view.api.pdf.pages_pdf_report/document/custom`، ADR-016، §2.10)، و ADR-004 مستبدَل. المواصفة أدناه الخطة الأصلية.
 
 مثل §2.4 تماماً، مع استبدال (2) بـ `guard_print` وحده. القرار: PDF طباعة، فيحتاج `print` فقط كما في الأصل (زرا الطباعة و PDF في query-report مشروطان بـ `can_print` وحده، `QJ:1956,1974`)؛ اشتراط `export` أيضاً أشد من الأصل بلا سبب. Excel و CSV تصدير ويحتاجان `export`. المخرجات ملف PDF بقالب `templates/report_view/print.html` و `frappe.utils.pdf.get_pdf` أو chrome حسب `settings.pdf_generator` (ADR-004). حقول إضافية في النموذج: `orientation`، `signatures: bool`، `page_size`.
 
@@ -197,7 +209,9 @@ guard_report_quiet(report_name) -> Report | None
 
 للزر في query-report (ADR-007). GET. الفحوص: `guard_report_quiet` (أي فشل ⇒ `{"show": false}` بلا رسائل في `_server_messages`). لا يكشف أكثر من الأصل: من يرى الزر فتح query-report للتقرير نفسه. المخرجات: `{"show": true, "route": ["report-view", <name>]}` أو `{"show": false}`. لاحقاً (المرحلة 4) يُقيَّد بـ `Global Settings.entry_button_scope` و `Report View Settings.show_entry_button`؛ إلى أن توجد هذه الإعدادات يظهر الزر لكل من يملك صلاحية التقرير.
 
-### 2.7 العروض المحفوظة: `report_view.api.views.*`
+### 2.7 العروض المحفوظة: `report_view.api.views.*` — «لم يُبنَ»
+
+> لم يُبنَ (ADR-010 مقبول ولم يُنفَّذ). المواصفة أدناه الخطة.
 
 كل الدوال تأخذ `report_name` أولاً وتبدأ بـ `guard_report(report_name)`، لأن رؤية العرض مشروطة برؤية التقرير (ADR-010).
 
@@ -225,6 +239,62 @@ POST. `(report_name, name, filters, filter_meta?)`. الفحوص: `guard_report`
 ### 2.9 الترجمة: `get_translations(report_name, lang, messages)` (ADR-014)
 
 POST. `guard_report` أولاً. `lang` من `frappe.translate.get_all_languages()` وإلا `RVInvalidInput`؛ `messages` قائمة نصوص (حد 2,000). المخرجات: `{msgid: ترجمة}` لما له ترجمة في `get_all_translations(lang)` (المفاتيح ذات السياق كما يخزّنها Frappe: `"<msgid>:<context>"`). الاستعمال: كلمات الصفحة وتسميات السجل والفلاتر حين تُطبع الصفحات بلغة غير لغة الجلسة؛ تسميات التقرير نفسه تأتي من `api.run` بمعامل `_lang` (Frappe يقرأه قبل الطلب).
+
+### 2.10 كل الدوال المتاحة (الموجودة فعلاً، 2026-10-22)
+
+46 دالة `@frappe.whitelist()`. «الحد» = طلبات لكل مستخدم في الدقيقة (`core/limits.rate_limit`، داخل طلب ويب فقط؛ الرفض `RateLimitExceededError` من Frappe). كل دالة تبدأ بالحارس المذكور. القسمان §2.5 و §2.7 خطة لم تُبنَ.
+
+| الدالة | الطريقة | الحارس الأول | الحد | المرجع |
+|---|---|---|---|---|
+| `report_view.api.run` | POST | `guard_report` | 30 | §2.1 |
+| `report_view.api.get_meta` | GET | `guard_report` | — | §2.2 |
+| `report_view.api.get_entry_state` | GET | `guard_report_quiet` | — | §2.6 |
+| `report_view.api.enrich` | POST | `guard_report` | 60 | §2.3 |
+| `report_view.api.export_xlsx` | POST | `guard_report`، `guard_export` | 10 | §2.4 |
+| `report_view.api.export_xlsx_status` | GET | وظيفة المستخدم نفسه، ثم `guard_report` و `guard_export` | — | §2.4 |
+| `report_view.api.export_xlsx_cancel` | POST | كالسابق | — | §2.4 |
+| `report_view.api.export_xlsx_download` | GET | كالسابق | — | §2.4 |
+| `report_view.api.get_print_options` | GET | `guard_report`، `guard_print` | — | §2.8 |
+| `report_view.api.get_print_format` | GET | `guard_report`، `guard_print` | — | §2.8 |
+| `report_view.api.render_print_format` | POST | `guard_report`، `guard_print` | 10 | ADR-014 |
+| `report_view.api.render_print_heading` | POST | `guard_report`، `guard_print` | — | §2.8أ |
+| `report_view.api.render_print_signature` | POST | `guard_report`، `guard_print` | — | §2.8أ |
+| `report_view.api.get_translations` | POST | `guard_report` | — | §2.9 |
+| `report_view.api.document.get_doc_print_options` | GET | `guard_doc_print` | — | ADR-017 |
+| `report_view.api.document.render_doc_print` | GET | `guard_doc_print` | — | ADR-017 |
+| `report_view.api.document.render_doc_heading` | POST | `guard_doc_print` | — | ADR-017 |
+| `report_view.api.document.render_doc_signature` | POST | `guard_doc_print` | — | ADR-017 |
+| `report_view.api.document.get_doc_translations` | POST | `guard_doc_print` | — | ADR-017 |
+| `report_view.api.document.render_doc_letterhead` | GET | `guard_doc_print` | — | ADR-017 |
+| `report_view.api.pdf.pages_pdf_report` | POST | `guard_report`، `guard_print` | 10 | ADR-016 |
+| `report_view.api.pdf.pages_pdf_document` | POST | `guard_doc_print` | 10 | ADR-016 |
+| `report_view.api.pdf.pages_pdf_custom` | POST | `custom_print.resolve` (قالب يطبع به المستخدم أو رمز مرحلي له) | 10 | ADR-019 |
+| `report_view.api.pdf.pages_pdf_status` | GET | وظيفة المستخدم نفسه | — | ADR-016 |
+| `report_view.api.pdf.pages_pdf_cancel` | POST | وظيفة المستخدم نفسه | — | ADR-016 |
+| `report_view.api.pdf.pages_pdf_download` | GET | وظيفة المستخدم نفسه | — | ADR-016 |
+| `report_view.api.letterhead.builder_context` | GET | قراءة Letter Head و Company | 60 | ADR-018 |
+| `report_view.api.letterhead.company_data` | GET | قراءة Letter Head و Company | 60 | ADR-018 |
+| `report_view.api.letterhead.preview` | POST | قراءة Letter Head و Company | 120 | ADR-018 |
+| `report_view.api.letterhead.save` | POST | إنشاء/كتابة Letter Head | 20 | ADR-018 |
+| `report_view.api.letterhead.qr_svg` | GET | قراءة Letter Head و Company | 60 | ADR-018 |
+| `report_view.api.custom_print.formats` | GET | `frappe.get_list` لقوالب Custom التي يطبع بها المستخدم | — | ADR-019 |
+| `report_view.api.custom_print.stage` | POST | `guard_custom_format` أو `guard_inline` | 30 | ADR-019 |
+| `report_view.api.custom_print.staged` | GET | `custom_print.resolve` | — | ADR-019 |
+| `report_view.api.custom_print.get_options` | GET | `custom_print.resolve` | — | ADR-019 |
+| `report_view.api.custom_print.render` | POST | `custom_print.resolve` | 60 | ADR-019 |
+| `report_view.api.custom_print.render_letterhead` | GET | `custom_print.resolve` | — | ADR-019 |
+| `report_view.api.custom_print.render_heading` | POST | `custom_print.resolve` | 60 | ADR-019 |
+| `report_view.api.custom_print.render_signature` | POST | `custom_print.resolve` | 60 | ADR-019 |
+| `report_view.api.custom_print.get_translations` | POST | `custom_print.resolve` | — | ADR-019 |
+| `report_view.api.print_presets.list` | GET | `guard_target` (التقرير أو المستند أو قالب Custom) | — | ADR-020 |
+| `report_view.api.print_presets.save` | POST | `guard_target` ثم صلاحية الإعداد | 60 | ADR-020 |
+| `report_view.api.print_presets.delete` | POST | صلاحية الإعداد (`has_permission` لـ Print Preset) | — | ADR-020 |
+| `report_view.api.print_presets.set_default` | POST | صلاحية الإعداد | — | ADR-020 |
+| `report_view.api.chromium.engine_status` | GET | `frappe.only_for("System Manager")` | — | ADR-016 |
+| `report_view.api.chromium.engine_install` | POST | `frappe.only_for("System Manager")` | — | ADR-016 |
+
+`guard_doc_print` (`core/guard.py`) هو فحص طباعة المستند الوحيد: نوع مستند موجود وليس جدولاً فرعياً، ثم `print` على النوع، ثم على المستند نفسه.
+
 ---
 
 ## 3. عقد التطبيع
@@ -544,7 +614,7 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 | `derived_columns` | `[{key, label, fieldtype, role, compute: (row) => value}]` | `[]` | أعمدة محسوبة في المتصفح فقط؛ لا تُصدَّر ما لم يعرّفها `defaults/<report>.json` بتعبير من القائمة المغلقة (`sum`, `diff`, `abs`, `sign`) لأن الخادم لا ينفّذ كود JS |
 | `summary` | `{kind: "balance_pairs", pairs: [{label, debit, credit}]}` \| `{kind: "report_summary"}` | `report_summary` إن وُجد | بطاقات الملخص |
 | `ready_views` | `[{id, title, description, state}]` | `[]` | عروض جاهزة غير قابلة للحذف (قائمة المفضلة) |
-| `quick_filters` | `[{id, label, filter}]` | `[]` | الفلاتر السريعة (نمط `PRESETS` في التصميم) |
+| `quick_filters` | `[{id, label, expression, exclusive?}]` | `[]` | الفلاتر السريعة (نمط `PRESETS` في التصميم): `expression` تعبير Perspective منطقي، وللتصدير يجب أن يكون من القواعد المغلقة في ADR-013 |
 | `period` | `{from_key, to_key, fiscal_year_key?, company_key?}` | يُكتشف تلقائياً من أسماء الفلاتر `from_date/to_date/fiscal_year/company` | ربط مكوّن الفترة |
 | `row_actions` | `[{label, icon, action: (row, ctx) => void, visible?: (row) => bool}]` | `[]` | قائمة إجراءات الصف |
 | `enrich` | `[{source, doctype, fields}]` | `[]` | **اقتراح فقط** (ADR-003): لا يُفعَّل إلا بقاعدة خادمية |
@@ -554,16 +624,16 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 
 **`Report View Global Settings` (Single)** — كتابة: System Manager، Report View Manager؛ قراءة: الدور `Desk User`.
 
-> بُني في 2026-10-12 (ADR-015) بالحقول `max_rows` و `print_max_pages` وقسم «إعدادات الطباعة القياسية» فقط؛ بقية الحقول أدناه لم تُبنَ بعد.
+> بُني في 2026-10-12 (ADR-015) بالحقول `max_rows` (الافتراضي في الكود والـ DocType **50,000**، `core/settings.DEFAULT_MAX_ROWS`؛ تحقق 2026-10-22) و `print_max_pages` وقسم «إعدادات الطباعة القياسية»، ثم `custom_print_open_in` (ADR-019)؛ بقية الحقول أدناه «لم يُبنَ». اختيار 50,000 أو 100,000 قرار صاحب المشروع (C21). `Report View Settings` كله «لم يُبنَ»: الإعدادات لكل تقرير تأتي من `defaults/*.json`.
 
 | الحقل | النوع | الافتراضي |
 |---|---|---|
 | `enabled_for` | Select: `All Reports` / `Enabled Reports Only` | `All Reports` |
 | `entry_button_scope` | Select: `All Reports` / `Enabled Reports Only` / `None` | `Enabled Reports Only` |
-| `max_rows` | Int | 100,000 (يُقيَّد بـ `System Settings.max_report_rows` وبالسقف 200,000) |
+| `max_rows` | Int | 50,000 في الكود (الخطة كانت 100,000؛ يُقيَّد بـ `System Settings.max_report_rows` وبالسقف 200,000) |
 | `hard_max_rows` | Int، للقراءة فقط | 200,000 (السقف الصلب لـ `max_rows`) |
 | `export_background_threshold` | Int | 20,000 |
-| `default_pdf_generator` | Select: `wkhtmltopdf` / `chrome` | `wkhtmltopdf` |
+| `default_pdf_generator` | Select: `wkhtmltopdf` / `chrome` | `wkhtmltopdf` — «لم يُبنَ» (ADR-016: محرك Chromium خاص دائماً) |
 
 **`Report View Settings`** (اسم السجل = اسم التقرير) — نفس الصلاحيات (قراءة `Desk User`، كتابة System Manager و Report View Manager).
 
@@ -606,7 +676,9 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 
 ---
 
-## 6. DocType `Report View Saved View`
+## 6. DocType `Report View Saved View` — «لم يُبنَ»
+
+> لم يُبنَ (ADR-010)، ولا اختباره الإلزامي. لا hooks مسجّلة له (ADR-007). المواصفة أدناه الخطة.
 
 | الحقل | النوع | ملاحظة |
 |---|---|---|
@@ -754,7 +826,7 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 
 | البند | القرار |
 |---|---|
-| الحد الأقصى للصفوف | `min(max_rows, System Settings.max_report_rows)`؛ الافتراضي 100,000 والسقف الصلب 200,000 (ADR-009). عند 100 ألف: أول عرض 468ms و `group_by` بمستويين 117ms و `split_by` 246ms. عند 500 ألف: أول عرض 3.6 ث، وذاكرة 450-544MB، وتحميل الدفعة الواحدة أسقط التبويب |
+| الحد الأقصى للصفوف | `min(max_rows, System Settings.max_report_rows)`؛ الافتراضي في الكود 50,000 (الخطة 100,000، قرار صاحب المشروع معلّق) والسقف الصلب 200,000 (ADR-009). عند 100 ألف: أول عرض 468ms و `group_by` بمستويين 117ms و `split_by` 246ms. عند 500 ألف: أول عرض 3.6 ث، وذاكرة 450-544MB، وتحميل الدفعة الواحدة أسقط التبويب |
 | ما فوق الحد | رسالة بخيارات فعلية (ADR-009)؛ دعم كامل للتقارير المعدّة أصلاً |
 | التحميل الكسول | سكربت الصفحة (Page) صغير ⇒ `frappe.require("report_view.bundle.js")` عند أول فتح (JS المكتبتين نحو 20KB مضغوطاً) ⇒ جلب ملفي WASM (2.28MB و 0.22MB، غير قابلين للضغط، مخزَّنين سنة في الكاش) عند أول تشغيل ⇒ `report_view_charts.bundle.js` عند أول فتح لعرض الرسوم. الصفحات الأخرى تحمّل `report_view_entry.bundle.js` فقط |
 | أول تهيئة للمحرك | 0.3 ث على شبكة محلية، 2.7 ث على 10Mbit، 13 ث على 1.6Mbit (مرة واحدة). حالة التحميل تعرض «جارٍ تجهيز المحرك» مع أول فتح |

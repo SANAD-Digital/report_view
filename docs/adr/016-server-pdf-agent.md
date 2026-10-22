@@ -106,3 +106,11 @@
 - أمر bench: `bench report-view-install-chromium [--force]` (لا يحتاج `--site`).
 - في `Report View Global Settings`: قسم «محرك PDF» يعرض الحالة (مثبت بالإصدار المعتمد / إصدار آخر / غير مثبت والبديل مستعمل) وزر تثبيت يعمل في الخلفية على طابور `long` (System Manager فقط، `api/chromium.py`).
 - حزم النظام (libnss3 وغيرها) لا تُثبَّت تلقائياً (تحتاج sudo)؛ السكربت يطبع أمر `apt-get` كاملاً.
+
+## تعديل (2026-10-22): التثبيت لا يوقف migrate، وحالته للـ bench كله
+- `after_install` (`report_view.install.after_install`) يثبّت Chromium في الحال (`core/chromium.ensure()`) بحد أقصى 300 ث (`INSTALL_APP_TIMEOUT`)، وبعد فحص اتصال بمصدر التنزيل (`reachable()`). إذا تعذّر الاتصال لا ينتظر: يسجّل تحذيراً ويطبع الأمر اليدوي، ويبقى PDF على Chromium الخاص بـ Frappe.
+- `after_migrate` (`report_view.install.after_migrate`) **لا يثبّت أبداً في الحال**: `core/chromium.ensure_in_background()` يضع وظيفة `install_job` على طابور `long` (معرّف ثابت `deduplicate=True`، وظيفة واحدة للـ bench) إن كان التثبيت لازماً. إذا لم يرد Redis لا يضعها (كان `frappe.enqueue` سيشغّلها داخل migrate) ويسجّل الأمر اليدوي فقط.
+- الحالة للـ bench كله، لا للموقع: قفل ملف (`flock`) يمنع تثبيتين معاً، وملف آخر نتيجة (`rv-chromium-install.last.json`)، كلاهما في `<bench>/tmp`. كل المواقع ترى الحالة نفسها في «محرك PDF» في `Report View Global Settings`.
+- الدالتان تستدعيان أيضاً `core/letterhead.check_pdf_body_html_hook()`: hook `pdf_body_html` يفوز فيه آخر تطبيق مثبّت، فإن غلب تطبيق آخر hook التطبيق يُسجَّل تحذير بأن هوامش ورق الشركة المبني بالمنشئ في wkhtmltopdf لن تُضاف ما لم يستدعِ ذلك التطبيق الـ hook السابق (ADR-018).
+- السجل الكامل للـ hooks في ADR-007.
+

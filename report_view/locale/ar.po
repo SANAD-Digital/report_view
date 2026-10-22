@@ -78,9 +78,6 @@ msgstr "التقرير المعدّ {0} غير متاح"
 msgid "Report"
 msgstr "تقرير"
 
-msgid "Report execution failed"
-msgstr "فشل تشغيل التقرير"
-
 msgid "Report name is required"
 msgstr "اسم التقرير مطلوب"
 
@@ -275,10 +272,6 @@ msgid "Something went wrong"
 msgstr "حدث خطأ ما"
 
 #: report_view/public/js/report_view
-msgid "The export is being prepared; you will be notified."
-msgstr "جارٍ تجهيز ملف التصدير، وستصلك رسالة عند اكتماله."
-
-#: report_view/public/js/report_view
 msgid "The exported totals do not match the screen"
 msgstr "إجماليات الملف المصدَّر لا تطابق ما على الشاشة"
 
@@ -360,9 +353,6 @@ msgstr "توسيع المجموعة"
 msgid "Grand Total"
 msgstr "الإجمالي العام"
 
-msgid "Breadcrumbs"
-msgstr "مسار التنقل"
-
 msgid "Density"
 msgstr "الكثافة"
 
@@ -387,20 +377,11 @@ msgstr "السنة المالية"
 msgid "Currency"
 msgstr "العملة"
 
-msgid "Running…"
-msgstr "جارٍ التشغيل…"
-
-msgid "Last run {0}"
-msgstr "آخر تشغيل {0}"
-
 msgid "Switch to light mode"
 msgstr "التبديل إلى الوضع الفاتح"
 
 msgid "Switch to dark mode"
 msgstr "التبديل إلى الوضع الداكن"
-
-msgid "Coming soon"
-msgstr "قريباً"
 
 msgid "View"
 msgstr "طريقة العرض"
@@ -414,38 +395,11 @@ msgstr "تحليل Pivot"
 msgid "Charts"
 msgstr "رسوم"
 
-msgid "Rows {0} of {1}"
-msgstr "الصفوف {0} من {1}"
-
 msgid "Groups {0}"
 msgstr "المجموعات {0}"
 
 msgid "Report criteria"
 msgstr "معايير التقرير"
-
-msgid "Fetch the data again from the server"
-msgstr "تعيد جلب البيانات من الخادم"
-
-msgid "Run report"
-msgstr "تشغيل التقرير"
-
-msgid "Not run yet"
-msgstr "لم يتم التشغيل بعد"
-
-msgid "Fetching data from the server…"
-msgstr "جارٍ جلب البيانات من الخادم…"
-
-msgid "Criteria changed: run the report to fetch the data again"
-msgstr "تغيّرت المعايير — شغّل التقرير لجلب البيانات من جديد"
-
-msgid "The last run failed"
-msgstr "فشل آخر تشغيل"
-
-msgid "Data is up to date · {0} rows from the server"
-msgstr "البيانات محدّثة · {0} صفاً من الخادم"
-
-msgid "No grouping"
-msgstr "بلا تجميع"
 
 msgid "Group subtotals"
 msgstr "مجاميع المجموعات"
@@ -672,14 +626,8 @@ msgstr "نطاق تواريخ"
 msgid "Debit closing balances"
 msgstr "أرصدة ختامية مدينة"
 
-msgid "Default view"
-msgstr "العرض الافتراضي"
-
 msgid "Difference from the filters"
 msgstr "فرق بسبب الفلترة"
-
-msgid "Difference {0} · all {1} ({2})"
-msgstr "الفرق {0} · جميع {1} ({2})"
 
 msgid "Difference {0}: check the entries"
 msgstr "الفرق {0}: راجع القيود"
@@ -698,12 +646,6 @@ msgstr "اسحب عموداً رقمياً هنا"
 
 msgid "Drag columns here to group the rows"
 msgstr "اسحب أعمدة هنا لتجميع الصفوف"
-
-msgid "Export not available with quick filters"
-msgstr "التصدير غير متاح مع الفلاتر السريعة"
-
-msgid "Favorites"
-msgstr "المفضلة"
 
 msgid "Filter values…"
 msgstr "فلترة القيم…"
@@ -840,9 +782,6 @@ msgstr "غير متاح"
 msgid "Not balanced"
 msgstr "غير متوازن"
 
-msgid "PDF and printing arrive with the server export (coming soon)"
-msgstr "الطباعة و PDF تأتي مع التصدير من الخادم (قريباً)"
-
 msgid "Pick the end date"
 msgstr "اختر تاريخ النهاية"
 
@@ -861,9 +800,6 @@ msgstr "أعمدة التحليل"
 msgid "Pivot mode"
 msgstr "وضع التحليل (Pivot)"
 
-msgid "Quick filters are applied on screen only for now. Remove them to export the file."
-msgstr "الفلاتر السريعة تُطبَّق على الشاشة فقط حالياً. أزلها لتصدير الملف."
-
 msgid "Quick options"
 msgstr "خيارات سريعة"
 
@@ -881,9 +817,6 @@ msgstr "مجموعات الصفوف"
 
 msgid "Rows"
 msgstr "الصفوف"
-
-msgid "Saved views arrive with the saved-view settings (coming soon)"
-msgstr "العروض المحفوظة تأتي مع إعدادات العروض المحفوظة (قريباً)"
 
 msgid "Search and filter"
 msgstr "بحث وفلترة"
@@ -924,32 +857,17 @@ msgstr "ترتيب تنازلي"
 msgid "Starts in"
 msgstr "تبدأ في"
 
-msgid "The current filters left out every row"
-msgstr "الفلاتر الحالية استبعدت كل الصفوف"
-
-msgid "The data could not be loaded"
-msgstr "تعذّر تحميل البيانات"
-
 msgid "The grid pins columns at the start only"
 msgstr "الجدول يثبّت الأعمدة في البداية فقط"
 
 msgid "The label column is always pinned"
 msgstr "عمود العنوان مثبّت دائماً"
 
-msgid "The totals are being read again"
-msgstr "يُعاد احتساب الإجماليات"
-
 msgid "The values could not be read"
 msgstr "تعذّرت قراءة القيم"
 
 msgid "Tool panels"
 msgstr "لوحات الأدوات"
-
-msgid "Turn the pivot mode on to use this zone (coming soon)"
-msgstr "فعّل وضع التحليل لاستخدام هذه المنطقة (قريباً)"
-
-msgid "Turns the values of a dimension into columns"
-msgstr "تحويل قيم بُعد إلى أعمدة ديناميكية"
 
 msgid "Type a text to search {0}, or a value of another column. Backspace removes the last facet."
 msgstr "اكتب نصاً للبحث في {0}، أو في قيم عمود آخر. Backspace يحذف آخر شريحة."
@@ -997,19 +915,15 @@ msgctxt "Report View"
 msgid "Filter"
 msgstr "فلتر"
 
-msgctxt "Report View"
 msgid "Count"
 msgstr "عدد"
 
-msgctxt "Report View"
 msgid "Average"
 msgstr "متوسط"
 
-msgctxt "Report View"
 msgid "Maximum"
 msgstr "الأعلى"
 
-msgctxt "Report View"
 msgid "Minimum"
 msgstr "الأدنى"
 
@@ -1017,7 +931,6 @@ msgctxt "Report View"
 msgid "Filters"
 msgstr "الفلاتر"
 
-msgctxt "Report View"
 msgid "PDF"
 msgstr "PDF"
 
@@ -1073,9 +986,6 @@ msgstr "خطي"
 msgid "Donut"
 msgstr "دائري مجوّف"
 
-msgid "Chart settings"
-msgstr "إعدادات الرسم"
-
 msgid "Chart type"
 msgstr "نوع الرسم"
 
@@ -1091,14 +1001,8 @@ msgstr "المجموعات الرئيسية"
 msgid "Level {0}"
 msgstr "المستوى {0}"
 
-msgid "By {0}"
-msgstr "حسب {0}"
-
 msgid "{0} categories"
 msgstr "الفئات: {0}"
-
-msgid "{0} of {1} categories shown."
-msgstr "يُعرض {0} من {1} فئة."
 
 msgid "Nothing to chart"
 msgstr "لا يوجد ما يُرسم"
@@ -1106,26 +1010,8 @@ msgstr "لا يوجد ما يُرسم"
 msgid "This report has no numeric column the engine can add up."
 msgstr "لا يحتوي هذا التقرير على عمود رقمي يمكن تجميعه."
 
-msgid "Preparing the charts…"
-msgstr "جارٍ تجهيز الرسوم…"
-
-msgid "Charts are built from the same rows, once they arrive."
-msgstr "تُبنى الرسوم من نفس الصفوف بعد وصولها من الخادم."
-
 msgid "No data to chart"
 msgstr "لا توجد بيانات للرسم"
-
-msgid "The current filters left no rows. Remove some of them from the search box."
-msgstr "الفلاتر الحالية استبعدت كل الصفوف. أزل بعضها من شريط البحث."
-
-msgid "The report's own values of each group at this level"
-msgstr "قيم التقرير نفسه لكل مجموعة في هذا المستوى"
-
-msgid "Values added up by the engine for each category"
-msgstr "مجموع القيم لكل فئة كما يحسبه المحرك"
-
-msgid "Showing the {0} largest of {1} categories by {2}."
-msgstr "يُعرض أكبر {0} من {1} فئة حسب {2}."
 
 msgid "A donut shows the first measure only."
 msgstr "الدائري يعرض المقياس الأول فقط."
@@ -1324,9 +1210,6 @@ msgctxt "Report View"
 msgid "Print"
 msgstr "طباعة"
 
-msgid "Print pages"
-msgstr "صفحات الطباعة"
-
 msgid "Print settings"
 msgstr "إعدادات الطباعة"
 
@@ -1342,15 +1225,6 @@ msgstr "مقاس الورق"
 msgid "Margins"
 msgstr "الهوامش"
 
-msgid "Narrow margins"
-msgstr "هوامش ضيقة"
-
-msgid "Normal margins"
-msgstr "هوامش عادية"
-
-msgid "Wide margins"
-msgstr "هوامش واسعة"
-
 msgid "Orientation"
 msgstr "اتجاه الصفحة"
 
@@ -1361,9 +1235,6 @@ msgstr "عمودي"
 msgctxt "Report View"
 msgid "Landscape"
 msgstr "أفقي"
-
-msgid "Template and letter head"
-msgstr "القالب والترويسة"
 
 msgid "Print template"
 msgstr "قالب الطباعة"
@@ -1500,12 +1371,6 @@ msgstr "طلب ترجمة غير صالح"
 msgid "The print format is wider than the page: try landscape or a larger paper."
 msgstr "قالب الطباعة أعرض من الصفحة: جرّب الاتجاه الأفقي أو ورقاً أكبر."
 
-msgid "Letter head on every page"
-msgstr "الترويسة في كل الصفحات"
-
-msgid "Header, footer and numbering"
-msgstr "الترويسة والتذييل والترقيم"
-
 msgid "Letter head height"
 msgstr "ارتفاع الترويسة"
 
@@ -1554,19 +1419,12 @@ msgstr "حديث"
 msgid "Accounting grid"
 msgstr "شبكة محاسبية"
 
-
 msgctxt "Print template"
 msgid "Compact"
 msgstr "مضغوط"
 
 msgid "Ink saving"
 msgstr "موفّر للحبر"
-
-msgid "Report View templates"
-msgstr "قوالب Report View"
-
-msgid "Print formats of the report"
-msgstr "قوالب طباعة التقرير"
 
 msgid "Print Format {0} is not a Jinja template"
 msgstr "قالب الطباعة {0} ليس قالب Jinja"
@@ -1579,9 +1437,6 @@ msgstr "لم يُرجع التقرير صفوفاً للطباعة"
 
 msgid "Print style"
 msgstr "أسلوب الطباعة"
-
-msgid "Repeat on every page"
-msgstr "تكرار في كل الصفحات"
 
 msgctxt "Report View"
 msgid "Height"
@@ -1613,24 +1468,11 @@ msgstr "بعرض الصفحة"
 msgid "Rule under the letter head"
 msgstr "الخط تحت الترويسة"
 
-msgid "Choose a letter head above to set its size, place and pages."
-msgstr "اختر ترويسة في الأعلى لتتحكم بحجمها ومكانها وصفحاتها."
-
-msgctxt "Report View"
 msgid "Footer"
 msgstr "التذييل"
 
 msgid "Rule above the footer"
 msgstr "الخط فوق التذييل"
-
-msgid "The footer prints on the last page only."
-msgstr "يُطبع التذييل في الصفحة الأخيرة فقط."
-
-msgid "Height of the number band"
-msgstr "ارتفاع شريط الترقيم"
-
-msgid "Rule above the page number"
-msgstr "الخط فوق الترقيم"
 
 msgctxt "Report View"
 msgid "None"
@@ -1741,15 +1583,6 @@ msgstr "هوامش الترويسة"
 msgid "Footer margins"
 msgstr "هوامش التذييل"
 
-msgid "Against the footer"
-msgstr "مكانه من التذييل"
-
-msgid "Under the footer"
-msgstr "تحت التذييل"
-
-msgid "Above the footer"
-msgstr "فوق التذييل"
-
 msgid "Start at"
 msgstr "يبدأ من"
 
@@ -1789,6 +1622,7 @@ msgstr "الشفافية"
 msgid "Angle"
 msgstr "الزاوية"
 
+# the Pages view (its tab and title); the plain "Pages" is a count label
 msgctxt "Report View"
 msgid "Pages"
 msgstr "الصفحات"
@@ -2182,7 +2016,6 @@ msgstr "التوقيعات"
 msgid "Print signatures"
 msgstr "طباعة التوقيعات"
 
-msgctxt "Report View"
 msgid "Place"
 msgstr "المكان"
 
@@ -2216,9 +2049,6 @@ msgstr "استغرق إنشاء ملف PDF أكثر من {0} ثانية. اطب�
 msgid "The PDF has {0} pages; at most {1} pages can be printed"
 msgstr "ملف PDF فيه {0} صفحة، والحد الأقصى للطباعة {1} صفحة"
 
-msgid "Document is required"
-msgstr "المستند مطلوب"
-
 msgid "Advanced Print"
 msgstr "الطباعة المتقدمة"
 
@@ -2242,9 +2072,6 @@ msgstr "نوع المستند واسمه مطلوبان"
 
 msgid "Document type {0} not found"
 msgstr "نوع المستند {0} غير موجود"
-
-msgid "Not permitted to print {0} {1}"
-msgstr "غير مسموح بطباعة {0} {1}"
 
 msgid "Print Format {0} is not available for {1}"
 msgstr "قالب الطباعة {0} غير متاح لـ {1}"
@@ -2296,10 +2123,6 @@ msgctxt "Report View"
 msgid "Unknown error"
 msgstr "خطأ غير معروف"
 
-msgctxt "Report View"
-msgid "Accountant"
-msgstr "المحاسب"
-
 msgid "Approval Steps"
 msgstr "خطوات الاعتماد"
 
@@ -2312,7 +2135,6 @@ msgstr "إقرار استلام"
 msgid "I acknowledge that I have received the above in full and in good order."
 msgstr "أقرّ بأنني استلمت ما ورد أعلاه كاملاً وبحالة سليمة."
 
-msgctxt "Report View"
 msgid "Settings"
 msgstr "الإعدادات"
 
@@ -2514,9 +2336,6 @@ msgstr "مُعاملات دالة البيانات ليست JSON صالحاً"
 msgid "Give the print format and the method that returns the data"
 msgstr "حدّد قالب الطباعة والدالة التي تعيد البيانات"
 
-msgid "Give the print format to print with"
-msgstr "حدّد قالب الطباعة الذي تُطبع به"
-
 msgid "Give the columns of the table"
 msgstr "حدّد أعمدة الجدول"
 
@@ -2618,9 +2437,6 @@ msgstr "النمط الذي بدأ منه التصميم"
 
 msgid "The letter head's HTML as the builder last wrote it; a different hash means it was edited by hand"
 msgstr "بصمة HTML ورق الشركة كما كتبه المنشئ آخر مرة؛ اختلافها يعني أنه عُدّل يدوياً"
-
-msgid "Company Name (Arabic)"
-msgstr "اسم الشركة (عربي)"
 
 msgid "Choose the company of the letter head"
 msgstr "اختر شركة ورق الشركة"
@@ -2759,9 +2575,6 @@ msgstr "{0} يجب أن يكون رقماً"
 
 msgid "{0} must be a text"
 msgstr "{0} يجب أن يكون نصاً"
-
-msgid "Registration Details"
-msgstr "تفاصيل التسجيل"
 
 msgid "Tax ID"
 msgstr "الرقم الضريبي"
@@ -3060,9 +2873,6 @@ msgstr "على الورقة"
 msgid "On the paper"
 msgstr "ما يظهر في الورق"
 
-msgid "Only a System Manager can save letter heads."
-msgstr "حفظ ورق الشركة لمدير النظام فقط."
-
 msgid "Open the company"
 msgstr "فتح سجل الشركة"
 
@@ -3290,9 +3100,6 @@ msgstr "الصورة كاملة"
 
 msgid "Width"
 msgstr "العرض"
-
-msgid "With «Repeat header and footer», wkhtmltopdf does not measure the header: add this line to the CSS of the print format so the body starts under it. The Chrome engine measures it by itself."
-msgstr "مع «تكرار الترويسة والتذييل» لا يقيس wkhtmltopdf الترويسة: أضف هذا السطر إلى CSS قالب الطباعة ليبدأ المتن تحتها. محرك Chrome يقيسها بنفسه."
 
 msgid "Works in"
 msgstr "يعمل في"
@@ -3730,3 +3537,69 @@ msgstr "من الطرفية: bench report-view-install-chromium"
 
 msgid "The install started in the background"
 msgstr "بدأ التثبيت في الخلفية"
+
+msgid "Height"
+msgstr "الارتفاع"
+
+msgid "Print Signature Item"
+msgstr "بند توقيع الطباعة"
+
+msgid "The Excel export was cancelled"
+msgstr "أُلغي تصدير Excel"
+
+msgid "Creating the Excel file stopped unexpectedly. Try again."
+msgstr "توقف إنشاء ملف Excel على نحو غير متوقع. حاول مرة أخرى."
+
+msgid "No background worker is running for exports. Ask your administrator."
+msgstr "لا توجد عملية خلفية تعمل للتصدير. راجع مسؤول النظام."
+
+msgid "Element {0} runs past the edge of the {1}: it is cut off in print"
+msgstr "العنصر {0} يتجاوز حافة {1}: يُقصّ عند الطباعة"
+
+msgid "Letter Head {0} was edited by hand. Open it in the letter head builder to replace its HTML."
+msgstr "عُدّل ورق الشركة {0} يدوياً. افتحه في منشئ ورق الشركة ليُستبدل HTML الخاص به."
+
+msgid "Invalid print preset"
+msgstr "إعداد محفوظ غير صالح"
+
+msgid "The data of {0} could not be loaded."
+msgstr "تعذّر تحميل بيانات {0}."
+
+msgid "You may not write letter heads."
+msgstr "لا تملك صلاحية كتابة ورق الشركة."
+
+msgid "You may not read letter heads."
+msgstr "لا تملك صلاحية قراءة ورق الشركة."
+
+msgid "The QR code could not be drawn now; it is drawn when the letter head is saved."
+msgstr "تعذّر رسم رمز QR الآن؛ يُرسم عند حفظ ورق الشركة."
+
+msgid "With «Repeat header and footer», the page margins this letter head needs are added by themselves. Only a print format that sets its own .print-format margin keeps it; such a format needs this line instead:"
+msgstr "مع «تكرار الترويسة والتذييل» تُضاف هوامش الصفحة التي يحتاجها هذا الورق تلقائياً. قالب الطباعة الذي يضع هامش .print-format بنفسه وحده يحتفظ بهامشه، ويحتاج هذا السطر بدلاً من ذلك:"
+
+msgid "Report View Table"
+msgstr "جدول عرض التقرير"
+
+msgid "Report View could not close the report's tables: {0}"
+msgstr "تعذّر على عرض التقرير إغلاق جداول التقرير: {0}"
+
+msgid "Your settings could not be saved"
+msgstr "تعذّر حفظ إعداداتك"
+
+msgid "The pages could not be laid out: {0}"
+msgstr "تعذّر ترتيب الصفحات: {0}"
+
+msgid "A page could not be drawn: {0}"
+msgstr "تعذّر رسم صفحة: {0}"
+
+msgid "The pages could not be laid out, so nothing was printed."
+msgstr "تعذّر ترتيب الصفحات، فلم يُطبع شيء."
+
+msgid "{0} of {1} pages could not be drawn, so nothing was printed. Try again."
+msgstr "تعذّر رسم {0} من {1} صفحة، فلم يُطبع شيء. حاول مرة أخرى."
+
+msgid "Nothing was printed"
+msgstr "لم يُطبع شيء"
+
+msgid "The export could not be cancelled on the server; its file will not be downloaded"
+msgstr "تعذّر إلغاء التصدير على الخادم؛ لن يُنزَّل ملفه"

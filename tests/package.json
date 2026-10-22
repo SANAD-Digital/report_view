@@ -1,0 +1,15 @@
+{
+  "name": "report_view-tests",
+  "private": true,
+  "description": "Test tooling of report_view (Playwright). Installed here, never in the app root, so the app's node_modules (served under /assets/report_view/node_modules) holds runtime libraries only.",
+  "license": "MIT",
+  "scripts": {
+    "e2e": "playwright test -c playwright.config.js",
+    "visual": "node visual/build.mjs && playwright test -c visual",
+    "perf": "node perf/measure.cjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "playwright": "1.63.0"
+  }
+}

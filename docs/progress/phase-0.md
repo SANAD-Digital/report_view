@@ -45,15 +45,15 @@
 ## القرارات المتخذة
 - موقع التطوير `acc.dev.sanad.digital` بقرار صاحب المشروع (اقتراحي الأول كان `test.dev` لأنه يحقق شرط البيانات دون توليد).
 - الشركة المستخدمة لتقييد `rv_restricted`: `SND Accounting` (الوحيدة ذات القيود على `acc.dev`).
-- مستخدمو الاختبار بصيغة `<username>@rv.test` (تسجيل الدخول يقبل اسم المستخدم أو البريد). كلمات المرور (موقع تطوير فقط):
+- مستخدمو الاختبار بصيغة `<username>@rv.test` (تسجيل الدخول يقبل اسم المستخدم أو البريد). كلمات المرور لا تُكتب في المستودع: كل واحدة في متغير بيئة يقرؤه `scripts/setup_test_users.py` و `tests/e2e/users.js` (ولا قيمة احتياطية؛ الاختبار يتوقف إذا غاب المتغير). على خادم التطوير هذا محفوظة في `~/.config/report_view/test-users.env` (صلاحية 600)، وتُحمَّل بـ `set -a; . ~/.config/report_view/test-users.env; set +a`. كلمات المرور القديمة التي كانت هنا غُيّرت في 2026-10-22:
 
-| المستخدم | البريد | كلمة المرور | الأدوار |
+| المستخدم | البريد | متغير كلمة المرور | الأدوار |
 |---|---|---|---|
-| rv_admin | rv_admin@rv.test | `***REMOVED***` | System Manager |
-| rv_accountant | rv_accountant@rv.test | `***REMOVED***` | Accounts User، Accounts Manager |
-| rv_restricted | rv_restricted@rv.test | `***REMOVED***` | Accounts User + User Permission على شركة `SND Accounting` (apply_to_all_doctypes) |
-| rv_noexport | rv_noexport@rv.test | `***REMOVED***` | Accounts User |
-| rv_none | rv_none@rv.test | `***REMOVED***` | بلا أدوار |
+| rv_admin | rv_admin@rv.test | `RV_ADMIN_PASSWORD` | System Manager |
+| rv_accountant | rv_accountant@rv.test | `RV_ACCOUNTANT_PASSWORD` | Accounts User، Accounts Manager |
+| rv_restricted | rv_restricted@rv.test | `RV_RESTRICTED_PASSWORD` | Accounts User + User Permission على شركة `SND Accounting` (apply_to_all_doctypes) |
+| rv_noexport | rv_noexport@rv.test | `RV_NOEXPORT_PASSWORD` | Accounts User |
+| rv_none | rv_none@rv.test | `RV_NONE_PASSWORD` | بلا أدوار |
 
 - إلغاء تصدير `rv_noexport`: صلاحية Export في Frappe على مستوى الدور (اتحاد أدوار المستخدم عبر `frappe.permissions.can_export`)، فلا يمكن إلغاؤها لمستخدم بعينه يحمل Accounts User دون إلغائها عن الدور نفسه. السكربت يلغي `export` لدور Accounts User على `GL Entry` و `Account` عبر Custom DocPerm، وهذا يؤثر على كل حاملي الدور على موقع الاختبار. للتراجع: Role Permission Manager أو `frappe.permissions.update("GL Entry", "Accounts User", 0, "export", 1)` وكذلك `Account`.
 - إبقاء `frappe.set_user("Administrator")` داخل `scripts/setup_test_users.py` فقط لأنه سكربت تجهيز تطويري وليس كود إنتاج؛ لا يُستورد من التطبيق.

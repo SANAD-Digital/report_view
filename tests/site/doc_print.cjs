@@ -2,10 +2,11 @@
 // Frappe's print page, paper, formats, letter heads and footers, a long document split
 // over pages (rows, head repeated, nothing over the footer), numbers, headings,
 // signatures, border, watermark, language, zoom, the record fields, print and PDF.
-// RV_PW=… RV_SHORT_DOC=<a Journal Entry> RV_LONG_DOC=<one of 80+ rows, e.g. ACC-JV-2026-00016 (300)> node tests/site/doc_print.cjs
+// [RV_USER=… RV_PW=…] RV_SHORT_DOC=<a Journal Entry> RV_LONG_DOC=<one of 80+ rows, e.g. ACC-JV-2026-00016 (300)> node tests/site/doc_print.cjs
 // Every part of the document print page, on the site, as rv_accountant.
 const fs = require("node:fs");
 const { chromium } = require("playwright");
+const password = require("./_password.cjs");
 const BASE = process.env.RV_SITE || "https://acc.dev.sanad.digital";
 const SHORT = process.env.RV_SHORT_DOC, LONG = process.env.RV_LONG_DOC;
 const results = [];
@@ -17,7 +18,7 @@ const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", nam
 	const problems = [];
 	page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
 	page.on("console", (m) => { if (m.type() === "error" && !/CORS|ERR_FAILED|dev-acc/.test(m.text())) problems.push(m.text()); });
-	await page.request.post(`${BASE}/api/method/login`, { form: { usr: process.env.RV_USER || "rv_accountant@rv.test", pwd: process.env.RV_PW } });
+	await page.request.post(`${BASE}/api/method/login`, { form: { usr: process.env.RV_USER || "rv_accountant@rv.test", pwd: password("RV_PW", "RV_ACCOUNTANT_PASSWORD") } });
 	const V = "frappe.pages['rv-print'].rv_print.pages";
 	const settle = async () => {
 		await page.waitForFunction((g) => { try { const v = eval(g); return v.pages.length && v.filled.size && !v.el.classList.contains("is-busy"); } catch { return false; } }, V, { timeout: 60000 });

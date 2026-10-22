@@ -3,9 +3,10 @@
 // list of Custom formats only, another format on the same data, escaping, language), the
 // data of a method (bookmarkable address), a token of nobody, document mode still there,
 // and the PDF (RV_PDF=1, after the server restart that loads pages_pdf_custom).
-// RV_PW=… [RV_SHORT_DOC=<a Journal Entry>] [RV_PDF=1] [RV_SKIP_INLINE=1] node tests/site/custom_print.cjs
+// [RV_USER=… RV_PW=…] [RV_SHORT_DOC=<a Journal Entry>] [RV_PDF=1] [RV_SKIP_INLINE=1] node tests/site/custom_print.cjs
 // (RV_SKIP_INLINE: the server runs code without the sent template yet)
 const { chromium } = require("playwright");
+const password = require("./_password.cjs");
 const BASE = process.env.RV_SITE || "https://acc.dev.sanad.digital";
 const results = [];
 const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", name, info]); if (process.env.RV_VERBOSE) console.log(ok ? "PASS" : "FAIL", name, info); };
@@ -17,7 +18,7 @@ const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", nam
 	page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
 	page.on("dialog", (d) => { problems.push(`dialog: ${d.message()}`); d.dismiss(); });
 	page.on("console", (m) => { if (m.type() === "error" && !/CORS|ERR_FAILED|dev-acc|status of 4\d\d/.test(m.text())) problems.push(m.text()); });
-	await page.request.post(`${BASE}/api/method/login`, { form: { usr: process.env.RV_USER || "rv_accountant@rv.test", pwd: process.env.RV_PW } });
+	await page.request.post(`${BASE}/api/method/login`, { form: { usr: process.env.RV_USER || "rv_accountant@rv.test", pwd: password("RV_PW", "RV_ACCOUNTANT_PASSWORD") } });
 	const V = "frappe.pages['rv-print'].rv_print.pages";
 	const settle = async () => {
 		await page.waitForFunction((g) => { try { const v = eval(g); return v.pages.length && v.filled.size && !v.el.classList.contains("is-busy"); } catch { return false; } }, V, { timeout: 60000 });

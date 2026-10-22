@@ -49,3 +49,10 @@ Ran 51 tests (integration)   OK
 - جانب المتصفح من ADR-013 (§3 أعلاه) خارج نطاق هذه الجولة؛ إلى حينه الواجهة ما زالت ترفض التصدير مع فلتر سريع، والخادم جاهز.
 - `DEFAULT_MAX_ROWS = 50000` في `settings.py` بينما تعديل ADR-009 و §5.2 يقولان 100,000 افتراضياً مع سقف 200,000 عبر `Report View Global Settings` (غير مبني بعد). لم أغيّره: الاختبارات تثبّت 50,000 والقرار يحتاج صاحب المشروع (رفع الحد بلا DocType الإعدادات يغيّر السلوك بصمت).
 - §5.1 في المعمارية يصف `quick_filters` بـ `{id, label, filter}` بينما الكود `{id, label, expression, exclusive?}`؛ هذا قسم المتصفح فلم ألمسه، ويُصحَّح مع تنفيذ جانب المتصفح.
+
+## 6. حالة البنود المفتوحة (مراجعة 2026-10-22، الفرع `letterhead-builder`)
+| البند | الحالة | الدليل |
+|---|---|---|
+| §5.1 `DEFAULT_MAX_ROWS` = 50,000 والوثائق 100,000 | **مفتوح، قرار صاحب المشروع** (C21). الوثائق صارت تذكر الحقيقة: 50,000 في الكود والـ DocType (`Report View Global Settings` بُني في ADR-015) | `docs/architecture.md` §5.2 و §8، `docs/brief.md`، ADR-009 |
+| §5.2 جانب المتصفح من ADR-013 (التصدير مع فلتر سريع) | **مغلق** | `public/js/report_view/index.js` `export_model()` يرسل `view_state.quick_filters` (المعرّفات المعروفة فقط) و `quick_filters: [{id, expression}]`؛ حالة ADR-013 محدَّثة |
+| §5.3 شكل `quick_filters` في المعمارية §5.1 | **مغلق** | §5.1 صار `{id, label, expression, exclusive?}` كما في الكود |

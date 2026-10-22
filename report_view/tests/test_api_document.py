@@ -5,18 +5,12 @@ import frappe
 
 from report_view.api import document as api
 from report_view.core.errors import RVInvalidInput
-from report_view.tests.utils import COMPANY, RVTestCase
-
-
-def a_journal_entry():
-	return frappe.db.get_value("Journal Entry", {"docstatus": 1, "company": COMPANY}, "name")
+from report_view.tests.utils import RVTestCase, submitted_journal_entry
 
 
 class TestDocumentPrint(RVTestCase):
 	def setUp(self):
-		self.je = a_journal_entry()
-		if not self.je:
-			self.skipTest("no submitted Journal Entry on this site")
+		self.je = submitted_journal_entry()
 
 	def test_options_of_a_document(self):
 		with self.as_user("accountant"):
@@ -57,7 +51,11 @@ class TestDocumentPrint(RVTestCase):
 
 	def test_heading_signature_and_letter_head_with_the_document(self):
 		heading = frappe.get_doc(
-			{"doctype": "Print Heading", "print_heading": "RV Doc Heading", "description": "{{ doc.name }} / {{ doc.voucher_type }}"}
+			{
+				"doctype": "Print Heading",
+				"print_heading": "RV Doc Heading",
+				"description": "{{ doc.name }} / {{ doc.voucher_type }}",
+			}
 		).insert(ignore_if_duplicate=True)
 		frappe.get_doc(
 			{
@@ -70,7 +68,14 @@ class TestDocumentPrint(RVTestCase):
 			}
 		).insert()
 		frappe.get_doc(
-			{"doctype": "Print Signature", "signature_name": "RV Other Doc Sig", "signature_for": "Document", "reference_doctype": "Sales Invoice", "content_type": "HTML", "html": "<p>x</p>"}
+			{
+				"doctype": "Print Signature",
+				"signature_name": "RV Other Doc Sig",
+				"signature_for": "Document",
+				"reference_doctype": "Sales Invoice",
+				"content_type": "HTML",
+				"html": "<p>x</p>",
+			}
 		).insert()
 		with self.as_user("accountant"):
 			h = api.render_doc_heading("Journal Entry", self.je, heading.name)
@@ -79,7 +84,9 @@ class TestDocumentPrint(RVTestCase):
 			self.assertIn(f"<p>{self.je}</p>", s["html"])
 			with self.assertRaises(frappe.DoesNotExistError):
 				api.render_doc_signature("Journal Entry", self.je, "RV Other Doc Sig")
-			names = {x["name"] for x in api.get_doc_print_options("Journal Entry", self.je)["print_signatures"]}
+			names = {
+				x["name"] for x in api.get_doc_print_options("Journal Entry", self.je)["print_signatures"]
+			}
 			self.assertIn("RV Doc Sig", names)
 			self.assertNotIn("RV Other Doc Sig", names)
 			lh = frappe.db.get_value("Letter Head", {"disabled": 0}, "name")

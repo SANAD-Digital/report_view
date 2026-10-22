@@ -1,25 +1,17 @@
 {
   "name": "report_view",
   "version": "1.0.0",
-  "description": "Report View",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "private": true,
+  "description": "Report View: the runtime libraries of the app's pages. Test tooling lives in tests/package.json.",
+  "license": "MIT",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "test:js": "node --test 'tests/js/*.test.mjs'"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "devDependencies": {
-    "@playwright/test": "^1.63.0"
+    "test:js": "node --test 'tests/js/*.test.mjs'",
+    "test:e2e": "npm --prefix tests run e2e",
+    "test:visual": "npm --prefix tests run visual"
   },
   "dependencies": {
     "@finos/perspective": "3.8.0",
-    "echarts": "^5.6.0",
+    "echarts": "5.6.0",
     "regular-table": "0.9.1"
   }
 }

@@ -3,8 +3,9 @@
 // into a slot, an element freed by dragging and moved with the keys, a resize, undo/redo,
 // save, then the saved letter head in Frappe's print view and in the rv-print page; the
 // phone layout (tap to add, no horizontal scroll). The test letter head is deleted at the end.
-// RV_ADMIN_PASSWORD=… [RV_SHOTS=<dir>] node tests/site/letterhead.cjs
+// [RV_USER=… RV_PW=…] [RV_SHOTS=<dir>] node tests/site/letterhead.cjs
 const { chromium } = require("playwright");
+const password = require("./_password.cjs");
 const BASE = process.env.RV_SITE || "https://acc.dev.sanad.digital";
 const USER = process.env.RV_USER || "rv_admin@rv.test";
 const SHOTS = process.env.RV_SHOTS || "";
@@ -21,7 +22,7 @@ const check = (name, ok, info = "") => results.push([ok ? "PASS" : "FAIL", name,
 		// the probes for a printable document may be refused (403): not a fault of the builder
 		if (m.type() === "error" && !/CORS|ERR_FAILED|dev-acc|403|PermissionError/.test(m.text())) problems.push(m.text());
 	});
-	await page.request.post(`${BASE}/api/method/login`, { form: { usr: USER, pwd: process.env.RV_ADMIN_PASSWORD } });
+	await page.request.post(`${BASE}/api/method/login`, { form: { usr: USER, pwd: password("RV_PW", "RV_ADMIN_PASSWORD") } });
 	const H = "frappe.pages['rv-letterhead'].rv_letterhead";
 	const layout = () => page.evaluate((h) => eval(h).store.layout, H);
 	const find = (l, id) => [...l.header.elements, ...l.footer.elements].find((e) => e.id === id);
@@ -197,7 +198,7 @@ const check = (name, ok, info = "") => results.push([ok ? "PASS" : "FAIL", name,
 		const ph = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 440, height: 956 }, isMobile: true, hasTouch: true });
 		const pp = await ph.newPage();
 		pp.on("pageerror", (e) => problems.push(`phone pageerror: ${e.message}`));
-		await pp.request.post(`${BASE}/api/method/login`, { form: { usr: USER, pwd: process.env.RV_ADMIN_PASSWORD } });
+		await pp.request.post(`${BASE}/api/method/login`, { form: { usr: USER, pwd: password("RV_PW", "RV_ADMIN_PASSWORD") } });
 		await pp.goto(`${BASE}/desk/rv-letterhead/${encodeURIComponent(NAME)}`, { waitUntil: "domcontentloaded" });
 		await pp.waitForSelector(".rvlb-editor:not([hidden]) .rvlb-el", { timeout: 40000 });
 		const n0 = await pp.evaluate((h) => eval(h).store.layout.header.elements.length, H);

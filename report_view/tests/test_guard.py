@@ -1,8 +1,14 @@
 import frappe
 
-from report_view.core.errors import RVNoExport, RVNoPrint, RVUnsupportedReport
-from report_view.core.guard import guard_export, guard_print, guard_report, guard_report_quiet
-from report_view.tests.utils import RVTestCase
+from report_view.core.errors import RVInvalidInput, RVNoExport, RVNoPrint, RVUnsupportedReport
+from report_view.core.guard import (
+	guard_doc_print,
+	guard_export,
+	guard_print,
+	guard_report,
+	guard_report_quiet,
+)
+from report_view.tests.utils import RVTestCase, report_builder_report
 
 
 class TestGuard(RVTestCase):
@@ -20,13 +26,9 @@ class TestGuard(RVTestCase):
 			guard_report("No Such Report RV")
 
 	def test_guard_report_unsupported_type(self):
-		builder = frappe.get_list(
-			"Report", filters={"report_type": "Report Builder", "disabled": 0}, pluck="name", limit=1
-		)
-		if not builder:
-			self.skipTest("No Report Builder report on this site")
+		builder = report_builder_report()
 		with self.as_user("admin"), self.assertRaises(RVUnsupportedReport):
-			guard_report(builder[0])
+			guard_report(builder)
 
 	def test_guard_report_quiet(self):
 		with self.as_user("accountant"):
@@ -54,3 +56,26 @@ class TestGuard(RVTestCase):
 				self.skipTest("Auditor can print GL Entry on this site")
 			with self.assertRaises(RVNoPrint):
 				guard_print(report)
+
+	def test_guard_doc_print(self):
+		"""C4: the one document print check of the document page and of its PDF."""
+		from report_view.api import document, pdf
+
+		self.assertIs(document.guard_doc_print, guard_doc_print)
+		self.assertIs(pdf.guard_doc_print, guard_doc_print)
+		company = frappe.db.get_value("Company", {}, "name")
+		with self.as_user("admin"):
+			self.assertEqual(guard_doc_print("Company", company).name, company)
+			for doctype, name in (("", ""), ("Company", None), (None, company)):
+				with self.subTest(doctype=doctype, name=name), self.assertRaises(RVInvalidInput):
+					guard_doc_print(doctype, name)
+			# a child table is not a document; an unknown doctype or name does not exist
+			for doctype, name in (
+				("Journal Entry Account", "x"),
+				("No Such Doctype", "x"),
+				("Company", "rv-no-such"),
+			):
+				with self.subTest(doctype=doctype), self.assertRaises(frappe.DoesNotExistError):
+					guard_doc_print(doctype, name)
+		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
+			guard_doc_print("Company", company)

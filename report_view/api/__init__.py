@@ -4,7 +4,6 @@ Every function calls ``guard_report`` on its first line (``_guard``: once per re
 """
 
 import re
-from functools import wraps
 from typing import Any
 
 import frappe
@@ -24,6 +23,7 @@ from report_view.core.guard import (
 	guard_report_quiet,
 )
 from report_view.core.inputs import parse_json_arg
+from report_view.core.limits import rate_limit as _rate_limit
 from report_view.core.settings import get_print_max_pages, get_row_limit, load_settings, print_defaults
 
 MAX_ENRICH_NAMES = 5000
@@ -31,33 +31,6 @@ MAX_TRANSLATION_MESSAGES = 2000
 # rows a server-rendered report print format may hold per printed page (print_max_pages)
 PRINT_ROWS_PER_PAGE = 40
 _FIELD_RE = re.compile(r"^[A-Za-z0-9_]+$")
-
-
-def _rate_limit(limit: int, seconds: int = 60):
-	"""At most ``limit`` calls of the function per user in ``seconds`` (a web request only).
-
-	``frappe.rate_limiter.rate_limit`` counts per IP address or per a form field, never per
-	user: the users of an office share one address. The count and the refusal are Frappe's
-	(``RateLimitExceededError``, HTTP 429, its translated message)."""
-
-	def decorator(fn):
-		@wraps(fn)
-		def wrapper(*args, **kwargs):
-			if getattr(frappe.local, "request", None):
-				key = frappe.cache.make_key(f"report_view:rl:{fn.__name__}:{frappe.session.user}:{seconds}")
-				count = frappe.cache.incrby(key, 1)
-				if count == 1:
-					frappe.cache.expire(key, seconds)
-				if count > limit:
-					frappe.throw(
-						_("You hit the rate limit because of too many requests. Please try after sometime."),
-						frappe.RateLimitExceededError,
-					)
-			return fn(*args, **kwargs)
-
-		return wrapper
-
-	return decorator
 
 
 def _guard(report_name: str):
@@ -220,9 +193,16 @@ def export_xlsx(report_name: str, export_model: dict | str) -> Any:
 
 @frappe.whitelist(methods=["GET"])
 def export_xlsx_status(job: str) -> dict:
-	"""``{state: queued|running|done|failed, row_count, error}`` of the user's own export job;
-	the job's report and ``can_export`` are checked again (``export_jobs._job``)."""
+	"""``{state: queued|running|done|failed, row_count, error, error_code, cancellable}`` of
+	the user's own export job; the job's report and ``can_export`` are checked again
+	(``export_jobs._job``). A job whose worker is gone reads as failed."""
 	return export_jobs.status(job)
+
+
+@frappe.whitelist(methods=["POST"])
+def export_xlsx_cancel(job: str) -> dict:
+	"""Cancel the user's own export job (``export_jobs.cancel``); answers as the status."""
+	return export_jobs.cancel(job)
 
 
 @frappe.whitelist(methods=["GET"])
@@ -290,7 +270,11 @@ def get_print_options(report_name: str, company: str | None = None) -> dict:
 		limit=0,
 	)
 	languages = frappe.get_list(
-		"Language", filters={"enabled": 1}, fields=["name", "language_name"], order_by="language_name asc", limit=0
+		"Language",
+		filters={"enabled": 1},
+		fields=["name", "language_name"],
+		order_by="language_name asc",
+		limit=0,
 	)
 	return {
 		"letter_heads": [{"name": lh.name, "is_default": bool(lh.is_default)} for lh in letter_heads],
@@ -418,7 +402,9 @@ def render_print_format(
 			data.append(printing.escaped(row))
 		elif isinstance(row, list | tuple):
 			data.append(
-				printing.escaped({c.fieldname: row[i] if i < len(row) else None for i, c in enumerate(columns_as_returned)})
+				printing.escaped(
+					{c.fieldname: row[i] if i < len(row) else None for i, c in enumerate(columns_as_returned)}
+				)
 			)
 	html = frappe.render_template(
 		doc.html or "",
@@ -437,7 +423,11 @@ def render_print_format(
 
 @frappe.whitelist(methods=["POST"])
 def render_print_heading(
-	report_name: str, name: str, filters: dict | str, filter_meta: list | str | None = None, view_columns: list | str | None = None
+	report_name: str,
+	name: str,
+	filters: dict | str,
+	filter_meta: list | str | None = None,
+	view_columns: list | str | None = None,
 ) -> dict:
 	"""A ``Print Heading`` of the Pages view (ADR-015): its title and description rendered
 	as Jinja with the report's name and the filters on screen (``printing.report_context``),
@@ -451,7 +441,11 @@ def render_print_heading(
 
 @frappe.whitelist(methods=["POST"])
 def render_print_signature(
-	report_name: str, name: str, filters: dict | str, filter_meta: list | str | None = None, view_columns: list | str | None = None
+	report_name: str,
+	name: str,
+	filters: dict | str,
+	filter_meta: list | str | None = None,
+	view_columns: list | str | None = None,
 ) -> dict:
 	"""A ``Print Signature`` of type Report (ADR-015), for this report or for all: its
 	table of signatories or its HTML/Jinja, with the report's context; its CSS nested in
@@ -461,7 +455,9 @@ def render_print_signature(
 	if not isinstance(name, str) or not name.strip():
 		frappe.throw(_("Print signature name is required"), RVInvalidInput)
 	names = list(dict.fromkeys([report_name, report.name]))
-	return printing.report_signature(name, names, printing.report_context(report, filters, filter_meta, view_columns))
+	return printing.report_signature(
+		name, names, printing.report_context(report, filters, filter_meta, view_columns)
+	)
 
 
 @frappe.whitelist(methods=["POST"])

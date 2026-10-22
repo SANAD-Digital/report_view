@@ -9,7 +9,7 @@ from frappe import _
 from frappe.core.doctype.report.report import Report
 from frappe.desk.query_report import get_report_doc
 
-from report_view.core.errors import RVNoExport, RVNoPrint, RVUnsupportedReport
+from report_view.core.errors import RVInvalidInput, RVNoExport, RVNoPrint, RVUnsupportedReport
 
 SUPPORTED_REPORT_TYPES = ("Script Report", "Query Report")
 
@@ -66,6 +66,26 @@ def guard_print(report: Report) -> None:
 			_("You are not allowed to print {0}").format(_(report.ref_doctype)),
 			RVNoPrint,
 		)
+
+
+def guard_doc_print(doctype: str, name: str):
+	"""The document, if the user may print it; else raise. The one check of the document
+	print page (``api.document``) and of its PDF (``api.pdf.pages_pdf_document``).
+
+	``print`` is checked on the doctype first, so a user without it learns nothing about
+	the document, then on the document itself. Frappe's print page also lets ``read``
+	print (``frappe.www.printview.validate_print_permission``); Report View asks for
+	``print`` (CLAUDE.md). A child table is not a printable document."""
+	if not isinstance(doctype, str) or not isinstance(name, str) or not doctype or not name:
+		frappe.throw(_("Document type and name are required"), RVInvalidInput)
+	if not frappe.db.exists("DocType", doctype) or frappe.get_meta(doctype).istable:
+		frappe.throw(_("Document type {0} not found").format(doctype), frappe.DoesNotExistError)
+	if not frappe.has_permission(doctype, "print"):
+		frappe.throw(_("You are not allowed to print {0}").format(_(doctype)), frappe.PermissionError)
+	doc = frappe.get_doc(doctype, name)
+	if not frappe.has_permission(doctype, "print", doc=doc):
+		frappe.throw(_("You are not allowed to print {0}").format(_(doctype)), frappe.PermissionError)
+	return doc
 
 
 def can_export(report: Report) -> bool:

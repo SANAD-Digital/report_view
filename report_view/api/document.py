@@ -13,23 +13,11 @@ from frappe.www.printview import get_html_and_style
 
 from report_view.core import printing
 from report_view.core.errors import RVInvalidInput
+from report_view.core.guard import guard_doc_print
 from report_view.core.inputs import parse_json_arg
 from report_view.core.settings import get_print_max_pages, print_defaults
 
 MAX_TRANSLATION_MESSAGES = 2000
-
-
-def guard_doc_print(doctype: str, name: str):
-	"""The document, if the user may print it (``print`` on it); else PermissionError.
-	Frappe's print page also lets ``read`` print; Report View asks for ``print``
-	(CLAUDE.md: printing checks the print permission)."""
-	if not isinstance(doctype, str) or not isinstance(name, str) or not doctype or not name:
-		frappe.throw(_("Document type and name are required"), RVInvalidInput)
-	if not frappe.db.exists("DocType", doctype) or frappe.get_meta(doctype).istable:
-		frappe.throw(_("Document type {0} not found").format(doctype), frappe.DoesNotExistError)
-	if not frappe.has_permission(doctype, "print", doc=name):
-		frappe.throw(_("Not permitted to print {0} {1}").format(_(doctype), name), frappe.PermissionError)
-	return frappe.get_doc(doctype, name)
 
 
 def _print_format_filters(doctype: str) -> dict:
@@ -51,12 +39,18 @@ def get_doc_print_options(doctype: str, name: str) -> dict:
 	default_letter_head = None
 	if frappe.has_permission("Letter Head"):
 		letter_heads = frappe.get_list(
-			"Letter Head", filters={"disabled": 0}, fields=["name", "is_default"], order_by="name asc", limit=0
+			"Letter Head",
+			filters={"disabled": 0},
+			fields=["name", "is_default"],
+			order_by="name asc",
+			limit=0,
 		)
 		names = {lh.name for lh in letter_heads}
 		company = doc.get("company")
 		if company and frappe.has_permission("Company", doc=company):
-			rows = frappe.get_list("Company", filters={"name": company}, fields=["default_letter_head"], limit=1)
+			rows = frappe.get_list(
+				"Company", filters={"name": company}, fields=["default_letter_head"], limit=1
+			)
 			default_letter_head = rows[0].default_letter_head if rows else None
 		if doc.get("letter_head") in names:
 			default_letter_head = doc.letter_head
@@ -79,7 +73,11 @@ def get_doc_print_options(doctype: str, name: str) -> dict:
 	if own_heading in {h.name for h in headings}:
 		defaults["heading"] = own_heading
 	languages = frappe.get_list(
-		"Language", filters={"enabled": 1}, fields=["name", "language_name"], order_by="language_name asc", limit=0
+		"Language",
+		filters={"enabled": 1},
+		fields=["name", "language_name"],
+		order_by="language_name asc",
+		limit=0,
 	)
 	return {
 		"doctype": doctype,
@@ -108,13 +106,19 @@ def render_doc_print(doctype: str, name: str, print_format: str | None = None) -
 	guard_doc_print(doctype, name)
 	if print_format:
 		found = frappe.get_list(
-			"Print Format", filters={"name": print_format, **_print_format_filters(doctype)}, fields=["name"], limit=1
+			"Print Format",
+			filters={"name": print_format, **_print_format_filters(doctype)},
+			fields=["name"],
+			limit=1,
 		)
 		if not found:
 			frappe.throw(
-				_("Print Format {0} is not available for {1}").format(print_format, _(doctype)), frappe.DoesNotExistError
+				_("Print Format {0} is not available for {1}").format(print_format, _(doctype)),
+				frappe.DoesNotExistError,
 			)
-	out = get_html_and_style(doctype, name, print_format=print_format or None, no_letterhead=1, trigger_print=False)
+	out = get_html_and_style(
+		doctype, name, print_format=print_format or None, no_letterhead=1, trigger_print=False
+	)
 	if out.get("html") is None:
 		frappe.throw(_("The print format could not be rendered"), RVInvalidInput)
 	return {"name": print_format or "", "type": "Jinja", "html": out["html"], "css": out.get("style") or ""}
@@ -154,7 +158,9 @@ def render_doc_letterhead(doctype: str, name: str, letterhead: str) -> dict:
 	doc = guard_doc_print(doctype, name)
 	if not frappe.has_permission("Letter Head", "read"):
 		return {}
-	found = frappe.get_list("Letter Head", filters={"name": letterhead, "disabled": 0}, fields=["name"], limit=1)
+	found = frappe.get_list(
+		"Letter Head", filters={"name": letterhead, "disabled": 0}, fields=["name"], limit=1
+	)
 	if not found:
 		frappe.throw(_("Letter Head {0} not found").format(letterhead), frappe.DoesNotExistError)
 	lh = frappe.get_doc("Letter Head", found[0].name)

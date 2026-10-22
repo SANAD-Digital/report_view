@@ -80,9 +80,27 @@ def _keep_text(name: str):
 
 
 for _name in (
-	"capitalize", "casefold", "center", "expandtabs", "ljust", "lower", "lstrip", "partition",
-	"removeprefix", "removesuffix", "rjust", "rpartition", "rsplit", "rstrip", "split",
-	"splitlines", "strip", "swapcase", "title", "upper", "zfill",
+	"capitalize",
+	"casefold",
+	"center",
+	"expandtabs",
+	"ljust",
+	"lower",
+	"lstrip",
+	"partition",
+	"removeprefix",
+	"removesuffix",
+	"rjust",
+	"rpartition",
+	"rsplit",
+	"rstrip",
+	"split",
+	"splitlines",
+	"strip",
+	"swapcase",
+	"title",
+	"upper",
+	"zfill",
 ):
 	setattr(Text, _name, _keep_text(_name))
 
@@ -159,7 +177,9 @@ def apply_view_columns(columns: list, view: list) -> list:
 	return out + list(by.values())
 
 
-def report_context(report, filters: dict | str, filter_meta: list | str | None, view_columns: list | str | None = None) -> dict:
+def report_context(
+	report, filters: dict | str, filter_meta: list | str | None, view_columns: list | str | None = None
+) -> dict:
 	"""What a heading or a signature of a report may read (the help of Print Signature lists
 	it): ``title``, ``report_name``, ``filters``, ``doc`` (the filter values as a document),
 	``company``, ``printed_by``, ``printed_on``, ``lang``, and the columns as the view shows
@@ -237,7 +257,9 @@ def render_signature(doc, context: dict) -> dict:
 	"""A ``Print Signature`` rendered: its HTML template, or its table of signatories as
 	boxes (``templates/includes/print_signature.html``)."""
 	signatories = [
-		frappe._dict(label=r.label, person_name=r.person_name, designation=r.designation, show_date=r.show_date)
+		frappe._dict(
+			label=r.label, person_name=r.person_name, designation=r.designation, show_date=r.show_date
+		)
 		for r in doc.get("signatories") or []
 	]
 	context = {**context, "signatories": signatories, "signature": doc.name}
@@ -255,7 +277,9 @@ def report_signature(name: str, report_names: list[str], context: dict) -> dict:
 		"Print Signature", filters={"name": name, **filters}, or_filters=or_filters, fields=["name"], limit=1
 	)
 	if not found:
-		frappe.throw(_("Print Signature {0} is not available for this report").format(name), frappe.DoesNotExistError)
+		frappe.throw(
+			_("Print Signature {0} is not available for this report").format(name), frappe.DoesNotExistError
+		)
 	return render_signature(frappe.get_doc("Print Signature", found[0].name), context)
 
 
@@ -279,7 +303,12 @@ def list_document_signatures(doctype: str | None) -> list[dict]:
 	"""Enabled signatures of type Document for ``doctype`` or for all."""
 	filters, or_filters = signature_filters("Document", [doctype] if doctype else None, "reference_doctype")
 	rows = frappe.get_list(
-		"Print Signature", filters=filters, or_filters=or_filters, fields=["name", "content_type"], order_by="name asc", limit=0
+		"Print Signature",
+		filters=filters,
+		or_filters=or_filters,
+		fields=["name", "content_type"],
+		order_by="name asc",
+		limit=0,
 	)
 	return [{"name": r.name, "content_type": r.content_type} for r in rows]
 
@@ -292,7 +321,9 @@ def document_signature(name: str, doc, standalone: bool = False) -> dict:
 		"Print Signature", filters={"name": name, **filters}, or_filters=or_filters, fields=["name"], limit=1
 	)
 	if not found:
-		frappe.throw(_("Print Signature {0} is not available for this document").format(name), frappe.DoesNotExistError)
+		frappe.throw(
+			_("Print Signature {0} is not available for this document").format(name), frappe.DoesNotExistError
+		)
 	context = {**document_context(doc), "standalone": standalone}
 	return render_signature(frappe.get_doc("Print Signature", found[0].name), context)
 
@@ -306,7 +337,7 @@ def report_view_signature(name: str, doc=None) -> str:
 	"""
 	try:
 		out = document_signature(name, doc, standalone=True)
-	except (frappe.DoesNotExistError, frappe.PermissionError):
+	except frappe.DoesNotExistError, frappe.PermissionError:
 		# a user who may not read signatures (a portal user) still prints the document
 		frappe.clear_last_message()
 		return ""

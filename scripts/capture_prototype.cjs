@@ -4,7 +4,8 @@
 //   node scripts/capture_prototype.cjs pivot dark  only these
 const fs = require("node:fs");
 const path = require("node:path");
-const { chromium } = require("playwright");
+// Playwright is test tooling, installed in tests/ (npm --prefix tests ci), not in the app.
+const { chromium } = require(require.resolve("playwright", { paths: [path.join(__dirname, "../tests")] }));
 
 const ROOT = path.resolve(__dirname, "..");
 const DESIGN = path.join(ROOT, "reference/design");

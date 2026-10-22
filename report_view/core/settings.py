@@ -147,12 +147,20 @@ def boot_session(bootinfo) -> None:
 	report_view.print() opens a Custom print. It must be known at the click: a tab opened
 	after a request is blocked by the browser."""
 	gs = global_settings()
-	bootinfo.report_view = {"custom_print_open_in": "tab" if gs and gs.get("custom_print_open_in") == "New tab" else "same"}
+	bootinfo.report_view = {
+		"custom_print_open_in": "tab" if gs and gs.get("custom_print_open_in") == "New tab" else "same"
+	}
 
 
 # The labels of the single's Select fields, as the Pages view keys them.
 _PAGES = {"Every page": "all", "First page": "first", "All but the first": "rest", "Last page": "last"}
-_STYLES = {"Classic": "classic", "Modern": "modern", "Accounting grid": "ledger", "Compact": "compact", "Ink saving": "minimal"}
+_STYLES = {
+	"Classic": "classic",
+	"Modern": "modern",
+	"Accounting grid": "ledger",
+	"Compact": "compact",
+	"Ink saving": "minimal",
+}
 _NUMBER_POS = {
 	"Bottom, at the end": "bottom-end",
 	"Bottom, centred": "bottom-center",

@@ -561,7 +561,7 @@ def cleanup_stale(max_age: float | None = None) -> dict:
 	- Chromium processes of the agent (their ``--user-data-dir`` is one of our profiles)
 	  older than ``max_age`` whose starting process is gone: killed with their group;
 	- profiles no running Chromium uses, whose owner is gone or older than ``max_age``;
-	- the site's job files older than an hour (``report_view.api.pdf.clean_old_files``).
+	- the site's job files older than an hour (``core.jobs.PDF_JOBS.clean_old_files``).
 	"""
 	max_age = MAX_RENDER_SECONDS + 60 if max_age is None else max_age
 	# the system temp folder too: where profiles were made before <bench>/tmp
@@ -590,9 +590,9 @@ def cleanup_stale(max_age: float | None = None) -> dict:
 			removed.append(path)
 	files = 0
 	if getattr(frappe.local, "site", None):
-		from report_view.api.pdf import clean_old_files
+		from report_view.core.jobs import PDF_JOBS
 
-		files = clean_old_files()
+		files = PDF_JOBS.clean_old_files()
 	if killed or removed:
 		frappe.logger("report_view").warning(
 			"Report View PDF cleanup: killed %s, removed %s profiles", killed, len(removed)

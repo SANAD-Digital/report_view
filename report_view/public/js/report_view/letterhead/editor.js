@@ -13,7 +13,7 @@
 // of a band is a slider for its height.
 
 import { BANDS, PAGE, REF_W, LIMITS, GRID_MM, NUDGE_MM, NUDGE_BIG_MM, find, slot_box, slot_at, insert_index, snap_move, snap_grid, resize_rect, guide_targets, element_defaults, reorder, neighbour_slot, move_to_slot, make_free, remove, duplicate, clamp, BOXED, set_band_height } from "./model.js";
-import { render_band } from "./render.js";
+import { render_band, esc } from "./render.js";
 import { element_aria, element_hint, band_label, slot_label } from "./labels.js";
 import { icons } from "./icons.js";
 
@@ -45,29 +45,30 @@ export class Canvas {
 			<div class="rvlb-zone" data-band="${b}">
 				<div class="rvlb-paper"></div>
 				<div class="rvlb-over" aria-hidden="true"><div class="rvlb-slots"></div><div class="rvlb-guides"></div><div class="rvlb-drop" hidden></div><div class="rvlb-sel" hidden>${HANDLES.map((h) => `<span class="rvlb-h" data-h="${h}"></span>`).join("")}</div></div>
-				<div class="rvlb-edge" role="slider" tabindex="0" aria-orientation="vertical" aria-label="${__("Height of the {0} (mm)", [band_label(b)])}"><span></span></div>
+				<div class="rvlb-edge" role="slider" tabindex="0" aria-orientation="vertical" aria-label="${esc(__("Height of the {0} (mm)", [band_label(b)]))}"><span></span></div>
 				<span class="rvlb-tag" dir="${this.host.rtl ? "rtl" : "ltr"}"></span>
 			</div>`;
 		parent.innerHTML = `
 			<div class="rvlb-stage">
 				<div class="rvlb-ruler" aria-hidden="true"></div>
 				<div class="rvlb-sheetbox">
-					<div class="rvlb-sheet" dir="ltr" role="group" aria-label="${__("The page: header, body and footer")}">
+					<div class="rvlb-sheet" dir="ltr" role="group" aria-label="${esc(__("The page: header, body and footer"))}">
 						${zone("header")}
 						<div class="rvlb-body" aria-hidden="true">
 							<i style="width:38%"></i><i></i><i></i><i style="width:76%"></i>
 							<b></b><i></i><i style="width:64%"></i>
-							<span dir="${this.host.rtl ? "rtl" : "ltr"}">${__("The document's content is not edited here")}</span>
+							<span dir="${this.host.rtl ? "rtl" : "ltr"}">${esc(__("The document's content is not edited here"))}</span>
 						</div>
 						${zone("footer")}
 					</div>
 				</div>
 				<div class="rvlb-badge" hidden></div>
+				<div class="rvlb-sr" aria-live="polite" aria-atomic="true"></div>
 			</div>
-			<div class="rvlb-float" role="toolbar" aria-label="${__("Canvas")}">
-				<button type="button" class="rvlb-tog" data-act="grid" aria-pressed="true">${icons.grid()}<span>${__("Grid 1 mm")}</span></button>
-				<button type="button" class="rvlb-tog" data-act="guides" aria-pressed="true">${icons.guides()}<span>${__("Alignment guides")}</span></button>
-				<span class="rvlb-float-hint">${__("Alt: no snapping")}</span>
+			<div class="rvlb-float" role="toolbar" aria-label="${esc(__("Canvas"))}">
+				<button type="button" class="rvlb-tog" data-act="grid" aria-pressed="true">${icons.grid()}<span>${esc(__("Grid 1 mm"))}</span></button>
+				<button type="button" class="rvlb-tog" data-act="guides" aria-pressed="true">${icons.guides()}<span>${esc(__("Alignment guides"))}</span></button>
+				<span class="rvlb-float-hint">${esc(__("Alt: no snapping"))}</span>
 			</div>`;
 		this.root = parent;
 		this.stage = parent.querySelector(".rvlb-stage");
@@ -76,6 +77,7 @@ export class Canvas {
 		this.sheet = parent.querySelector(".rvlb-sheet");
 		this.body = parent.querySelector(".rvlb-body");
 		this.badge = parent.querySelector(".rvlb-badge");
+		this.live = parent.querySelector(".rvlb-sr");
 		this.zones = {};
 		for (const b of BANDS) {
 			const z = parent.querySelector(`.rvlb-zone[data-band=${b}]`);
@@ -139,7 +141,7 @@ export class Canvas {
 			html += `<i class="${cls}" style="left:${(mm * k).toFixed(1)}px"></i>`;
 			if (mm % 30 === 0) html += `<span style="left:${(mm * k).toFixed(1)}px">${mm}</span>`;
 		}
-		html += `<span class="u" style="left:${(PAGE.w * k).toFixed(1)}px">${__("mm")}</span><b class="rvlb-ruler-sel" hidden></b>`;
+		html += `<span class="u" style="left:${(PAGE.w * k).toFixed(1)}px">${esc(__("mm"))}</span><b class="rvlb-ruler-sel" hidden></b>`;
 		this.ruler.innerHTML = html;
 		this.ruler.style.width = `${PAGE.w * k}px`;
 		this.ruler_sel = this.ruler.querySelector(".rvlb-ruler-sel");
@@ -169,7 +171,7 @@ export class Canvas {
 				.filter((s) => band.slots[s] > 0)
 				.map((s) => {
 					const box = slot_box(band, s);
-					return `<div class="rvlb-slot" data-slot="${s}" style="left:${pct(box.x)};width:${pct(box.w)};top:${Math.max(0, band.pad_top - 1)}mm;bottom:0"><span dir="${this.host.rtl ? "rtl" : "ltr"}">${slot_label(s)}</span></div>`;
+					return `<div class="rvlb-slot" data-slot="${s}" style="left:${pct(box.x)};width:${pct(box.w)};top:${Math.max(0, band.pad_top - 1)}mm;bottom:0"><span dir="${this.host.rtl ? "rtl" : "ltr"}">${esc(slot_label(s))}</span></div>`;
 				})
 				.join("");
 		}
@@ -635,7 +637,11 @@ export class Canvas {
 	announce_place(id) {
 		const f = find(this.layout, id);
 		const node = this.node(id);
-		if (f && node) node.setAttribute("aria-label", element_aria(f.el));
+		if (!f) return;
+		const text = element_aria(f.el);
+		if (node) node.setAttribute("aria-label", text);
+		// the new place is said, not only kept in the label of the focused element
+		if (this.live) this.live.textContent = text;
 	}
 
 	remove(id) {

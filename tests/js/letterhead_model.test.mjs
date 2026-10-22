@@ -2,8 +2,9 @@
 // edits, geometry, snapping and history; pure, nothing of the DOM.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import "./_json.mjs";
 
-import {
+const {
 	clamp_layout,
 	clamp_element,
 	default_layout,
@@ -22,13 +23,12 @@ import {
 	snap_move,
 	resize_rect,
 	guide_targets,
-	margin_css,
 	History,
 	Store,
 	REF_W,
 	LIMITS,
 	TOKENS,
-} from "../../report_view/public/js/report_view/letterhead/model.js";
+} = await import("../../report_view/public/js/report_view/letterhead/model.js");
 
 test("default layout is the ADR's example", () => {
 	const l = default_layout();
@@ -193,13 +193,6 @@ test("resize: each handle, grid, minimum, band", () => {
 	assert.equal(resize_rect(r, "w", -50, 0).x, 0);
 });
 
-test("margin line for wkhtmltopdf uses the header and footer heights (as the server's)", () => {
-	const l = default_layout();
-	assert.equal(margin_css(l), ".print-format{margin-top: 50mm; margin-bottom: 25mm;}");
-	l.footer.h = 0;
-	assert.equal(margin_css(l), ".print-format{margin-top: 50mm;}");
-});
-
 test("history: undo, redo, merge of quick nudges", () => {
 	const h = new History();
 	h.reset({ n: 0 });
@@ -260,4 +253,21 @@ test("colour band corners: kept as the server keeps them, drawn on the chosen co
 	assert.equal(band_radius({ radius: 3, corners: "all" }), "3mm");
 	const l = clamp_layout({ v: 1, header: { h: 30, elements: [{ id: "b", type: "band", slot: null, x: 0, y: 0, w: 50, h: 20, props: { fill: "primary", radius: 10, corners: "br" } }] } });
 	assert.equal(l.header.elements[0].props.corners, "br");
+});
+
+test("the contract is the one source: limits, fields and defaults come from letterhead_contract.json", async () => {
+	const fs = await import("node:fs");
+	const C = JSON.parse(fs.readFileSync(new URL("../../report_view/letterhead_contract.json", import.meta.url), "utf8"));
+	const m = await import("../../report_view/public/js/report_view/letterhead/model.js");
+	assert.deepEqual([...m.TOKENS], C.tokens);
+	assert.deepEqual([...m.LTR_TOKENS], C.ltr_tokens);
+	assert.equal(m.LIMITS.text, C.limits.text);
+	assert.deepEqual([...m.LIMITS.header_h], C.bands.header.h);
+	assert.equal(m.REF_W, C.ref_width);
+	for (const t of m.TYPES) assert.deepEqual(m.element_defaults(t), C.element_defaults[t]);
+	assert.deepEqual(m.default_band("footer"), { ...C.bands.footer.default, elements: [] });
+	// an image as the server takes it: a public file or an asset, no quote, bracket or parent
+	assert.ok(m.is_image_src("/files/logo.png") && m.is_image_src("/assets/x/y.svg"));
+	for (const bad of ["/private/files/x.png", "https://x/y.png", "/files/a'b.png", "/files/a(b).png", "/files/../x.png", "/files/a.__x"]) assert.equal(m.is_image_src(bad), false, bad);
+	assert.equal(m.clamp_layout({ header: { elements: [{ id: "i", type: "image", slot: "left", props: { src: '/files/x.png" onerror="' } }] } }).header.elements[0].props.src, "");
 });

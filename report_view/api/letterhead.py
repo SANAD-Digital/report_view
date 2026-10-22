@@ -34,11 +34,15 @@ def _guard_save(letter_head: str | None, make_default, company: str | None):
 			"Letter Head Layout", "write"
 		)
 	else:
-		allowed = frappe.has_permission("Letter Head", "create") and frappe.has_permission("Letter Head Layout", "create")
+		allowed = frappe.has_permission("Letter Head", "create") and frappe.has_permission(
+			"Letter Head Layout", "create"
+		)
 	if not allowed:
 		frappe.throw(_("Not permitted to save letter heads"), frappe.PermissionError)
 	if frappe.utils.cint(make_default) and not frappe.has_permission("Company", "write", doc=company):
-		frappe.throw(_("Not permitted to change the default letter head of the company"), frappe.PermissionError)
+		frappe.throw(
+			_("Not permitted to change the default letter head of the company"), frappe.PermissionError
+		)
 
 
 def _company(name: str | None) -> frappe._dict | None:
@@ -62,7 +66,10 @@ def _address(company: str) -> dict:
 		return {}
 	rows = frappe.get_list(
 		"Address",
-		filters=[["Dynamic Link", "link_doctype", "=", "Company"], ["Dynamic Link", "link_name", "=", company]],
+		filters=[
+			["Dynamic Link", "link_doctype", "=", "Company"],
+			["Dynamic Link", "link_name", "=", company],
+		],
 		fields=list(lh_core.ADDRESS_FIELDS),
 		order_by="is_your_company_address desc, is_primary_address desc",
 		limit=1,
@@ -76,7 +83,14 @@ def _values(company: frappe._dict, address: dict) -> dict:
 	name_ar = frappe.translate.get_user_translations("ar").get(name) or name
 	city_line = ", ".join(v for v in (address.get("city"), address.get("state"), address.get("pincode")) if v)
 	full = "\n".join(
-		v for v in (address.get("address_line1"), address.get("address_line2"), city_line, address.get("country")) if v
+		v
+		for v in (
+			address.get("address_line1"),
+			address.get("address_line2"),
+			city_line,
+			address.get("country"),
+		)
+		if v
 	)
 	values = {t: company.get(t) or "" for t in lh_core.TOKENS if t in lh_core.COMPANY_FIELDS}
 	values.update(
@@ -129,36 +143,37 @@ def _hand_edited(lh: frappe._dict, record: frappe._dict | None) -> bool:
 	return bool((lh.content or "").strip() or (lh.footer or "").strip())
 
 
-def _token_labels() -> dict:
-	"""The fields a layout may print, in the order of ``TOKENS``, with their labels."""
-	return {
-		"company_name": _("Company Name"),
-		"company_name_ar": _("Company Name (Arabic)"),
-		"abbr": _("Abbreviation"),
-		"tax_id": _("Tax ID"),
-		"phone_no": _("Phone No"),
-		"fax": _("Fax"),
-		"email": _("Email"),
-		"website": _("Website"),
-		"registration_details": _("Registration Details"),
-		"country": _("Country"),
-		"address": _("Address"),
-		"address_line1": _("Address Line 1"),
-		"city": _("City"),
-	}
-
-
 def _heights(layout: dict) -> dict:
 	return {"header_height": layout["header"]["h"], "footer_height": layout["footer"]["h"]}
 
 
+def _company_data(company: str) -> dict:
+	"""What the builder draws a company with: its values per field and its logo."""
+	row = _company(company)
+	logo = row.company_logo or ""
+	return {
+		"name": row.name,
+		"values": _values(row, _address(row.name)),
+		"logo": logo,
+		"logo_public": logo.startswith(("/files/", "/assets/")),
+	}
+
+
+def _can_set_default(company: str | None) -> bool:
+	return bool(company and frappe.has_permission("Company", "write", doc=company))
+
+
 @frappe.whitelist(methods=["GET"])
+@_rate_limit(60)
 def builder_context(company: str | None = None, letter_head: str | None = None) -> dict:
-	"""What the builder draws with: the companies the user reads, the chosen company's
-	values per field, the fonts, fields, limits and defaults of the layout, whether the user
-	may save, and the letter head's layout when it has one."""
+	"""What the builder opens with: the companies the user reads, the chosen company's
+	values per field (``company_data``), whether the user may save and set the company's
+	default, and the letter head's layout when it has one. The layout's limits, fields and
+	defaults are the contract the page imports (letterhead_contract.json), not sent here."""
 	_guard_read()
-	companies = frappe.get_list("Company", fields=["name", "company_name", "abbr"], order_by="name asc", limit=0)
+	companies = frappe.get_list(
+		"Company", fields=["name", "company_name", "abbr"], order_by="name asc", limit=0
+	)
 	readable = [c.name for c in companies]
 	lh_info = None
 	if letter_head:
@@ -176,49 +191,29 @@ def builder_context(company: str | None = None, letter_head: str | None = None) 
 		}
 		company = company or (record.company if record else None)
 	company = company or _default_company(readable)
-	data = None
-	if company:
-		row = _company(company)
-		address = _address(row.name)
-		logo = row.company_logo or ""
-		data = {
-			"name": row.name,
-			"values": _values(row, address),
-			"address": address,
-			"logo": logo,
-			"logo_public": logo.startswith(("/files/", "/assets/")),
-		}
+	data = _company_data(company) if company else None
 	return {
 		"companies": companies,
 		"company": data["name"] if data else None,
 		"company_data": data,
 		"letter_head": lh_info,
-		"fonts": list(lh_core.FONTS),
-		"tokens": [{"token": t, "label": label} for t, label in _token_labels().items()],
-		"ref_width": lh_core.REF_WIDTH,
-		"defaults": {
-			"colors": dict(lh_core.DEFAULT_COLORS),
-			"header": {"h": 35, "pad_top": 6, "slots": dict(lh_core.BANDS["header"]["slots"])},
-			"footer": {"h": 15, "pad_top": 3, "slots": dict(lh_core.BANDS["footer"]["slots"])},
-		},
-		"limits": {
-			"layout_bytes": lh_core.MAX_LAYOUT_BYTES,
-			"elements": lh_core.MAX_ELEMENTS,
-			"text": lh_core.MAX_TEXT,
-			"label": lh_core.MAX_LABEL,
-			"qr_text": lh_core.MAX_QR_TEXT,
-			"header_h": list(lh_core.BANDS["header"]["h"][:2]),
-			"footer_h": list(lh_core.BANDS["footer"]["h"][:2]),
-			"pad_top": list(lh_core.BANDS["header"]["pad_top"][:2]),
-			"slot": [0, 70],
-			"size": [6, 40],
-			"gap": [0, 10],
-		},
 		"can_write": bool(
-			frappe.has_permission("Letter Head", "write", doc=lh_info["name"]) if lh_info else frappe.has_permission("Letter Head", "create")
+			frappe.has_permission("Letter Head", "write", doc=lh_info["name"])
+			if lh_info
+			else frappe.has_permission("Letter Head", "create")
 		),
-		"can_set_default": bool(company and frappe.has_permission("Company", "write", doc=company)),
+		"can_set_default": _can_set_default(company),
 	}
+
+
+@frappe.whitelist(methods=["GET"])
+@_rate_limit(60)
+def company_data(company: str) -> dict:
+	"""The preview company of the builder switched: ``{company_data, can_set_default}``."""
+	_guard_read()
+	if not isinstance(company, str) or not company:
+		frappe.throw(_("Invalid company"), RVInvalidInput)
+	return {"company_data": _company_data(company), "can_set_default": _can_set_default(company)}
 
 
 @frappe.whitelist(methods=["POST"])
@@ -264,14 +259,14 @@ def save(
 	shown = _company(preview_company)
 	if template is not None and (not isinstance(template, str) or len(template) > MAX_NAME):
 		frappe.throw(_("Invalid template"), RVInvalidInput)
-	html = lh_core.generate(clean, fixed.name if fixed else None, qr_company=shown.name if shown else None)
-
 	if letter_head:
 		current = _letter_head(letter_head)
 		record = _layout_record(current.name)
 		if not frappe.utils.cint(overwrite) and _hand_edited(current, record):
 			frappe.throw(
-				_("Letter Head {0} was edited by hand. Saving the design replaces its HTML.").format(current.name),
+				_("Letter Head {0} was edited by hand. Saving the design replaces its HTML.").format(
+					current.name
+				),
 				RVLetterHeadEdited,
 			)
 		lh = frappe.get_doc("Letter Head", current.name)
@@ -284,29 +279,21 @@ def save(
 		record = None
 		lh = frappe.new_doc("Letter Head")
 		lh.letter_head_name = name
-		lh.content, lh.footer, lh.footer_source = html["header"], html["footer"], "HTML"
-		# Letter Head.before_insert makes a new one an image letter head (and warns that it
-		# has no image); the source is set to HTML right after, so that warning is dropped
-		log = frappe.local.message_log
-		count = len(log)
-		lh.insert()
-		del log[count:]
+	generated_hash = lh_core.write_letter_head(
+		lh, clean, fixed.name if fixed else None, qr_company=shown.name if shown else None
+	)
 
-	lh.source = lh.footer_source = "HTML"
-	lh.content, lh.footer = html["header"], html["footer"]
-	meta = frappe.get_meta("Letter Head")
-	for field, value in _heights(clean).items():
-		if meta.has_field(field):
-			lh.set(field, value)
-	lh.save()
-
-	doc = frappe.get_doc("Letter Head Layout", record.name) if record else frappe.new_doc("Letter Head Layout")
+	doc = (
+		frappe.get_doc("Letter Head Layout", record.name) if record else frappe.new_doc("Letter Head Layout")
+	)
 	doc.letter_head = lh.name
 	doc.company = fixed.name if fixed else None
 	if template is not None:
 		doc.template = template
 	doc.layout = json.dumps(clean, ensure_ascii=False, separators=(",", ":"))
-	doc.generated_hash = lh_core.content_hash(lh.content, lh.footer)
+	doc.generated_hash = generated_hash
+	# the Letter Head is written already: the layout's own on_update does not write it again
+	doc.flags.from_builder = True
 	doc.save()
 
 	target = fixed or shown

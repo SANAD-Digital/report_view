@@ -6,19 +6,21 @@
 // a field whose value is empty is drawn as a hint instead of disappearing.
 // Pure: tested in node (tests/js/letterhead_render.test.mjs).
 
-import { REF_W, SLOTS, LTR_TOKENS, BOXED, slot_box, band_radius } from "./model.js";
+import { REF_W, SLOTS, LTR_TOKENS, MULTILINE_TOKENS, BOXED, TEXTUAL, LIMITS, CONTRACT, band_radius, css_num } from "./model.js";
 import { font_stack, font_face_css, print_weights } from "../fonts.js";
 
 export const FONT_INHERIT = ".rvlh[data-rv-lh] *{font-family:inherit}";
 const ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ESC[c]);
 const lines = (s) => esc(s).replace(/\r?\n/g, "<br>");
-const pct = (mm) => `${+((mm / REF_W) * 100).toFixed(3)}%`;
-const mm = (v) => `${+(+v).toFixed(2)}mm`;
+// numbers as the server writes them (core/letterhead.py _n, _pct)
+const pct = (mm) => `${css_num((mm / REF_W) * 100)}%`;
+const mm = (v) => `${css_num(v)}mm`;
 
-// Arabic, Hebrew, Syriac, Thaana… : the first strong character decides the direction.
-const RTL_CHAR = /[֐-ࣿיִ-﷿ﹰ-﻿]/;
-const LTR_CHAR = /[A-Za-zÀ-ɏ]/;
+// Arabic, Hebrew, Syriac, Thaana… : the first strong character decides the direction
+// (the character classes of letterhead_contract.json, as the server tests them).
+const RTL_CHAR = new RegExp(`[${CONTRACT.rtl_chars}]`);
+const LTR_CHAR = new RegExp(`[${CONTRACT.ltr_chars}]`);
 export function is_rtl_text(s) {
 	for (const ch of String(s ?? "")) {
 		if (RTL_CHAR.test(ch)) return true;
@@ -50,7 +52,7 @@ export function page_html(format, nums = null) {
 
 function text_style(layout, el, extra = "") {
 	const s = el.style;
-	return `font-size:${s.size}pt;font-weight:${s.weight};color:${resolve_color(layout, s.color)}${extra}`;
+	return `font-size:${css_num(s.size)}pt;font-weight:${s.weight};color:${resolve_color(layout, s.color)}${extra}`;
 }
 
 /** The direction of an element's own content (for the alignment of a free element). */
@@ -71,8 +73,27 @@ function physical_align(el, ctx) {
 	return (a === "start") === rtl ? "right" : "left";
 }
 
+/** The printed order of a page number: Arabic alone reads right to left. */
+const page_dir = (el) => (el.props.format === "ar" ? "rtl" : "ltr");
+
 function qr_text(el, ctx) {
-	return el.props.source === "website" ? field_value(ctx, "website") : el.props.text;
+	return (el.props.source === "website" ? field_value(ctx, "website") : el.props.text).trim();
+}
+
+/** A QR code is square: the smaller side of its box (core/letterhead.py qr_size). */
+const qr_size = (el) => (el.w && el.h ? Math.min(el.w, el.h) : el.h || el.w);
+
+/** A double rule needs some thickness to show its two lines (the server prints the same). */
+const line_thick = (p) => (p.style === "double" ? Math.max(p.thick, LIMITS.double_line_min) : p.thick);
+
+const band_fill = (layout, p) => `background-color:${resolve_color(layout, p.fill)}${+p.radius ? `;border-radius:${band_radius(p)}` : ""}`;
+
+/** An image within w × h mm, its proportions kept (QtWebKit has no object-fit); cover as a background. */
+function img_html(src, el, free, fit = "contain") {
+	const width = free ? "100%" : mm(el.w);
+	if (fit === "cover")
+		return `<div style="display:inline-block;vertical-align:top;width:${width};height:${mm(el.h)};background-image:url('${esc(src)}');background-position:center;background-repeat:no-repeat;-webkit-background-size:cover;background-size:cover"></div>`;
+	return `<img src="${esc(src)}" alt="" style="display:inline-block;vertical-align:top;width:auto;height:auto;max-width:${width};max-height:${mm(el.h)}">`;
 }
 
 /** The inside of an element: text, a picture, a rule, a box. `free` = sized by its wrapper. */
@@ -84,7 +105,8 @@ function inner(layout, el, ctx, opts, free) {
 		case "field": {
 			const v = field_value(ctx, p.token);
 			if (!v) return opts.editor ? `<span class="rvlb-hint">${esc(opts.hint?.(el) ?? "")}</span>` : p.hide_empty ? "" : esc(p.label);
-			const value = LTR_TOKENS.has(p.token) ? `<bdi dir="ltr">${lines(v)}</bdi>` : lines(v);
+			const text = MULTILINE_TOKENS.has(p.token) ? lines(v) : esc(v);
+			const value = LTR_TOKENS.has(p.token) ? `<bdi dir="ltr">${text}</bdi>` : `<bdi>${text}</bdi>`;
 			return `${p.label ? `${esc(p.label)} ` : ""}${value}`;
 		}
 		case "page":
@@ -95,31 +117,22 @@ function inner(layout, el, ctx, opts, free) {
 			// only a public file prints (the PDF engine cannot read a private one)
 			const src = /^\/(files|assets)\//.test(raw) ? raw : "";
 			if (!src) return opts.editor ? `<span class="rvlb-ph" style="display:inline-block;width:${free ? "100%" : mm(el.w)};height:${free ? "100%" : mm(el.h)}">${esc(opts.hint?.(el) ?? "")}</span>` : "";
-			if (el.type === "image" && p.fit === "cover") {
-				const box = free ? "width:100%;height:100%" : `width:${mm(el.w)};height:${mm(el.h)}`;
-				return `<span style="display:inline-block;vertical-align:top;${box};background:url('${esc(src)}') center/cover no-repeat"></span>`;
-			}
-			return free
-				? `<img src="${esc(src)}" alt="" style="max-width:100%;max-height:100%;vertical-align:top">`
-				: `<img src="${esc(src)}" alt="" style="max-width:${mm(el.w)};max-height:${mm(el.h)};vertical-align:top">`;
+			return img_html(src, el, free, el.type === "image" ? p.fit : "contain");
 		}
 		case "qr": {
 			const svg = ctx?.qr?.[qr_text(el, ctx)];
-			const box = free ? "width:100%;height:100%" : `width:${mm(el.w)};height:${mm(el.h)}`;
-			if (svg) return `<span style="display:inline-block;${box}">${svg}</span>`;
-			return opts.editor ? `<span class="rvlb-ph" style="display:inline-block;${box}">QR</span>` : "";
+			const box = `display:inline-block;vertical-align:top;width:${mm(qr_size(el))};height:${mm(qr_size(el))}`;
+			if (svg) return `<span style="${box}">${svg}</span>`;
+			return opts.editor ? `<span class="rvlb-ph" style="${box}">${esc(opts.qr_hint?.(el) ?? "QR")}</span>` : "";
 		}
 		case "line": {
 			const c = resolve_color(layout, el.style.color);
-			const width = free ? "100%" : el.w ? mm(el.w) : "100%";
-			const t = p.style === "double" ? Math.max(p.thick, 0.8) : p.thick;
-			return `<span style="display:inline-block;vertical-align:top;width:${width};height:0;border-top:${mm(t)} ${p.style} ${c}"></span>`;
+			const width = free || !el.w ? "100%" : mm(el.w);
+			return `<div style="display:inline-block;vertical-align:top;width:${width};height:0;border-top:${mm(line_thick(p))} ${p.style} ${c}"></div>`;
 		}
-		case "band": {
-			const fill = resolve_color(layout, p.fill);
+		case "band":
 			if (free) return "";
-			return `<span style="display:inline-block;vertical-align:top;width:${el.w ? mm(el.w) : "100%"};height:${mm(el.h)};background:${fill};border-radius:${band_radius(p)}"></span>`;
-		}
+			return `<div style="display:inline-block;vertical-align:top;width:${el.w ? mm(el.w) : "100%"};height:${mm(el.h)};${band_fill(layout, p)}"></div>`;
 		default:
 			return "";
 	}
@@ -132,14 +145,21 @@ function editor_attrs(el, opts) {
 	return ` class="rvlb-el${sel}${el.slot ? "" : " is-free"}" data-type="${el.type}" tabindex="0" role="button" aria-label="${label}" aria-pressed="${opts.selected === el.id}"`;
 }
 
+/** The dir attribute of an element (the server writes the same): a text's own direction, a page number's order, a free field's content. */
+function dir_attr(el, ctx, free) {
+	if (el.type === "text") return ` dir="${free ? content_dir(el, ctx) : el.props.dir}"`;
+	if (el.type === "page") return ` dir="${page_dir(el)}"`;
+	if (el.type === "field" && free) return ` dir="${content_dir(el, ctx)}"`;
+	return "";
+}
+
 /** One element inside a slot: it flows under the one before it. */
 function slotted(layout, el, ctx, opts) {
 	const body = inner(layout, el, ctx, opts, false);
 	if (!body && !opts.editor) return "";
 	const gap = `margin:0 0 ${mm(el.style.gap)}`;
-	const style = el.type === "field" || el.type === "text" || el.type === "page" ? text_style(layout, el, `;${gap}`) : `${gap};line-height:0`;
-	const dir = el.type === "text" && el.props.dir !== "auto" ? ` dir="${el.props.dir}"` : "";
-	return `<div data-el="${el.id}"${dir}${editor_attrs(el, opts)} style="${style}">${body}</div>`;
+	const style = TEXTUAL.has(el.type) ? text_style(layout, el, `;${gap}`) : `${gap};line-height:0`;
+	return `<div data-el="${el.id}"${dir_attr(el, ctx, false)}${editor_attrs(el, opts)} style="${style}">${body}</div>`;
 }
 
 /** A free element: placed and sized in mm (x and w as percentages of the band). */
@@ -148,26 +168,25 @@ function free(layout, el, ctx, opts) {
 	if (!body && el.type !== "band" && !opts.editor) return "";
 	let style = `position:absolute;left:${pct(el.x)};top:${mm(el.y)};width:${pct(el.w)}`;
 	if (el.type === "band") {
-		style += `;height:${mm(el.h)};background:${resolve_color(layout, el.props.fill)};border-radius:${band_radius(el.props)}`;
+		style += `;height:${mm(el.h)};${band_fill(layout, el.props)}`;
 	} else if (BOXED.has(el.type)) {
-		style += `;height:${mm(el.h)}`;
+		style += `;height:${mm(el.h)};line-height:0`;
 	} else if (el.type === "line") {
 		style += ";line-height:0";
 	} else {
 		if (el.h) style += `;height:${mm(el.h)};overflow:hidden`;
 		style += `;${text_style(layout, el)};text-align:${physical_align(el, ctx)}`;
 	}
-	const dir = el.type === "text" && el.props.dir !== "auto" ? ` dir="${el.props.dir}"` : el.type === "field" || el.type === "text" ? ` dir="${content_dir(el, ctx)}"` : "";
-	return `<div data-el="${el.id}"${dir}${editor_attrs(el, opts)} style="${style}">${body}</div>`;
+	return `<div data-el="${el.id}"${dir_attr(el, ctx, true)}${editor_attrs(el, opts)} style="${style}">${body}</div>`;
 }
 
 const SLOT_DIR = { right: "rtl", left: "ltr", center: "auto" };
 function slot_style(band, slot) {
 	const w = band.slots[slot];
-	const place = slot === "right" ? "right:0" : slot === "left" ? "left:0" : `left:50%;margin-left:-${+(w / 2).toFixed(2)}%`;
+	const place = slot === "right" ? "right:0" : slot === "left" ? "left:0" : `left:50%;margin-left:-${css_num(w / 2)}%`;
 	const align = slot === "center" ? "center" : slot;
 	// 1mm inside its edges, as the server writes it: a glyph past the slot is not cut by the band
-	return `position:absolute;top:${mm(band.pad_top)};${place};width:${w}%;padding:0 1mm;box-sizing:border-box;text-align:${align}`;
+	return `position:absolute;top:${mm(band.pad_top)};${place};width:${css_num(w)}%;padding:0 1mm;box-sizing:border-box;text-align:${align}`;
 }
 
 /**
@@ -175,13 +194,14 @@ function slot_style(band, slot) {
  * @param {object} layout clamped layout (model.clamp_layout)
  * @param {"header"|"footer"} name
  * @param {{values:object, logo?:string, qr?:object}} ctx the company's values, its logo, QR SVGs by text
- * @param {{editor?:boolean, selected?:string, page?:[any,any], label?:Function, hint?:Function, comment?:boolean, font_base?:string}} opts
+ * @param {{editor?:boolean, selected?:string, page?:[any,any], label?:Function, hint?:Function, qr_hint?:Function, comment?:boolean, font_base?:string}} opts
  */
 export function render_band(layout, name, ctx = {}, opts = {}) {
 	const band = layout[name];
 	if (!band.h && !opts.editor) return "";
 	const font = font_stack(layout.font);
-	let html = opts.comment === false ? "" : `<!-- rv-lh v1 ${name} h=${band.h} -->`;
+	const h = css_num(band.h);
+	let html = opts.comment === false ? "" : `<!-- rv-lh v1 ${name} h=${h} -->`;
 	// the <style> the server writes (core/letterhead.py font_style): the @font-face of its font
 	// (absolute urls under `opts.font_base`) and the font kept on every element of the band
 	if (opts.font_base) {
@@ -189,7 +209,7 @@ export function render_band(layout, name, ctx = {}, opts = {}) {
 		for (const b of ["header", "footer"]) for (const el of layout[b].elements) used.add(el.style.weight);
 		html += `<style>${font_face_css(layout.font, opts.font_base, print_weights(layout.font, used))}${FONT_INHERIT}</style>`;
 	}
-	html += `<div class="rvlh" data-rv-lh="${name}" data-h="${band.h}" dir="ltr" style="position:relative;width:100%;height:${mm(band.h)};overflow:hidden;box-sizing:border-box;font-family:${font};color:${layout.colors.text};line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact">`;
+	html += `<div class="rvlh" data-rv-lh="${name}" data-h="${h}" dir="ltr" style="position:relative;width:100%;height:${mm(band.h)};overflow:hidden;box-sizing:border-box;font-family:${font};color:${layout.colors.text};line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact">`;
 	for (const slot of SLOTS) {
 		if (!band.slots[slot]) continue;
 		const items = band.elements.filter((e) => e.slot === slot).map((e) => slotted(layout, e, ctx, opts)).join("");
@@ -198,11 +218,6 @@ export function render_band(layout, name, ctx = {}, opts = {}) {
 	}
 	for (const el of band.elements) if (el.slot === null) html += free(layout, el, ctx, opts);
 	return `${html}</div>`;
-}
-
-/** Both bands. */
-export function render_letterhead(layout, ctx, opts = {}) {
-	return { header: render_band(layout, "header", ctx, opts), footer: render_band(layout, "footer", ctx, opts) };
 }
 
 /** The tokens a layout shows whose value the company does not have (to say so, not to fake it). */
@@ -221,5 +236,3 @@ export function qr_texts(layout, ctx) {
 	}
 	return [...out];
 }
-
-export { slot_box };

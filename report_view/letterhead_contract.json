@@ -1,0 +1,69 @@
+{
+	"version": 1,
+	"ref_width": 180,
+	"fonts": {
+		"default": "IBM Plex Sans Arabic",
+		"asset_base": "/assets/report_view/fonts/",
+		"categories": ["sans", "naskh", "kufi", "serif", "display", "mono"],
+		"generic": { "serif": "serif", "naskh": "serif", "mono": "monospace" }
+	},
+	"page": { "w": 210, "h": 297, "side": 15, "top": 12, "bottom": 12 },
+	"limits": {
+		"layout_bytes": 65536,
+		"elements": 60,
+		"text": 500,
+		"label": 60,
+		"qr_text": 300,
+		"x": [0, 180],
+		"y": [0, 80],
+		"w": [0, 180],
+		"h": [0, 80],
+		"size": [6, 40],
+		"gap": [0, 10],
+		"thick": [0.2, 3],
+		"radius": [0, 10],
+		"slot": [0, 70],
+		"slots_sum": 100,
+		"min_w": 2,
+		"min_h": 1,
+		"free_w": 60,
+		"double_line_min": 0.8
+	},
+	"margins": { "header_extra": 15, "footer_extra": 10 },
+	"bands": {
+		"header": { "h": [10, 80], "pad_top": [0, 20], "default": { "h": 35, "pad_top": 6, "slots": { "right": 34, "center": 26, "left": 34 } } },
+		"footer": { "h": [0, 50], "pad_top": [0, 20], "default": { "h": 15, "pad_top": 3, "slots": { "right": 40, "center": 20, "left": 40 } } }
+	},
+	"slots": ["right", "center", "left"],
+	"types": ["text", "field", "logo", "image", "line", "band", "qr", "page"],
+	"boxed": ["logo", "image", "qr", "band"],
+	"textual": ["text", "field", "page"],
+	"tokens": ["company_name", "company_name_ar", "abbr", "tax_id", "phone_no", "fax", "email", "website", "registration_details", "country", "address", "address_line1", "city"],
+	"ltr_tokens": ["tax_id", "phone_no", "fax", "email", "website"],
+	"multiline_tokens": ["address", "registration_details"],
+	"weights": [400, 500, 600, 700],
+	"aligns": ["start", "center", "end"],
+	"color_names": ["primary", "text", "muted"],
+	"default_colors": { "primary": "#1E5C45", "text": "#17211C", "muted": "#5B6660" },
+	"corners": ["tl", "tr", "br", "bl"],
+	"choices": {
+		"text.dir": ["auto", "rtl", "ltr"],
+		"image.fit": ["contain", "cover"],
+		"line.style": ["solid", "dashed", "double"],
+		"qr.source": ["website", "text"],
+		"page.format": ["ar", "en", "both"]
+	},
+	"image_src": "^/(files|assets)/[^\"'()<>\\\\{}\\u0000-\\u001f\\u007f]{1,400}$",
+	"rtl_chars": "\\u0590-\\u08ff\\ufb1d-\\ufdff\\ufe70-\\ufeff",
+	"ltr_chars": "A-Za-z\\u00c0-\\u024f",
+	"element_defaults": {
+		"text": { "w": 60, "h": 0, "style": { "size": 10, "weight": 400, "color": "text", "align": "start", "gap": 1 }, "props": { "text": "", "dir": "auto" } },
+		"field": { "w": 60, "h": 0, "style": { "size": 9, "weight": 400, "color": "muted", "align": "start", "gap": 1 }, "props": { "token": "company_name", "label": "", "hide_empty": true } },
+		"logo": { "w": 28, "h": 20, "style": { "size": 9, "weight": 400, "color": "text", "align": "start", "gap": 1.5 }, "props": {} },
+		"image": { "w": 30, "h": 20, "style": { "size": 9, "weight": 400, "color": "text", "align": "start", "gap": 1 }, "props": { "src": "", "fit": "contain" } },
+		"line": { "w": 0, "h": 0, "style": { "size": 9, "weight": 400, "color": "primary", "align": "start", "gap": 1.5 }, "props": { "thick": 0.6, "style": "solid" } },
+		"band": { "w": 180, "h": 8, "style": { "size": 9, "weight": 400, "color": "primary", "align": "start", "gap": 1 }, "props": { "fill": "primary", "radius": 0, "corners": "all" } },
+		"qr": { "w": 18, "h": 18, "style": { "size": 9, "weight": 400, "color": "text", "align": "start", "gap": 1 }, "props": { "source": "website", "text": "" } },
+		"page": { "w": 50, "h": 0, "style": { "size": 8, "weight": 400, "color": "muted", "align": "start", "gap": 1 }, "props": { "format": "both" } }
+	}
+}

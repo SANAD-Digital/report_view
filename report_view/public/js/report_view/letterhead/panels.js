@@ -3,7 +3,7 @@
 // elements, dragged onto the page or added with a click/tap) and the inspector at the inline
 // end (the selected element, or the band when nothing is selected, then the layers).
 
-import { TOKENS, SLOTS, BANDS, WEIGHTS, COLOR_NAMES, LIMITS, SLOT_PRESETS, BOXED, TEXTUAL, find, is_hex, slot_elements, move_to_slot, make_free, reorder, set_band_height, CORNERS, band_corners } from "./model.js";
+import { TOKENS, SLOTS, BANDS, WEIGHTS, COLOR_NAMES, LIMITS, CONTRACT, REF_W, SLOT_PRESETS, BOXED, TEXTUAL, find, is_hex, slot_elements, move_to_slot, make_free, reorder, set_band_height, CORNERS, band_corners } from "./model.js";
 import { PRESETS } from "./presets.js";
 import { render_band, field_value, esc } from "./render.js";
 import { token_label, type_label, slot_label, band_label, color_label, element_name } from "./labels.js";
@@ -222,7 +222,7 @@ export class Inspector {
 		const head = `<div class="rvlb-insp-head">
 			<div><small>${esc(__("Selected element"))}</small><strong>${esc(element_name(el))}</strong><small>${esc(type_label(el.type))}</small></div>
 			<div class="rvlb-insp-acts">
-				<button type="button" class="rv-btn icon sm ghost" data-act="duplicate" aria-label="${esc(__("Duplicate"))}" title="${esc(__("Duplicate"))} (Ctrl+D)">${icons.copy()}</button>
+				<button type="button" class="rv-btn icon sm ghost" data-act="duplicate" aria-label="${esc(__("Duplicate", null, "Report View"))}" title="${esc(__("Duplicate", null, "Report View"))} (Ctrl+D)">${icons.copy()}</button>
 				<button type="button" class="rv-btn icon sm ghost rvlb-danger" data-act="delete" aria-label="${esc(__("Delete"))}" title="${esc(__("Delete"))} (Delete)">${icons.trash()}</button>
 				<button type="button" class="rv-btn icon sm ghost" data-act="deselect" aria-label="${esc(__("Close"))}" title="${esc(__("Close"))} (Esc)">${icons.close()}</button>
 			</div></div>`;
@@ -235,17 +235,17 @@ export class Inspector {
 		if (el.slot === null) {
 			size = section(
 				__("Position and size (mm)"),
-				`<div class="rvlb-grid4">${num_input(k("x"), el.x, { label: __("From left"), min: 0, max: 180 })}${num_input(k("y"), el.y, { label: __("From top"), min: 0, max: b.h })}${num_input(k("w"), el.w, { label: __("Width"), min: 2, max: 180 })}${el.type === "line" ? "" : num_input(k("h"), el.h || "", { label: __("Height"), min: 0, max: 80, placeholder: __("auto") })}</div>`,
+				`<div class="rvlb-grid4">${num_input(k("x"), el.x, { label: __("From left"), min: 0, max: REF_W })}${num_input(k("y"), el.y, { label: __("From top"), min: 0, max: b.h })}${num_input(k("w"), el.w, { label: __("Width"), min: LIMITS.min_w, max: REF_W })}${el.type === "line" ? "" : num_input(k("h"), el.h || "", { label: __("Height"), min: 0, max: CONTRACT.limits.h[1], placeholder: __("auto") })}</div>`,
 			);
 		} else if (BOXED.has(el.type)) {
-			size = section(__("Size (mm)"), `<div class="rvlb-grid4 two">${num_input(k("w"), el.w, { label: __("Width"), min: 1, max: 180 })}${num_input(k("h"), el.h, { label: __("Height"), min: 1, max: 80 })}</div>`);
+			size = section(__("Size (mm)"), `<div class="rvlb-grid4 two">${num_input(k("w"), el.w, { label: __("Width"), min: 1, max: REF_W })}${num_input(k("h"), el.h, { label: __("Height"), min: 1, max: CONTRACT.limits.h[1] })}</div>`);
 		}
 		const content = this.content_html(el);
 		let style = "";
 		if (TEXTUAL.has(el.type)) {
 			style = section(
-				__("Text"),
-				`<div class="rvlb-row">${num_input(k("style.size"), el.style.size, { label: __("Size"), min: 6, max: 40, step: 0.5, unit: "pt" })}
+				__("Text", null, "Report View"),
+				`<div class="rvlb-row">${num_input(k("style.size"), el.style.size, { label: __("Size"), min: LIMITS.size[0], max: LIMITS.size[1], step: 0.5, unit: "pt" })}
 				<label class="rvlb-num"><span>${esc(__("Weight"))}</span><select class="rv-input sm" data-k="${k("style.weight")}">${WEIGHTS.map((w) => `<option value="${w}"${w === el.style.weight ? " selected" : ""}>${esc({ 400: __("Regular"), 500: __("Medium"), 600: __("Semibold"), 700: __("Bold") }[w])}</option>`).join("")}</select></label></div>
 				<div class="rvlb-lbl">${esc(__("Colour"))}</div>${this.colors_html(k("style.color"), el.style.color, __("Colour"))}
 				${el.slot === null ? `<div class="rvlb-lbl">${esc(__("Alignment"))}</div>${seg(k("style.align"), el.style.align, [["start", __("Align start")], ["center", __("Align centre")], ["end", __("Align end")]], { label: __("Alignment") })}` : `<p class="rvlb-note">${esc(__("In a slot the text follows the slot: right is right-aligned, left is left-aligned."))}</p>`}`,
@@ -253,7 +253,7 @@ export class Inspector {
 		} else if (el.type === "line") {
 			style = section(__("Colour"), this.colors_html(k("style.color"), el.style.color, __("Colour")));
 		}
-		const gap = el.slot ? section(__("Space after it"), `<div class="rvlb-row">${num_input(k("style.gap"), el.style.gap, { label: __("Gap"), min: 0, max: 10, step: 0.2, unit: __("mm") })}</div>`) : "";
+		const gap = el.slot ? section(__("Space after it"), `<div class="rvlb-row">${num_input(k("style.gap"), el.style.gap, { label: __("Gap"), min: LIMITS.gap[0], max: LIMITS.gap[1], step: 0.2, unit: __("mm") })}</div>`) : "";
 		return head + place + size + content + style + gap;
 	}
 
@@ -264,9 +264,9 @@ export class Inspector {
 		switch (el.type) {
 			case "text":
 				return section(
-					__("Content"),
-					`<textarea class="rv-input rvlb-ta" rows="3" data-k="${k("text")}" maxlength="${LIMITS.text}" dir="${p.dir}" aria-label="${esc(__("Text"))}" placeholder="${esc(__("Write a text"))}">${esc(p.text)}</textarea>
-					<div class="rvlb-lbl">${esc(__("Direction"))}</div>${seg(k("dir"), p.dir, [["auto", __("Automatic")], ["rtl", __("Right to left")], ["ltr", __("Left to right")]], { label: __("Direction") })}`,
+					__("Content", null, "Report View"),
+					`<textarea class="rv-input rvlb-ta" rows="3" data-k="${k("text")}" maxlength="${LIMITS.text}" dir="${p.dir}" aria-label="${esc(__("Text", null, "Report View"))}" placeholder="${esc(__("Write a text"))}">${esc(p.text)}</textarea>
+					<div class="rvlb-lbl">${esc(__("Direction"))}</div>${seg(k("dir"), p.dir, [["auto", __("Automatic", null, "Report View")], ["rtl", __("Right to left")], ["ltr", __("Left to right")]], { label: __("Direction") })}`,
 				);
 			case "field": {
 				const v = field_value(ctx, p.token);
@@ -283,24 +283,24 @@ export class Inspector {
 				return section(__("Logo"), `<p class="rvlb-note">${esc(ctx.logo ? __("The logo of the company record, kept within the size above.") : __("The company has no logo: add one in the company record."))}</p>`);
 			case "image":
 				return section(
-					__("Image"),
+					__("Image", null, "Report View"),
 					`${p.src ? `<div class="rvlb-imgpv"><img src="${esc(p.src)}" alt=""></div>` : ""}
 					<button type="button" class="rv-btn sm" data-act="pick-image">${icons.upload()}<span>${esc(p.src ? __("Replace the image") : __("Choose an image"))}</span></button>
 					<p class="rvlb-note">${esc(__("Public files only: a private file does not show in the PDF."))}</p>
-					<div class="rvlb-lbl">${esc(__("Fit"))}</div>${seg(k("fit"), p.fit, [["contain", __("Whole image")], ["cover", __("Fill the box")]], { label: __("Fit") })}`,
+					<div class="rvlb-lbl">${esc(__("Fit", null, "Report View"))}</div>${seg(k("fit"), p.fit, [["contain", __("Whole image")], ["cover", __("Fill the box")]], { label: __("Fit", null, "Report View") })}`,
 				);
 			case "line":
 				return section(
 					__("Line"),
-					`<div class="rvlb-row">${num_input(k("thick"), p.thick, { label: __("Thickness"), min: 0.2, max: 3, step: 0.1, unit: __("mm") })}${el.slot ? num_input("el.w", el.w || "", { label: __("Length"), min: 0, max: 180, placeholder: __("slot") }) : ""}</div>
+					`<div class="rvlb-row">${num_input(k("thick"), p.thick, { label: __("Thickness"), min: LIMITS.thick[0], max: LIMITS.thick[1], step: 0.1, unit: __("mm") })}${el.slot ? num_input("el.w", el.w || "", { label: __("Length"), min: 0, max: REF_W, placeholder: __("slot") }) : ""}</div>
 					${seg(k("style"), p.style, [["solid", __("Solid")], ["dashed", __("Dashed")], ["double", __("Double")]], { label: __("Line style") })}`,
 				);
 			case "band":
-				return section(__("Colour band"), `<div class="rvlb-lbl">${esc(__("Fill"))}</div>${this.colors_html(k("fill"), p.fill, __("Fill"))}<div class="rvlb-row">${num_input(k("radius"), p.radius, { label: __("Corner radius"), min: 0, max: 10, step: 0.5, unit: __("mm") })}</div>${corners_html(p)}`);
+				return section(__("Colour band"), `<div class="rvlb-lbl">${esc(__("Fill"))}</div>${this.colors_html(k("fill"), p.fill, __("Fill"))}<div class="rvlb-row">${num_input(k("radius"), p.radius, { label: __("Corner radius"), min: LIMITS.radius[0], max: LIMITS.radius[1], step: 0.5, unit: __("mm") })}</div>${corners_html(p)}`);
 			case "qr":
 				return section(
 					__("QR code"),
-					`${seg(k("source"), p.source, [["website", __("The company's website")], ["text", __("A text")]], { label: __("Content") })}
+					`${seg(k("source"), p.source, [["website", __("The company's website")], ["text", __("A text")]], { label: __("Content", null, "Report View") })}
 					${p.source === "text" ? `<textarea class="rv-input rvlb-ta" rows="2" dir="ltr" data-k="${k("text")}" maxlength="${LIMITS.qr_text}" aria-label="${esc(__("QR text"))}">${esc(p.text)}</textarea>` : `<p class="rvlb-note ltr">${esc(field_value(ctx, "website") || __("The company has no website"))}</p>`}`,
 				);
 			case "page":
@@ -323,13 +323,13 @@ export class Inspector {
 			${section(__("Band"), seg("ui.band", this.band, BANDS.map((x) => [x, band_label(x)]), { label: __("Band") }))}
 			${section(
 				__("Size (mm)"),
-				`<div class="rvlb-grid4 two">${num_input(k("h"), b.h, { label: __("Height"), min: lo, max: hi, step: 1 })}${num_input(k("pad_top"), b.pad_top, { label: __("Top padding"), min: 0, max: 20 })}</div>
+				`<div class="rvlb-grid4 two">${num_input(k("h"), b.h, { label: __("Height"), min: lo, max: hi, step: 1 })}${num_input(k("pad_top"), b.pad_top, { label: __("Top padding"), min: LIMITS.pad_top[0], max: LIMITS.pad_top[1] })}</div>
 				${this.band === "footer" ? `<p class="rvlb-note">${esc(__("Height 0 = no footer."))}</p>` : ""}`,
 			)}
 			${section(
 				__("Slots (% of the width)"),
 				`<div class="rvlb-pills" role="group" aria-label="${esc(__("Slot layout"))}">${Object.keys(SLOT_PRESETS).map((p) => `<button type="button" data-k="ui.slots" data-v="${p}" class="rvlb-pill${p === preset ? " on" : ""}" aria-pressed="${p === preset}">${esc(names[p])}</button>`).join("")}</div>
-				<div class="rvlb-grid4 three">${SLOTS.map((s) => num_input(k(`slots.${s}`), b.slots[s], { label: slot_label(s), min: 0, max: 70, step: 1, unit: "%" })).join("")}</div>
+				<div class="rvlb-grid4 three">${SLOTS.map((s) => num_input(k(`slots.${s}`), b.slots[s], { label: slot_label(s), min: LIMITS.slot[0], max: LIMITS.slot[1], step: 1, unit: "%" })).join("")}</div>
 				<p class="rvlb-note${sum > 100 ? " is-warn" : ""}">${esc(__("Together {0}% of 100%; 0 closes a slot.", [sum]))}</p>
 				${closed ? `<p class="rvlb-note is-warn">${esc(__("{0} element(s) sit in a closed slot and are not printed.", [closed]))}</p>` : ""}`,
 			)}

@@ -23,17 +23,21 @@ import frappe
 from frappe import _
 
 from report_view.core import fonts as font_lib
+from report_view.core.contract import CONTRACT
 from report_view.core.errors import RVInvalidInput
 
-LAYOUT_VERSION = 1
-MAX_LAYOUT_BYTES = 64 * 1024
-MAX_ELEMENTS = 60
-MAX_TEXT = 500
-MAX_LABEL = 60
-MAX_QR_TEXT = 300
+# the layout contract (letterhead_contract.json, core/contract.py): model.js reads the same
+C = CONTRACT
+LIMITS = C["limits"]
+LAYOUT_VERSION = C["version"]
+MAX_LAYOUT_BYTES = LIMITS["layout_bytes"]
+MAX_ELEMENTS = LIMITS["elements"]
+MAX_TEXT = LIMITS["text"]
+MAX_LABEL = LIMITS["label"]
+MAX_QR_TEXT = LIMITS["qr_text"]
 # x and w are millimetres on this width (A4 portrait less 15mm margins) and print as
 # percentages of the band, so a design fits any paper width
-REF_WIDTH = 180
+REF_WIDTH = C["ref_width"]
 
 # the font library (core/fonts.py, report_view/fonts.json)
 FONTS = font_lib.families()
@@ -41,40 +45,55 @@ DEFAULT_FONT = font_lib.DEFAULT_FONT
 # the @font-face urls of the letter head: absolute, so every print path finds the files
 # (print view, wkhtmltopdf, Chrome, the Pages and their PDF engine)
 FONT_BASE = "{{ frappe.utils.get_url('" + font_lib.ASSET_BASE + "')|e }}"
-DEFAULT_COLORS = {"primary": "#1E5C45", "text": "#17211C", "muted": "#5B6660"}
-SLOTS = ("right", "center", "left")
+DEFAULT_COLORS = dict(C["default_colors"])
+SLOTS = tuple(C["slots"])
 # band: (min, max, default) of h and pad_top, and the default slot widths (%)
 BANDS = {
-	"header": {"h": (10, 80, 35), "pad_top": (0, 20, 6), "slots": {"right": 34, "center": 26, "left": 34}},
-	"footer": {"h": (0, 50, 15), "pad_top": (0, 20, 3), "slots": {"right": 40, "center": 20, "left": 40}},
+	band: {
+		"h": (*spec["h"], spec["default"]["h"]),
+		"pad_top": (*spec["pad_top"], spec["default"]["pad_top"]),
+		"slots": dict(spec["default"]["slots"]),
+	}
+	for band, spec in C["bands"].items()
 }
-TOKENS = (
-	"company_name", "company_name_ar", "abbr", "tax_id", "phone_no", "fax", "email", "website",
-	"registration_details", "country", "address", "address_line1", "city",
-)
+TOKENS = tuple(C["tokens"])
 # values printed left-to-right inside a right-to-left slot
-LTR_TOKENS = {"tax_id", "phone_no", "fax", "email", "website"}
-MULTILINE_TOKENS = {"address", "registration_details"}
+LTR_TOKENS = frozenset(C["ltr_tokens"])
+MULTILINE_TOKENS = frozenset(C["multiline_tokens"])
 COMPANY_FIELDS = (
-	"company_name", "abbr", "tax_id", "phone_no", "fax", "email", "website",
-	"registration_details", "country", "company_logo",
+	"company_name",
+	"abbr",
+	"tax_id",
+	"phone_no",
+	"fax",
+	"email",
+	"website",
+	"registration_details",
+	"country",
+	"company_logo",
 )
 ADDRESS_FIELDS = ("address_line1", "address_line2", "city", "state", "pincode", "country")
-# default (w, h) in mm of an element that does not give them
-DEFAULT_SIZE = {
-	"text": (60, 0), "field": (60, 0), "logo": (40, 18), "image": (40, 20),
-	"line": (0, 0), "band": (180, 6), "qr": (18, 18), "page": (60, 0),
-}
-WEIGHTS = (400, 500, 600, 700)
-ALIGNS = ("start", "center", "end")
-COLOR_TOKENS = ("primary", "text", "muted")
-PAGE_FORMATS = ("ar", "en", "both")
+TYPES = tuple(C["types"])
+# drawn as a box of w x h; the textual ones carry a text style
+BOXED = frozenset(C["boxed"])
+TEXTUAL = frozenset(C["textual"])
+# what a new element of a type starts with, and what a missing value of it becomes
+ELEMENT_DEFAULTS = C["element_defaults"]
+WEIGHTS = tuple(C["weights"])
+ALIGNS = tuple(C["aligns"])
+COLOR_TOKENS = tuple(C["color_names"])
+CHOICES = {k: tuple(v) for k, v in C["choices"].items()}
+PAGE_FORMATS = CHOICES["page.format"]
+CORNERS = tuple(C["corners"])
 
 _ID = re.compile(r"^[a-z0-9]{1,12}$")
 _HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
 # a public file or an asset; no quote, bracket, backslash or control character (it prints
 # in an attribute and in a CSS url()), no parent segment
-_SRC = re.compile(r"^/(files|assets)/[^\"'()<>\\{}\x00-\x1f\x7f]{1,400}$")
+_SRC = re.compile(C["image_src"])
+# the first strong character decides the direction of a text (render.js is_rtl_text)
+_STRONG = re.compile(f"[{C['rtl_chars']}]|[{C['ltr_chars']}]")
+_RTL = re.compile(f"[{C['rtl_chars']}]")
 ELEMENT_KEYS = {"id", "type", "slot", "x", "y", "w", "h", "style", "props"}
 STYLE_KEYS = {"size", "weight", "color", "align", "gap"}
 
@@ -149,21 +168,26 @@ def _props(etype: str, props, where: str) -> dict:
 		props = {}
 	if not isinstance(props, dict):
 		_invalid(_("Invalid properties of {0}").format(where))
+	d = ELEMENT_DEFAULTS[etype]["props"]
 	if etype == "text":
 		_only_keys(props, {"text", "dir"}, where)
 		return {
 			"text": _string(props.get("text"), MAX_TEXT, where),
-			"dir": _choice(props.get("dir"), ("auto", "rtl", "ltr"), where, "auto"),
+			"dir": _choice(props.get("dir"), CHOICES["text.dir"], where, d["dir"]),
 		}
 	if etype == "field":
 		_only_keys(props, {"token", "label", "hide_empty"}, where)
 		token = props.get("token")
 		if token not in TOKENS:
 			_invalid(_("Unknown field {0} in {1}").format(frappe.as_unicode(token)[:40], where))
-		hide = props.get("hide_empty", True)
+		hide = props.get("hide_empty", d["hide_empty"])
 		if not isinstance(hide, bool | int):
 			_invalid(_("Invalid value {0} for {1}").format(frappe.as_unicode(hide)[:20], where))
-		return {"token": token, "label": _string(props.get("label"), MAX_LABEL, where), "hide_empty": bool(hide)}
+		return {
+			"token": token,
+			"label": _string(props.get("label"), MAX_LABEL, where),
+			"hide_empty": bool(hide),
+		}
 	if etype == "logo":
 		_only_keys(props, set(), where)
 		return {}
@@ -171,30 +195,38 @@ def _props(etype: str, props, where: str) -> dict:
 		_only_keys(props, {"src", "fit"}, where)
 		src = props.get("src")
 		if not isinstance(src, str) or not _SRC.match(src) or "/../" in src or ".__" in src:
-			_invalid(_("The image of {0} must be a public file (/files/…) or an asset (/assets/…)").format(where))
-		return {"src": src, "fit": _choice(props.get("fit"), ("contain", "cover"), where, "contain")}
+			_invalid(
+				_("The image of {0} must be a public file (/files/…) or an asset (/assets/…)").format(where)
+			)
+		return {"src": src, "fit": _choice(props.get("fit"), CHOICES["image.fit"], where, d["fit"])}
 	if etype == "line":
 		_only_keys(props, {"thick", "style"}, where)
 		return {
-			"thick": _num(props.get("thick"), 0.2, 3, where, 0.4),
-			"style": _choice(props.get("style"), ("solid", "dashed", "double"), where, "solid"),
+			"thick": _num(props.get("thick"), *LIMITS["thick"], where, d["thick"]),
+			"style": _choice(props.get("style"), CHOICES["line.style"], where, d["style"]),
 		}
 	if etype == "band":
 		_only_keys(props, {"fill", "radius", "corners"}, where)
 		return {
-			"fill": _color(props.get("fill"), where, "primary"),
-			"radius": _num(props.get("radius"), 0, 10, where, 0),
+			"fill": _color(props.get("fill"), where, d["fill"]),
+			"radius": _num(props.get("radius"), *LIMITS["radius"], where, d["radius"]),
 			"corners": _corners(props.get("corners"), where),
 		}
 	if etype == "qr":
 		_only_keys(props, {"source", "text"}, where)
 		return {
-			"source": _choice(props.get("source"), ("website", "text"), where, "website"),
+			"source": _choice(props.get("source"), CHOICES["qr.source"], where, d["source"]),
 			"text": _string(props.get("text"), MAX_QR_TEXT, where),
 		}
 	# page
 	_only_keys(props, {"format"}, where)
-	return {"format": _choice(props.get("format"), PAGE_FORMATS, where, "both")}
+	return {"format": _choice(props.get("format"), PAGE_FORMATS, where, d["format"])}
+
+
+def _r(value: float) -> float:
+	"""A computed millimetre value as the layout keeps it: 0.01, no float noise."""
+	value = round(value, 2)
+	return int(value) if value == int(value) else value
 
 
 def _element(el, band: str, seen: set) -> dict:
@@ -209,7 +241,7 @@ def _element(el, band: str, seen: set) -> dict:
 	where = _("element {0}").format(eid)
 	_only_keys(el, ELEMENT_KEYS, where)
 	etype = el.get("type")
-	if etype not in DEFAULT_SIZE:
+	if etype not in TYPES:
 		_invalid(_("Unknown element type {0}").format(frappe.as_unicode(etype)[:20]))
 	slot = el.get("slot")
 	if slot is not None and slot not in SLOTS:
@@ -218,26 +250,37 @@ def _element(el, band: str, seen: set) -> dict:
 	if not isinstance(style, dict):
 		_invalid(_("Invalid style of {0}").format(where))
 	_only_keys(style, STYLE_KEYS, where)
-	dw, dh = DEFAULT_SIZE[etype]
-	x = _num(el.get("x"), 0, REF_WIDTH, where, 0)
-	w = _num(el.get("w"), 0, REF_WIDTH, where, dw)
-	if slot is None and w == 0:
-		# a free element without a width takes the rest of the band
-		w = max(REF_WIDTH - x, 1)
+	d = ELEMENT_DEFAULTS[etype]
+	ds = d["style"]
+	x = _num(el.get("x"), *LIMITS["x"], where, 0)
+	y = _num(el.get("y"), *LIMITS["y"], where, 0)
+	w = _num(el.get("w"), *LIMITS["w"], where, d["w"])
+	h = _num(el.get("h"), *LIMITS["h"], where, d["h"])
+	# the same rules as model.js clamp_element: a box always has a size
+	if etype in BOXED:
+		w, h = w or d["w"], h or d["h"]
+	if slot is None:
+		# a free element can always be grabbed and stays within the band's width
+		w = max(w or d["w"] or LIMITS["free_w"], LIMITS["min_w"])
+		x = _r(min(x, REF_WIDTH - w))
+		if h:
+			h = max(h, LIMITS["min_h"])
+	else:
+		x = y = 0
 	return {
 		"id": eid,
 		"type": etype,
 		"slot": slot,
 		"x": x,
-		"y": _num(el.get("y"), 0, 80, where, 0),
+		"y": y,
 		"w": w,
-		"h": _num(el.get("h"), 0, 80, where, dh),
+		"h": h,
 		"style": {
-			"size": _num(style.get("size"), 6, 40, where, 9),
-			"weight": _choice(style.get("weight"), WEIGHTS, where, 400),
-			"color": _color(style.get("color"), where, "text"),
-			"align": _choice(style.get("align"), ALIGNS, where, "start"),
-			"gap": _num(style.get("gap"), 0, 10, where, 1),
+			"size": _num(style.get("size"), *LIMITS["size"], where, ds["size"]),
+			"weight": _choice(style.get("weight"), WEIGHTS, where, ds["weight"]),
+			"color": _color(style.get("color"), where, ds["color"]),
+			"align": _choice(style.get("align"), ALIGNS, where, ds["align"]),
+			"gap": _num(style.get("gap"), *LIMITS["gap"], where, ds["gap"]),
 		},
 		"props": _props(etype, el.get("props"), where),
 	}
@@ -253,12 +296,13 @@ def _band(value, band: str, seen: set) -> dict:
 	_only_keys(value, {"h", "pad_top", "slots", "elements"}, label)
 	slots = value.get("slots")
 	if slots is None:
-		slots = dict(spec["slots"])
+		slots = {}
 	if not isinstance(slots, dict):
 		_invalid(_("Invalid slots of the {0}").format(label))
 	_only_keys(slots, set(SLOTS), label)
-	clean_slots = {s: _num(slots.get(s), 0, 70, label, 0 if slots else spec["slots"][s]) for s in SLOTS}
-	if sum(clean_slots.values()) > 100:
+	# a slot left out keeps its default width (model.js clamp_slots)
+	clean_slots = {s: _num(slots.get(s), *LIMITS["slot"], label, spec["slots"][s]) for s in SLOTS}
+	if sum(clean_slots.values()) > LIMITS["slots_sum"]:
 		_invalid(_("The slots of the {0} are wider than 100%").format(label))
 	elements = value.get("elements") or []
 	if not isinstance(elements, list):
@@ -324,9 +368,6 @@ def validate_layout(layout) -> dict:
 # ---------------------------------------------------------------------------- generation
 
 
-CORNERS = ("tl", "tr", "br", "bl")
-
-
 def _corners(value, where: str) -> str:
 	"""The rounded corners of a colour band: "all", or some of tl, tr, br, bl (physical,
 	the band is placed by left/right) in that order, comma separated."""
@@ -334,7 +375,7 @@ def _corners(value, where: str) -> str:
 		return "all"
 	parts = value.split(",") if isinstance(value, str) else None
 	if not parts or any(p not in CORNERS for p in parts):
-		frappe.throw(_("Invalid corners in {0}").format(where), RVInvalidInput)
+		_invalid(_("Invalid corners in {0}").format(where))
 	picked = [c for c in CORNERS if c in parts]
 	return "all" if len(picked) == 4 else ",".join(picked)
 
@@ -433,7 +474,7 @@ def _token_expr(token: str) -> str:
 		return "_rvn"
 	if token == "address":
 		return (
-			"[_rva.address_line1, _rva.address_line2, [_rva.city, _rva.state, _rva.pincode]|select|join(\", \"), "
+			'[_rva.address_line1, _rva.address_line2, [_rva.city, _rva.state, _rva.pincode]|select|join(", "), '
 			'_rva.country]|select|join("\\n")'
 		)
 	if token in ("address_line1", "city"):
@@ -441,36 +482,102 @@ def _token_expr(token: str) -> str:
 	return f"_rvo.{token}"
 
 
-def _box(el: dict, colors: dict, free: bool) -> list[str]:
-	"""The inline style of an element: its text style, and its place when free."""
-	st = el["style"]
-	css = [f"font-size:{_n(st['size'])}pt", f"font-weight:{st['weight']}", f"color:{_rgb(st['color'], colors)}"]
-	if free:
-		css += ["position:absolute", f"left:{_pct(el['x'])}", f"top:{_n(el['y'])}mm", f"width:{_pct(el['w'])}"]
-		if el["h"] and el["type"] in ("text", "field", "page", "logo", "image"):
-			css += [f"height:{_n(el['h'])}mm", "overflow:hidden"]
-		css.append(f"text-align:{_free_align(el)}")
-	else:
-		css.append(f"margin:0 0 {_n(st['gap'])}mm")
-	return css
+def is_rtl_text(value: str | None) -> bool:
+	"""The first strong character is right-to-left (render.js ``is_rtl_text``)."""
+	m = _STRONG.search(value or "")
+	return bool(m and _RTL.match(m.group()))
 
 
-def _el_dir(el: dict) -> str:
-	if el["type"] == "text":
-		return el["props"]["dir"]
-	if el["type"] == "page" and el["props"]["format"] == "ar":
-		return "rtl"
-	return "ltr" if el["type"] == "page" else "auto"
+def _ranges(spec: str) -> list[tuple[str, str]]:
+	"""The ``a-b`` ranges of a character class of the contract (``rtl_chars``, ``ltr_chars``)."""
+	chars = spec.encode("ascii").decode("unicode_escape")
+	return [(chars[i], chars[i + 2]) for i in range(0, len(chars), 3)]
 
 
-def _free_align(el: dict) -> str:
-	"""``start``/``end`` of a free element: right/left for a right-to-left text, else
-	left/right."""
-	align = el["style"]["align"]
+def _jinja_ranges(spec: str) -> str:
+	return " or ".join(f'"\\u{ord(a):04x}" <= _c <= "\\u{ord(b):04x}"' for a, b in _ranges(spec))
+
+
+# The direction of a value known only when it prints (a company field without a label): the
+# same test as is_rtl_text, in core Jinja (a loop over its characters; the first strong one
+# wins). Sets ``_rd`` to "rtl" or "ltr".
+_JINJA_DIR = (
+	'{%- set _rdn = namespace(d="") -%}{%- for _c in _v -%}{%- if not _rdn.d -%}'
+	f'{{%- if {_jinja_ranges(C["rtl_chars"])} -%}}{{%- set _rdn.d = "rtl" -%}}'
+	f'{{%- elif {_jinja_ranges(C["ltr_chars"])} -%}}{{%- set _rdn.d = "ltr" -%}}'
+	"{%- endif -%}{%- endif -%}{%- endfor -%}"
+	'{%- set _rd = "rtl" if _rdn.d == "rtl" else "ltr" -%}'
+)
+
+
+def _content_dir(el: dict) -> str | None:
+	"""The direction of an element's own content, for the alignment of a free element
+	(render.js ``content_dir``): ``None`` when it depends on the printed value."""
+	etype, props = el["type"], el["props"]
+	if etype == "text":
+		if props["dir"] != "auto":
+			return props["dir"]
+		return "rtl" if is_rtl_text(props["text"]) else "ltr"
+	if etype == "field":
+		if props["token"] in LTR_TOKENS or props["label"]:
+			return "rtl" if is_rtl_text(props["label"]) else "ltr"
+		return None
+	if etype == "page":
+		return "ltr" if props["format"] == "en" else "rtl"
+	return "ltr"
+
+
+def _physical_align(align: str, rtl: bool) -> str:
+	"""``start``/``end`` as right/left for a right-to-left content, else left/right."""
 	if align == "center":
 		return "center"
-	rtl = _el_dir(el) == "rtl"
-	return ("right" if rtl else "left") if align == "start" else ("left" if rtl else "right")
+	return "right" if (align == "start") == rtl else "left"
+
+
+def _page_dir(el: dict) -> str:
+	return "rtl" if el["props"]["format"] == "ar" else "ltr"
+
+
+def _text_style(el: dict, colors: dict) -> list[str]:
+	st = el["style"]
+	return [
+		f"font-size:{_n(st['size'])}pt",
+		f"font-weight:{st['weight']}",
+		f"color:{_rgb(st['color'], colors)}",
+	]
+
+
+def _line_thick(props: dict) -> float:
+	"""A double rule needs some thickness to show its two lines (the editor draws the same)."""
+	return max(props["thick"], LIMITS["double_line_min"]) if props["style"] == "double" else props["thick"]
+
+
+def _band_fill(props: dict, colors: dict) -> str:
+	fill = f"background-color:{_rgb(props['fill'], colors)}"
+	return fill + (f";border-radius:{_band_radius(props)}" if props["radius"] else "")
+
+
+def _box(el: dict, colors: dict, free: bool, align: str | None) -> list[str]:
+	"""The inline style of an element's wrapper (render.js ``slotted``/``free``): in a slot it
+	flows under the one before it; free, it is placed and sized in mm (x and w in % of the
+	band). ``align``: the physical text-align of a free textual element (a Jinja expression
+	when it depends on the printed value)."""
+	etype = el["type"]
+	if not free:
+		gap = f"margin:0 0 {_n(el['style']['gap'])}mm"
+		return [*_text_style(el, colors), gap] if etype in TEXTUAL else [gap, "line-height:0"]
+	css = ["position:absolute", f"left:{_pct(el['x'])}", f"top:{_n(el['y'])}mm", f"width:{_pct(el['w'])}"]
+	if etype == "band":
+		css += [f"height:{_n(el['h'])}mm", _band_fill(el["props"], colors)]
+	elif etype in BOXED:
+		css += [f"height:{_n(el['h'])}mm", "line-height:0"]
+	elif etype == "line":
+		css.append("line-height:0")
+	else:
+		if el["h"]:
+			css += [f"height:{_n(el['h'])}mm", "overflow:hidden"]
+		css += [*_text_style(el, colors), f"text-align:{align}"]
+	return css
 
 
 def qr_svg(text: str, color: str = "#000000", size_mm: float | None = None) -> str:
@@ -479,27 +586,39 @@ def qr_svg(text: str, color: str = "#000000", size_mm: float | None = None) -> s
 
 	code = pyqrcode.create(text, error="M", encoding="utf-8")
 	buf = io.BytesIO()
-	code.svg(buf, scale=1, omithw=True, xmldecl=False, quiet_zone=0, svgclass=None, lineclass=None, module_color=color)
+	code.svg(
+		buf,
+		scale=1,
+		omithw=True,
+		xmldecl=False,
+		quiet_zone=0,
+		svgclass=None,
+		lineclass=None,
+		module_color=color,
+	)
 	svg = buf.getvalue().decode("utf-8")
-	style = f' style="display:inline-block;vertical-align:top;width:{_n(size_mm)}mm;height:{_n(size_mm)}mm"' if size_mm else ""
+	style = (
+		f' style="display:inline-block;vertical-align:top;width:{_n(size_mm)}mm;height:{_n(size_mm)}mm"'
+		if size_mm
+		else ""
+	)
 	return svg.replace("<svg ", f'<svg shape-rendering="crispEdges"{style} ', 1)
 
 
 def _img(src_expr: str, w: float, h: float, free: bool, fit: str = "contain") -> str:
-	"""An image that keeps its proportions inside ``w``×``h`` mm (``max-width``/
+	"""An image that keeps its proportions inside ``w`` by ``h`` mm (``max-width``/
 	``max-height``: QtWebKit has no ``object-fit``); ``cover`` fills the box as a
 	background."""
+	width = "100%" if free else f"{_n(w)}mm"
 	if fit == "cover":
-		width = "100%" if free else f"{_n(w)}mm"
 		return (
 			f'<div style="display:inline-block;vertical-align:top;width:{width};height:{_n(h)}mm;'
 			f"background-image:url('{src_expr}');background-position:center;background-repeat:no-repeat;"
 			'-webkit-background-size:cover;background-size:cover"></div>'
 		)
-	max_w = "100%" if free else f"{_n(w)}mm"
 	return (
 		f'<img src="{src_expr}" alt="" style="display:inline-block;vertical-align:top;width:auto;height:auto;'
-		f'max-width:{max_w};max-height:{_n(h)}mm">'
+		f'max-width:{width};max-height:{_n(h)}mm">'
 	)
 
 
@@ -509,30 +628,54 @@ def _qr_text(el: dict, website: str | None) -> str:
 	return (website or "").strip()
 
 
+def qr_size(el: dict) -> float:
+	"""A QR code is square: the smaller side of its box."""
+	return min(el["w"], el["h"]) if el["w"] and el["h"] else el["h"] or el["w"]
+
+
 def _element_html(el: dict, colors: dict, free: bool, qr_website: str | None) -> str:
 	etype, props = el["type"], el["props"]
 	attrs = f'data-el="{el["id"]}"'
-	css = _box(el, colors, free)
-	if etype in ("logo", "image", "line", "band", "qr"):
-		css.append("line-height:0")
-		if not free:
-			css.append("font-size:0")
 	if etype == "text":
+		if not props["text"]:
+			return ""
+		direction = _content_dir(el) if free else props["dir"]
+		css = _box(el, colors, free, _physical_align(el["style"]["align"], direction == "rtl"))
 		lines = "<br>".join(_text(line) for line in props["text"].split("\n"))
-		return f'<div {attrs} dir="{props["dir"]}" style="{";".join(css)}">{lines}</div>'
+		return f'<div {attrs} dir="{direction}" style="{";".join(css)}">{lines}</div>'
 	if etype == "field":
 		token = props["token"]
 		label = _text(props["label"]).strip()
 		bdi = '<bdi dir="ltr">' if token in LTR_TOKENS else "<bdi>"
 		if token in MULTILINE_TOKENS:
-			value = '{% for _l in _v.split("\\n") %}{{ _l|e }}{% if not loop.last %}<br>{% endif %}{% endfor %}'
+			value = (
+				'{% for _l in _v.split("\\n") %}{{ _l|e }}{% if not loop.last %}<br>{% endif %}{% endfor %}'
+			)
 		else:
 			value = "{{ _v|e }}"
-		body = f'<div {attrs} style="{";".join(css)}">{label + " " if label else ""}{bdi}{value}</bdi></div>'
-		head = f'{{%- set _v = ({_token_expr(token)} or "")|string -%}}'
+		head = f'{{%- set _v = ({_token_expr(token)} or "")|string|trim -%}}'
+		dir_attr = ""
+		align = None
+		if free:
+			direction = _content_dir(el)
+			if direction is None:
+				# known when it prints: from the value itself
+				head += _JINJA_DIR
+				a = el["style"]["align"]
+				align = "center" if a == "center" else "{{ _ra|e }}"
+				if a != "center":
+					right_if = "rtl" if a == "start" else "ltr"
+					head += f'{{%- set _ra = "right" if _rd == "{right_if}" else "left" -%}}'
+				dir_attr = ' dir="{{ _rd|e }}"'
+			else:
+				align = _physical_align(el["style"]["align"], direction == "rtl")
+				dir_attr = f' dir="{direction}"'
+		css = _box(el, colors, free, align)
+		body = f'<div {attrs}{dir_attr} style="{";".join(css)}">{label + " " if label else ""}{bdi}{value}</bdi></div>'
 		if props["hide_empty"]:
 			return f"{head}{{% if _v %}}{body}{{% endif %}}"
 		return head + body
+	css = _box(el, colors, free, None)
 	if etype == "logo":
 		img = _img("{{ _rvo.company_logo|e }}", el["w"], el["h"], free)
 		cond = '_rvo.company_logo and (_rvo.company_logo.startswith("/files/") or _rvo.company_logo.startswith("/assets/"))'
@@ -542,36 +685,31 @@ def _element_html(el: dict, colors: dict, free: bool, qr_website: str | None) ->
 		return f'<div {attrs} style="{";".join(css)}">{img}</div>'
 	color = _rgb(el["style"]["color"], colors)
 	if etype == "line":
-		border = f"border-top:{_n(props['thick'])}mm {props['style']} {color}"
-		if free:
-			return f'<div {attrs} style="{";".join(css)};height:0;{border}"></div>'
-		width = f"{_n(el['w'])}mm" if el["w"] else "100%"
-		return f'<div {attrs} style="{";".join(css)}"><div style="display:inline-block;vertical-align:top;width:{width};height:0;{border}"></div></div>'
+		width = "100%" if free or not el["w"] else f"{_n(el['w'])}mm"
+		rule = f"display:inline-block;vertical-align:top;width:{width};height:0;border-top:{_n(_line_thick(props))}mm {props['style']} {color}"
+		return f'<div {attrs} style="{";".join(css)}"><div style="{rule}"></div></div>'
 	if etype == "band":
-		fill = f"background-color:{_rgb(props['fill'], colors)}"
-		radius = f";border-radius:{_band_radius(props)}" if props["radius"] else ""
 		if free:
-			return f'<div {attrs} style="{";".join(css)};height:{_n(el["h"])}mm;{fill}{radius}"></div>'
+			return f'<div {attrs} style="{";".join(css)}"></div>'
 		width = f"{_n(el['w'])}mm" if el["w"] else "100%"
-		return (
-			f'<div {attrs} style="{";".join(css)}"><div style="display:inline-block;vertical-align:top;'
-			f'width:{width};height:{_n(el["h"])}mm;{fill}{radius}"></div></div>'
-		)
+		box = f"display:inline-block;vertical-align:top;width:{width};height:{_n(el['h'])}mm;{_band_fill(props, colors)}"
+		return f'<div {attrs} style="{";".join(css)}"><div style="{box}"></div></div>'
 	if etype == "qr":
 		text = _qr_text(el, qr_website)
 		if not text:
 			return ""
-		size = el["h"] or el["w"]
-		return f'<div {attrs} style="{";".join(css)}">{qr_svg(text, color, size)}</div>'
+		return f'<div {attrs} style="{";".join(css)}">{qr_svg(text, color, qr_size(el))}</div>'
 	# page number: Frappe's convention, filled by wkhtmltopdf, Chrome and the Pages
+	if free:
+		css = _box(el, colors, True, _physical_align(el["style"]["align"], _content_dir(el) == "rtl"))
 	en = 'Page <span class="page"></span> of <span class="topage"></span>'
-	ar = "صفحة <span class=\"page\"></span> من <span class=\"topage\"></span>"
+	ar = 'صفحة <span class="page"></span> من <span class="topage"></span>'
 	body = {
 		"en": f'<span dir="ltr">{en}</span>',
 		"ar": f'<span dir="rtl">{ar}</span>',
 		"both": f'<span dir="ltr">{en}</span> | <span dir="rtl">{ar}</span>',
 	}[props["format"]]
-	return f'<div {attrs} dir="{_el_dir(el)}" style="{";".join(css)}">{body}</div>'
+	return f'<div {attrs} dir="{_page_dir(el)}" style="{";".join(css)}">{body}</div>'
 
 
 # A site's Print Style may set a font on ``.letter-head *`` (every element of the letter
@@ -607,7 +745,11 @@ def _band_html(layout: dict, band: str, company: str | None, qr_website: str | N
 		f"height:{h}mm;overflow:hidden;box-sizing:border-box;font-family:{font_lib.font_stack(layout['font'])};"
 		f'color:{colors["text"]};line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact">'
 	)
-	out = [f"<!-- rv-lh v{LAYOUT_VERSION} {band} h={h} -->", font_style(layout), _company_block(_band_uses(spec), company) + root]
+	out = [
+		f"<!-- rv-lh v{LAYOUT_VERSION} {band} h={h} -->",
+		font_style(layout),
+		_company_block(_band_uses(spec), company) + root,
+	]
 	for slot in SLOTS:
 		width = spec["slots"][slot]
 		items = [el for el in spec["elements"] if el["slot"] == slot]
@@ -655,8 +797,9 @@ def content_hash(header: str | None, footer: str | None) -> str:
 
 def layout_warnings(layout: dict, company: dict | None) -> list[str]:
 	"""What prints otherwise than the builder draws: elements in a closed slot or outside
-	their band, a private or missing logo, a QR code without a website. ``company`` is the
-	previewed company's record (``company_logo``, ``website``)."""
+	their band (below it, or running past its bottom edge), a private or missing logo, a QR
+	code without a website. ``company`` is the previewed company's record
+	(``company_logo``, ``website``)."""
 	company = company or {}
 	out = []
 	for band in ("header", "footer"):
@@ -666,12 +809,22 @@ def layout_warnings(layout: dict, company: dict | None) -> list[str]:
 				out.append(_("Element {0} is in a closed slot and is not printed").format(el["id"]))
 			elif el["slot"] is None and el["y"] >= spec["h"]:
 				out.append(_("Element {0} is outside the {1}").format(el["id"], _band_label(band)))
+			elif el["slot"] is None and (
+				el["y"] + el["h"] > spec["h"] + 0.01 or el["x"] + el["w"] > REF_WIDTH + 0.01
+			):
+				out.append(
+					_("Element {0} runs past the edge of the {1}: it is cut off in print").format(
+						el["id"], _band_label(band)
+					)
+				)
 			if el["type"] == "logo":
 				logo = company.get("company_logo") or ""
 				if not logo:
 					out.append(_("The company has no logo"))
 				elif not logo.startswith(("/files/", "/assets/")):
-					out.append(_("The company logo is a private file: it is not printed. Make the file public."))
+					out.append(
+						_("The company logo is a private file: it is not printed. Make the file public.")
+					)
 			if el["type"] == "qr" and el["props"]["source"] == "website" and not company.get("website"):
 				out.append(_("The company has no website: the QR code is not printed"))
 			if el["type"] == "qr" and el["props"]["source"] == "text" and not el["props"]["text"].strip():
@@ -679,31 +832,67 @@ def layout_warnings(layout: dict, company: dict | None) -> list[str]:
 	return list(dict.fromkeys(out))
 
 
+def page_margins(header_h: float, footer_h: float) -> dict:
+	"""The page margins wkhtmltopdf needs with "Repeat Header and Footer" around a builder
+	letter head: it does not measure the letter head, it puts it in the page margin. Measured
+	on Frappe 16 (ADR-018, server notes): Frappe's header page adds 15mm to the header (its
+	padding), and the footer page adds Frappe's own page number line, so 10mm."""
+	extra = C["margins"]
+	return {
+		"top": _r(header_h + extra["header_extra"]),
+		"bottom": _r(footer_h + extra["footer_extra"]) if footer_h else None,
+	}
+
+
 def print_format_css(layout: dict) -> str:
-	"""The rule a print format needs with wkhtmltopdf and "Repeat Header and Footer": it
-	does not measure the letter head, it puts it in the page margin. Measured on Frappe 16
-	(ADR-018, server notes): Frappe's header page adds 15mm to the header (its padding), and
-	the footer page adds Frappe's own page number line, so 10mm."""
-	css = f".print-format {{ margin-top: {_n(layout['header']['h'] + 15)}mm;"
-	if layout["footer"]["h"]:
-		css += f" margin-bottom: {_n(layout['footer']['h'] + 10)}mm;"
+	"""The ``.print-format`` margins of a layout as CSS: what ``pdf_body_html`` adds by
+	itself; a print format that sets its own ``.print-format`` margin needs this line."""
+	m = page_margins(layout["header"]["h"], layout["footer"]["h"])
+	css = f".print-format {{ margin-top: {_n(m['top'])}mm;"
+	if m["bottom"]:
+		css += f" margin-bottom: {_n(m['bottom'])}mm;"
 	return css + " }"
 
 
 BAND_HEIGHT = re.compile(r'data-rv-lh="(header|footer)" data-h="([0-9.]+)"')
 FORMAT_MARGIN = re.compile(r"\.print-format\s*\{[^}]*margin-(top|bottom)", re.I)
+HOOK = "report_view.core.letterhead.pdf_body_html"
+FRAPPE_HOOK = "frappe.utils.pdf.pdf_body_html"
+
+
+def previous_pdf_body_html() -> str:
+	"""The ``pdf_body_html`` hook this one wraps: the one of the app installed before Report
+	View (Frappe's own, unless another app sets it too)."""
+	hooks = frappe.get_hooks("pdf_body_html") or []
+	before = hooks[: hooks.index(HOOK)] if HOOK in hooks else [h for h in hooks if h != HOOK]
+	return before[-1] if before else FRAPPE_HOOK
+
+
+def check_pdf_body_html_hook() -> bool:
+	"""``pdf_body_html`` is a last-app-wins hook (frappe/www/printview.py takes the last one):
+	an app installed after Report View that sets it replaces this one, and builder letter
+	heads lose their wkhtmltopdf margins. Logs a warning then; True when this one is used."""
+	hooks = frappe.get_hooks("pdf_body_html") or []
+	if hooks and hooks[-1] != HOOK:
+		frappe.logger("report_view").warning(
+			"pdf_body_html: %s overrides Report View's hook; builder letter heads get no automatic "
+			"wkhtmltopdf margins unless it calls the previous hook (ADR-018)",
+			hooks[-1],
+		)
+		return False
+	return True
 
 
 def pdf_body_html(jenv, template, print_format, args):
-	"""Hook `pdf_body_html` (ADR-018): the print page as Frappe renders it, plus, for a PDF
-	made by wkhtmltopdf with "Repeat Header and Footer", the page margins a builder letter
-	head needs. wkhtmltopdf does not measure the header; it reads the margins from a
-	`.print-format` rule of the page (frappe/utils/pdf.py, read_options_from_html). A format
-	that sets its own margin keeps it; a letter head not made by the builder is left alone."""
-	hooks = frappe.get_hooks("pdf_body_html")
-	mine = "report_view.core.letterhead.pdf_body_html"
-	previous = [h for h in hooks if h != mine][-1]
-	html = frappe.get_attr(previous)(jenv=jenv, template=template, print_format=print_format, args=args)
+	"""Hook `pdf_body_html` (ADR-018): the print page as the previous hook renders it
+	(Frappe's), plus, for a PDF made by wkhtmltopdf with "Repeat Header and Footer", the page
+	margins a builder letter head needs. wkhtmltopdf does not measure the header; it reads
+	the margins from a `.print-format` rule of the page (frappe/utils/pdf.py,
+	read_options_from_html). A format that sets its own margin keeps it; a letter head not
+	made by the builder is left alone, and every other print is the previous hook's, as it is."""
+	html = frappe.get_attr(previous_pdf_body_html())(
+		jenv=jenv, template=template, print_format=print_format, args=args
+	)
 	if frappe.local.form_dict.get("pdf_generator") != "wkhtmltopdf" or args.get("no_letterhead"):
 		return html
 	settings = args.get("print_settings") or {}
@@ -713,9 +902,68 @@ def pdf_body_html(jenv, template, print_format, args):
 	if not heights:
 		return html
 	taken = {side.lower() for side in FORMAT_MARGIN.findall(html)}
+	m = page_margins(float(heights.get("header") or 0), float(heights.get("footer") or 0))
 	rules = []
 	if "header" in heights and "top" not in taken:
-		rules.append(f"margin-top: {_n(float(heights['header']) + 15)}mm")
-	if float(heights.get("footer") or 0) and "bottom" not in taken:
-		rules.append(f"margin-bottom: {_n(float(heights['footer']) + 10)}mm")
+		rules.append(f"margin-top: {_n(m['top'])}mm")
+	if m["bottom"] and "bottom" not in taken:
+		rules.append(f"margin-bottom: {_n(m['bottom'])}mm")
 	return html + (f"<style>.print-format {{ {'; '.join(rules)}; }}</style>" if rules else "")
+
+
+# ---------------------------------------------------------------------------- the records
+
+
+def keep_builder_source(doc, method=None):
+	"""Letter Head ``before_insert`` (doc_events): Frappe makes every new letter head an image
+	one; a letter head the builder inserts (``flags.rv_builder``) stays HTML, so it is
+	written once."""
+	if doc.flags.rv_builder:
+		doc.source = doc.footer_source = "HTML"
+
+
+def delete_layout(doc, method=None):
+	"""Letter Head ``on_trash`` (doc_events): its builder layout goes with it (it links to the
+	letter head, which could not be deleted otherwise)."""
+	for name in frappe.get_list("Letter Head Layout", filters={"letter_head": doc.name}, pluck="name"):
+		frappe.delete_doc("Letter Head Layout", name)
+
+
+def write_letter_head(lh, layout: dict, company: str | None = None, qr_company: str | None = None) -> str:
+	"""Writes the HTML of a validated ``layout`` into the Letter Head document ``lh`` (new or
+	existing; saved with the user's permissions) and returns its ``content_hash``."""
+	html = generate(layout, company, qr_company=qr_company)
+	lh.content, lh.footer = html["header"], html["footer"]
+	lh.source = lh.footer_source = "HTML"
+	meta = frappe.get_meta("Letter Head")
+	for field, value in (("header_height", layout["header"]["h"]), ("footer_height", layout["footer"]["h"])):
+		if meta.has_field(field):
+			lh.set(field, value)
+	if lh.is_new():
+		lh.flags.rv_builder = True
+		lh.insert()
+		if lh.source != "HTML" or lh.footer_source != "HTML":
+			# the doc_event keep_builder_source is not active: Letter Head.before_insert made it
+			# an image letter head (and said it has no image), so it is set back to HTML
+			_drop_message(_("Please attach an image file to set HTML for Letter Head."))
+			lh.source = lh.footer_source = "HTML"
+			lh.content, lh.footer = html["header"], html["footer"]
+			lh.save()
+	else:
+		lh.save()
+	return content_hash(lh.content, lh.footer)
+
+
+def _drop_message(text: str):
+	"""Removes one message (by its text) from the messages of this request."""
+
+	def text_of(m):
+		if isinstance(m, str):
+			try:
+				m = json.loads(m)
+			except ValueError:
+				return m
+		return m.get("message") if isinstance(m, dict) else m
+
+	log = frappe.local.message_log
+	log[:] = [m for m in log if text_of(m) != text]

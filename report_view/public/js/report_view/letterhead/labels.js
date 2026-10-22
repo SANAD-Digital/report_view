@@ -20,10 +20,10 @@ export const token_label = (t) =>
 
 export const type_label = (t) =>
 	({
-		text: __("Text"),
+		text: __("Text", null, "Report View"),
 		field: __("Company field"),
 		logo: __("Logo"),
-		image: __("Image"),
+		image: __("Image", null, "Report View"),
 		line: __("Line"),
 		band: __("Colour band"),
 		qr: __("QR code"),
@@ -39,7 +39,7 @@ export function element_name(el) {
 	if (el.type === "field") return token_label(el.props.token);
 	if (el.type === "text") {
 		const t = (el.props.text || "").split("\n")[0].trim();
-		return t ? (t.length > 28 ? `${t.slice(0, 27)}…` : t) : __("Text");
+		return t ? (t.length > 28 ? `${t.slice(0, 27)}…` : t) : __("Text", null, "Report View");
 	}
 	return type_label(el.type);
 }

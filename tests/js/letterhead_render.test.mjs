@@ -2,10 +2,11 @@
 // styles of the gallery (letterhead/presets.js), with a company's real values.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import "./_json.mjs";
 
-import { render_band, render_letterhead, missing_tokens, qr_texts, is_rtl_text, resolve_color, page_html, esc } from "../../report_view/public/js/report_view/letterhead/render.js";
-import { PRESETS, build_preset, blank_layout, brand_from_rgb } from "../../report_view/public/js/report_view/letterhead/presets.js";
-import { clamp_layout, default_layout, LIMITS, REF_W } from "../../report_view/public/js/report_view/letterhead/model.js";
+const { render_band, missing_tokens, qr_texts, is_rtl_text, resolve_color, page_html, esc } = await import("../../report_view/public/js/report_view/letterhead/render.js");
+const { PRESETS, build_preset, blank_layout, brand_from_rgb } = await import("../../report_view/public/js/report_view/letterhead/presets.js");
+const { clamp_layout, default_layout, LIMITS, REF_W } = await import("../../report_view/public/js/report_view/letterhead/model.js");
 
 const CTX = {
 	values: { company_name: "SND Accounting", company_name_ar: "شركة سند للمحاسبة", phone_no: "777999579", email: "info@championsys.cloud", website: "championsys.cloud", address: "Sana'a\nYemen", tax_id: "" },
@@ -35,7 +36,7 @@ test("band: center and left slots", () => {
 	]);
 	const html = render_band(l, "header", CTX);
 	assert.match(html, /data-slot="center" dir="auto" style="position:absolute;top:6mm;left:50%;margin-left:-13%;width:26%;padding:0 1mm;box-sizing:border-box;text-align:center"/);
-	assert.match(html, /<img src="\/files\/logo.png" alt="" style="max-width:26mm;max-height:22mm;vertical-align:top">/);
+	assert.match(html, /<img src="\/files\/logo.png" alt="" style="display:inline-block;vertical-align:top;width:auto;height:auto;max-width:26mm;max-height:22mm">/);
 	assert.match(html, /data-slot="left" dir="ltr" style="position:absolute;top:6mm;left:0;width:34%;padding:0 1mm;box-sizing:border-box;text-align:left"/);
 });
 
@@ -46,8 +47,8 @@ test("free elements: x and w as percentages of 180mm, y and h in mm", () => {
 		{ id: "t1", type: "text", slot: null, x: 90, y: 4, w: 90, style: { align: "start" }, props: { text: "مرحبا\nسطر" } },
 	]);
 	const html = render_band(l, "header", CTX);
-	assert.match(html, /data-el="e9" style="position:absolute;left:10%;top:28mm;width:80%;line-height:0"><span style="display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.6mm solid #1E5C45">/);
-	assert.match(html, /data-el="b1" style="position:absolute;left:0%;top:0mm;width:50%;height:12mm;background:#AA0000;border-radius:3mm">/);
+	assert.match(html, /data-el="e9" style="position:absolute;left:10%;top:28mm;width:80%;line-height:0"><div style="display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.6mm solid #1E5C45">/);
+	assert.match(html, /data-el="b1" style="position:absolute;left:0%;top:0mm;width:50%;height:12mm;background-color:#AA0000;border-radius:3mm">/);
 	// an Arabic text aligned to its start is aligned right; its line breaks kept
 	assert.match(html, /data-el="t1" dir="rtl" style="[^"]*text-align:right">مرحبا<br>سطر<\/div>/);
 	assert.ok(html.indexOf('data-el="b1"') > html.indexOf("data-el=\"e9\""), "free elements in their order");
@@ -84,9 +85,10 @@ test("address on several lines, page numbers, QR", () => {
 		header: { elements: [{ id: "a", type: "field", slot: "right", props: { token: "address" } }, { id: "q", type: "qr", slot: "left", w: 16, h: 16, props: { source: "website" } }] },
 		footer: { elements: [{ id: "p", type: "page", slot: "center", props: { format: "both" } }] },
 	});
-	const { header, footer } = render_letterhead(l, { ...CTX, qr: { "championsys.cloud": "<svg id=qr></svg>" } });
+	const ctx = { ...CTX, qr: { "championsys.cloud": "<svg id=qr></svg>" } };
+	const [header, footer] = [render_band(l, "header", ctx), render_band(l, "footer", ctx)];
 	assert.match(header, />Sana&#39;a<br>Yemen</);
-	assert.match(header, /<span style="display:inline-block;width:16mm;height:16mm"><svg id=qr><\/svg><\/span>/);
+	assert.match(header, /<span style="display:inline-block;vertical-align:top;width:16mm;height:16mm"><svg id=qr><\/svg><\/span>/);
 	assert.match(footer, /<span class="page"><\/span>/);
 	assert.match(footer, /<span class="topage"><\/span>/);
 	assert.match(page_html("ar", [2, 5]), /صفحة <span class="page">2<\/span> من <span class="topage">5<\/span>/);
@@ -101,8 +103,8 @@ test("images: public files only, cover as a background, never object-fit", () =>
 		{ id: "i2", type: "image", slot: "left", w: 30, h: 20, props: { src: "/files/b.png" } },
 	]);
 	const html = render_band(l, "header", { ...CTX, logo: "/private/files/logo.png" });
-	assert.match(html, /background:url\('\/files\/a.png'\) center\/cover no-repeat/);
-	assert.match(html, /<img src="\/files\/b.png" alt="" style="max-width:30mm;max-height:20mm;vertical-align:top">/);
+	assert.match(html, /background-image:url\('\/files\/a.png'\);background-position:center;background-repeat:no-repeat;-webkit-background-size:cover;background-size:cover/);
+	assert.match(html, /<img src="\/files\/b.png" alt="" style="display:inline-block;vertical-align:top;width:auto;height:auto;max-width:30mm;max-height:20mm">/);
 	assert.doesNotMatch(html, /object-fit/);
 	const logo = render_band(layout_with([{ id: "g", type: "logo", slot: "center" }]), "header", { ...CTX, logo: "/private/files/logo.png" });
 	assert.doesNotMatch(logo, /private/, "a private logo is not printed");

@@ -6,7 +6,7 @@
 // live preview (render.js), and «Real preview» shows what the server renders.
 
 import "../fonts_registry.js";
-import { Store, TOKENS, DEFAULT_COLORS, BOXED, find, make_element, insert_in_slot, slot_elements, margin_css, layout_bytes, LIMITS, clamp } from "./model.js";
+import { Store, DEFAULT_COLORS, BOXED, REF_W, find, make_element, element_defaults, insert_in_slot, slot_elements, layout_bytes, LIMITS, clamp } from "./model.js";
 import { build_preset, blank_layout, brand_from_rgb, PRESETS } from "./presets.js";
 import { qr_texts, esc } from "./render.js";
 import { Canvas } from "./editor.js";
@@ -17,33 +17,25 @@ import { icons } from "./icons.js";
 const API = "report_view.api.letterhead";
 const call = (method, args, type = "GET") => frappe.call({ method: `${API}.${method}`, args, type }).then((r) => r?.message);
 
-/** The company part of builder_context, as {name, values: {token: text}, logo}. */
+// QR codes drawn by the server (qr_svg): fetched once the text rests, at most this many kept
+const QR_WAIT_MS = 400;
+const QR_KEEP = 24;
+
+/** The company part of builder_context / company_data: {name, values: {token: text}, logo (public only)}. */
 function company_of(c) {
-	if (!c || typeof c !== "object") return { name: c || null, values: {}, logo: "" };
-	const values = { ...(c.values || c.fields || {}) };
-	for (const t of TOKENS) if (values[t] == null && c[t] != null) values[t] = c[t];
-	if (!values.company_name) values.company_name = c.company_name || c.name || "";
-	const logo = c.logo || "";
-	return { name: c.name || values.company_name || null, values, logo: c.logo_public === false || !/^\/(files|assets)\//.test(logo) ? "" : logo };
+	if (!c) return { name: null, values: {}, logo: "" };
+	return { name: c.name, values: c.values || {}, logo: c.logo_public ? c.logo || "" : "" };
 }
 
 /** builder_context as the page uses it: the company, the companies, the saved layout. */
 function context_of(r = {}) {
-	const lh = r.letter_head && typeof r.letter_head === "object" ? r.letter_head : null;
-	let layout = lh?.layout ?? null;
-	if (typeof layout === "string") {
-		try {
-			layout = JSON.parse(layout);
-		} catch {
-			layout = null;
-		}
-	}
+	const lh = r.letter_head || null;
 	return {
-		company: company_of(r.company_data || r.company),
-		companies: (r.companies || []).map((c) => (typeof c === "string" ? c : c.name)),
+		company: company_of(r.company_data),
+		companies: (r.companies || []).map((c) => c.name),
 		can_write: Boolean(r.can_write),
-		can_set_default: r.can_set_default !== false && r.can_set_default !== 0,
-		layout: layout && typeof layout === "object" ? layout : null,
+		can_set_default: Boolean(r.can_set_default),
+		layout: lh?.layout || null,
 		template: lh?.template || null,
 		fixed_company: lh?.company || null,
 		hand_edited: Boolean(lh?.hand_edited),
@@ -60,8 +52,11 @@ class LetterheadBuilderPage {
 		this.companies = [];
 		this.company = null;
 		this.data = new Map();
-		this.qr = {};
+		// QR SVGs by text (a small LRU: Map in use order), the texts asked, the texts that failed
+		this.qr = new Map();
 		this.qr_pending = new Set();
+		this.qr_failed = new Set();
+		this.qr_timer = null;
 		this.brands = new Map();
 		this.presets = new Map();
 		this.letter_head = null;
@@ -114,12 +109,12 @@ class LetterheadBuilderPage {
 				</header>
 				<div class="rvlb-work">
 					<aside class="rvlb-lib rvlb-sheetpanel" data-pane="lib" aria-label="${esc(__("Library"))}"></aside>
-					<main class="rvlb-center" data-pane="page" aria-label="${esc(__("Page"))}"></main>
+					<main class="rvlb-center" data-pane="page" aria-label="${esc(__("Page", null, "Report View"))}"></main>
 					<aside class="rvlb-insp rvlb-sheetpanel" data-pane="insp" aria-label="${esc(__("Properties"))}"></aside>
 				</div>
 				<nav class="rvlb-phonetabs" aria-label="${esc(__("Panels"))}">
 					<button type="button" data-pane-btn="lib" aria-pressed="false">${icons.elements()}<span>${esc(__("Elements"))}</span></button>
-					<button type="button" data-pane-btn="page" aria-pressed="true">${icons.page()}<span>${esc(__("Page"))}</span></button>
+					<button type="button" data-pane-btn="page" aria-pressed="true">${icons.page()}<span>${esc(__("Page", null, "Report View"))}</span></button>
 					<button type="button" data-pane-btn="insp" aria-pressed="false">${icons.sliders()}<span>${esc(__("Properties"))}</span></button>
 				</nav>
 			</div>`;
@@ -168,7 +163,7 @@ class LetterheadBuilderPage {
 		this.can_set_default = ctx.can_set_default;
 		this.companies = ctx.companies.length ? ctx.companies : [ctx.company.name].filter(Boolean);
 		this.company = ctx.fixed_company || ctx.company.name || this.companies[0] || null;
-		if (ctx.company.name) this.data.set(ctx.company.name, ctx.company);
+		if (ctx.company.name) this.data.set(ctx.company.name, { ...ctx.company, can_set_default: ctx.can_set_default });
 		if (this.company && !this.data.has(this.company)) await this.fetch_company(this.company);
 		this.fixed_company = ctx.fixed_company;
 		this.hand_edited = ctx.hand_edited;
@@ -194,19 +189,24 @@ class LetterheadBuilderPage {
 
 	async fetch_company(name) {
 		if (this.data.has(name)) return this.data.get(name);
-		const ctx = context_of(await call("builder_context", { company: name }));
-		const c = ctx.company.name ? ctx.company : { ...ctx.company, name };
+		const r = await call("company_data", { company: name });
+		const c = { ...company_of(r?.company_data), can_set_default: Boolean(r?.can_set_default) };
 		this.data.set(name, c);
 		return c;
 	}
 
 	async set_company(name) {
 		if (!name || name === this.company) return;
+		let c;
 		try {
-			await this.fetch_company(name);
+			c = await this.fetch_company(name);
 		} catch {
+			// the select goes back to the company the page still draws with
+			this.refs.company.value = this.company;
+			frappe.show_alert({ message: __("The data of {0} could not be loaded.", [name]), indicator: "orange" });
 			return;
 		}
+		if (c.can_set_default !== undefined) this.can_set_default = c.can_set_default;
 		this.company = name;
 		this.detect_brand(name);
 		this.refresh_company();
@@ -268,7 +268,7 @@ class LetterheadBuilderPage {
 	/** What render.js draws with: the preview company's values, its logo, the QR codes. */
 	render_ctx() {
 		const c = this.data.get(this.company) || { values: {}, logo: "" };
-		return { values: c.values, logo: c.logo, qr: this.qr };
+		return { values: c.values, logo: c.logo, qr: Object.fromEntries(this.qr) };
 	}
 
 	preset_layout(id) {
@@ -323,7 +323,7 @@ class LetterheadBuilderPage {
 		this.refs.status.classList.toggle("is-dirty", !this.letter_head || this.store.dirty);
 		const save = this.root.querySelector("[data-act=save]");
 		save.disabled = !this.can_write;
-		if (!this.can_write) save.title = __("Only a System Manager can save letter heads.");
+		save.title = this.can_write ? "" : __("You may not write letter heads.");
 	}
 
 	on_zoom(scale, fit) {
@@ -331,21 +331,41 @@ class LetterheadBuilderPage {
 		this.refs.zoom.setAttribute("aria-label", fit ? __("Zoom {0}%, fitted to the page", [Math.round(scale * 100)]) : __("Zoom {0}%: fit the page", [Math.round(scale * 100)]));
 	}
 
+	/** After each drawing: the QR codes the layout needs, fetched once their text rests (not per keystroke). */
 	after_render() {
-		const ctx = this.render_ctx();
-		for (const t of qr_texts(this.store.layout, ctx)) {
-			if (this.qr[t] || this.qr_pending.has(t)) continue;
+		const missing = qr_texts(this.store.layout, this.render_ctx()).filter((t) => !this.qr.has(t) && !this.qr_pending.has(t) && !this.qr_failed.has(t));
+		if (!missing.length) return;
+		clearTimeout(this.qr_timer);
+		this.qr_timer = setTimeout(() => this.fetch_qr(), QR_WAIT_MS);
+	}
+
+	fetch_qr() {
+		const wanted = qr_texts(this.store.layout, this.render_ctx());
+		for (const t of wanted) {
+			if (this.qr.has(t) || this.qr_pending.has(t) || this.qr_failed.has(t)) continue;
 			this.qr_pending.add(t);
 			call("qr_svg", { text: t })
 				.then((r) => {
-					const svg = typeof r === "string" ? r : r?.svg;
-					if (svg && /^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(svg)) {
-						this.qr[t] = svg.replace(/^\s*<\?xml[^>]*>/, "").replace(/<svg/i, '<svg style="width:100%;height:100%;display:block"');
-						this.canvas.render();
-					}
+					const svg = r?.svg;
+					if (!svg || !/^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(svg)) throw new Error("not an svg");
+					this.qr.set(t, svg.replace(/^\s*<\?xml[^>]*>/, "").replace(/<svg/i, '<svg style="width:100%;height:100%;display:block"'));
+					while (this.qr.size > QR_KEEP) this.qr.delete(this.qr.keys().next().value);
+					// a text typed over meanwhile is not drawn any more: no need to draw again
+					if (qr_texts(this.store.layout, this.render_ctx()).includes(t)) this.canvas.render();
 				})
-				.catch(() => {})
+				.catch(() => {
+					this.qr_failed.add(t);
+					frappe.show_alert({ message: __("The QR code could not be drawn now; it is drawn when the letter head is saved."), indicator: "orange" });
+				})
 				.finally(() => this.qr_pending.delete(t));
+		}
+		// what is drawn stays last in use order, so the LRU drops older texts first
+		for (const t of wanted) {
+			const svg = this.qr.get(t);
+			if (svg) {
+				this.qr.delete(t);
+				this.qr.set(t, svg);
+			}
 		}
 	}
 
@@ -360,8 +380,8 @@ class LetterheadBuilderPage {
 		const sel = this.store.selected && find(L, this.store.selected);
 		let place = null;
 		if (sel && sel.el.slot) place = { kind: "slot", band: sel.band, slot: sel.el.slot, index: slot_elements(L, sel.band, sel.el.slot).indexOf(sel.el) + 1 };
-		else if (spec.type === "band") place = { kind: "free", band: "header", rect: { x: 0, y: 0, w: 180, h: 8 } };
-		else if (spec.type === "line") place = { kind: "free", band: "header", rect: { x: 0, y: Math.max(0, L.header.h - 3), w: 180, h: 0 } };
+		else if (spec.type === "band") place = { kind: "free", band: "header", rect: { x: 0, y: 0, w: REF_W, h: element_defaults("band").h } };
+		else if (spec.type === "line") place = { kind: "free", band: "header", rect: { x: 0, y: Math.max(0, L.header.h - 3), w: REF_W, h: 0 } };
 		else {
 			const band = spec.type === "page" && L.footer.h ? "footer" : "header";
 			const token = spec.patch?.props?.token;
@@ -383,7 +403,7 @@ class LetterheadBuilderPage {
 			(l) => {
 				const e = make_element(l, spec.type, spec.patch);
 				if (t.kind === "slot") return insert_in_slot(l, e, t.band, t.slot, t.index);
-				Object.assign(e, { slot: null, x: t.rect.x, y: t.rect.y, w: clamp(t.rect.w, 2, 180) });
+				Object.assign(e, { slot: null, x: t.rect.x, y: t.rect.y, w: clamp(t.rect.w, LIMITS.min_w, REF_W) });
 				if (BOXED.has(e.type)) e.h = t.rect.h;
 				l[t.band].elements.push(e);
 				return e;
@@ -494,7 +514,7 @@ class LetterheadBuilderPage {
 			return;
 		}
 		const warnings = r?.warnings || [];
-		const css = r?.print_format_css || margin_css(layout);
+		const css = r?.print_format_css || "";
 		body.firstElementChild.innerHTML = `
 			<div class="rvlb-pv-wrap">
 				<div class="rvlb-pv-a4" aria-label="${esc(__("A4 page"))}">
@@ -507,9 +527,9 @@ class LetterheadBuilderPage {
 				<aside class="rvlb-pv-side">
 					<span class="rvlb-h3">${esc(__("Rendered by the server"))}</span>
 					<p class="rvlb-note">${esc(__("This is the HTML saved in the letter head, rendered for {0}, as Frappe's print, the PDF and the Report View pages show it.", [this.company || ""]))}</p>
-					${warnings.length ? `<div class="rvlb-warn" role="note">${icons.alert()}<ul>${warnings.map((w) => `<li>${esc(typeof w === "string" ? w : w.message || JSON.stringify(w))}</li>`).join("")}</ul></div>` : ""}
+					${warnings.length ? `<div class="rvlb-warn" role="note">${icons.alert()}<ul>${warnings.map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>` : ""}
 					<span class="rvlb-h3">${esc(__("PDF with wkhtmltopdf"))}</span>
-					<p class="rvlb-note">${esc(__("With «Repeat header and footer», wkhtmltopdf does not measure the header: add this line to the CSS of the print format so the body starts under it. The Chrome engine measures it by itself."))}</p>
+					<p class="rvlb-note">${esc(__("With «Repeat header and footer», the page margins this letter head needs are added by themselves. Only a print format that sets its own .print-format margin keeps it; such a format needs this line instead:"))}</p>
 					<div class="rvlb-code"><code class="ltr" dir="ltr">${esc(css)}</code><button type="button" class="rv-btn sm" data-copy>${icons.copy()}<span>${esc(__("Copy"))}</span></button></div>
 				</aside>
 			</div>`;

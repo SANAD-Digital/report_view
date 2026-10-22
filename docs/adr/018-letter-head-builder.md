@@ -23,21 +23,24 @@
 - **DocType جديد `Letter Head Layout`** (وحدة Report View، تسمية بحقل `letter_head`):
   `letter_head` (Link Letter Head، فريد، إلزامي)، `company` (Link Company، اختياري: فارغ = شركة المستند)، `template` (Data: اسم النمط الذي بدأ منه)، `layout` (JSON)، `layout_version` (Int)، `generated_hash` (Data، للقراءة).
   الصلاحيات: كتابة System Manager، قراءة Desk User (كـ Letter Head).
-- **`Letter Head` يبقى قياسياً**: المنشئ يكتب فيه `content` و `footer` بمصدر `HTML` (بعد الإدخال إذا كان جديداً)، و `header_height`/`footer_height` إن وُجد الحقلان (snd_print). إزالة Report View تترك ورقاً يعمل (يضيع التعديل فقط).
+  تخطيط يُحفظ خارج المنشئ (Desk أو REST) **يكتب ورقه من جديد** بالمولّد نفسه (`on_update`، ويرفض إن كان الورق معدّلاً يدوياً)، وحذف ورق من المنشئ **يحذف تخطيطه** (`doc_events` لـ Letter Head: `on_trash`)، فلا يبقى رابط يمنع الحذف.
+- **`Letter Head` يبقى قياسياً**: المنشئ يكتب فيه `content` و `footer` بمصدر `HTML` (الجديد يُدخَل مرة واحدة: `doc_events` `before_insert` يُبقي مصدره HTML بعد أن يجعله Frappe «صورة»؛ بلا الـhook يُدخَل ثم يُحفظ كما كان)، و `header_height`/`footer_height` إن وُجد الحقلان (snd_print). إزالة Report View تترك ورقاً يعمل (يضيع التعديل فقط).
 - **الخادم وحده يولّد HTML** من التخطيط بعد التحقق منه (لا HTML ولا Jinja من المتصفح). المتصفح يرسم التخطيط نفسه بقيم الشركة للمعاينة الفورية بالبنية نفسها (العقد أدناه).
 - إن تغيّر `content`/`footer` يدوياً بعد آخر توليد (`generated_hash` لا يطابق) يرفض الحفظ إلا بـ `overwrite=1`، والمحرر يسأل.
 
 ### الواجهة البرمجية (`report_view.api.letterhead`)
 | الدالة | الطريقة | ما تفعله |
 |---|---|---|
-| `builder_context(company=None, letter_head=None)` | GET | بيانات الشركة (حقول القائمة المسموحة أدناه + العنوان + الشعار + الاسم العربي من Translation)، الشركات التي يقرؤها المستخدم، الخطوط، الحدود، `can_write`، وتخطيط `letter_head` إن وُجد مع `hand_edited` |
-| `preview(layout, company=None)` | POST | يتحقق ويولّد ويرندر Jinja بسياق `{doc: {company}}`، يعيد `{header, footer, warnings}` |
-| `save(layout, letter_head=None, name=None, company=None, make_default=0, overwrite=0)` | POST | ينشئ أو يحدّث Letter Head و Letter Head Layout، يعيد `{letter_head}` |
-| `qr_svg(text)` | GET | SVG لرمز QR (pyqrcode، تابع لـ Frappe) للمعاينة؛ عند الحفظ يُضمَّن SVG في HTML |
+| `builder_context(company=None, letter_head=None)` | GET | ما تقرؤه الصفحة فقط: `companies` (التي يقرؤها المستخدم)، `company`، `company_data` = `{name, values (قيمة كل حقل), logo, logo_public}`، `letter_head` = `{name, is_default, disabled, has_layout, layout, company, template, hand_edited}` أو null، `can_write`، `can_set_default`. الحدود والحقول والقيم الافتراضية **لا تُرسل**: الصفحة تستورد العقد نفسه (`letterhead_contract.json`) |
+| `company_data(company)` | GET | `{company_data, can_set_default}` لشركة معاينة أخرى (تبديل الشركة لا يعيد `builder_context` كله) |
+| `preview(layout, company=None)` | POST | يتحقق ويولّد ويرندر Jinja بسياق `{doc: {company}}`، يعيد `{header, footer, warnings, print_format_css, header_height, footer_height}` |
+| `save(layout, letter_head=None, name=None, company=None, make_default=0, overwrite=0, template=None, preview_company=None)` | POST | ينشئ أو يحدّث Letter Head و Letter Head Layout. `template` اسم النمط، `preview_company` شركة المعاينة (موقعها لرمز QR، وشركة «افتراضي الشركة» إن لم تُثبَّت شركة). يعيد `{letter_head, layout, generated_hash, is_default, company_default, warnings, print_format_css, header_height, footer_height}` |
+| `qr_svg(text)` | GET | SVG لرمز QR (pyqrcode، تابع لـ Frappe) للمعاينة؛ عند الحفظ يُضمَّن SVG في HTML. المحرر يطلبه بعد سكون النص (400ms) لا مع كل حرف، ويحفظ آخر 24 رمزاً |
 
-كل دالة تتحقق من الصلاحية في أول سطر: `builder_context`/`preview`/`qr_svg` قراءة Letter Head و Company؛ `save` كتابة Letter Head (وكتابة Company لـ `make_default`). القراءة بـ `frappe.get_list`. حدود: التخطيط ≤ 64KB، ≤ 60 عنصراً في الشريط، النص ≤ 500 حرف.
+كل دالة تتحقق من الصلاحية في أول سطر: `builder_context`/`company_data`/`preview`/`qr_svg` قراءة Letter Head و Company؛ `save` كتابة Letter Head (وكتابة Company لـ `make_default`). القراءة بـ `frappe.get_list`. حدود: التخطيط ≤ 64KB، ≤ 60 عنصراً في الشريط، النص ≤ 500 حرف.
 
 ### عقد التخطيط (JSON، `v: 1`)
+**مصدر واحد**: `report_view/letterhead_contract.json` — الحدود، والحقول (`tokens`، `ltr_tokens`، `multiline_tokens`)، والقيم الافتراضية لكل نوع عنصر ولكل شريط، والألوان، وفئات حروف الاتجاه، ونمط رابط الصورة، وثوابت مكتبة الخطوط. يقرؤه `core/contract.py` (ومنه `core/letterhead.py` و `core/fonts.py`) ويستورده `letterhead/model.js` و `fonts.js` في الحزمة (اختبارات node تحمّله بـ `tests/js/_json.mjs`). القواعد نفسها في الجهتين: عنصر حر بلا عرض يأخذ عرض نوعه، والخانة الغائبة عرضها الافتراضي، والصندوق (شعار، صورة، QR، شريط لون) بلا حجم يأخذ حجم نوعه، والعنصر الحر يبقى داخل عرض الشريط (`x ≤ 180 − w`). الخادم أشد في موضعين: يرفض الخانات فوق 100% (المحرر يصغّرها)، ويقبل `y` حتى 80mm ثم يحذّر.
 ```json
 {
   "v": 1,
@@ -68,7 +71,7 @@
   | `logo` | — (شعار الشركة؛ الحجم `w`×`h`، احتواء) |
   | `image` | `src` (يبدأ بـ `/files/` لملف عام أو `/assets/`)، `fit`: `contain|cover` |
   | `line` | `thick` 0.2–3mm، `style`: `solid|dashed|double` |
-  | `band` | `fill` (لون)، `radius` 0–10mm (حر فقط عادة) |
+  | `band` | `fill` (لون)، `radius` 0–10mm، `corners`: `all` أو بعض `tl,tr,br,bl` (الزوايا المدوّرة، فعلية على الورق) |
   | `qr` | `source`: `website|text`، `text` (≤300) |
   | `page` | `format`: `ar|en|both` (في التذييل) |
 - **الحقول المسموحة (`token`)**: `company_name`، `company_name_ar` (ترجمة الاسم أو الاسم)، `abbr`، `tax_id`، `phone_no`، `fax`، `email`، `website`، `registration_details`، `country`، `address` (العنوان كاملاً بأسطره)، `address_line1`، `city`.
@@ -84,7 +87,9 @@
   <div data-el="e9" style="position:absolute;left:10%;top:28mm;width:80%;height:0.6mm;...">…</div>
 </div>
 ```
-- الشركة: `company` ثابت في التخطيط، وإلا `doc.company` إن كان `doc` معرّفاً، وإلا `Global Defaults.default_company`. القيم بـ `frappe.get_cached_doc` و `frappe.db.get_value` (globals Frappe الأساسية فقط، بلا دالة من Report View). كل قيمة `|e`. الأرقام والبريد والموقع داخل `<bdi dir="ltr">`.
+- الشركة: `company` ثابت في التخطيط، وإلا `doc.company` إن كان `doc` معرّفاً، وإلا `Global Defaults.default_company`. القيم بـ `frappe.db.get_value` و `frappe.db.get_single_value` (globals Frappe الأساسية فقط، بلا دالة من Report View). كل قيمة `|e` وتُقصّ مسافاتها (قيمة من مسافات فقط فارغة). الأرقام والبريد والموقع داخل `<bdi dir="ltr">`، وبقية القيم داخل `<bdi>`؛ فواصل الأسطر تُطبع للعنوان والتفاصيل فقط.
+- **اتجاه العنصر الحر ومحاذاته** (قاعدة المحرر، وهي قاعدة الورق): النص `auto` اتجاهه من أول حرف قوي فيه، والحقل من تسميته إن كانت، وإلا (حقل غير لاتيني الطبيعة بلا تسمية) من قيمته **عند الطباعة** (حلقة Jinja على حروفها بفئات العقد)، ورقم الصفحة `en` من اليسار وغيره من اليمين. `start` يمين لمحتوى عربي ويسار لغيره، و `dir` يُكتب على العنصر. رقم الصفحة `dir="rtl"` للعربي وحده و `ltr` لغيره (ترتيب «Page … | صفحة …» ثابت).
+- **البنية واحدة في الجهتين**: غلاف العنصر في الخانة `margin:0 0 <gap>mm` (ومعه للنصوص حجم الخط ووزنه ولونه، ولغيرها `line-height:0`)؛ والحر `position:absolute;left;top;width` ثم للشريط `height` و `background-color` و `border-radius` (إن كان نصف القطر أكبر من 0)، وللصندوق `height;line-height:0`، وللخط `line-height:0` وفي داخله خط `border-top`، وللنص `height;overflow:hidden` (إن كان له ارتفاع) ثم خطه و `text-align`. الخط المزدوج 0.8mm على الأقل. رمز QR مربع بضلع `min(w, h)`. الأرقام بأربعة أرقام عشرية بلا أصفار زائدة. **اختبار تطابق دائم**: `tests/js/letterhead_parity.test.mjs` يكتب رسم `render.js` للأنماط الست ولقالب حدّي فيه كل نوع وخيار في `report_view/tests/fixtures/letterhead_parity.json`، و `TestRendererParity` (test_letterhead.py) يرسمها بالخادم ويقارن `dir` والأنماط inline عنصراً عنصراً (بلا تطبيع غير ترتيب الخصائص والمسافات).
 - بلا JavaScript، بلا grid ولا flex ولا متغيرات CSS ولا transform. كل التنسيق inline، إلا `<style>` واحداً في أول كل شريط (القسم «الخطوط»). الخانة اليمنى `dir="rtl"`، اليسرى `dir="ltr"`، الوسطى `dir="auto"`.
 - رقم الصفحة: `<span class="page"></span>` و `<span class="topage"></span>` (عرف Frappe في PDF)، وصفحات Report View تملؤهما.
 - الصورة والشعار: رابط نسبي عام (`/files/…`)؛ الخاص يُرفض مع تحذير (لا يظهر في PDF).
@@ -101,6 +106,7 @@
 
 ### الدخول
 - زر «تصميم بالمنشئ» في نموذج Letter Head (`doctype_js`)، وصفحة Desk جديدة `rv-letterhead` (`/desk/rv-letterhead[/<letter head>]`)، ورابط «تصميم ورق جديد» بجانب اختيار الترويسة في الصفحات.
+- **بالصلاحية لا بالدور**: الزر لمن يكتب Letter Head (`frappe.model.can_write`/`can_create`)، والصفحة بلا أدوار (`roles: []`) وتعرض «لا تملك صلاحية قراءة ورق الشركة» لمن لا يقرؤه، وزر الحفظ معطّل لمن لا يكتب. الخادم يتحقق في كل دالة كما سبق.
 
 ### صفحات Report View
 - ترويسة فيها `[data-rv-lh]` تُعامل «تصميماً ثابتاً»: ارتفاع شريطها من `data-h`، ولا تنطبق عليها قيود `fit-wide` و `max-height` على الصور والعناصر.
@@ -108,7 +114,8 @@
 ## العواقب
 - hook جديد: `doctype_js = {"Letter Head": "public/js/letter_head_form.js"}`.
 - DocType جديد وصفحة جديدة تُثبَّتان بـ `bench migrate` أو `reload-doc`.
-- wkhtmltopdf مع «تكرار الترويسة والتذييل» لا يقيس الترويسة: قالب الطباعة يحتاج `.print-format{margin-top: <h+5>mm}`. المنشئ يعرض هذا السطر جاهزاً للنسخ مع ارتفاع التصميم. مولّد Chrome يقيس الترويسة بنفسه.
+- wkhtmltopdf مع «تكرار الترويسة والتذييل» لا يقيس الترويسة: الهامش `h+15mm` (و `f+10mm` للتذييل) **يُضاف تلقائياً** بالـhook `pdf_body_html` (القسم «تعديل» أدناه). «المعاينة الحقيقية» تعرض السطر نفسه (`print_format_css`) لقالب طباعة يضع هامش `.print-format` بنفسه فقط، لأن ذلك القالب يحتفظ بهامشه. مولّد Chrome يقيس الترويسة بنفسه.
+- hooks جديدة (2026-10-22): `doc_events["Letter Head"] = {"before_insert": "report_view.core.letterhead.keep_builder_source", "on_trash": "report_view.core.letterhead.delete_layout"}`.
 - مكتبات جديدة: لا. السحب بـ Pointer Events، و QR بـ pyqrcode (تابع لـ Frappe).
 - hook جديد: `app_include_css = ["/assets/report_view/css/rv_fonts.css"]` (مكتبة الخطوط). حجم المكتبة نحو 24MB على القرص؛ لا يُحمَّل منها في المتصفح إلا ما يُستعمل.
 - إزالة Report View تُبقي الورق يعمل لكن بخط بديل (روابط الخطوط من `/assets/report_view/`).
@@ -116,7 +123,7 @@
 ## ملاحظات الخادم (2026-10-21)
 - الملفات: `core/letterhead.py` (التحقق والتوليد)، `api/letterhead.py` (الواجهة)، DocType `Letter Head Layout`، والاختبارات `tests/test_letterhead.py`.
 - **التحقق صارم**: أي مفتاح غير معروف في أي مستوى يُرفض (لا يُتجاهل)؛ الأرقام تُقصّ إلى حدودها؛ مجموع الخانات > 100 يُرفض. العنصر الحر بعرض 0 يأخذ باقي الشريط (`180 - x`).
-- **رمز QR ثابت** يُرسم عند الحفظ: النص، أو موقع الشركة الثابتة، وإلا موقع شركة المعاينة (`preview_company` في `save`)، وإلا الشركة الافتراضية. حجمه `h` وإلا `w` (مربع).
+- **رمز QR ثابت** يُرسم عند الحفظ: النص، أو موقع الشركة الثابتة، وإلا موقع شركة المعاينة (`preview_company` في `save`)، وإلا الشركة الافتراضية. مربع بضلع `min(w, h)` (المحرر يرسمه كذلك).
 - **الشعار يُطبع إن كان عاماً فقط** (`/files/` أو `/assets/`)، وإلا لا يظهر ويحذّر المنشئ — القاعدة نفسها للصورة، فالمعاينة وكل PDF متطابقة.
 - الاحتواء بـ `max-width`/`max-height` (QtWebKit بلا `object-fit`)، والتغطية بخلفية `background-size:cover`.
 - ورق كُتب يدوياً ولم يكتبه المنشئ قط (بلا `Letter Head Layout`) وفيه HTML يُعدّ «معدّلاً يدوياً»: لا يُستبدل إلا بـ `overwrite=1`. الرفض بخطأ `RVLetterHeadEdited` (HTTP 409).
@@ -133,3 +140,7 @@
 - hook جديد `pdf_body_html = "report_view.core.letterhead.pdf_body_html"`: يرندر الصفحة كما يرندرها Frappe (يستدعي الـhook السابق)، ثم يضيف `.print-format{margin-top:h+15mm;margin-bottom:f+10mm}` فقط عندما يكون المولّد wkhtmltopdf والتكرار مفعّلاً والترويسة من المنشئ (`data-rv-lh`)، والقالب لم يضع هامشه بنفسه. صفحة الطباعة على الشاشة و Chrome لا يتأثران.
 - في صفحات Report View: الشريط بارتفاعه كاملاً (رُفع قيد `max-height` عن جذر التصميم نفسه)، وتذييل يرقّم صفحاته بنفسه يلغي سطر الترقيم الخاص بالصفحات فلا يتكرر الرقم.
 - يبقى في PDF بـ wkhtmltopdf سطر «Page x of y» الذي يضيفه Frappe تحت التذييل؛ من لا يريده يحذف عنصر رقم الصفحة من تذييل المنشئ.
+
+### `pdf_body_html` hook «آخر تطبيق يفوز» (2026-10-22)
+- Frappe يأخذ **آخر** قيمة للـhook (`frappe/www/printview.py`: `frappe.get_hooks("pdf_body_html")[-1]`)، فدالة Report View تبني متن **كل** PDF في الموقع لكل DocType. لذلك تستدعي الـhook الذي قبلها في ترتيب التطبيقات (`previous_pdf_body_html`: hook Frappe نفسه ما لم يضعه تطبيق مثبّت قبل Report View) وتعيد ناتجه **كما هو** لكل طباعة ليست ورقاً من المنشئ مع wkhtmltopdf و«تكرار الترويسة والتذييل» (اختبار `TestPdfBodyHook`).
+- تطبيق يُثبَّت **بعد** Report View ويضع الـhook نفسه يستبدل دالتنا، فيفقد ورق المنشئ هوامش wkhtmltopdf التلقائية ما لم يستدعِ دالته الـhook السابق. `after_install` و `after_migrate` يفحصان ذلك (`check_pdf_body_html_hook`) ويكتبان تحذيراً في سجل `report_view`.

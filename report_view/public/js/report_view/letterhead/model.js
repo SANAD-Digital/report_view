@@ -1,68 +1,72 @@
 // The layout of a letter head (ADR-018, «عقد التخطيط»): its defaults, its limits, the
 // clamping that keeps any layout inside them, the geometry of the slots, snapping and the
 // alignment guides, the history of the editor. Pure: nothing of the DOM or of Frappe, so the
-// same rules are tested in node (tests/js/letterhead_model.test.mjs). The server validates
-// the layout again before it generates any HTML; these rules only keep the editor honest.
+// same rules are tested in node (tests/js/letterhead_model.test.mjs).
+// The contract (limits, fields, element and band defaults) is report_view/letterhead_contract.json,
+// the file core/letterhead.py validates with: the server checks the layout again before it
+// generates any HTML; these rules only keep the editor honest.
 
+import CONTRACT from "../../../../letterhead_contract.json";
 import { DEFAULT_FONT, clean_font } from "../fonts.js";
 
-export const VERSION = 1;
+const deep_freeze = (v) => {
+	if (v && typeof v === "object") for (const k of Object.keys(v)) deep_freeze(v[k]);
+	return Object.freeze(v);
+};
+const C = deep_freeze(JSON.parse(JSON.stringify(CONTRACT)));
+export { C as CONTRACT };
+
+export const VERSION = C.version;
 // x and w are millimetres on a reference width of 180mm (A4 portrait less 15mm margins) and
 // are written to the HTML as percentages; y and h are millimetres.
-export const REF_W = 180;
-export const PAGE = Object.freeze({ w: 210, h: 297, side: 15, top: 12, bottom: 12 });
+export const REF_W = C.ref_width;
+export const PAGE = C.page;
 // The fonts are the library's (report_view/fonts.json through ../fonts.js): the registry the
 // server validates against too.
 export { DEFAULT_FONT, font_names } from "../fonts.js";
-export const BANDS = Object.freeze(["header", "footer"]);
+export const BANDS = Object.freeze(Object.keys(C.bands));
 // Physical order on the page, left to right, is left · center · right; the editor lists them
 // in reading order of the paper: right (Arabic) · center · left (English).
-export const SLOTS = Object.freeze(["right", "center", "left"]);
-export const TYPES = Object.freeze(["text", "field", "logo", "image", "line", "band", "qr", "page"]);
-export const TOKENS = Object.freeze([
-	"company_name",
-	"company_name_ar",
-	"abbr",
-	"tax_id",
-	"phone_no",
-	"fax",
-	"email",
-	"website",
-	"registration_details",
-	"country",
-	"address",
-	"address_line1",
-	"city",
-]);
+export const SLOTS = C.slots;
+export const TYPES = C.types;
+export const TOKENS = C.tokens;
 // Values written left to right inside <bdi dir="ltr">: numbers, mail, the site.
-export const LTR_TOKENS = Object.freeze(new Set(["tax_id", "phone_no", "fax", "email", "website"]));
-export const COLOR_NAMES = Object.freeze(["primary", "text", "muted"]);
-export const WEIGHTS = Object.freeze([400, 500, 600, 700]);
-export const ALIGNS = Object.freeze(["start", "center", "end"]);
+export const LTR_TOKENS = Object.freeze(new Set(C.ltr_tokens));
+// Values whose line breaks print (the address, the registration details).
+export const MULTILINE_TOKENS = Object.freeze(new Set(C.multiline_tokens));
+export const COLOR_NAMES = C.color_names;
+export const WEIGHTS = C.weights;
+export const ALIGNS = C.aligns;
 // Types drawn as a box of w × h (the rest flow as text, or as a rule for the line).
-export const BOXED = Object.freeze(new Set(["logo", "image", "qr", "band"]));
+export const BOXED = Object.freeze(new Set(C.boxed));
 // Types that carry text and its style (size, weight).
-export const TEXTUAL = Object.freeze(new Set(["text", "field", "page"]));
-
+export const TEXTUAL = Object.freeze(new Set(C.textual));
+export const CHOICES = C.choices;
+const L = C.limits;
 export const LIMITS = Object.freeze({
-	header_h: [10, 80],
-	footer_h: [0, 50],
-	pad_top: [0, 20],
-	slot: [0, 70],
-	slots_sum: 100,
-	size: [6, 40],
-	gap: [0, 10],
-	thick: [0.2, 3],
-	radius: [0, 10],
-	text: 500,
-	label: 60,
-	qr_text: 300,
-	elements: 60,
-	bytes: 64 * 1024,
+	header_h: C.bands.header.h,
+	footer_h: C.bands.footer.h,
+	pad_top: C.bands.header.pad_top,
+	slot: L.slot,
+	slots_sum: L.slots_sum,
+	size: L.size,
+	gap: L.gap,
+	thick: L.thick,
+	radius: L.radius,
+	text: L.text,
+	label: L.label,
+	qr_text: L.qr_text,
+	elements: L.elements,
+	bytes: L.layout_bytes,
 	// the editor's own floor for a free element (mm), so it can always be grabbed
-	min_w: 2,
-	min_h: 1,
+	min_w: L.min_w,
+	min_h: L.min_h,
+	free_w: L.free_w,
+	double_line_min: L.double_line_min,
 });
+// A public file or an asset, as the server accepts it (no quote, bracket or parent segment).
+const SRC_RE = new RegExp(C.image_src);
+export const is_image_src = (s) => typeof s === "string" && SRC_RE.test(s) && !s.includes("/../") && !s.includes(".__");
 
 export const GRID_MM = 1;
 export const SNAP_MM = 1.5;
@@ -72,7 +76,7 @@ export const NUDGE_BIG_MM = 5;
 const ID_RE = /^[a-z0-9]{1,12}$/;
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
-export const DEFAULT_COLORS = Object.freeze({ primary: "#1E5C45", text: "#17211C", muted: "#5B6660" });
+export const DEFAULT_COLORS = C.default_colors;
 
 // The slot widths offered by the band inspector (percent of the band, right · center · left).
 export const SLOT_PRESETS = Object.freeze({
@@ -84,23 +88,26 @@ export const SLOT_PRESETS = Object.freeze({
 
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const num = (v, d) => (typeof v === "number" && Number.isFinite(v) ? v : typeof v === "string" && v.trim() !== "" && Number.isFinite(+v) ? +v : d);
-/** A number within [lo, hi], rounded to a tenth of a millimetre (or to `step`). */
 /** The rounded corners of a colour band, as the server keeps them: "all" or some of tl, tr, br, bl. */
-export const CORNERS = ["tl", "tr", "br", "bl"];
+export const CORNERS = C.corners;
 export function band_corners(v) {
 	const parts = typeof v === "string" && v !== "all" ? v.split(",") : CORNERS;
 	const picked = CORNERS.filter((c) => parts.includes(c));
 	return !picked.length || picked.length === 4 ? "all" : picked.join(",");
 }
 
+/** A number for CSS as the server writes it (core/letterhead.py `_n`): 4 decimals, no trailing zeros. */
+export const css_num = (v) => String(+(+v).toFixed(4));
+
 /** The CSS border-radius of a colour band: its radius on its rounded corners only. */
 export function band_radius(props) {
-	const r = `${+(+props.radius || 0).toFixed(2)}mm`;
+	const r = `${css_num(+props.radius || 0)}mm`;
 	if (!props.corners || props.corners === "all") return r;
 	const on = props.corners.split(",");
 	return CORNERS.map((c) => (on.includes(c) ? r : "0")).join(" ");
 }
 
+/** A number within [lo, hi], rounded to a tenth of a millimetre (or to `step`). */
 export function clamp(v, lo, hi, d = lo, step = 0.1) {
 	const n = Math.min(hi, Math.max(lo, num(v, d)));
 	return +(Math.round(n / step) * step).toFixed(2);
@@ -111,9 +118,7 @@ export const is_hex = (v) => typeof v === "string" && HEX_RE.test(v);
 const color = (v, d) => (COLOR_NAMES.includes(v) ? v : is_hex(v) ? v.toUpperCase() : d);
 
 export function default_band(name) {
-	return name === "header"
-		? { h: 35, pad_top: 6, slots: { right: 34, center: 26, left: 34 }, elements: [] }
-		: { h: 15, pad_top: 3, slots: { right: 40, center: 20, left: 40 }, elements: [] };
+	return { ...clone(C.bands[name].default), elements: [] };
 }
 
 export function default_layout() {
@@ -122,27 +127,8 @@ export function default_layout() {
 
 /** What a new element of a type starts with (style and props), before its place is set. */
 export function element_defaults(type) {
-	const style = { size: 9, weight: 400, color: "text", align: "start", gap: 1 };
-	switch (type) {
-		case "text":
-			return { w: 60, h: 0, style: { ...style, size: 10 }, props: { text: "", dir: "auto" } };
-		case "field":
-			return { w: 60, h: 0, style: { ...style, color: "muted" }, props: { token: "company_name", label: "", hide_empty: true } };
-		case "logo":
-			return { w: 28, h: 20, style: { ...style, gap: 1.5 }, props: {} };
-		case "image":
-			return { w: 30, h: 20, style, props: { src: "", fit: "contain" } };
-		case "line":
-			return { w: 0, h: 0, style: { ...style, color: "primary", gap: 1.5 }, props: { thick: 0.6, style: "solid" } };
-		case "band":
-			return { w: 180, h: 8, style: { ...style, color: "primary" }, props: { fill: "primary", radius: 0, corners: "all" } };
-		case "qr":
-			return { w: 18, h: 18, style, props: { source: "website", text: "" } };
-		case "page":
-			return { w: 50, h: 0, style: { ...style, size: 8, color: "muted" }, props: { format: "both" } };
-		default:
-			return null;
-	}
+	const d = C.element_defaults[type];
+	return d ? clone(d) : null;
 }
 
 // ------------------------------------------------------------------ clamping
@@ -150,30 +136,28 @@ export function element_defaults(type) {
 function clamp_props(type, p = {}) {
 	switch (type) {
 		case "text":
-			return { text: str(p.text, LIMITS.text), dir: one_of(p.dir, ["auto", "rtl", "ltr"], "auto") };
+			return { text: str(p.text, LIMITS.text), dir: one_of(p.dir, CHOICES["text.dir"], "auto") };
 		case "field":
 			return { token: one_of(p.token, TOKENS, "company_name"), label: str(p.label, LIMITS.label), hide_empty: p.hide_empty !== false && p.hide_empty !== 0 };
 		case "logo":
 			return {};
-		case "image": {
-			const src = str(p.src, 500);
-			return { src: /^\/(files|assets)\//.test(src) ? src : "", fit: one_of(p.fit, ["contain", "cover"], "contain") };
-		}
+		case "image":
+			return { src: is_image_src(p.src) ? p.src : "", fit: one_of(p.fit, CHOICES["image.fit"], "contain") };
 		case "line":
-			return { thick: clamp(p.thick, ...LIMITS.thick, 0.6), style: one_of(p.style, ["solid", "dashed", "double"], "solid") };
+			return { thick: clamp(p.thick, ...LIMITS.thick, C.element_defaults.line.props.thick), style: one_of(p.style, CHOICES["line.style"], "solid") };
 		case "band":
 			return { fill: color(p.fill, "primary"), radius: clamp(p.radius, ...LIMITS.radius, 0), corners: band_corners(p.corners) };
 		case "qr":
-			return { source: one_of(p.source, ["website", "text"], "website"), text: str(p.text, LIMITS.qr_text) };
+			return { source: one_of(p.source, CHOICES["qr.source"], "website"), text: str(p.text, LIMITS.qr_text) };
 		case "page":
-			return { format: one_of(p.format, ["ar", "en", "both"], "both") };
+			return { format: one_of(p.format, CHOICES["page.format"], "both") };
 		default:
 			return {};
 	}
 }
 
 /** One element inside the limits of its band (height `band_h`); null when it cannot be kept. */
-export function clamp_element(raw, band_h = 80) {
+export function clamp_element(raw, band_h = L.y[1]) {
 	if (!raw || typeof raw !== "object" || !TYPES.includes(raw.type)) return null;
 	const d = element_defaults(raw.type);
 	const slot = SLOTS.includes(raw.slot) ? raw.slot : null;
@@ -184,13 +168,13 @@ export function clamp_element(raw, band_h = 80) {
 		slot,
 		x: 0,
 		y: 0,
-		w: clamp(raw.w, 0, REF_W, d.w),
-		h: clamp(raw.h, 0, 80, d.h),
+		w: clamp(raw.w, ...L.w, d.w),
+		h: clamp(raw.h, ...L.h, d.h),
 		style: {
 			size: clamp(s.size, ...LIMITS.size, d.style.size, 0.5),
 			weight: WEIGHTS.includes(+s.weight) ? +s.weight : d.style.weight,
 			color: color(s.color, d.style.color),
-			align: one_of(s.align, ALIGNS, "start"),
+			align: one_of(s.align, ALIGNS, d.style.align),
 			gap: clamp(s.gap, ...LIMITS.gap, d.style.gap),
 		},
 		props: clamp_props(raw.type, raw.props),
@@ -202,10 +186,10 @@ export function clamp_element(raw, band_h = 80) {
 	}
 	if (slot === null) {
 		// a free element: always grabbable, never wholly outside its band
-		el.w = clamp(el.w || d.w || 60, LIMITS.min_w, REF_W);
+		el.w = clamp(el.w || d.w || LIMITS.free_w, LIMITS.min_w, REF_W);
 		el.x = clamp(raw.x, 0, REF_W - el.w, 0);
 		el.y = clamp(raw.y, 0, Math.max(0, band_h - LIMITS.min_h), 0);
-		if (el.h) el.h = clamp(el.h, LIMITS.min_h, 80);
+		if (el.h) el.h = clamp(el.h, LIMITS.min_h, L.h[1]);
 	}
 	return el;
 }
@@ -283,10 +267,6 @@ export function slot_elements(layout, band, slot) {
 	return layout[band].elements.filter((e) => e.slot === slot);
 }
 
-export function free_elements(layout, band) {
-	return layout[band].elements.filter((e) => e.slot === null);
-}
-
 /** A new element of `type` with `patch` (place, props, style), its id given. */
 export function make_element(layout, type, patch = {}) {
 	const d = element_defaults(type);
@@ -333,7 +313,7 @@ export function make_free(layout, id, band, rect = {}) {
 	if (!el) return null;
 	const d = element_defaults(el.type);
 	el.slot = null;
-	el.w = clamp(rect.w ?? (el.w || d.w || 60), LIMITS.min_w, REF_W);
+	el.w = clamp(rect.w ?? (el.w || d.w || LIMITS.free_w), LIMITS.min_w, REF_W);
 	el.h = rect.h ?? el.h;
 	el.x = clamp(rect.x ?? 0, 0, REF_W - el.w);
 	el.y = clamp(rect.y ?? 0, 0, Math.max(0, layout[band].h - LIMITS.min_h));
@@ -341,7 +321,6 @@ export function make_free(layout, id, band, rect = {}) {
 	return el;
 }
 
-/** A copy of an element next to it: after it in its slot, or 3mm lower and to the side when free. */
 /** A band's new height: its free elements move up so none is left below its bottom edge. */
 export function set_band_height(layout, band, h) {
 	const b = layout[band];
@@ -354,6 +333,7 @@ export function set_band_height(layout, band, h) {
 	}
 }
 
+/** A copy of an element next to it: after it in its slot, or 3mm lower and to the side when free. */
 export function duplicate(layout, id) {
 	const f = find(layout, id);
 	if (!f) return null;
@@ -487,15 +467,6 @@ export function guide_targets(band_obj, others = []) {
 	}
 	const uniq = (a) => [...new Set(a.map((n) => +n.toFixed(2)))];
 	return { v: uniq(v), h: uniq(h) };
-}
-
-/**
- * The CSS line wkhtmltopdf needs to keep the body clear of a repeated header and footer
- * (ADR-018); the server sends its own (`print_format_css`), this one stands in until then.
- */
-export function margin_css(layout) {
-	const f = layout.footer.h ? ` margin-bottom: ${Math.ceil(layout.footer.h + 10)}mm;` : "";
-	return `.print-format{margin-top: ${Math.ceil(layout.header.h + 15)}mm;${f}}`;
 }
 
 export function layout_bytes(layout) {

@@ -3603,3 +3603,9 @@ msgstr "لم يُطبع شيء"
 
 msgid "The export could not be cancelled on the server; its file will not be downloaded"
 msgstr "تعذّر إلغاء التصدير على الخادم؛ لن يُنزَّل ملفه"
+
+msgid "Chromium sandbox: on"
+msgstr "عزل Chromium (sandbox): مفعّل"
+
+msgid "Chromium sandbox: off (the server forbids it; PDFs print with --no-sandbox). To turn it on, run once as root:"
+msgstr "عزل Chromium (sandbox): معطّل (الخادم يمنعه؛ ملفات PDF تُطبع بـ --no-sandbox). لتفعيله شغّل مرة واحدة بصلاحية root:"

@@ -1,0 +1,217 @@
+# Report View CI: lint, the JS unit tests, the visual harness (Chromium; Firefox and WebKit
+# reported, not yet required) and the server tests on a fresh Frappe 16 + ERPNext site.
+# Public actions only, pinned to their major versions; no secrets.
+name: CI
+
+on:
+  push:
+    branches: [main, version-16]
+  pull_request:
+    branches: [main, version-16]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # the versions .pre-commit-config.yaml pins
+  RUFF_VERSION: "0.14.10"
+  ESLINT_VERSION: "8.44.0"
+  FRAPPE_BRANCH: version-16
+  ERPNEXT_BRANCH: version-16
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Ruff
+        run: |
+          pip install "ruff==${RUFF_VERSION}"
+          ruff check .
+          ruff format --check .
+
+      # ESLint as .pre-commit-config.yaml runs it (.eslintrc, the same exclusions).
+      # Prettier is configured there too, but the code was never formatted with it, so it
+      # is not checked here until it is.
+      - name: ESLint
+        run: >
+          npx --yes "eslint@${ESLINT_VERSION}" --quiet --ext .js
+          --ignore-pattern 'report_view/public/dist/'
+          --ignore-pattern 'report_view/public/js/lib/'
+          --ignore-pattern 'report_view/templates/includes/'
+          --ignore-pattern 'tests/experiments/'
+          --ignore-pattern 'tests/visual/dist/'
+          --ignore-pattern 'node_modules/'
+          report_view tests
+
+  js:
+    name: JS unit tests (node ${{ matrix.node }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      # the tests read the whitelisted methods of Frappe next to the app (apps/frappe)
+      - uses: actions/checkout@v6
+        with:
+          path: apps/report_view
+
+      - uses: actions/checkout@v6
+        with:
+          repository: frappe/frappe
+          ref: ${{ env.FRAPPE_BRANCH }}
+          path: apps/frappe
+          sparse-checkout: frappe
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: apps/report_view/package-lock.json
+
+      - name: Runtime libraries (Perspective)
+        working-directory: apps/report_view
+        run: npm ci --no-audit --no-fund
+
+      - name: node --test
+        working-directory: apps/report_view
+        run: node --test tests/js/*.test.mjs
+
+  visual:
+    name: Visual harness (${{ matrix.browser }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    # Firefox and WebKit run and report, and do not fail the workflow until they are green
+    continue-on-error: ${{ matrix.browser != 'chromium' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: report_view
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # The harness takes Frappe's built desk CSS, its esbuild and the Arabic messages of
+      # frappe and erpnext from a bench: a bench with Frappe's assets, no site, no database.
+      - name: Bench
+        run: |
+          pip install frappe-bench
+          bench init --skip-redis-config-generation --frappe-branch "${FRAPPE_BRANCH}" \
+            --python "$(which python)" ~/frappe-bench
+          git clone --depth 1 --branch "${ERPNEXT_BRANCH}" https://github.com/frappe/erpnext ~/frappe-bench/apps/erpnext
+          cp -r "${GITHUB_WORKSPACE}/report_view" ~/frappe-bench/apps/report_view
+
+      - name: Test tooling
+        working-directory: /home/runner/frappe-bench/apps/report_view
+        run: |
+          npm ci --no-audit --no-fund
+          cd tests
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Visual suite
+        working-directory: /home/runner/frappe-bench/apps/report_view
+        env:
+          RV_BROWSERS: ${{ matrix.browser }}
+        run: |
+          node tests/visual/build.mjs
+          tests/node_modules/.bin/playwright test -c tests/visual
+
+      - name: Results
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: visual-${{ matrix.browser }}
+          path: /home/runner/frappe-bench/apps/report_view/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  server:
+    name: Server tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    services:
+      redis-cache:
+        image: redis:alpine
+        ports:
+          - 13000:6379
+      redis-queue:
+        image: redis:alpine
+        ports:
+          - 11000:6379
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: --health-cmd="mariadb-admin ping" --health-interval=5s --health-timeout=2s --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # Frappe 16 needs Python 3.14 (requires-python >=3.14,<3.15) and Node 24
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: System packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mariadb-client fonts-noto-core
+
+      - name: Bench
+        run: |
+          pip install frappe-bench
+          bench init --skip-redis-config-generation --skip-assets --frappe-branch "${FRAPPE_BRANCH}" \
+            --python "$(which python)" ~/frappe-bench
+
+      - name: Apps and site
+        working-directory: /home/runner/frappe-bench
+        env:
+          CI: "Yes"
+        run: |
+          bench get-app erpnext --branch "${ERPNEXT_BRANCH}" --skip-assets
+          bench get-app report_view "${GITHUB_WORKSPACE}" --skip-assets
+          bench setup requirements --dev
+          bench build
+          bench new-site --db-root-password root --admin-password admin test_site
+          bench --site test_site install-app erpnext
+          # also downloads Report View's Chromium for the PDF agent (scripts/install_chromium.sh)
+          bench --site test_site install-app report_view
+          bench --site test_site set-config allow_tests true
+
+      - name: Run tests
+        working-directory: /home/runner/frappe-bench
+        env:
+          TYPE: server
+        run: bench --site test_site run-tests --app report_view

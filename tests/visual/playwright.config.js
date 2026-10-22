@@ -1,7 +1,9 @@
 // @ts-check
 // Visual harness of Report View (no Frappe site needed):
 //   node tests/visual/build.mjs && npx playwright test -c tests/visual
-const { defineConfig, devices } = require("@playwright/test");
+// Other browsers: RV_BROWSERS=firefox (or webkit, or a comma list).
+const { defineConfig } = require("@playwright/test");
+const { projects } = require("../browsers.js");
 
 const PORT = Number(process.env.RV_HARNESS_PORT || 8791);
 
@@ -22,5 +24,6 @@ module.exports = defineConfig({
 		stderr: "ignore",
 		timeout: 20_000,
 	},
-	projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+	// RV_BROWSERS=chromium,firefox,webkit (default chromium): see ../browsers.js
+	projects: projects(),
 });

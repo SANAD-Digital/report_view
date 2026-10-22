@@ -26,6 +26,9 @@
 	"root": true,
 	"globals": {
 		"frappe": true,
+		"report_view": true,
+		"CSSContainerRule": true,
+		"CSSLayerBlockRule": true,
 		"Vue": true,
 		"SetVueGlobals": true,
 		"__": true,

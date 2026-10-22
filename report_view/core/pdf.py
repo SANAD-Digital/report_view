@@ -307,6 +307,103 @@ def _engine_path() -> str:
 	return find_or_download_chromium_executable()
 
 
+# ---------------------------------------------------------------- the sandbox
+
+NO_SANDBOX = "--no-sandbox"
+SANDBOX_PROBE_SECONDS = 20
+_SANDBOX_MARK = "rv-sandbox-ok"
+# a "no" is asked again after this long: an AppArmor profile installed meanwhile is seen
+# without a restart (the binary, and so the key, stays the same)
+SANDBOX_RETRY_SECONDS = 600
+# (real path, mtime) -> (whether Chromium's sandbox starts, when that was found)
+_sandbox_cache: dict[tuple[str, float], tuple[bool, float]] = {}
+
+
+def sandbox_works(path: str | None = None) -> bool:
+	"""Whether Chromium's own sandbox starts on this server for ``path`` (default: the
+	engine's binary). Ubuntu 23.10+ forbids the user namespaces it needs
+	(``kernel.apparmor_restrict_unprivileged_userns = 1``) unless an AppArmor profile allows
+	them for the binary (``scripts/install_apparmor.sh``). Answered by starting the binary
+	once with the sandbox on a trivial page; cached per process and per binary (its real path
+	and mtime). A "yes" is kept; a "no" is asked again after ``SANDBOX_RETRY_SECONDS``, so a
+	profile installed later is used without a restart. Logged when the answer is found."""
+	path = path or _engine_path()
+	try:
+		real = os.path.realpath(path)
+		key = (real, os.stat(real).st_mtime)
+	except OSError:
+		return False
+	cached = _sandbox_cache.get(key)
+	if cached is None or (not cached[0] and time.monotonic() - cached[1] > SANDBOX_RETRY_SECONDS):
+		works = _probe_sandbox(real)
+		_sandbox_cache[key] = (works, time.monotonic())
+		if cached is not None and cached[0] == works:
+			return works
+		log = frappe.logger("report_view")
+		if works:
+			log.info("Report View PDF: Chromium runs sandboxed (%s)", real)
+		else:
+			log.warning(
+				"Report View PDF: Chromium's sandbox cannot start, running with %s (%s). "
+				"Allow it with: sudo apps/report_view/scripts/install_apparmor.sh",
+				NO_SANDBOX,
+				real,
+			)
+	return _sandbox_cache[key][0]
+
+
+def _no_core():
+	"""``preexec_fn`` of the probe: a failed sandbox aborts Chromium; no core file for it."""
+	import resource
+
+	resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+
+
+def _probe_sandbox(path: str) -> bool:
+	"""Starts ``path`` with the sandbox (no ``--no-sandbox``) on a page of our own, without
+	network; True when it printed that page."""
+	profile = tempfile.mkdtemp(prefix=PROFILE_PREFIX, dir=profile_root())
+	args = [
+		path,
+		f"--user-data-dir={profile}",
+		"--headless",
+		"--disable-gpu",
+		"--disable-dev-shm-usage",
+		"--disable-extensions",
+		"--no-first-run",
+		"--proxy-server=127.0.0.1:9",
+		"--host-resolver-rules=MAP * ~NOTFOUND",
+		"--dump-dom",
+		f"data:text/html,<p>{_SANDBOX_MARK}</p>",
+	]
+	try:
+		proc = subprocess.Popen(
+			args,
+			stdin=subprocess.DEVNULL,
+			stdout=subprocess.PIPE,
+			stderr=subprocess.DEVNULL,
+			text=True,
+			start_new_session=True,
+			preexec_fn=_no_core,
+		)
+	except OSError:
+		shutil.rmtree(profile, ignore_errors=True)
+		return False
+	try:
+		out, _err = proc.communicate(timeout=SANDBOX_PROBE_SECONDS)
+		return proc.returncode == 0 and _SANDBOX_MARK in (out or "")
+	except subprocess.TimeoutExpired:
+		# not reaped yet, so its pid is still its own group's
+		_kill_group(proc.pid)
+		try:
+			proc.communicate(timeout=5)
+		except subprocess.TimeoutExpired:
+			pass
+		return False
+	finally:
+		shutil.rmtree(profile, ignore_errors=True)
+
+
 # ---------------------------------------------------------------- engine slots
 
 
@@ -455,12 +552,12 @@ class _browser:
 
 class _OwnChromium:
 	"""A headless Chromium with a fresh profile, in a session (process group) of its own that
-	is killed with the process that started it; its DevTools address read from stderr."""
+	is killed with the process that started it; its DevTools address read from stderr.
+	Sandboxed whenever the sandbox can start on this server (``sandbox_works``)."""
 
 	ARGS = (
 		"--headless",
 		"--remote-debugging-port=0",
-		"--no-sandbox",
 		"--disable-gpu",
 		"--disable-dev-shm-usage",
 		"--disable-extensions",
@@ -492,13 +589,14 @@ class _OwnChromium:
 
 	def __init__(self, path: str, deadline: float | None = None):
 		self.process = None
+		args = self.ARGS if sandbox_works(path) else (NO_SANDBOX, *self.ARGS)
 		self.profile = tempfile.mkdtemp(prefix=PROFILE_PREFIX, dir=profile_root())
 		# who started it, for cleanup_stale: the pid and its start time
 		with open(os.path.join(self.profile, _OWNER_FILE), "w") as f:
 			f.write(f"{os.getpid()} {_proc_start(os.getpid()) or 0}")
 		try:
 			self.process = subprocess.Popen(
-				[path, f"--user-data-dir={self.profile}", *self.ARGS],
+				[path, f"--user-data-dir={self.profile}", *args],
 				stdin=subprocess.DEVNULL,
 				stdout=subprocess.DEVNULL,
 				stderr=subprocess.PIPE,

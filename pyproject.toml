@@ -26,6 +26,8 @@ packages = []
 [tool.ruff]
 line-length = 110
 target-version = "py314"
+# research notes and throw-away experiments, not app code
+extend-exclude = ["docs", "reference", "tests/experiments"]
 
 [tool.ruff.lint]
 select = [

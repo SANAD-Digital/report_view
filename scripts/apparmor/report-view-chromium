@@ -1,0 +1,24 @@
+# AppArmor profile of Report View's PDF engine (ADR-016): the bench's own Chrome for
+# Testing "chrome-headless-shell" in <bench>/chromium-rv, installed by
+# scripts/install_chromium.sh.
+#
+# Ubuntu 23.10+ forbids unprivileged user namespaces to programs without a profile
+# (kernel.apparmor_restrict_unprivileged_userns = 1), so Chromium's own sandbox cannot
+# start and the engine has to run with --no-sandbox. This profile is the one Ubuntu 24.04
+# ships for Google Chrome (/etc/apparmor.d/chrome; msedge, brave, vivaldi-bin are the same):
+# it confines nothing else and only allows the user namespaces the sandbox is made of.
+#
+# Not loadable as it is: scripts/install_apparmor.sh (root) writes it to
+# /etc/apparmor.d/report-view-chromium with @@RV_CHROMIUM@@ replaced by the real path of
+# the bench's binary, and loads it with apparmor_parser -r. core/pdf.py then sees the
+# sandbox start (sandbox_works) and drops --no-sandbox.
+
+abi <abi/4.0>,
+include <tunables/global>
+
+profile report-view-chromium "@@RV_CHROMIUM@@" flags=(unconfined) {
+  userns,
+
+  # Site-specific additions and overrides. See local/README for details.
+  include if exists <local/report-view-chromium>
+}

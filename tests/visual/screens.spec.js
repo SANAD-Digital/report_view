@@ -17,9 +17,11 @@ const shots_dir = (name) => {
 };
 const OUT = shots_dir("phase-5a1");
 
-// The one documented exception to "no console warnings" (ADR-012): the Perspective client
-// prints this wherever window.chrome is missing (headless shell, Firefox, Safari).
-const ALLOWED = [/Unknown browser detected/];
+// The documented exceptions to "no console warnings" (ADR-012), both from Perspective, not
+// from Report View: its client prints the first wherever window.chrome is missing (headless
+// shell, Firefox, Safari); Firefox prints the second when it compiles Perspective's WASM
+// (built with the legacy exception-handling instructions).
+const ALLOWED = [/Unknown browser detected/, /WebAssembly exception handling 'try' instruction is deprecated/];
 
 // A view state as the `rv` URL parameter carries it (docs/architecture.md §7.4).
 const rv = (state) => Buffer.from(JSON.stringify({ v: 1, ...state })).toString("base64url");
@@ -86,6 +88,23 @@ async function open(page, query, { width = 1440, height = 1000 } = {}) {
 }
 
 const settle = (page) => page.evaluate(() => window.rv_settle());
+
+// The wheel over the table until it stops moving. Chromium jumps the whole delta at once;
+// Firefox and WebKit scroll smoothly and cap what one wheel event moves.
+async function wheel_to_end(page, dx, dy, tries = 30) {
+	await page.locator("regular-table").hover();
+	let last = null;
+	for (let i = 0; i < tries; i++) {
+		await page.mouse.wheel(dx, dy);
+		await page.waitForTimeout(150);
+		const pos = await page.evaluate(() => {
+			const rt = document.querySelector("regular-table");
+			return `${rt.scrollLeft},${rt.scrollTop}`;
+		});
+		if (pos === last) return;
+		last = pos;
+	}
+}
 const shot = (page, name, full = false) => page.screenshot({ path: path.join(OUT, `${name}.png`), fullPage: full });
 
 // Geometry of the table: where the pinned label column is, and which columns are drawn.
@@ -188,8 +207,7 @@ test("vertical scroll: rows are read in windows, the last row is reachable, no s
 	expect(top.ys[0]).toBe(0);
 	// only the window on screen is in the DOM
 	expect(top.drawn).toBeLessThan(30);
-	await page.locator("regular-table").hover();
-	await page.mouse.wheel(0, 100000);
+	await wheel_to_end(page, 0, 100000);
 	await page.waitForTimeout(300);
 	await settle(page);
 	const end = await rows();
@@ -607,8 +625,7 @@ test("general ledger: the report's opening row under the headers, its closing ro
 	expect(at_top.expected.totals.balance).toBe(0);
 
 	// scrolled to the end: the opening row stays, the last fact ends above the closing row
-	await page.locator("regular-table").hover();
-	await page.mouse.wheel(0, 100000);
+	await wheel_to_end(page, 0, 100000);
 	await page.waitForTimeout(300);
 	await settle(page);
 	const at_end = await page.evaluate(() => {
@@ -692,8 +709,7 @@ test("rows as reported: the opening, total and closing of every account stand be
 	expect(await page.locator("regular-table tbody tr.opening a, regular-table tbody tr.foot a").count()).toBe(0);
 
 	// the end of the report: the last account closes right above the pinned rows
-	await page.locator("regular-table").hover();
-	await page.mouse.wheel(0, 100000);
+	await wheel_to_end(page, 0, 100000);
 	await page.waitForTimeout(300);
 	await settle(page);
 	const last = (await body(page)).filter((r) => r.cls !== "spacer").slice(-2);
@@ -2869,7 +2885,14 @@ test("pages: the toolbar opens one tool's menu at a time, under its tool; elsewh
 	expect(await menu()).toBe(null);
 	// a click on the pages closes it, Escape too
 	await page.click('details[data-sec="foot"] > summary');
-	const stage = await page.locator(".rv-print-stage").boundingBox();
+	// the part of the stage on screen, without its scroll bars: the stage runs below the
+	// viewport, where Chromium still delivers a click (to the document) and Firefox does not
+	const stage = await page.evaluate(() => {
+		const el = document.querySelector(".rv-print-stage");
+		const r = el.getBoundingClientRect();
+		const y = r.top + el.clientTop;
+		return { x: r.left + el.clientLeft, y, width: el.clientWidth, height: Math.min(el.clientHeight, window.innerHeight - y) };
+	});
 	const open_menu = await page.locator(".rv-print-pop").boundingBox();
 	// a point of the stage away from the menu
 	const x = open_menu.x > stage.x + 60 ? stage.x + 20 : stage.x + stage.width - 20;

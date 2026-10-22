@@ -98,7 +98,7 @@
   ثم `bench setup supervisor` (أو `bench worker --queue rv_pdf` في التطوير). اسم طابور غير معرّف في `workers` يُسجَّل تحذيراً ويرجع إلى `long`.
 - **Chromium الاحتياطي**: لا نستعمل `ChromePDFGenerator` ولا دواله الخاصة بعد الآن: إن غاب `chromium-rv` يؤخذ مسار Chromium الخاص بـ Frappe بدالته العامة `find_or_download_chromium_executable` ويُشغَّل بالطريقة نفسها أعلاه، مع تحذير في `logs/report_view.log` مرة لكل عملية. الاعتماد الوحيد الباقي على Frappe هو `CDPSocketClient`.
 - **التثبيت**: `apps/report_view/scripts/install_chromium.sh` ينزّل Chrome for Testing `chrome-headless-shell` ‏153.0.8010.12 (مثبت بـ SHA-256 للأرشيف وللملف) إلى `<bench>/chromium-rv`، ويتحقق منه، ويطبع حزم apt المطلوبة؛ لا يفعل شيئاً إن كانت النسخة نفسها موجودة، ولا يستبدل نسخة أخرى إلا بـ `--force`.
-- **ما بقي**: `--no-sandbox` باقٍ (`kernel.apparmor_restrict_unprivileged_userns = 1`): حذفه يحتاج ملف AppArmor لـ `chrome-headless-shell` أو تشغيل المحرك بمستخدم نظام لا يقرأ `site_config.json`.
+- **ما بقي**: `--no-sandbox` باقٍ (`kernel.apparmor_restrict_unprivileged_userns = 1`): حذفه يحتاج ملف AppArmor لـ `chrome-headless-shell` أو تشغيل المحرك بمستخدم نظام لا يقرأ `site_config.json`. (حُلّ في «تعديل (2026-10-22): عزل Chromium» أدناه.)
 
 ## تعديل (2026-10-21): تثبيت Chromium مع التطبيق
 - Chromium الخاص بنا (Chrome for Testing «chrome-headless-shell»، نحو 260MB، Linux x86-64 فقط) **لا يُخزَّن في المستودع**، بل يُنزَّل مع التثبيت إلى `<bench>/chromium-rv` بالسكربت المثبَّت الإصدار والبصمة `scripts/install_chromium.sh` (مصدر رقم الإصدار الوحيد).
@@ -113,4 +113,19 @@
 - الحالة للـ bench كله، لا للموقع: قفل ملف (`flock`) يمنع تثبيتين معاً، وملف آخر نتيجة (`rv-chromium-install.last.json`)، كلاهما في `<bench>/tmp`. كل المواقع ترى الحالة نفسها في «محرك PDF» في `Report View Global Settings`.
 - الدالتان تستدعيان أيضاً `core/letterhead.check_pdf_body_html_hook()`: hook `pdf_body_html` يفوز فيه آخر تطبيق مثبّت، فإن غلب تطبيق آخر hook التطبيق يُسجَّل تحذير بأن هوامش ورق الشركة المبني بالمنشئ في wkhtmltopdf لن تُضاف ما لم يستدعِ ذلك التطبيق الـ hook السابق (ADR-018).
 - السجل الكامل للـ hooks في ADR-007.
+
+## تعديل (2026-10-22): عزل Chromium (C36)
+- **المشكلة**: `kernel.apparmor_restrict_unprivileged_userns = 1` في Ubuntu 23.10+ يمنع user namespaces عن أي برنامج بلا ملف AppArmor، فلا يبدأ عزل Chromium (sandbox) ويموت بـ «No usable sandbox!»، فكان المحرك يعمل دائماً بـ `--no-sandbox`. عملية العرض (renderer) تعمل حينها بمستخدم الـ bench الذي يقرأ `site_config.json`.
+- **القرار** (اختيار المالك (a)):
+  - `scripts/apparmor/report-view-chromium`: ملف AppArmor على نمط ما يشحنه Ubuntu 24.04 لـ Chrome (`/etc/apparmor.d/chrome`، ومثله msedge وbrave وvivaldi-bin): `flags=(unconfined)` و`userns,` فقط، لمسار `chrome-headless-shell` الخاص بالـ bench. الملف في المستودع قالب (`@@RV_CHROMIUM@@`) لا يحمل مسار أي خادم.
+  - `scripts/install_apparmor.sh` (root): يكتب القالب إلى `/etc/apparmor.d/report-view-chromium` بالمسار الحقيقي للملف التنفيذي (`readlink -f`؛ AppArmor يطابق المسار المحلول)، يتحقق منه (`apparmor_parser -Q -K`) ثم يحمّله (`apparmor_parser -r`)، ثم يشغّل Chromium بالعزل باسم مالك الملف ليتأكد. `--binary` لمسار آخر، `--remove` للحذف. على نواة لا تقيّد user namespaces لا يفعل شيئاً.
+  - `core/pdf.py` ‏`sandbox_works(path)`: يقرر وقت التشغيل: يشغّل الملف مرة بالعزل (بلا `--no-sandbox`) على صفحة `data:` صغيرة بـ `--dump-dom` بلا شبكة (ملف شخصي مؤقت في `<bench>/tmp/rv-chromium-*`، بلا core dump، مهلة 20 ث)، والجواب «نعم» إن طبع الصفحة. الجواب محفوظ لكل عملية ولكل ملف (المسار الحقيقي + mtime): «نعم» يبقى، و«لا» يُسأل من جديد بعد 10 دقائق (`SANDBOX_RETRY_SECONDS`) فيُرى ملف AppArmor مثبت لاحقاً دون إعادة تشغيل. `_OwnChromium` يضيف `--no-sandbox` فقط حين الجواب «لا».
+  - السجل (`logs/report_view.log`) يقول الوضع عند كل جواب جديد: `info` «Chromium runs sandboxed»، أو `warning` بـ `--no-sandbox` مع أمر التثبيت.
+  - `core/chromium.status()` يعيد `sandbox: true|false` (يُفحص Chromium الخاص بـ Report View فقط، لأن الملف يغطيه وحده؛ مع Chromium الخاص بـ Frappe يكون `false`) و`apparmor_command` (السطر الكامل بالمسارين). قسم «محرك PDF» في `Report View Global Settings` يعرض «عزل Chromium: مفعّل» أو «معطّل» مع هذا السطر.
+- **أمر المالك (مرة واحدة لكل خادم، وبعد نقل الـ bench أو Chromium)**:
+  ```bash
+  sudo bash <bench>/apps/report_view/scripts/install_apparmor.sh --bench <bench>
+  ```
+- **الاختبارات**: `TestPdfSandbox` في `tests/test_pdf.py`: الفحص مُحاكى بالحالتين (`--no-sandbox` موجود فقط حين لا يعمل العزل)، الحفظ لكل ملف وإعادة السؤال بعد «لا»، السجل، `status()`، وقراءة الفحص لما يطبعه ملف تنفيذي بديل (نجاح، انهيار SIGTRAP كما يفعل Chromium، صمت، تعليق حتى المهلة). بقية `test_pdf` تعمل على هذا الخادم بالعزل مطفأً (الفحص الحقيقي يقول «لا») وتبقى خضراء.
+- **لم يُتحقق منه هنا**: تشغيل المحرك والعزل مفعّل فعلاً (يحتاج root لتحميل الملف). بعد تشغيل الأمر أعلاه: `bench --site <site> run-tests --app report_view --module report_view.tests.test_pdf` يجب أن يبقى أخضر، و«محرك PDF» يقول «مفعّل».
 

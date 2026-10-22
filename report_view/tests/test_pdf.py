@@ -258,7 +258,9 @@ class TestPdfBatches(RVTestCase):
 		):
 			result = pdf.render_pdf(_pages_html())
 		self.assertEqual(result.pages, 2)
-		logger.return_value.warning.assert_called_once()
+		# once, whatever the sandbox probe of that binary logs besides
+		fallback = [c for c in logger.return_value.warning.call_args_list if "falling back" in c.args[0]]
+		self.assertEqual(len(fallback), 1)
 		self.assertEqual(_chromium_pids() - before, set())
 
 	def test_a_blocked_navigation_keeps_the_content(self):
@@ -560,3 +562,140 @@ class TestPdfEngine(RVTestCase):
 			if orphan.poll() is None:
 				orphan.kill()
 				orphan.wait()
+
+
+def _fake_chromium(folder: str, body: str) -> str:
+	"""An executable standing in for Chromium in the sandbox probe."""
+	path = os.path.join(folder, "chrome-headless-shell")
+	with open(path, "w") as f:
+		f.write("#!/bin/sh\n" + body + "\n")
+	os.chmod(path, 0o755)
+	return path
+
+
+class TestPdfSandbox(RVTestCase):
+	"""C36: Chromium's own sandbox is used whenever it starts on the server; --no-sandbox only
+	when it cannot (the probe is mocked here; the real one runs in every other PDF test)."""
+
+	def setUp(self):
+		super().setUp()
+		from report_view.core import pdf
+
+		self.pdf = pdf
+		self.folder = tempfile.mkdtemp()
+		self.binary = _fake_chromium(self.folder, "exit 0")
+		cache = patch.dict(pdf._sandbox_cache, clear=True)
+		cache.start()
+		self.addCleanup(cache.stop)
+
+	def tearDown(self):
+		import shutil
+
+		shutil.rmtree(self.folder, ignore_errors=True)
+		super().tearDown()
+
+	def _launch_args(self, works: bool) -> list[str]:
+		"""The command line _OwnChromium starts (stopped right there)."""
+		seen = {}
+
+		def popen(args, **kw):
+			seen["args"] = args
+			raise OSError("stop here")
+
+		pdf = self.pdf
+		with (
+			patch.object(pdf, "_probe_sandbox", return_value=works),
+			patch.object(pdf.subprocess, "Popen", side_effect=popen),
+			patch.object(pdf.frappe, "log_error"),
+			self.assertRaises(frappe.ValidationError),
+		):
+			pdf._OwnChromium(self.binary)
+		return seen["args"]
+
+	def test_the_sandbox_is_kept_when_it_starts(self):
+		args = self._launch_args(True)
+		self.assertNotIn("--no-sandbox", args)
+		self.assertIn("--headless", args)
+
+	def test_no_sandbox_only_when_it_cannot_start(self):
+		args = self._launch_args(False)
+		self.assertIn("--no-sandbox", args)
+		self.assertIn("--headless", args)
+
+	def test_the_answer_is_cached_per_binary_and_logged(self):
+		pdf = self.pdf
+		with (
+			patch.object(pdf, "_probe_sandbox", return_value=True) as probe,
+			patch.object(pdf.frappe, "logger") as logger,
+		):
+			self.assertTrue(pdf.sandbox_works(self.binary))
+			self.assertTrue(pdf.sandbox_works(self.binary))
+			self.assertEqual(probe.call_count, 1)
+			logger.return_value.info.assert_called_once()
+			self.assertIn("sandboxed", logger.return_value.info.call_args.args[0])
+			# another binary in the same place (a new mtime) is asked again
+			st = os.stat(self.binary)
+			os.utime(self.binary, (st.st_atime, st.st_mtime + 10))
+			self.assertTrue(pdf.sandbox_works(self.binary))
+			self.assertEqual(probe.call_count, 2)
+
+	def test_a_no_is_logged_and_asked_again_later(self):
+		pdf = self.pdf
+		with (
+			patch.object(pdf, "_probe_sandbox", return_value=False) as probe,
+			patch.object(pdf.frappe, "logger") as logger,
+		):
+			self.assertFalse(pdf.sandbox_works(self.binary))
+			self.assertFalse(pdf.sandbox_works(self.binary))
+			self.assertEqual(probe.call_count, 1)
+			logger.return_value.warning.assert_called_once()
+			self.assertIn("--no-sandbox", logger.return_value.warning.call_args.args)
+			# an AppArmor profile installed meanwhile is seen without a restart
+			later = time.monotonic() + pdf.SANDBOX_RETRY_SECONDS + 1
+			probe.return_value = True
+			with patch.object(pdf.time, "monotonic", return_value=later):
+				self.assertTrue(pdf.sandbox_works(self.binary))
+			self.assertEqual(probe.call_count, 2)
+			logger.return_value.info.assert_called_once()
+
+	def test_a_missing_binary_is_not_sandboxed(self):
+		with patch.object(self.pdf, "_probe_sandbox") as probe:
+			self.assertFalse(self.pdf.sandbox_works(os.path.join(self.folder, "missing")))
+		probe.assert_not_called()
+
+	def test_the_probe_reads_what_the_binary_printed(self):
+		import glob
+
+		pdf = self.pdf
+		profiles = os.path.join(pdf.profile_root(), pdf.PROFILE_PREFIX + "*")
+		before = set(glob.glob(profiles))
+		ok = _fake_chromium(self.folder, f'echo "<p>{pdf._SANDBOX_MARK}</p>"')
+		self.assertTrue(pdf._probe_sandbox(ok))
+		# what Chromium does without a usable sandbox: a FATAL line, then SIGTRAP
+		crash = _fake_chromium(self.folder, 'echo "No usable sandbox!" >&2; kill -TRAP $$')
+		self.assertFalse(pdf._probe_sandbox(crash))
+		silent = _fake_chromium(self.folder, "exit 0")
+		self.assertFalse(pdf._probe_sandbox(silent))
+		hangs = _fake_chromium(self.folder, f'echo "<p>{pdf._SANDBOX_MARK}</p>"; exec sleep 30')
+		started = time.monotonic()
+		with patch.object(pdf, "SANDBOX_PROBE_SECONDS", 1):
+			self.assertFalse(pdf._probe_sandbox(hangs))
+		self.assertLess(time.monotonic() - started, 10)
+		# every probe removed its profile
+		self.assertEqual(set(glob.glob(profiles)) - before, set())
+
+	def test_the_status_says_whether_the_sandbox_is_on(self):
+		from report_view.core import chromium
+
+		for works in (True, False):
+			with (
+				patch.object(chromium, "chromium_path", return_value=self.binary),
+				patch.object(chromium, "installed_version", return_value=chromium.pinned_version()),
+				patch.object(chromium, "sandbox_works", return_value=works),
+			):
+				s = chromium.status()
+			self.assertIs(s["sandbox"], works)
+			self.assertIn("install_apparmor.sh --bench ", s["apparmor_command"])
+			self.assertTrue(s["apparmor_command"].startswith("sudo bash "))
+		with patch.object(chromium, "chromium_path", return_value=None):
+			self.assertIs(chromium.status()["sandbox"], False)

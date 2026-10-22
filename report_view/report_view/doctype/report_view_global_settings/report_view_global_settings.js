@@ -21,10 +21,17 @@ async function show_engine(frm) {
 		: s.installed
 		? ["orange", __("Chromium {0} is installed; Report View pins {1}", [s.version || "?", s.pinned])]
 		: ["red", __("Report View's Chromium is not installed: PDFs use Frappe's Chromium and may differ slightly from the browser's print")];
+	// Chromium's own sandbox (C36): on once the AppArmor profile lets it start
+	const sandbox = !s.installed
+		? ""
+		: s.sandbox
+		? `<p class="text-muted small">${esc(__("Chromium sandbox: on"))}</p>`
+		: `<p class="text-muted small">${esc(__("Chromium sandbox: off (the server forbids it; PDFs print with --no-sandbox). To turn it on, run once as root:"))}</p>
+			<pre class="small" dir="ltr">${esc(s.apparmor_command || "")}</pre>`;
 	const last = s.last && !s.last.ok ? `<p class="text-muted small">${esc(__("Last install failed: {0}", [s.last.output.split("\n").slice(-3).join(" ")]))}</p>` : "";
 	wrap.html(`<div class="rv-engine">
 		<p><span class="indicator-pill ${state[0]}">${esc(state[1])}</span></p>
-		<p class="text-muted small">${esc(__("Folder: {0}", [s.path]))}</p>${last}
+		<p class="text-muted small">${esc(__("Folder: {0}", [s.path]))}</p>${sandbox}${last}
 		${s.supported && !s.current && !s.installing ? `<button type="button" class="btn btn-sm btn-default" data-action="install">${esc(s.installed ? __("Install version {0}", [s.pinned]) : __("Install Chromium"))}</button>` : ""}
 		${s.supported ? "" : `<p class="text-muted small">${esc(__("Chrome for Testing has no build for this server's system"))}</p>`}
 		<p class="text-muted small">${esc(__("From a terminal: bench report-view-install-chromium"))}</p>

@@ -1,5 +1,6 @@
 // @ts-check
-const { defineConfig, devices } = require("@playwright/test");
+const { defineConfig } = require("@playwright/test");
+const { projects } = require("./browsers.js");
 
 // End-to-end tests against a running site (tests/e2e). Tooling installed in tests/:
 //   npm --prefix tests ci && npm --prefix tests run e2e
@@ -19,5 +20,6 @@ module.exports = defineConfig({
 		screenshot: "only-on-failure",
 		trace: "retain-on-failure",
 	},
-	projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+	// RV_BROWSERS=chromium,firefox,webkit (default chromium): see browsers.js
+	projects: projects(),
 });

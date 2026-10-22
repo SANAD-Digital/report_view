@@ -21,7 +21,7 @@ import subprocess
 
 import frappe
 
-from report_view.core.pdf import DEFAULT_CHROMIUM, chromium_path
+from report_view.core.pdf import DEFAULT_CHROMIUM, chromium_path, sandbox_works
 
 INSTALL_TIMEOUT = 900
 # after_install: the install runs inline, but not for long
@@ -95,7 +95,9 @@ def last_result() -> dict | None:
 
 def status() -> dict:
 	"""What the PDF agent prints with: its own Chromium (pinned or another version) or
-	Frappe's, and whether an install is running."""
+	Frappe's, whether it runs sandboxed (``sandbox``: only Report View's own Chromium is
+	probed; the AppArmor profile of ``scripts/install_apparmor.sh`` covers that one only), and
+	whether an install is running."""
 	path = chromium_path()
 	version = installed_version(path)
 	pinned = pinned_version()
@@ -109,7 +111,20 @@ def status() -> dict:
 		"fallback": not path,
 		"installing": installing(),
 		"last": last_result(),
+		"sandbox": bool(path and sandbox_works(path)),
+		"apparmor_command": apparmor_command(),
 	}
+
+
+def apparmor_script_path() -> str:
+	return os.path.realpath(
+		os.path.join(frappe.get_app_path("report_view"), "..", "scripts", "install_apparmor.sh")
+	)
+
+
+def apparmor_command() -> str:
+	"""The one line, for root, that lets the sandbox start (scripts/install_apparmor.sh)."""
+	return f"sudo bash {apparmor_script_path()} --bench {frappe.utils.get_bench_path()}"
 
 
 def install(force: bool = False, timeout: int = INSTALL_TIMEOUT) -> tuple[bool, str]:

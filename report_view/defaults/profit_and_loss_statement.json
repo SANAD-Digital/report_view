@@ -1,0 +1,13 @@
+{
+	"report": "Profit and Loss Statement",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "report_template", "fieldtype": "Link", "options": "Financial Report Template"},
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "finance_book", "fieldtype": "Link", "options": "Finance Book"},
+		{"fieldname": "from_fiscal_year", "fieldtype": "Link", "options": "Fiscal Year"},
+		{"fieldname": "to_fiscal_year", "fieldtype": "Link", "options": "Fiscal Year"},
+		{"fieldname": "cost_center", "fieldtype": "MultiSelectList", "options": "Cost Center"},
+		{"fieldname": "project", "fieldtype": "MultiSelectList", "options": "Project"}
+	]
+}

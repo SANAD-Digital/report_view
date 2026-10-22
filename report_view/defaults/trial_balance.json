@@ -17,7 +17,10 @@
 	],
 	"filter_defs": [
 		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
-		{"fieldname": "fiscal_year", "fieldtype": "Link", "options": "Fiscal Year"}
+		{"fieldname": "fiscal_year", "fieldtype": "Link", "options": "Fiscal Year"},
+		{"fieldname": "cost_center", "fieldtype": "MultiSelectList", "options": "Cost Center"},
+		{"fieldname": "project", "fieldtype": "MultiSelectList", "options": "Project"},
+		{"fieldname": "finance_book", "fieldtype": "Link", "options": "Finance Book"}
 	],
 	"balance_pairs": [
 		{"label": "Opening", "debit_column": "opening_debit", "credit_column": "opening_credit"},

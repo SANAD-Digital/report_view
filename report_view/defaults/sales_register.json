@@ -1,0 +1,15 @@
+{
+	"report": "Sales Register",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "customer", "fieldtype": "Link", "options": "Customer"},
+		{"fieldname": "customer_group", "fieldtype": "Link", "options": "Customer Group"},
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "mode_of_payment", "fieldtype": "Link", "options": "Mode of Payment"},
+		{"fieldname": "owner", "fieldtype": "Link", "options": "User"},
+		{"fieldname": "cost_center", "fieldtype": "Link", "options": "Cost Center"},
+		{"fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse"},
+		{"fieldname": "brand", "fieldtype": "Link", "options": "Brand"},
+		{"fieldname": "item_group", "fieldtype": "Link", "options": "Item Group"}
+	]
+}

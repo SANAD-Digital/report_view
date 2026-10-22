@@ -1,0 +1,14 @@
+{
+	"report": "Stock Ledger",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "warehouse", "fieldtype": "MultiSelectList", "options": "Warehouse"},
+		{"fieldname": "item_code", "fieldtype": "MultiSelectList", "options": "Item"},
+		{"fieldname": "item_group", "fieldtype": "Link", "options": "Item Group"},
+		{"fieldname": "batch_no", "fieldtype": "Link", "options": "Batch"},
+		{"fieldname": "brand", "fieldtype": "Link", "options": "Brand"},
+		{"fieldname": "project", "fieldtype": "Link", "options": "Project"},
+		{"fieldname": "include_uom", "fieldtype": "Link", "options": "UOM"}
+	]
+}

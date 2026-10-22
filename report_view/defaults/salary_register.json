@@ -1,0 +1,12 @@
+{
+	"report": "Salary Register",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "currency", "fieldtype": "Link", "options": "Currency"},
+		{"fieldname": "employee", "fieldtype": "Link", "options": "Employee"},
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "department", "fieldtype": "Link", "options": "Department"},
+		{"fieldname": "designation", "fieldtype": "Link", "options": "Designation"},
+		{"fieldname": "branch", "fieldtype": "Link", "options": "Branch"}
+	]
+}

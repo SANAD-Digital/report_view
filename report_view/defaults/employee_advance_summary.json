@@ -1,0 +1,11 @@
+{
+	"report": "Employee Advance Summary",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "employee", "fieldtype": "Link", "options": "Employee"},
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "department", "fieldtype": "MultiSelectList", "options": "Department"},
+		{"fieldname": "branch", "fieldtype": "MultiSelectList", "options": "Branch"},
+		{"fieldname": "advance_account", "fieldtype": "MultiSelectList", "options": "Account"}
+	]
+}

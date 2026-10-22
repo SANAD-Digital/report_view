@@ -1,4 +1,6 @@
 import inspect
+import json
+import os
 from unittest.mock import patch
 
 import frappe
@@ -7,7 +9,8 @@ from frappe.desk import query_report
 from report_view import api
 from report_view.core import engine, normalize, runner
 from report_view.core.errors import RVInvalidInput, RVReportError
-from report_view.core.settings import load_settings
+from report_view.core.guard import guard_report
+from report_view.core.settings import _DEFAULTS_DIR, load_settings
 from report_view.tests.utils import (
 	COMPANY,
 	COMPANY_ABBR,
@@ -31,7 +34,7 @@ class TestApiRun(RVTestCase):
 		with self.as_user("accountant"):
 			response = api.run("Trial Balance", TB_FILTERS, TB_JS_FILTERS)
 		self.assertEqual(response["status"], "ok")
-		self.assertEqual(response["limit"], 50000)
+		self.assertEqual(response["limit"], 100000)
 		self.assertEqual(response["row_count"], len(response["raw"]["result"]))
 		self.assertIsInstance(response["execution_time"], float)
 
@@ -87,6 +90,80 @@ class TestApiRun(RVTestCase):
 			for js_filters in (None, forged):
 				with self.subTest(js_filters=js_filters), self.assertRaises(frappe.ValidationError):
 					api.run("Trial Balance", TB_FILTERS, js_filters)
+
+	def test_shipped_link_defs_cannot_be_dropped_or_retyped(self):
+		"""ADR-021: for every report with shipped filter_defs, a browser that drops a Link
+		definition or sends it as Data still gets Frappe's Link check on that value."""
+		forbidden = "rv-forbidden-value"
+		checked = 0
+		for report_name in shipped_reports():
+			if not frappe.db.exists("Report", report_name):
+				continue
+			report = frappe.get_doc("Report", report_name)
+			links = [d for d in load_settings(report_name)["filter_defs"] if d["fieldtype"] == "Link"]
+			self.assertTrue(links, f"{report_name}: no Link filter_defs shipped")
+			for d in links:
+				for js_filters in (None, [{"fieldname": d["fieldname"], "fieldtype": "Data"}]):
+					with self.subTest(report=report_name, fieldname=d["fieldname"], js_filters=js_filters):
+						calls = denied_link_check(
+							self, report, report_name, {d["fieldname"]: forbidden}, js_filters
+						)
+						self.assertIn((d["options"], forbidden), calls)
+						checked += 1
+		self.assertGreater(checked, 0)
+
+	def test_shipped_dynamic_link_is_checked_as_its_doctype(self):
+		"""A Dynamic Link (Trial Balance for Party's party) reaches Frappe as a Link of the
+		DocType its type filter names, whatever the browser sends."""
+		if not frappe.db.exists("Report", "Trial Balance for Party"):
+			self.skipTest("Trial Balance for Party is not installed")
+		report = frappe.get_doc("Report", "Trial Balance for Party")
+		filters = {"party_type": "Customer", "party": "rv-forbidden-party"}
+		forged = [
+			{"fieldname": "party", "fieldtype": "Data"},
+			{"fieldname": "party_type", "fieldtype": "Data"},
+		]
+		for js_filters in (None, forged):
+			with self.subTest(js_filters=js_filters):
+				calls = denied_link_check(
+					self, report, report.name, filters, js_filters, allowed=("Party Type",)
+				)
+				self.assertIn(("Party Type", "Customer"), calls)
+				self.assertIn(("Customer", "rv-forbidden-party"), calls)
+
+	def test_restricted_user_other_company_refused_in_shipped_reports(self):
+		"""Without a mock: the restricted user (User Permission on the other company) is
+		refused the main company in every shipped report it may open, js_filters dropped."""
+		checked = 0
+		for report_name in shipped_reports():
+			if not frappe.db.exists("Report", report_name):
+				continue
+			defs = load_settings(report_name)["filter_defs"]
+			if {"fieldname": "company", "fieldtype": "Link", "options": "Company"} not in defs:
+				continue
+			with self.as_user("restricted"):
+				try:
+					guard_report(report_name)
+				except frappe.PermissionError:
+					continue
+				for js_filters in (None, [{"fieldname": "company", "fieldtype": "Data"}]):
+					with (
+						self.subTest(report=report_name, js_filters=js_filters),
+						self.assertRaises(frappe.ValidationError) as cm,
+					):
+						api.run(report_name, {"company": COMPANY}, js_filters)
+					self.assertIn(COMPANY, str(cm.exception))
+					checked += 1
+		self.assertGreater(checked, 0)
+
+	def test_report_without_shipped_defs_is_logged_once(self):
+		runner._LOGGED_WITHOUT_DEFS.discard("rv-no-such-report")
+		settings = {"filter_defs": []}
+		with patch("frappe.logger") as logger:
+			runner.server_filter_defs("rv-no-such-report", settings)
+			runner.server_filter_defs("rv-no-such-report", settings)
+		self.assertEqual(logger.return_value.debug.call_count, 1)
+		runner._LOGGED_WITHOUT_DEFS.discard("rv-no-such-report")
 
 	def test_restricted_user_own_company(self):
 		with self.as_user("restricted"):
@@ -234,3 +311,34 @@ class TestRunHardening(RVTestCase):
 		# a name is never a path out of the defaults folder
 		for name in ("../hooks", "a/b", "..", ""):
 			self.assertIsNone(load_settings(name)["source"])
+
+
+def shipped_reports() -> list[str]:
+	"""The reports of report_view/defaults/*.json."""
+	names = []
+	for file in sorted(os.listdir(_DEFAULTS_DIR)):
+		if file.endswith(".json"):
+			with open(os.path.join(_DEFAULTS_DIR, file), encoding="utf-8") as f:
+				names.append(json.load(f)["report"])
+	return names
+
+
+def denied_link_check(
+	case, report, report_name: str, filters: dict, js_filters, allowed: tuple = ()
+) -> list[tuple]:
+	"""Run as Administrator with Frappe's Link check answering "no" (but for the DocTypes in
+	``allowed``); return what it was asked, as (doctype, value) pairs. The refusal stops the
+	run before the report executes."""
+	calls = []
+
+	def deny(**kwargs):
+		calls.append((kwargs.get("doctype"), kwargs.get("doc")))
+		return kwargs.get("doctype") in allowed
+
+	with (
+		case.set_user("Administrator"),
+		patch("frappe.desk.query_report.has_permission", side_effect=deny),
+		case.assertRaises(frappe.ValidationError),
+	):
+		runner.run(report, report_name, filters, js_filters)
+	return calls

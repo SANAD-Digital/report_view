@@ -56,7 +56,7 @@
    "fieldname": "max_rows",
    "fieldtype": "Int",
    "label": "Maximum rows of a report",
-   "default": "50000",
+   "default": "100000",
    "non_negative": 1,
    "description": "Rows a report may return to Report View. Capped by System Settings › Max Report Rows and by 200,000."
   },
@@ -305,7 +305,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-21 22:30:00.000000",
+ "modified": "2026-10-22 06:05:48.343408",
  "modified_by": "Administrator",
  "module": "Report View",
  "name": "Report View Global Settings",

@@ -1,0 +1,14 @@
+{
+	"report": "Accounts Payable",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "finance_book", "fieldtype": "Link", "options": "Finance Book"},
+		{"fieldname": "cost_center", "fieldtype": "MultiSelectList", "options": "Cost Center"},
+		{"fieldname": "project", "fieldtype": "MultiSelectList", "options": "Project"},
+		{"fieldname": "party_account", "fieldtype": "Link", "options": "Account"},
+		{"fieldname": "payment_terms_template", "fieldtype": "Link", "options": "Payment Terms Template"},
+		{"fieldname": "party", "fieldtype": "MultiSelectList", "options": "party_type"},
+		{"fieldname": "supplier_group", "fieldtype": "Link", "options": "Supplier Group"}
+	]
+}

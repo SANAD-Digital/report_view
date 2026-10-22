@@ -1,0 +1,9 @@
+{
+	"report": "Sales Order Analysis",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "sales_order", "fieldtype": "MultiSelectList", "options": "Sales Order"},
+		{"fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse"}
+	]
+}

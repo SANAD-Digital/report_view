@@ -12,7 +12,7 @@ import re
 
 import frappe
 
-DEFAULT_MAX_ROWS = 50000
+DEFAULT_MAX_ROWS = 100000
 HARD_MAX_ROWS = 200000
 DEFAULT_PRINT_MAX_PAGES = 600
 HARD_PRINT_MAX_PAGES = 2000
@@ -98,15 +98,26 @@ def _read_settings(report_name: str, path: str) -> dict:
 		for p in data.get("balance_pairs") or []
 	]
 	settings["signatures"] = list(data.get("signatures") or [])
-	# filter_defs are Link only: validate_filters_permissions checks nothing else (Q:1149).
 	settings["filter_defs"] = [
-		{"fieldname": d["fieldname"], "fieldtype": "Link", "options": d["options"]}
+		{"fieldname": d["fieldname"], "fieldtype": d["fieldtype"], "options": d["options"]}
 		for d in data.get("filter_defs") or []
-		if d.get("fieldtype") == "Link"
-		and _FIELDNAME_RE.match(str(d.get("fieldname") or ""))
-		and d.get("options")
+		if _valid_filter_def(d)
 	]
 	return settings
+
+
+def _valid_filter_def(d: dict) -> bool:
+	"""ADR-021: a Link names its DocType; a Dynamic Link names the filter holding the DocType;
+	a MultiSelectList (which Frappe does not check, Q:1149) is kept so the browser cannot
+	retype it."""
+	if not isinstance(d, dict) or not _FIELDNAME_RE.match(str(d.get("fieldname") or "")):
+		return False
+	options = d.get("options")
+	if not isinstance(options, str) or not options:
+		return False
+	if d.get("fieldtype") == "Dynamic Link":
+		return bool(_FIELDNAME_RE.match(options))
+	return d.get("fieldtype") in ("Link", "MultiSelectList")
 
 
 def global_settings():
@@ -127,7 +138,7 @@ def global_settings():
 
 
 def get_row_limit() -> int:
-	"""ADR-009: min(Global Settings.max_rows (default 50,000, at most 200,000),
+	"""ADR-009: min(Global Settings.max_rows (default 100,000, at most 200,000),
 	System Settings.max_report_rows)."""
 	gs = global_settings()
 	limit = min(frappe.utils.cint(gs and gs.max_rows) or DEFAULT_MAX_ROWS, HARD_MAX_ROWS)

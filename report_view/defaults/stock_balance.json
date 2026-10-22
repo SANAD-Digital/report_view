@@ -1,0 +1,12 @@
+{
+	"report": "Stock Balance",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "item_group", "fieldtype": "Link", "options": "Item Group"},
+		{"fieldname": "item_code", "fieldtype": "MultiSelectList", "options": "Item"},
+		{"fieldname": "warehouse", "fieldtype": "MultiSelectList", "options": "Warehouse"},
+		{"fieldname": "warehouse_type", "fieldtype": "Link", "options": "Warehouse Type"},
+		{"fieldname": "include_uom", "fieldtype": "Link", "options": "UOM"}
+	]
+}

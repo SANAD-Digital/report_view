@@ -1,0 +1,13 @@
+{
+	"report": "Purchase Register",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "supplier", "fieldtype": "Link", "options": "Supplier"},
+		{"fieldname": "supplier_group", "fieldtype": "Link", "options": "Supplier Group"},
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "mode_of_payment", "fieldtype": "Link", "options": "Mode of Payment"},
+		{"fieldname": "cost_center", "fieldtype": "Link", "options": "Cost Center"},
+		{"fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse"},
+		{"fieldname": "item_group", "fieldtype": "Link", "options": "Item Group"}
+	]
+}

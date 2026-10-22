@@ -1,0 +1,9 @@
+{
+	"report": "Employee Leave Balance",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "department", "fieldtype": "Link", "options": "Department"},
+		{"fieldname": "employee", "fieldtype": "Link", "options": "Employee"}
+	]
+}

@@ -1,0 +1,13 @@
+{
+	"report": "Gross Profit",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "sales_invoice", "fieldtype": "Link", "options": "Sales Invoice"},
+		{"fieldname": "item_group", "fieldtype": "Link", "options": "Item Group"},
+		{"fieldname": "sales_person", "fieldtype": "Link", "options": "Sales Person"},
+		{"fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse"},
+		{"fieldname": "cost_center", "fieldtype": "MultiSelectList", "options": "Cost Center"},
+		{"fieldname": "project", "fieldtype": "MultiSelectList", "options": "Project"}
+	]
+}

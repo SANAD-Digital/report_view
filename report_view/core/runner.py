@@ -22,12 +22,43 @@ from report_view.core.settings import get_row_limit, load_settings
 _PASS_THROUGH = (frappe.PermissionError, frappe.DoesNotExistError, frappe.ValidationError)
 
 
+# report names without shipped filter_defs, logged once per process (ADR-021)
+_LOGGED_WITHOUT_DEFS: set[str] = set()
+
+
 def merge_js_filters(browser_defs: list[dict], server_defs: list[dict]) -> list[dict]:
-	"""Union of browser and server filter definitions; server wins on the same fieldname."""
+	"""Union of browser and server filter definitions; server wins on the same fieldname
+	(ADR-021: a browser that omits or retypes a shipped filter cannot skip Frappe's check)."""
 	server_names = {d["fieldname"] for d in server_defs}
 	merged = [d for d in browser_defs if d["fieldname"] not in server_names]
 	merged.extend(dict(d) for d in server_defs)
 	return merged
+
+
+def resolve_dynamic_links(defs: list[dict], filters: dict) -> list[dict]:
+	"""A server Dynamic Link whose DocType filter holds an existing DocType is handed to
+	Frappe as a Link of that DocType, so ``validate_filters_permissions`` checks its value
+	(it checks Link only, Q:1149). Otherwise it stays as it is, which Frappe skips."""
+	out = []
+	for d in defs:
+		doctype = filters.get(d.get("options") or "") if d.get("fieldtype") == "Dynamic Link" else None
+		if isinstance(doctype, str) and doctype and frappe.db.exists("DocType", doctype):
+			d = {"fieldname": d["fieldname"], "fieldtype": "Link", "options": doctype}
+		out.append(d)
+	return out
+
+
+def server_filter_defs(report_name: str, settings: dict) -> list[dict]:
+	"""The shipped filter_defs; a report without them keeps Frappe's behaviour (the
+	browser's definitions only), logged once per process at debug level."""
+	defs = settings["filter_defs"]
+	if not defs and report_name not in _LOGGED_WITHOUT_DEFS:
+		_LOGGED_WITHOUT_DEFS.add(report_name)
+		frappe.logger("report_view").debug(
+			f"Report View: {report_name!r} has no shipped filter_defs; Link filters are checked "
+			"from the browser's definitions only (ADR-021)"
+		)
+	return defs
 
 
 def report_name_for_prepared(report: Report) -> str:
@@ -96,9 +127,11 @@ def run(
 	filters = validate_report_filters(parse_json_arg(filters, "filters", dict))
 	browser_defs = validate_js_filters(parse_json_arg(js_filters, "js_filters", list, allow_none=True) or [])
 	settings = load_settings(report.name)
-	merged_defs = merge_js_filters(browser_defs, settings["filter_defs"])
-
 	filters = dict(filters)
+	merged_defs = resolve_dynamic_links(
+		merge_js_filters(browser_defs, server_filter_defs(report.name, settings)), filters
+	)
+
 	filters.pop("prepared_report_name", None)
 	if prepared_report_name:
 		if not isinstance(prepared_report_name, str):

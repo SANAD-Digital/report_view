@@ -1,0 +1,7 @@
+{
+	"report": "Item Price Stock",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "item_code", "fieldtype": "Link", "options": "Item"}
+	]
+}

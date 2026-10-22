@@ -1,0 +1,11 @@
+{
+	"report": "Stock Ageing",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "warehouse_type", "fieldtype": "Link", "options": "Warehouse Type"},
+		{"fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse"},
+		{"fieldname": "item_code", "fieldtype": "Link", "options": "Item"},
+		{"fieldname": "brand", "fieldtype": "Link", "options": "Brand"}
+	]
+}

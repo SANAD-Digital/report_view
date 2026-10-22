@@ -1,0 +1,10 @@
+{
+	"report": "Monthly Attendance Sheet",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "employee", "fieldtype": "Link", "options": "Employee"},
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "department", "fieldtype": "Link", "options": "Department"},
+		{"fieldname": "branch", "fieldtype": "Link", "options": "Branch"}
+	]
+}

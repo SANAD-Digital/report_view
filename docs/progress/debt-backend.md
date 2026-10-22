@@ -53,6 +53,7 @@ Ran 51 tests (integration)   OK
 ## 6. حالة البنود المفتوحة (مراجعة 2026-10-22، الفرع `letterhead-builder`)
 | البند | الحالة | الدليل |
 |---|---|---|
-| §5.1 `DEFAULT_MAX_ROWS` = 50,000 والوثائق 100,000 | **مفتوح، قرار صاحب المشروع** (C21). الوثائق صارت تذكر الحقيقة: 50,000 في الكود والـ DocType (`Report View Global Settings` بُني في ADR-015) | `docs/architecture.md` §5.2 و §8، `docs/brief.md`، ADR-009 |
+| §5.1 `DEFAULT_MAX_ROWS` = 50,000 والوثائق 100,000 | **مغلق** (قرار صاحب المشروع C21، 2026-10-22: 100,000 رسمي). `DEFAULT_MAX_ROWS = 100000`، افتراضي `Report View Global Settings.max_rows` = 100000 (reload-doc على acc.dev)، والقيمة المحفوظة على acc.dev = 100000 | `core/settings.py`، الـ DocType، `docs/architecture.md` §5.2 و §8، `docs/brief.md`، ADR-009، `test_api_run` و `test_get_meta` |
+| C2 فجوة فلاتر Link لتقارير Script (تعريفات من المتصفح فقط) | **مغلق** (قرار صاحب المشروع C2، الخيار ب): `filter_defs` مشحونة لكل تقارير الكتالوج (31) من `scripts/extract_filter_defs.py`، والخادمية تغلب في `core/runner.py` | ADR-021، ADR-002، `test_api_run.py::test_shipped_*` و `test_restricted_user_other_company_refused_in_shipped_reports` |
 | §5.2 جانب المتصفح من ADR-013 (التصدير مع فلتر سريع) | **مغلق** | `public/js/report_view/index.js` `export_model()` يرسل `view_state.quick_filters` (المعرّفات المعروفة فقط) و `quick_filters: [{id, expression}]`؛ حالة ADR-013 محدَّثة |
 | §5.3 شكل `quick_filters` في المعمارية §5.1 | **مغلق** | §5.1 صار `{id, label, expression, exclusive?}` كما في الكود |

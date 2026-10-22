@@ -16,7 +16,7 @@ apps/report_view/
 ├── CLAUDE.md  START.md  README.md  package.json  yarn.lock  # مكتبات وقت التشغيل فقط
 ├── docs/                      # التوثيق (عربي). لا يُنشر كأصول.
 ├── reference/                 # التصميم والنموذج (لا يُنشر)
-├── scripts/                   # سكربتات تطوير (setup_test_users.py، توليد بيانات)
+├── scripts/                   # سكربتات تطوير (setup_test_users.py، extract_filter_defs.py، توليد بيانات)
 ├── tests/
 │   ├── package.json           # أدوات الاختبار (Playwright) بإصدار مثبّت ولها قفلها؛ لا تدخل node_modules التطبيق
 │   ├── playwright.config.js   # e2e على موقع
@@ -47,7 +47,8 @@ apps/report_view/
     │       ├── jobs.py        # التصدير في الخلفية (§2.4)
     │       └── pdf.py         # «لم يُبنَ»: PDF من صفحات المتصفح بمحرك الخادم (ADR-016)
     ├── defaults/
-    │   └── trial_balance.json # إعدادات ميزان المراجعة المشحونة
+    │   ├── trial_balance.json # إعدادات ميزان المراجعة المشحونة
+    │   └── <report>.json      # filter_defs لكل تقرير في الكتالوج (ADR-021)
     ├── templates/report_view/
     │   └── print.html         # قالب PDF — «لم يُبنَ» (ADR-016)
     ├── locale/ar.po           # الترجمة العربية (نظام .po في frappe 16)
@@ -165,7 +166,7 @@ guard_report_quiet(report_name) -> Report | None
 |---|---|
 | الطريقة | POST (الفلاتر قد تكون كبيرة) |
 | المدخلات | `report_name: str`؛ `filters: dict \| str(JSON)`؛ `js_filters: list[dict] \| str(JSON) \| None` = تعريفات فلاتر سكربت التقرير كما حمّلتها الواجهة (`fieldname`, `fieldtype`, `options`)؛ `prepared_report_name: str \| None` |
-| الفحوص بالترتيب | (1) `guard_report`؛ (2) تحقق شكل `filters` (قاموس، مفاتيح نصية، قيم بدائية أو قوائم)؛ (3) `js_filters` = **اتحاد** ما يرسله المتصفح مع `Report View Settings.filter_defs` الخادمية (الخادمية تغلب عند تعارض نفس `fieldname`). للصدق: `Report.filters` يُفحص في Frappe أصلاً (`Q:1146`)، وتعريفات المتصفح قابلة للتزوير (`fieldtype: Data` يعطّل فحص الحقل)، فهي تساوي حماية الصفحة الأصلية لا أكثر. الحماية التي لا يستطيع المستخدم إسقاطها هي `filter_defs` الخادمية فقط، ويُشحن منها لميزان المراجعة `company` و `fiscal_year`؛ (4) `prepared_report_name` إن وُجد: `frappe.get_list("Prepared Report", filters={"name": n, "report_name": report.get("custom_report") or report.name, "owner": frappe.session.user}, limit=1)` وإلا `RVInvalidInput`، لأن Frappe لا يقارنه بالتقرير ولا بالمالك (`Q:282-284,360`) وقد يكشف نتيجة ولّدها مستخدم غير مقيّد (ADR-009)؛ (5) استدعاء `frappe.desk.query_report.run(report_name, filters=filters, js_filters=js_filters, are_default_filters=False)` مع `prepared_report_name` داخل `filters` كما تفعل الواجهة الأصلية (`Q:282`)؛ فيه تحدث طبقات Frappe: `validate_filters_permissions` (`Q:261`)، `get_report_doc` مرة ثانية، `get_filtered_data` (`Q:122`) |
+| الفحوص بالترتيب | (1) `guard_report`؛ (2) تحقق شكل `filters` (قاموس، مفاتيح نصية، قيم بدائية أو قوائم)؛ (3) `js_filters` = **اتحاد** ما يرسله المتصفح مع `Report View Settings.filter_defs` الخادمية (الخادمية تغلب عند تعارض نفس `fieldname`). للصدق: `Report.filters` يُفحص في Frappe أصلاً (`Q:1146`)، وتعريفات المتصفح قابلة للتزوير (`fieldtype: Data` يعطّل فحص الحقل)، فهي تساوي حماية الصفحة الأصلية لا أكثر. الحماية التي لا يستطيع المستخدم إسقاطها هي `filter_defs` الخادمية، وتُشحن لكل تقارير الكتالوج (31) في `defaults/*.json` (ADR-021): كل Link و Dynamic Link و MultiSelectList، و Dynamic Link يُسلَّم لـ Frappe كـ Link بالـ DocType الذي يحمله فلتر نوعه؛ تقرير بلا تعريفات يبقى على سلوك Frappe ويُسجَّل مرة بمستوى debug؛ (4) `prepared_report_name` إن وُجد: `frappe.get_list("Prepared Report", filters={"name": n, "report_name": report.get("custom_report") or report.name, "owner": frappe.session.user}, limit=1)` وإلا `RVInvalidInput`، لأن Frappe لا يقارنه بالتقرير ولا بالمالك (`Q:282-284,360`) وقد يكشف نتيجة ولّدها مستخدم غير مقيّد (ADR-009)؛ (5) استدعاء `frappe.desk.query_report.run(report_name, filters=filters, js_filters=js_filters, are_default_filters=False)` مع `prepared_report_name` داخل `filters` كما تفعل الواجهة الأصلية (`Q:282`)؛ فيه تحدث طبقات Frappe: `validate_filters_permissions` (`Q:261`)، `get_report_doc` مرة ثانية، `get_filtered_data` (`Q:122`) |
 | المخرجات | `{"status": "ok", "raw": <رد run كما هو>, "row_count": int, "limit": int, "execution_time": float}`؛ أو `{"status": "too_large", "row_count", "limit"}` بلا `raw` (ADR-009)؛ أو `{"status": "prepared_pending" \| "prepared_missing", "prepared_report_name": str \| None, "doc": {...} \| None}` حين يأتي رد Prepared بلا `result` (`Q:370`) |
 | الأخطاء | `PermissionError`، `DoesNotExistError`، `ValidationError` (معطّل)، `RVUnsupportedReport`، `RVInvalidInput`، `frappe.ValidationError` من `validate_filters_permissions` أو من الفلاتر الإلزامية، `RVReportError` (يغلّف أي استثناء آخر من كود التقرير مع الرسالة) |
 | ملاحظات | لا يطبّع الخادم الرد هنا: التطبيع في المتصفح (ADR-001). `row_count` = طول `result` بعد استبعاد صف مجموع Frappe. الرسائل في `frappe.local.message_log` تمر كما هي في `_server_messages`. |
@@ -624,13 +625,13 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 
 **`Report View Global Settings` (Single)** — كتابة: System Manager، Report View Manager؛ قراءة: الدور `Desk User`.
 
-> بُني في 2026-10-12 (ADR-015) بالحقول `max_rows` (الافتراضي في الكود والـ DocType **50,000**، `core/settings.DEFAULT_MAX_ROWS`؛ تحقق 2026-10-22) و `print_max_pages` وقسم «إعدادات الطباعة القياسية»، ثم `custom_print_open_in` (ADR-019)؛ بقية الحقول أدناه «لم يُبنَ». اختيار 50,000 أو 100,000 قرار صاحب المشروع (C21). `Report View Settings` كله «لم يُبنَ»: الإعدادات لكل تقرير تأتي من `defaults/*.json`.
+> بُني في 2026-10-12 (ADR-015) بالحقول `max_rows` (الافتراضي في الكود والـ DocType **100,000**، `core/settings.DEFAULT_MAX_ROWS`) و `print_max_pages` وقسم «إعدادات الطباعة القياسية»، ثم `custom_print_open_in` (ADR-019)؛ بقية الحقول أدناه «لم يُبنَ». 100,000 رسمي بقرار صاحب المشروع (C21، 2026-10-22). `Report View Settings` كله «لم يُبنَ»: الإعدادات لكل تقرير تأتي من `defaults/*.json`.
 
 | الحقل | النوع | الافتراضي |
 |---|---|---|
 | `enabled_for` | Select: `All Reports` / `Enabled Reports Only` | `All Reports` |
 | `entry_button_scope` | Select: `All Reports` / `Enabled Reports Only` / `None` | `Enabled Reports Only` |
-| `max_rows` | Int | 50,000 في الكود (الخطة كانت 100,000؛ يُقيَّد بـ `System Settings.max_report_rows` وبالسقف 200,000) |
+| `max_rows` | Int | 100,000 (يُقيَّد بـ `System Settings.max_report_rows` وبالسقف 200,000) |
 | `hard_max_rows` | Int، للقراءة فقط | 200,000 (السقف الصلب لـ `max_rows`) |
 | `export_background_threshold` | Int | 20,000 |
 | `default_pdf_generator` | Select: `wkhtmltopdf` / `chrome` | `wkhtmltopdf` — «لم يُبنَ» (ADR-016: محرك Chromium خاص دائماً) |
@@ -652,7 +653,7 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 | `drilldowns` | Table `Report View Drilldown`: `source_column`, `target_report` (Link Report), `filter_map` (JSON: `{"target_filter": "row:<key>" \| "filter:<name>" \| "const:<value>"}`), `open_as` | |
 | `balance_pairs` | Table `Report View Balance Pair`: `label`, `debit_column`, `credit_column` | معادلة التوازن (المرحلة 6) |
 | `signatures` | Table `Report View Signature`: `label`, `idx` | خانات التوقيع في PDF |
-| `filter_defs` | Table `Report View Filter Def`: `fieldname`, `fieldtype` (Link فقط، لأن `validate_filters_permissions` لا يفحص غيره، `Q:1149`)، `options` | تعريفات فلاتر خادمية تُدمج في `js_filters` (§2.1) ولا يستطيع المتصفح إسقاطها |
+| `filter_defs` | Table `Report View Filter Def`: `fieldname`, `fieldtype` (Link / Dynamic Link / MultiSelectList؛ Frappe يفحص Link فقط، `Q:1149`، و Dynamic Link يُحوَّل إلى Link، ADR-021)، `options` | تعريفات فلاتر خادمية تُدمج في `js_filters` (§2.1) ولا يستطيع المتصفح إسقاطها |
 
 ### 5.3 ترتيب الأولوية
 
@@ -826,7 +827,7 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 
 | البند | القرار |
 |---|---|
-| الحد الأقصى للصفوف | `min(max_rows, System Settings.max_report_rows)`؛ الافتراضي في الكود 50,000 (الخطة 100,000، قرار صاحب المشروع معلّق) والسقف الصلب 200,000 (ADR-009). عند 100 ألف: أول عرض 468ms و `group_by` بمستويين 117ms و `split_by` 246ms. عند 500 ألف: أول عرض 3.6 ث، وذاكرة 450-544MB، وتحميل الدفعة الواحدة أسقط التبويب |
+| الحد الأقصى للصفوف | `min(max_rows, System Settings.max_report_rows)`؛ الافتراضي 100,000 (قرار صاحب المشروع C21) والسقف الصلب 200,000 (ADR-009). عند 100 ألف: أول عرض 468ms و `group_by` بمستويين 117ms و `split_by` 246ms. عند 500 ألف: أول عرض 3.6 ث، وذاكرة 450-544MB، وتحميل الدفعة الواحدة أسقط التبويب |
 | ما فوق الحد | رسالة بخيارات فعلية (ADR-009)؛ دعم كامل للتقارير المعدّة أصلاً |
 | التحميل الكسول | سكربت الصفحة (Page) صغير ⇒ `frappe.require("report_view.bundle.js")` عند أول فتح (JS المكتبتين نحو 20KB مضغوطاً) ⇒ جلب ملفي WASM (2.28MB و 0.22MB، غير قابلين للضغط، مخزَّنين سنة في الكاش) عند أول تشغيل ⇒ `report_view_charts.bundle.js` عند أول فتح لعرض الرسوم. الصفحات الأخرى تحمّل `report_view_entry.bundle.js` فقط |
 | أول تهيئة للمحرك | 0.3 ث على شبكة محلية، 2.7 ث على 10Mbit، 13 ث على 1.6Mbit (مرة واحدة). حالة التحميل تعرض «جارٍ تجهيز المحرك» مع أول فتح |

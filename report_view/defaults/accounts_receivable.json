@@ -1,0 +1,17 @@
+{
+	"report": "Accounts Receivable",
+	"enabled": 1,
+	"filter_defs": [
+		{"fieldname": "company", "fieldtype": "Link", "options": "Company"},
+		{"fieldname": "finance_book", "fieldtype": "Link", "options": "Finance Book"},
+		{"fieldname": "cost_center", "fieldtype": "MultiSelectList", "options": "Cost Center"},
+		{"fieldname": "project", "fieldtype": "MultiSelectList", "options": "Project"},
+		{"fieldname": "party", "fieldtype": "MultiSelectList", "options": "party_type"},
+		{"fieldname": "party_account", "fieldtype": "Link", "options": "Account"},
+		{"fieldname": "customer_group", "fieldtype": "MultiSelectList", "options": "Customer Group"},
+		{"fieldname": "payment_terms_template", "fieldtype": "Link", "options": "Payment Terms Template"},
+		{"fieldname": "sales_partner", "fieldtype": "Link", "options": "Sales Partner"},
+		{"fieldname": "sales_person", "fieldtype": "Link", "options": "Sales Person"},
+		{"fieldname": "territory", "fieldtype": "Link", "options": "Territory"}
+	]
+}

@@ -26,14 +26,15 @@ class TestGetMeta(RVTestCase):
 			],
 		)
 		self.assertEqual(
-			[d["fieldname"] for d in meta["settings"]["filter_defs"]], ["company", "fiscal_year"]
+			[d["fieldname"] for d in meta["settings"]["filter_defs"]],
+			["company", "fiscal_year", "cost_center", "project", "finance_book"],
 		)
-		self.assertEqual(meta["limits"], {"max_rows": 50000})
+		self.assertEqual(meta["limits"], {"max_rows": 100000})
 		self.assertEqual(meta["defaults"], {"saved_view": None, "source": None})
 
 	def test_report_without_settings(self):
 		with self.as_user("accountant"):
-			meta = api.get_meta("General Ledger")
+			meta = api.get_meta("Account Balance")
 		self.assertIsNone(meta["settings"]["source"])
 		self.assertEqual(meta["settings"]["enrich_rules"], [])
 

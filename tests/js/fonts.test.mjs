@@ -3,13 +3,14 @@
 // of the letter head kept to the registry's families.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import "./_json.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { set_font_registry, font_names, font_info, clean_font, font_stack, font_face_css, font_groups, print_weights, DEFAULT_FONT } from "../../report_view/public/js/report_view/fonts.js";
-import { clamp_layout } from "../../report_view/public/js/report_view/letterhead/model.js";
-import { render_band } from "../../report_view/public/js/report_view/letterhead/render.js";
+const { set_font_registry, font_names, font_info, clean_font, font_stack, font_face_css, font_groups, print_weights, DEFAULT_FONT } = await import("../../report_view/public/js/report_view/fonts.js");
+const { clamp_layout } = await import("../../report_view/public/js/report_view/letterhead/model.js");
+const { render_band } = await import("../../report_view/public/js/report_view/letterhead/render.js");
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PKG = path.join(HERE, "..", "..", "report_view");

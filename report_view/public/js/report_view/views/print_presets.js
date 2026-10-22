@@ -428,7 +428,7 @@ export class PresetControl {
 			title: __("Save the print settings as a new preset"),
 			primary: __("Save", null, "Print preset"),
 			fields: [
-				{ fieldname: "preset_name", fieldtype: "Data", label: __("Name"), reqd: 1, default: a ? __("{0} (copy)", [a.preset_name]) : "" },
+				{ fieldname: "preset_name", fieldtype: "Data", label: __("Name", null, "Report View"), reqd: 1, default: a ? __("{0} (copy)", [a.preset_name]) : "" },
 				...this.visibility_field("private"),
 				{
 					fieldname: "scope",
@@ -473,7 +473,7 @@ export class PresetControl {
 			title: __("Edit the preset «{0}»", [a.preset_name]),
 			primary: __("Save", null, "Print preset"),
 			fields: [
-				{ fieldname: "preset_name", fieldtype: "Data", label: __("Name"), reqd: 1, default: a.preset_name },
+				{ fieldname: "preset_name", fieldtype: "Data", label: __("Name", null, "Report View"), reqd: 1, default: a.preset_name },
 				...this.visibility_field(a.public ? "public" : "private"),
 				{ fieldname: "description", fieldtype: "Small Text", label: __("Description"), default: a.description || "" },
 				{ fieldname: "is_default", fieldtype: "Check", label: __("Use as the default"), default: a.is_default ? 1 : 0 },

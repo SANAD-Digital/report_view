@@ -79,7 +79,9 @@ def _content(payload, data):
 
 
 @frappe.whitelist(methods=["GET"])
-def get_options(print_format: str | None = None, company: str | None = None, token: str | None = None) -> dict:
+def get_options(
+	print_format: str | None = None, company: str | None = None, token: str | None = None
+) -> dict:
 	"""What the print page offers around a Custom format (or the inline template of the
 	staged ``token``): the Custom formats, letter heads (the company's default first), print
 	headings, signatures (type Document, for all), languages, the site's standard print
@@ -91,11 +93,17 @@ def get_options(print_format: str | None = None, company: str | None = None, tok
 	default_letter_head = None
 	if frappe.has_permission("Letter Head"):
 		letter_heads = frappe.get_list(
-			"Letter Head", filters={"disabled": 0}, fields=["name", "is_default"], order_by="name asc", limit=0
+			"Letter Head",
+			filters={"disabled": 0},
+			fields=["name", "is_default"],
+			order_by="name asc",
+			limit=0,
 		)
 		names = {lh.name for lh in letter_heads}
 		if company and frappe.has_permission("Company", doc=company):
-			rows = frappe.get_list("Company", filters={"name": company}, fields=["default_letter_head"], limit=1)
+			rows = frappe.get_list(
+				"Company", filters={"name": company}, fields=["default_letter_head"], limit=1
+			)
 			default_letter_head = rows[0].default_letter_head if rows else None
 		if defaults.get("letter_head") in names:
 			default_letter_head = defaults["letter_head"]
@@ -111,7 +119,11 @@ def get_options(print_format: str | None = None, company: str | None = None, tok
 		defaults["heading"] = ""
 	defaults["signature"] = ""
 	languages = frappe.get_list(
-		"Language", filters={"enabled": 1}, fields=["name", "language_name"], order_by="language_name asc", limit=0
+		"Language",
+		filters={"enabled": 1},
+		fields=["name", "language_name"],
+		order_by="language_name asc",
+		limit=0,
 	)
 	names = cp.list_custom_formats()
 	return {
@@ -156,12 +168,19 @@ def render(
 
 
 @frappe.whitelist(methods=["GET"])
+@_rate_limit(60)
 def render_letterhead(
-	print_format: str | None = None, letterhead: str | None = None, company: str | None = None, token: str | None = None
+	print_format: str | None = None,
+	letterhead: str | None = None,
+	company: str | None = None,
+	token: str | None = None,
 ) -> dict:
-	"""A letter head rendered with ``doc`` = ``{company}``."""
+	"""A letter head rendered with ``doc`` = ``{company}`` (a company the user may read, else
+	their default company)."""
 	cp.resolve(print_format, token)
-	return cp.render_letterhead(letterhead, company if isinstance(company, str) and company else cp.default_company(None))
+	return cp.render_letterhead(
+		letterhead, company if isinstance(company, str) and company else cp.default_company(None)
+	)
 
 
 @frappe.whitelist(methods=["POST"])
@@ -201,8 +220,12 @@ def render_signature(
 
 
 @frappe.whitelist(methods=["POST"])
+@_rate_limit(60)
 def get_translations(
-	print_format: str | None = None, lang: str | None = None, messages: list | str | None = None, token: str | None = None
+	print_format: str | None = None,
+	lang: str | None = None,
+	messages: list | str | None = None,
+	token: str | None = None,
 ) -> dict:
 	"""Translations of the page's own words in ``lang`` (an enabled language)."""
 	cp.resolve(print_format, token)

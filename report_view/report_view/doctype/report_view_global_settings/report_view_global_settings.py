@@ -13,7 +13,9 @@ class ReportViewGlobalSettings(Document):
 		if self.max_rows and self.max_rows > HARD_MAX_ROWS:
 			frappe.throw(_("Maximum rows of a report cannot be more than {0}").format(HARD_MAX_ROWS))
 		if self.print_max_pages and self.print_max_pages > HARD_PRINT_MAX_PAGES:
-			frappe.throw(_("Maximum pages printed at once cannot be more than {0}").format(HARD_PRINT_MAX_PAGES))
+			frappe.throw(
+				_("Maximum pages printed at once cannot be more than {0}").format(HARD_PRINT_MAX_PAGES)
+			)
 		for side in ("top", "bottom", "start", "end"):
 			if (self.get(f"margin_{side}") or 0) > 60:
 				frappe.throw(_("A page margin cannot be more than {0} mm").format(60))

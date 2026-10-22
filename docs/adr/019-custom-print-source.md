@@ -35,7 +35,7 @@
 ### صفحة الطباعة
 - `rv-print` نفسها: المسار الثاني `Custom` يجعلها في «الوضع المخصص» (`CustomPrintHost` في `doc_print.js`) بمحرك الصفحات نفسه وشريط أدواته (الورق، الترويسة، رأس الطباعة، التوقيع، الترقيم، الحدود، العلامة المائية، التكبير، الطباعة، PDF). وضع المستند لم يتغير؛ الانتقال بين الوضعين يبني الصفحات من جديد.
 - قائمة القوالب: القوالب المخصصة فقط؛ تغيير القالب يرندر البيانات نفسها. الترويسة تُرندر بـ `doc = {company}`. التوقيعات: من نوع Document للكل (بلا نوع مستند). الإعدادات تُحفظ لكل مستخدم وقالب (`Report View Print:Custom:<format>`) ويغلبها قالب المتصل واختياراته (`letter_head`، `heading`، `signature`، `lang`).
-- PDF: `report_view.api.pdf.pages_pdf_custom(print_format, html, title)` بآلية `_pdf` نفسها (المهام، الحجم، الحدود)، وحارسه `guard_custom_format`.
+- PDF: `report_view.api.pdf.pages_pdf_custom(print_format=None, html, title, token=None)` بآلية `_pdf` نفسها (المهام، الحجم، الحدود)، وحارسه `resolve`: القالب المحفوظ (`guard_custom_format`)، أو الرمز لمالكه للقالب المرسل (القسم «القالب المرسل» أدناه).
 
 ### نموذج Print Format
 - `public/js/print_format_form.js` (عبر `doctype_js`): عند Custom يبقى حقلا HTML و CSS، وتُخفى حقول المستند والتقرير ونوع القالب (JS) والطباعة الخام و`format_data` والقيمة المطلقة والهوامش والخطوط ورقم الصفحة ومولّد PDF واللغة الافتراضية والوحدة و«قياسي» (زر «Edit Format» لا يظهر لأن `custom_format=1`)، وتظهر لوحة مساعدة بلغة المستخدم (متغيرات السياق وأمثلة جاهزة للنسخ)، وزر «معاينة ببيانات تجريبية» يفتح نافذة فيها حقل Code بـ JSON قابل للتعديل ثم يفتح الطباعة في تبويب.
@@ -57,7 +57,7 @@ doctype_js = {..., "Print Format": "public/js/print_format_form.js"}
 - القوالب **المحفوظة** تبقى ببيئة Frappe كما هي (يكتبها من يملك write على Print Format).
 - **الصلاحية**: أي مستخدم Desk (System User) يطبع قالباً مرسلاً بلا صلاحية على Print Format؛ الرمز لمالكه فقط؛ حدود المعدل كما في `stage`/`render`.
 - **الواجهات**: `resolve(print_format, token)` أول سطر في كل دالة: قالب محفوظ مسمّى، وإلا قالب الطباعة المرحّلة (محفوظ أو مرسل). لذلك `print_format` صار اختيارياً في `get_options`، `render`، `render_letterhead`، `render_heading`، `render_signature`، `get_translations`، ومعها `token`. `staged` يعيد `inline: true` و`print_format: null` (القالب نفسه لا يعود للمتصفح). `render` لقالب مرسل يعيد `{name: "", type, html, css (محصور), title, inline: true}`. `pages_pdf_custom(print_format=None, html, title, token=None)`: حارسه القالب المحفوظ، أو الرمز لمالكه للقالب المرسل.
-- **صفحة الطباعة**: منتقي القوالب يعرض القالب المرسل اختياراً حالياً («القالب المرسل»، القيمة الفارغة)، ويمكن الانتقال إلى قالب مخصص محفوظ (البيانات نفسها) والعودة. الإعدادات تحت `Report View Print:Custom:Sent template`. الإعدادات المسبقة (ADR-020): السياق Custom بهدف فارغ (العامة) — يحتاج `print_presets.js`/`api/print_presets.py` قبول الهدف الفارغ لـ Custom (خارج ملفات هذا العمل)، وإلى ذلك لا تظهر قائمة الإعدادات المسبقة للقالب المرسل.
+- **صفحة الطباعة**: منتقي القوالب يعرض القالب المرسل اختياراً حالياً («القالب المرسل»، القيمة الفارغة)، ويمكن الانتقال إلى قالب مخصص محفوظ (البيانات نفسها) والعودة. الإعدادات تحت `Report View Print:Custom:Sent template`. الإعدادات المسبقة (ADR-020): السياق Custom بهدف فارغ — الإعدادات العامة لكل القوالب المخصصة؛ `guard_target` يقبل الهدف الفارغ لـ Custom بحارس القالب المرسل (`guard_inline`)، فتظهر القائمة للقالب المرسل (اختبار `test_a_sent_template_offers_the_general_custom_presets`).
 
 ## عقد الواجهة (API)
 | الدالة | الطريقة | المعاملات | يعيد |
@@ -87,3 +87,8 @@ doctype_js = {..., "Print Format": "public/js/print_format_form.js"}
 - خيار `open_in: "same" | "tab"` في `print` و `print_table` و `open_print` (و `new_window: true` القديم = `"tab"`).
 - الافتراضي حقل جديد في `Report View Global Settings`: `custom_print_open_in` (Same tab / New tab، الافتراضي Same tab).
 - يجب أن يُعرف الافتراضي عند الضغطة نفسها (المتصفح يمنع تبويباً يُفتح بعد طلب)، فيصل في بيانات الإقلاع: hook جديد `extend_bootinfo = "report_view.core.settings.boot_session"` يضيف `frappe.boot.report_view = {custom_print_open_in}` فقط.
+
+## تعديل (2026-10-22): حدود وقيود
+- `render_letterhead` و `get_translations` محدودتان بـ 60 طلباً في الدقيقة لكل مستخدم كبقية الدوال.
+- ورق الطباعة يُرندر لشركة يقرؤها المستخدم فقط: شركة أخرى (من `company` أو من بيانات طباعة مرحّلة) تُستبدل بشركته الافتراضية (`core.custom_print.render_letterhead`)، لأن ورق المنشئ يقرأ سجل الشركة (الرقم الضريبي والعنوان والشعار) عند الطباعة. اسم شركة غير موجود يُطبع كما هو (لا سجل يُقرأ).
+- قواعد عنوان الطباعة في المتصفح (الرمز، مسار الدالة، مفاتيح الخيارات) في وحدة واحدة `public/js/report_view/custom_print_rules.js` يستوردها `custom_print.js` (و `doc_print.js`)، واختبار `tests/js/custom_print_rules.test.mjs` يطابقها بـ `_TOKEN` و `_METHOD` و `_OPTION_KEYS` في `core/custom_print.py`.

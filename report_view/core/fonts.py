@@ -21,13 +21,15 @@ import functools
 import json
 import os
 
-ASSET_BASE = "/assets/report_view/fonts/"
-DEFAULT_FONT = "IBM Plex Sans Arabic"
-CATEGORIES = ("sans", "serif", "naskh", "kufi", "display", "mono")
-SCRIPTS = ("arabic", "latin")
+from report_view.core.contract import CONTRACT
+
+# the library's constants: letterhead_contract.json ("fonts"), as fonts.js reads them
+ASSET_BASE = CONTRACT["fonts"]["asset_base"]
+DEFAULT_FONT = CONTRACT["fonts"]["default"]
+CATEGORIES = tuple(CONTRACT["fonts"]["categories"])
 FORMATS = (("woff2", "woff2"), ("ttf", "truetype"))
 # the generic family after the chosen one, by category
-GENERIC = {"serif": "serif", "naskh": "serif", "mono": "monospace"}
+GENERIC = dict(CONTRACT["fonts"]["generic"])
 
 REGISTRY_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "fonts.json")
 FONTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public", "fonts")

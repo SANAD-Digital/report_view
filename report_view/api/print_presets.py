@@ -1,7 +1,8 @@
 """Print presets of the print toolbar (ADR-020): list, save, delete, make the default.
 
 Every function first checks the print target (the report, the document type or the
-Custom print format the pages print, as the other print functions do) and then the
+Custom print format the pages print, as the other print functions do; ``delete`` and
+``set_default`` the preset's own target, none for a general preset) and then the
 permission on ``Print Preset``; reads go through ``frappe.get_list`` and writes through
 ``doc.save`` / ``doc.delete``, so the privacy hooks of ``core.print_presets`` apply.
 """
@@ -44,7 +45,8 @@ def _check(value) -> bool:
 
 
 @frappe.whitelist(methods=["GET"])
-def list(context: str, target: str) -> dict:
+@_rate_limit(120)
+def list_presets(context: str, target: str) -> dict:
 	"""The presets the user may apply here: ``{mine, public, can_publish, keys}``, each list
 	with the target's own presets first, then the general ones."""
 	target = guard_target(context, target)
@@ -90,7 +92,10 @@ def save(
 	if public is not None:
 		if _check(public):
 			if not pp.can_publish():
-				frappe.throw(_("Only a System Manager or a Report Manager can make a print preset public"), frappe.PermissionError)
+				frappe.throw(
+					_("Only a System Manager or a Report Manager can make a print preset public"),
+					frappe.PermissionError,
+				)
 			doc.for_user = None
 		else:
 			# private: its owner's (a new one: the session user's)
@@ -103,20 +108,40 @@ def save(
 	return pp.as_row(doc)
 
 
+def _preset(name: str, ptype: str):
+	"""A preset the user may ``ptype`` (write, delete), after its print target's check."""
+	if not isinstance(name, str) or not name:
+		frappe.throw(_("Invalid print preset"), RVInvalidInput)
+	doc = frappe.get_doc(pp.DOCTYPE, name)
+	target = pp.target_of(doc)
+	# a preset of one target: that target as every function checks it; a general one (every
+	# report, document type or Custom format of its kind) has no target to check
+	if target or doc.context == "Custom":
+		guard_target(doc.context, target)
+	doc.check_permission(ptype)
+	return doc
+
+
 @frappe.whitelist(methods=["POST"])
+@_rate_limit(60)
 def delete(name: str) -> dict:
 	"""Delete a preset the user may edit (their own private one, or a public one as a publisher)."""
-	doc = frappe.get_doc(pp.DOCTYPE, name)
-	doc.check_permission("delete")
+	doc = _preset(name, "delete")
 	doc.delete()
 	return {"name": name}
 
 
 @frappe.whitelist(methods=["POST"])
+@_rate_limit(60)
 def set_default(name: str, value: int | str = 1) -> dict:
 	"""Make a preset the default of its audience and target (or stop it being the default)."""
-	doc = frappe.get_doc(pp.DOCTYPE, name)
-	doc.check_permission("write")
+	doc = _preset(name, "write")
 	doc.is_default = 1 if _check(value) else 0
 	doc.save()
 	return pp.as_row(doc)
+
+
+# The toolbar (views/print_presets.js) and its visual harness call the list as
+# ``report_view.api.print_presets.list``: the old name stays, after every function of this
+# module, so nothing here reads the builtin through it.
+list = list_presets

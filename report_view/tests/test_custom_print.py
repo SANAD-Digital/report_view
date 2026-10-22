@@ -24,13 +24,28 @@ def _fixture(name: str) -> list[dict]:
 
 def _custom_format(name: str, html: str, css: str = "", **extra):
 	doc = frappe.get_doc(
-		{"doctype": "Print Format", "name": name, "print_format_for": "Custom", "html": html, "css": css, **extra}
+		{
+			"doctype": "Print Format",
+			"name": name,
+			"print_format_for": "Custom",
+			"html": html,
+			"css": css,
+			**extra,
+		}
 	)
 	cp.before_validate_print_format(doc)
 	return doc.insert()
 
 
 class TestCustomPrint(RVTestCase):
+	def setUp(self):
+		super().setUp()
+		# a broken template is logged (frappe.log_error); Frappe keeps an Error Log through a
+		# rollback, so the tests count the calls instead of leaving logs on the site
+		patcher = patch.object(frappe, "log_error")
+		self.logged = patcher.start()
+		self.addCleanup(patcher.stop)
+
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
@@ -63,25 +78,52 @@ class TestCustomPrint(RVTestCase):
 		)
 		cls.disabled = _custom_format("RV Custom Disabled", "<p>x</p>", disabled=1)
 		cls.doc_format = frappe.get_doc(
-			{"doctype": "Print Format", "name": "RV Not Custom", "doc_type": "Company", "custom_format": 1, "print_format_type": "Jinja", "html": "<p>x</p>"}
+			{
+				"doctype": "Print Format",
+				"name": "RV Not Custom",
+				"doc_type": "Company",
+				"custom_format": 1,
+				"print_format_type": "Jinja",
+				"html": "<p>x</p>",
+			}
 		).insert()
 
 	# ------------------------------------------------------------ the Print Format
 
 	def test_a_custom_format_is_a_jinja_template_of_no_doctype(self):
 		doc = frappe.get_doc(
-			{"doctype": "Print Format", "name": "RV Custom Shape", "print_format_for": "Custom", "print_format_type": "JS", "doc_type": "Company", "standard": "Yes", "html": "<p>{{ data }}</p>"}
+			{
+				"doctype": "Print Format",
+				"name": "RV Custom Shape",
+				"print_format_for": "Custom",
+				"print_format_type": "JS",
+				"doc_type": "Company",
+				"standard": "Yes",
+				"html": "<p>{{ data }}</p>",
+			}
 		)
 		cp.before_validate_print_format(doc)
-		self.assertEqual((doc.custom_format, doc.standard, doc.print_format_type, doc.doc_type, doc.report), (1, "No", "Jinja", None, None))
+		self.assertEqual(
+			(doc.custom_format, doc.standard, doc.print_format_type, doc.doc_type, doc.report),
+			(1, "No", "Jinja", None, None),
+		)
 		doc.insert()
 		# Frappe's validate then asks for the HTML
-		empty = frappe.get_doc({"doctype": "Print Format", "name": "RV Custom Empty", "print_format_for": "Custom"})
+		empty = frappe.get_doc(
+			{"doctype": "Print Format", "name": "RV Custom Empty", "print_format_for": "Custom"}
+		)
 		cp.before_validate_print_format(empty)
 		with self.assertRaises(frappe.MandatoryError):
 			empty.insert()
 		# other formats are left as they are
-		other = frappe.get_doc({"doctype": "Print Format", "print_format_for": "DocType", "doc_type": "Company", "standard": "No"})
+		other = frappe.get_doc(
+			{
+				"doctype": "Print Format",
+				"print_format_for": "DocType",
+				"doc_type": "Company",
+				"standard": "No",
+			}
+		)
 		cp.before_validate_print_format(other)
 		self.assertEqual((bool(other.custom_format), other.doc_type), (False, "Company"))
 
@@ -89,7 +131,10 @@ class TestCustomPrint(RVTestCase):
 		ps = _fixture("property_setter.json")
 		self.assertEqual(ps[0]["value"].split("\n"), ["DocType", "Report", "Custom"])
 		pf = _fixture("print_format.json")[0]
-		self.assertEqual((pf["name"], pf["print_format_for"], pf["print_format_type"], pf["custom_format"]), (TABLE, "Custom", "Jinja", 1))
+		self.assertEqual(
+			(pf["name"], pf["print_format_for"], pf["print_format_type"], pf["custom_format"]),
+			(TABLE, "Custom", "Jinja", 1),
+		)
 
 	def test_formats_lists_enabled_custom_formats_only(self):
 		with self.as_user("accountant"):
@@ -124,10 +169,17 @@ class TestCustomPrint(RVTestCase):
 	# ------------------------------------------------------------ rendering
 
 	def test_render_with_data(self):
-		data = {"customer": "Acme <b>", "rows": [{"x": 1}, {"x": "<script>alert(1)</script>"}], "company": COMPANY}
+		data = {
+			"customer": "Acme <b>",
+			"rows": [{"x": 1}, {"x": "<script>alert(1)</script>"}],
+			"company": COMPANY,
+		}
 		with self.as_user("accountant"):
 			out = api.render("RV Custom Test", data=json.dumps(data), title="Sales <i>")
-		self.assertEqual((out["name"], out["type"], out["css"]), ("RV Custom Test", "Jinja", ".rv-page-flow{.rvx{color:inherit}}"))
+		self.assertEqual(
+			(out["name"], out["type"], out["css"]),
+			("RV Custom Test", "Jinja", ".rv-page-flow{.rvx{color:inherit}}"),
+		)
 		self.assertIn("<h1>Sales &lt;i&gt;</h1>", out["html"])
 		self.assertIn("<p>Acme &lt;b&gt;</p>", out["html"])
 		self.assertIn(f"<p>{COMPANY}</p>", out["html"])
@@ -153,7 +205,9 @@ class TestCustomPrint(RVTestCase):
 			self.assertTrue(ctx["printed_by"])
 			self.assertTrue(ctx["company"])
 			ctx = cp.context(self.fmt, {"rows": [1], "company": "X"}, "T")
-			self.assertEqual((ctx["rows"], ctx["doc"].company, ctx["company"], ctx["title"]), ([1], "X", "X", "T"))
+			self.assertEqual(
+				(ctx["rows"], ctx["doc"].company, ctx["company"], ctx["title"]), ([1], "X", "X", "T")
+			)
 
 	def test_render_in_another_language(self):
 		with self.as_user("accountant"):
@@ -180,7 +234,6 @@ class TestCustomPrint(RVTestCase):
 		broken = _custom_format("RV Custom Broken", "<p>{{ doc.x.y.z() }}</p>")
 		frappe.db.set_value("Print Format", broken.name, "html", "<p>\n{{ 1/0 }}</p>")
 		frappe.clear_document_cache("Print Format", broken.name)
-		before = frappe.db.count("Error Log")
 		with self.as_user("accountant"):
 			with patch.dict(frappe.conf, {"developer_mode": 0}), self.assertRaises(RVInvalidInput) as e:
 				api.render(broken.name, data={})
@@ -189,10 +242,14 @@ class TestCustomPrint(RVTestCase):
 				api.render(broken.name, data={})
 			self.assertIn("ZeroDivisionError", str(e.exception))
 			self.assertIn("2", str(e.exception))
-		self.assertGreater(frappe.db.count("Error Log"), before)
+		self.assertEqual(self.logged.call_args.kwargs["title"], "Report View custom print: RV Custom Broken")
 		frappe.db.set_value("Print Format", broken.name, "html", "<p>{% if %}</p>")
 		frappe.clear_document_cache("Print Format", broken.name)
-		with self.as_user("accountant"), patch.dict(frappe.conf, {"developer_mode": 1}), self.assertRaises(RVInvalidInput) as e:
+		with (
+			self.as_user("accountant"),
+			patch.dict(frappe.conf, {"developer_mode": 1}),
+			self.assertRaises(RVInvalidInput) as e,
+		):
 			api.render(broken.name, data={})
 		self.assertIn("TemplateSyntaxError", str(e.exception))
 
@@ -222,17 +279,35 @@ class TestCustomPrint(RVTestCase):
 			html = api.render(TABLE, data={**data, "totals": {"qty": 99}})["html"]
 			self.assertIn(">99</td>", html)
 			# no rows, no columns
-			self.assertIn("rvt-none", api.render(TABLE, data={"columns": data["columns"], "rows": []})["html"])
+			self.assertIn(
+				"rvt-none", api.render(TABLE, data={"columns": data["columns"], "rows": []})["html"]
+			)
 			self.assertIn("rvt-empty", api.render(TABLE, data={})["html"])
 
 	# ------------------------------------------------------------ staging
 
 	def test_stage_and_read_back_by_its_user_only(self):
 		with self.as_user("accountant"):
-			out = api.stage("RV Custom Test", data=json.dumps({"customer": "C1"}), title="T1", letter_head="LH", heading="", signature="S")
+			out = api.stage(
+				"RV Custom Test",
+				data=json.dumps({"customer": "C1"}),
+				title="T1",
+				letter_head="LH",
+				heading="",
+				signature="S",
+			)
 			self.assertEqual(out["route"], f"/desk/rv-print/Custom/{out['token']}")
 			back = api.staged(out["token"])
-			self.assertEqual(back, {"print_format": "RV Custom Test", "inline": False, "data": {"customer": "C1"}, "title": "T1", "options": {"letter_head": "LH", "signature": "S"}})
+			self.assertEqual(
+				back,
+				{
+					"print_format": "RV Custom Test",
+					"inline": False,
+					"data": {"customer": "C1"},
+					"title": "T1",
+					"options": {"letter_head": "LH", "signature": "S"},
+				},
+			)
 			# rendered by its token (with any Custom format)
 			self.assertIn("<p>C1</p>", api.render("RV Custom Test", token=out["token"])["html"])
 			self.assertIn("rvt-empty", api.render(TABLE, token=out["token"])["html"])
@@ -253,7 +328,9 @@ class TestCustomPrint(RVTestCase):
 			url = cp.print_url("RV Custom Test", data={"customer": "C2"}, title="T")
 			token = url.rsplit("/", 1)[1]
 			self.assertEqual(api.staged(token)["data"], {"customer": "C2"})
-			url = cp.print_url("RV Custom Test", method="my_app.api.rows", args={"a": "b c"}, title="T", letter_head="L")
+			url = cp.print_url(
+				"RV Custom Test", method="my_app.api.rows", args={"a": "b c"}, title="T", letter_head="L"
+			)
 			self.assertEqual(
 				url,
 				"/desk/rv-print/Custom/RV%20Custom%20Test?method=my_app.api.rows&args=%7B%22a%22%3A%22b%20c%22%7D&title=T&letter_head=L",
@@ -268,26 +345,55 @@ class TestCustomPrint(RVTestCase):
 	def test_options(self):
 		with self.as_user("accountant"):
 			out = api.get_options("RV Custom Test")
-		self.assertEqual((out["print_format"], out["default_print_format"]), ("RV Custom Test", "RV Custom Test"))
+		self.assertEqual(
+			(out["print_format"], out["default_print_format"]), ("RV Custom Test", "RV Custom Test")
+		)
 		self.assertIn(TABLE, out["print_formats"])
 		self.assertEqual(out["print_format_types"][TABLE], "Jinja")
 		for s in out["print_signatures"]:
-			sig = frappe.db.get_value("Print Signature", s["name"], ["signature_for", "reference_doctype"], as_dict=True)
+			sig = frappe.db.get_value(
+				"Print Signature", s["name"], ["signature_for", "reference_doctype"], as_dict=True
+			)
 			self.assertEqual((sig.signature_for, sig.reference_doctype or None), ("Document", None))
 		self.assertIn("print_max_pages", out["limits"])
 		self.assertTrue(out["company"])
 
 	def test_heading_signature_letter_head_and_translations(self):
 		heading = frappe.get_doc(
-			{"doctype": "Print Heading", "print_heading": "RV Custom Heading", "description": "{{ title }} / {{ doc.customer }}"}
+			{
+				"doctype": "Print Heading",
+				"print_heading": "RV Custom Heading",
+				"description": "{{ title }} / {{ doc.customer }}",
+			}
 		).insert(ignore_if_duplicate=True)
 		frappe.get_doc(
-			{"doctype": "Print Signature", "signature_name": "RV Custom Sig", "signature_for": "Document", "content_type": "HTML", "html": "<p>{{ doc.customer }}</p>"}
+			{
+				"doctype": "Print Signature",
+				"signature_name": "RV Custom Sig",
+				"signature_for": "Document",
+				"content_type": "HTML",
+				"html": "<p>{{ doc.customer }}</p>",
+			}
 		).insert()
 		frappe.get_doc(
-			{"doctype": "Print Signature", "signature_name": "RV Custom Sig JE", "signature_for": "Document", "reference_doctype": "Journal Entry", "content_type": "HTML", "html": "<p>x</p>"}
+			{
+				"doctype": "Print Signature",
+				"signature_name": "RV Custom Sig JE",
+				"signature_for": "Document",
+				"reference_doctype": "Journal Entry",
+				"content_type": "HTML",
+				"html": "<p>x</p>",
+			}
 		).insert()
-		lh = frappe.get_doc({"doctype": "Letter Head", "letter_head_name": "RV Custom LH", "source": "HTML", "content": "<b>{{ doc.company }}</b>", "footer": "<i>f</i>"}).insert()
+		lh = frappe.get_doc(
+			{
+				"doctype": "Letter Head",
+				"letter_head_name": "RV Custom LH",
+				"source": "HTML",
+				"content": "<b>{{ doc.company }}</b>",
+				"footer": "<i>f</i>",
+			}
+		).insert()
 		data = json.dumps({"customer": "Cu <1>"})
 		with self.as_user("accountant"):
 			h = api.render_heading("RV Custom Test", heading.name, data=data, title="Ti")
@@ -301,9 +407,16 @@ class TestCustomPrint(RVTestCase):
 			self.assertNotIn("RV Custom Sig JE", names)
 			out = api.render_letterhead("RV Custom Test", lh.name, company="Co <x>")
 			self.assertEqual(out, {"header": "<b>Co &lt;x&gt;</b>", "footer": "<i>f</i>"})
-			self.assertEqual(api.get_translations("RV Custom Test", "ar", json.dumps(["Total"])), {"Total": "الإجمالي"})
+			self.assertEqual(
+				api.get_translations("RV Custom Test", "ar", json.dumps(["Total"])), {"Total": "الإجمالي"}
+			)
 			with self.assertRaises(RVInvalidInput):
 				api.get_translations("RV Custom Test", "xx-not", ["Total"])
+		# a company the user may not read prints as their own default company, never its record
+		with self.as_user("restricted"):
+			out = cp.render_letterhead(lh.name, COMPANY)
+		self.assertTrue(out.get("header"))
+		self.assertNotIn(COMPANY, out["header"])
 
 	def test_pdf(self):
 		from report_view.tests.test_pdf import _pages_html
@@ -334,7 +447,9 @@ class TestCustomPrint(RVTestCase):
 			self.assertEqual((back["print_format"], back["inline"], back["title"]), (None, True, "Inl <t>"))
 			self.assertNotIn("html", back)
 			out = api.render(token=token, lang="ar")
-		self.assertEqual((out["name"], out["inline"], out["css"]), ("", True, ".rv-page-flow{.k{color:inherit}}"))
+		self.assertEqual(
+			(out["name"], out["inline"], out["css"]), ("", True, ".rv-page-flow{.k{color:inherit}}")
+		)
 		h = out["html"]
 		self.assertIn("<h2>Inl &lt;t&gt;</h2>", h)
 		self.assertIn("<p>A &lt;b&gt;</p>", h)
@@ -408,7 +523,10 @@ class TestCustomPrint(RVTestCase):
 			self.assertEqual((opts["print_format"], opts["inline"]), (None, True))
 			self.assertIn("RV Custom Test", opts["print_formats"])
 			self.assertTrue(opts["default_print_format"])
-			self.assertEqual(api.get_translations(lang="ar", messages=json.dumps(["Total"]), token=token), {"Total": "الإجمالي"})
+			self.assertEqual(
+				api.get_translations(lang="ar", messages=json.dumps(["Total"]), token=token),
+				{"Total": "الإجمالي"},
+			)
 		with self.as_user("admin"):
 			for call in (
 				lambda: api.render(token=token),
@@ -425,7 +543,10 @@ class TestCustomPrint(RVTestCase):
 		# a user with no desk role is a Website User
 		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
 			api.stage(html="<p>x</p>", data="{}")
-		with self.as_user("accountant"), patch.object(cp.frappe, "get_cached_value", return_value="Website User"):
+		with (
+			self.as_user("accountant"),
+			patch.object(cp.frappe, "get_cached_value", return_value="Website User"),
+		):
 			with self.assertRaises(frappe.PermissionError):
 				api.stage(html="<p>x</p>", data="{}")
 		with self.set_user("Guest"), self.assertRaises(frappe.PermissionError):
@@ -435,19 +556,32 @@ class TestCustomPrint(RVTestCase):
 		from report_view.tests.test_pdf import _pages_html
 
 		heading = frappe.get_doc(
-			{"doctype": "Print Heading", "print_heading": "RV Inline Heading", "description": "{{ title }}:{{ doc.customer }}"}
+			{
+				"doctype": "Print Heading",
+				"print_heading": "RV Inline Heading",
+				"description": "{{ title }}:{{ doc.customer }}",
+			}
 		).insert(ignore_if_duplicate=True)
 		frappe.get_doc(
-			{"doctype": "Print Signature", "signature_name": "RV Inline Sig", "signature_for": "Document", "content_type": "HTML", "html": "<p>{{ doc.customer }}</p>"}
+			{
+				"doctype": "Print Signature",
+				"signature_name": "RV Inline Sig",
+				"signature_for": "Document",
+				"content_type": "HTML",
+				"html": "<p>{{ doc.customer }}</p>",
+			}
 		).insert()
 		with self.as_user("accountant"):
 			token = self._inline("<p>x</p>", {"customer": "Cu <1>"}, title="Ti")
-			self.assertIn("Ti:Cu &lt;1&gt;", api.render_heading(heading=heading.name, token=token, title="Ti")["html"])
-			self.assertIn("<p>Cu &lt;1&gt;</p>", api.render_signature(signature="RV Inline Sig", token=token)["html"])
+			self.assertIn(
+				"Ti:Cu &lt;1&gt;", api.render_heading(heading=heading.name, token=token, title="Ti")["html"]
+			)
+			self.assertIn(
+				"<p>Cu &lt;1&gt;</p>", api.render_signature(signature="RV Inline Sig", token=token)["html"]
+			)
 			pages_pdf_custom(token=token, html=_pages_html())
 			self.assertTrue(frappe.local.response.filecontent.startswith(b"%PDF"))
 			self.assertEqual(frappe.local.response.filename, "Sent template.pdf")
-
 
 
 class TestOpenIn(RVTestCase):

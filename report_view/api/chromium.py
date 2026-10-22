@@ -21,8 +21,8 @@ def engine_install(force: int | str = 0) -> dict:
 		"report_view.core.chromium.install_job",
 		queue="long",
 		timeout=chromium.INSTALL_TIMEOUT + 60,
-		job_id="report_view_chromium_install",
+		job_id=chromium.JOB_ID,
 		deduplicate=True,
-		force=str(force) in ("1", "true"),
+		force=bool(frappe.utils.cint(force)),
 	)
 	return chromium.status()

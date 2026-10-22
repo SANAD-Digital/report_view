@@ -86,7 +86,7 @@ test("the default preset: the user's own first (this target's before every targe
 });
 
 test("the server's keys of a preset are the page's settings without the zoom", () => {
-	const js = fs.readFileSync(path.join(app, "report_view/public/js/report_view/views/pages_view.js"), "utf8");
+	const js = fs.readFileSync(path.join(app, "report_view/public/js/report_view/views/pages/settings.js"), "utf8");
 	const block = js.slice(js.indexOf("export const DEFAULT_SETTINGS = Object.freeze({"), js.indexOf("\n});", js.indexOf("export const DEFAULT_SETTINGS")));
 	const page_keys = [...block.matchAll(/^\t(\w+):/gm)].map((m) => m[1]).filter((k) => k !== "zoom");
 	const py = fs.readFileSync(path.join(app, "report_view/core/print_presets.py"), "utf8");

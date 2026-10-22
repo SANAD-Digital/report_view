@@ -34,7 +34,7 @@
   - `permission_query_conditions`: القوائم = العامة + خاصة المستخدم نفسه.
   - `has_permission`: الخاص لا يراه ولا يعدّله إلا `for_user` المخزّن، **حتى System Manager** (CLAUDE.md: «الخاصة لا يراها ولا يعدّلها إلا مالكها»)؛ العام يقرؤه الجميع ولا يكتبه إلا ناشر؛ طلب يجعل `for_user` مستخدماً آخر مرفوض. «المخزّن» لا قيمة الطلب: REST يطبّق التعديلات قبل الفحص (ADR-010).
   - `validate` في المتحكم (يعمل مع REST أيضاً): الخاص لمالكه المخزّن فقط، والتحويل إلى عام لناشر، والعام إلى خاص لمن أنشأه فقط (فلا يصير إعداد عام خاصاً بشخص لا يراه أحد غيره)، والإعدادات بالتحقق أدناه، والاسم غير مكرر.
-- **الواجهات** `report_view/api/print_presets.py` تبدأ كلها بفحص الهدف (`guard_target`): التقرير بـ `guard_report` + `guard_print`، نوع المستند بصلاحية `print` عليه، القالب المخصص بـ `guard_custom_format`؛ ثم صلاحية `Print Preset` (`read` / `create` / `doc.check_permission`). القراءة بـ `frappe.get_list` والكتابة بـ `doc.save` / `doc.insert` / `doc.delete`. لا `ignore_permissions` ولا `set_user`.
+- **الواجهات** `report_view/api/print_presets.py` تبدأ كلها بفحص الهدف (`guard_target`؛ `delete` و `set_default` بهدف الإعداد نفسه، والإعداد العام لكل الأهداف بلا هدف يُفحص غير صلاحية الإعداد، وCustom العام بحارس القالب المرسل): التقرير بـ `guard_report` + `guard_print`، نوع المستند بصلاحية `print` عليه، القالب المخصص بـ `guard_custom_format`؛ ثم صلاحية `Print Preset` (`read` / `create` / `doc.check_permission`). القراءة بـ `frappe.get_list` والكتابة بـ `doc.save` / `doc.insert` / `doc.delete`. لا `ignore_permissions` ولا `set_user`.
 
 ### التحقق من الإعدادات في الخادم (`clean_settings`)
 - كائن JSON، ≤ 32 KB، مفاتيح معروفة فقط (`SETTINGS_KEYS` = مفاتيح `DEFAULT_SETTINGS` في `pages_view.js` بلا `zoom`؛ اختبار `tests/js/print_presets.test.mjs` يفشل إن اختلفت القائمتان)، وقيم بسيطة: نص ≤ 2000، رقم محدود، منطقي، قائمة نصوص ≤ 500 (الأعمدة المخفية)، أو صندوق `{top,bottom,start,end}` بأرقام. غير ذلك `RVInvalidInput`.
@@ -59,12 +59,12 @@
 ## عقد الواجهة (API)
 | الدالة | الطريقة | المعاملات | يعيد |
 |---|---|---|---|
-| `report_view.api.print_presets.list` | GET | `context`, `target` | `{mine: [row], public: [row], can_publish, keys}` — هذا الهدف أولاً ثم العامة لكل الأهداف |
+| `report_view.api.print_presets.list` (الدالة `list_presets`؛ `list` اسمها القديم يبقى لأن الشريط وحزمة الفحص البصري تناديانه) | GET | `context`, `target` | `{mine: [row], public: [row], can_publish, keys}` — هذا الهدف أولاً ثم العامة لكل الأهداف |
 | `report_view.api.print_presets.save` | POST | `context`, `target`, `preset_name`, `settings` (JSON)، `public`, `for_all`, `description`, `is_default`، و`name` (تعديل: ما يُرسل فقط يتغير) أو `name` + `as_new=1` (نسخة) | `row` |
 | `report_view.api.print_presets.delete` | POST | `name` | `{name}` |
 | `report_view.api.print_presets.set_default` | POST | `name`, `value` (1/0) | `row` |
 
-`row` = `{name, preset_name, public, is_default, context, target, specific, description, settings, can_edit, owner_name, modified}`. `save` محدود بـ 60 طلباً في الدقيقة لكل مستخدم (`_rate_limit`).
+`row` = `{name, preset_name, public, is_default, context, target, specific, description, settings, can_edit, owner_name, modified}`. `save` و `delete` و `set_default` محدودة بـ 60 طلباً في الدقيقة لكل مستخدم، و `list` بـ 120 (`_rate_limit`).
 
 ## الـ hooks المضافة
 ```python

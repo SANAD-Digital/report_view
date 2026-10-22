@@ -178,7 +178,8 @@ def _check_value(key: str, value) -> None:
 		return
 	if isinstance(value, dict):
 		if not set(value) <= BOX_SIDES or not all(
-			isinstance(v, int | float) and not isinstance(v, bool) and math.isfinite(v) for v in value.values()
+			isinstance(v, int | float) and not isinstance(v, bool) and math.isfinite(v)
+			for v in value.values()
 		):
 			_bad(_("The print setting {0} has an invalid value").format(key))
 		return
@@ -235,9 +236,14 @@ def validate_preset(doc) -> None:
 		if doc.for_user != stored.owner:
 			frappe.throw(_("A private print preset belongs to the user who made it"), frappe.PermissionError)
 		if not doc.is_new() and not stored.for_user and stored.owner != user:
-			frappe.throw(_("Only the user who made a public print preset can make it private"), frappe.PermissionError)
+			frappe.throw(
+				_("Only the user who made a public print preset can make it private"), frappe.PermissionError
+			)
 	elif (doc.is_new() or stored.for_user) and not can_publish(user):
-		frappe.throw(_("Only a System Manager or a Report Manager can make a print preset public"), frappe.PermissionError)
+		frappe.throw(
+			_("Only a System Manager or a Report Manager can make a print preset public"),
+			frappe.PermissionError,
+		)
 
 	if _name_taken(doc):
 		_bad(_("A print preset named {0} already exists here").format(doc.preset_name))
@@ -315,7 +321,18 @@ def list_presets(context: str, target: str | None) -> dict:
 		DOCTYPE,
 		filters={"context": context},
 		or_filters=[[field, "is", "not set"]] + ([[field, "=", target]] if target else []),
-		fields=["name", "preset_name", "for_user", "is_default", "context", field, "description", "settings", "owner", "modified"],
+		fields=[
+			"name",
+			"preset_name",
+			"for_user",
+			"is_default",
+			"context",
+			field,
+			"description",
+			"settings",
+			"owner",
+			"modified",
+		],
 		order_by="preset_name asc",
 		limit=500,
 	)

@@ -2,6 +2,7 @@
 and written by a publisher (System Manager or Report Manager), the settings are checked."""
 
 import json
+from unittest.mock import patch
 
 import frappe
 
@@ -11,7 +12,13 @@ from report_view.core.errors import RVInvalidInput
 from report_view.tests.utils import DOMAIN, RVTestCase
 
 TB = "Trial Balance"
-SETTINGS = {"size": "A4", "orientation": "landscape", "page_numbers": True, "page_m": {"top": 10, "bottom": 10, "start": 8, "end": 8}, "hidden": ["debit"]}
+SETTINGS = {
+	"size": "A4",
+	"orientation": "landscape",
+	"page_numbers": True,
+	"page_m": {"top": 10, "bottom": 10, "start": 8, "end": 8},
+	"hidden": ["debit"],
+}
 PUBLISHER = f"rv_t_publisher@{DOMAIN}"
 # a System Manager who may also run the accounting reports (rv_t_admin may not)
 MANAGER = f"rv_t_sysmanager@{DOMAIN}"
@@ -31,7 +38,10 @@ class TestPrintPresets(RVTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		for email, roles in ((PUBLISHER, ("Accounts User", "Report Manager")), (MANAGER, ("Accounts User", "System Manager"))):
+		for email, roles in (
+			(PUBLISHER, ("Accounts User", "Report Manager")),
+			(MANAGER, ("Accounts User", "System Manager")),
+		):
 			if not frappe.db.exists("User", email):
 				frappe.get_doc(
 					{
@@ -53,7 +63,9 @@ class TestPrintPresets(RVTestCase):
 			mine = _save(preset_name="Mine only")
 		self.assertFalse(mine["public"])
 		self.assertTrue(mine["can_edit"])
-		self.assertEqual(frappe.db.get_value("Print Preset", mine["name"], "for_user"), self.users["restricted"])
+		self.assertEqual(
+			frappe.db.get_value("Print Preset", mine["name"], "for_user"), self.users["restricted"]
+		)
 		with self.as_user("restricted"):
 			self.assertIn(mine["name"], _names(api.list("Report", TB), "mine"))
 		for other in (self.users["accountant"], MANAGER):
@@ -93,7 +105,9 @@ class TestPrintPresets(RVTestCase):
 		with self.as_email(PUBLISHER):
 			out = api.list("Report", TB)
 			self.assertTrue(out["can_publish"])
-			edited = api.save(context="Report", target=TB, name=public["name"], description="Edited by a Report Manager")
+			edited = api.save(
+				context="Report", target=TB, name=public["name"], description="Edited by a Report Manager"
+			)
 			self.assertEqual(edited["description"], "Edited by a Report Manager")
 
 	def test_only_publishers_make_a_preset_public(self):
@@ -137,6 +151,21 @@ class TestPrintPresets(RVTestCase):
 			with self.assertRaises(frappe.DoesNotExistError):
 				api.list("Document", "No Such Doctype")
 
+	def test_delete_and_set_default_check_the_preset_target(self):
+		with self.as_user("accountant"):
+			own = _save(preset_name="Guarded")
+			general = _save(preset_name="Guarded all", for_all=1)
+			with patch.object(api, "guard_target", side_effect=frappe.PermissionError) as guard:
+				for call in (lambda: api.delete(own["name"]), lambda: api.set_default(own["name"])):
+					with self.assertRaises(frappe.PermissionError):
+						call()
+				self.assertEqual(guard.call_args.args, ("Report", TB))
+				# a general preset has no target of its own: the preset's permission decides
+				api.set_default(general["name"])
+			self.assertTrue(frappe.db.exists("Print Preset", own["name"]))
+			api.delete(own["name"])
+		self.assertIs(api.list, api.list_presets)
+
 	def test_one_default_per_audience_and_target(self):
 		with self.as_user("accountant"):
 			a = _save(preset_name="A", is_default=1)
@@ -176,10 +205,19 @@ class TestPrintPresets(RVTestCase):
 	def test_save_as_new_and_update_and_delete(self):
 		with self.as_user("accountant"):
 			first = _save(preset_name="Draft")
-			copy = api.save(context="Report", target=TB, name=first["name"], as_new=1, preset_name="Draft copy", settings=json.dumps({"size": "A5"}))
+			copy = api.save(
+				context="Report",
+				target=TB,
+				name=first["name"],
+				as_new=1,
+				preset_name="Draft copy",
+				settings=json.dumps({"size": "A5"}),
+			)
 			self.assertNotEqual(copy["name"], first["name"])
 			self.assertEqual(frappe.db.get_value("Print Preset", first["name"], "preset_name"), "Draft")
-			updated = api.save(context="Report", target=TB, name=first["name"], settings=json.dumps({"size": "Letter"}))
+			updated = api.save(
+				context="Report", target=TB, name=first["name"], settings=json.dumps({"size": "Letter"})
+			)
 			self.assertEqual(updated["settings"], {"size": "Letter"})
 			self.assertEqual(updated["preset_name"], "Draft")
 			with self.assertRaises(RVInvalidInput):
@@ -191,7 +229,13 @@ class TestPrintPresets(RVTestCase):
 		"""A sent template (ADR-019) has no Custom format: it lists and saves the presets of
 		every Custom format, as any Desk user who may print."""
 		with self.as_user("accountant"):
-			row = api.save(context="Custom", target="", preset_name="Sent template wide", settings=json.dumps({"orientation": "landscape"}), for_all=1)
+			row = api.save(
+				context="Custom",
+				target="",
+				preset_name="Sent template wide",
+				settings=json.dumps({"orientation": "landscape"}),
+				for_all=1,
+			)
 			self.assertFalse(row["specific"])
 			self.assertIn(row["name"], _names(api.list("Custom", ""), "mine"))
 		with self.as_user("none"):

@@ -84,6 +84,10 @@ function code(text) {
 	return `<pre class="rv-cp-code"><code>${frappe.utils.escape_html(text)}</code></pre>`;
 }
 
+// the place of markup inside a translated sentence: the sentence is escaped, then the markup put in
+const RV_CP_SLOT = "\u0000";
+const rv_cp_esc = (s) => frappe.utils.escape_html(s);
+
 function help_html(frm) {
 	const name = frm.doc.name && !frm.is_new() ? frm.doc.name : "My Format";
 	const n = JSON.stringify(name);
@@ -99,22 +103,22 @@ function help_html(frm) {
 	];
 	const rows = vars.map(([v, d]) => `<tr><td><code>${frappe.utils.escape_html(v)}</code></td><td>${frappe.utils.escape_html(d)}</td></tr>`).join("");
 	return `<div class="rv-cp-help">
-		<h5>${__("A Custom print format")}</h5>
-		<p><b>${__("It is HTML and CSS only: the HTML (with Jinja for the data) in the HTML field, the styles in the CSS field. The CSS reaches the printed content only, on screen and in the PDF.")}</b></p>
-		<p>${__("Its data does not come from a document or a report: the page or the method that prints sends it. The print page adds the paper, the letter head, the heading, the signature, the page numbers and the PDF.")}</p>
-		<p>${__("Text in the data prints HTML-escaped. The template is written once; any page can print with it.")}</p>
-		<p>${__("A page may also send its own template instead: {0}. It reads only the data sent; a template that looks records up is saved here.", ["<code>report_view.print({ html, css, data })</code>"])}</p>
-		<h6>${__("What the template reads")}</h6>
+		<h5>${rv_cp_esc(__("A Custom print format"))}</h5>
+		<p><b>${rv_cp_esc(__("It is HTML and CSS only: the HTML (with Jinja for the data) in the HTML field, the styles in the CSS field. The CSS reaches the printed content only, on screen and in the PDF."))}</b></p>
+		<p>${rv_cp_esc(__("Its data does not come from a document or a report: the page or the method that prints sends it. The print page adds the paper, the letter head, the heading, the signature, the page numbers and the PDF."))}</p>
+		<p>${rv_cp_esc(__("Text in the data prints HTML-escaped. The template is written once; any page can print with it."))}</p>
+		<p>${rv_cp_esc(__("A page may also send its own template instead: {0}. It reads only the data sent; a template that looks records up is saved here.", [RV_CP_SLOT])).replace(RV_CP_SLOT, "<code>report_view.print({ html, css, data })</code>")}</p>
+		<h6>${rv_cp_esc(__("What the template reads"))}</h6>
 		<table class="rv-cp-vars"><tbody>${rows}</tbody></table>
-		<h6>${__("From a page, with the data")}</h6>
+		<h6>${rv_cp_esc(__("From a page, with the data"))}</h6>
 		${code(`report_view.print({\n\tprint_format: ${n},\n\tdata: { customer: "Acme", rows: [{ item: "A", qty: 2 }] },\n\ttitle: "Delivery list",\n\t// letter_head, heading, signature, lang, open_in: "same" | "tab"\n});`)}
-		<h6>${__("From a page, with a method that returns the data")}</h6>
+		<h6>${rv_cp_esc(__("From a page, with a method that returns the data"))}</h6>
 		${code(`report_view.print({\n\tprint_format: ${n},\n\tmethod: "my_app.api.get_rows", // @frappe.whitelist(methods=["GET"])\n\targs: { from_date: "2026-01-01" },\n});`)}
-		<h6>${__("As an address (keeps the data live)")}</h6>
+		<h6>${rv_cp_esc(__("As an address (keeps the data live)"))}</h6>
 		${code(`/desk/rv-print/Custom/${encodeURIComponent(name)}?method=my_app.api.get_rows&args={"from_date":"2026-01-01"}`)}
-		<h6>${__("From Python")}</h6>
+		<h6>${rv_cp_esc(__("From Python"))}</h6>
 		${code(`from report_view.core.custom_print import print_url\n\n@frappe.whitelist()\ndef print_rows():\n\trows = frappe.get_list("ToDo", fields=["name", "description"])\n\treturn print_url(${n}, data={"rows": rows}, title=_("Open tasks"))\n\n# in the page: frappe.call("my_app.api.print_rows").then((r) => report_view.open_print(r.message));`)}
-		<h6>${__("Any table, without a template")}</h6>
+		<h6>${rv_cp_esc(__("Any table, without a template"))}</h6>
 		${code(`report_view.print_table({\n\ttitle: "Stock",\n\tcolumns: [{ label: "Item", fieldname: "item" }, { label: "Qty", fieldname: "qty", fieldtype: "Float" }],\n\trows: [{ item: "A", qty: 2 }],\n\ttotals: true,\n});`)}
 	</div>`;
 }
@@ -162,7 +166,7 @@ function preview(frm) {
 				default: JSON.stringify(sample_for(frm), null, 2),
 				description: __("Paste the data a page would send; the print opens in a new tab."),
 			},
-			{ fieldname: "title", fieldtype: "Data", label: __("Title"), default: __(frm.doc.name) },
+			{ fieldname: "title", fieldtype: "Data", label: __("Title", null, "Report View"), default: __(frm.doc.name) },
 		],
 		primary_action_label: __("Preview"),
 		primary_action(values) {

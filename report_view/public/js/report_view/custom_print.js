@@ -17,11 +17,9 @@
 // and is rendered in a sandbox: it reads only the data sent (no database); for lookups,
 // save it as a Custom format.
 
+import { CUSTOM, TABLE_FORMAT, OPTION_KEYS, METHOD } from "./custom_print_rules.js";
+
 const ROUTE = "rv-print";
-const CUSTOM = "Custom";
-const TABLE_FORMAT = "Report View Table";
-const OPTION_KEYS = ["letter_head", "lang", "heading", "signature"];
-const METHOD = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$/;
 
 function choices(opts) {
 	const out = {};

@@ -189,7 +189,9 @@ def _inline_text(value, name: str, limit: int, required: bool) -> str:
 	if not isinstance(value, str):
 		frappe.throw(_("{0} has an invalid type").format(name), RVInvalidInput)
 	if len(value.encode("utf-8")) > limit:
-		frappe.throw(_("The {0} of the template is larger than {1} KB").format(name, limit // 1024), RVInvalidInput)
+		frappe.throw(
+			_("The {0} of the template is larger than {1} KB").format(name, limit // 1024), RVInvalidInput
+		)
 	return value
 
 
@@ -233,7 +235,9 @@ def staged(token: str) -> dict:
 		frappe.throw(_("Invalid print link"), RVInvalidInput)
 	payload = frappe.cache.get_value(_key(token), use_local_cache=False)
 	if not payload or payload.get("owner") != frappe.session.user:
-		frappe.throw(_("This print has expired. Print it again from where it came from."), frappe.DoesNotExistError)
+		frappe.throw(
+			_("This print has expired. Print it again from where it came from."), frappe.DoesNotExistError
+		)
 	return payload
 
 
@@ -289,7 +293,10 @@ def print_url(
 	(bookmarkable, live data); an inline template cannot travel in an address."""
 	_one_source(print_format, html)
 	if html and data is None:
-		frappe.throw(_("An HTML template is sent with its data: an address with a method cannot carry it"), RVInvalidInput)
+		frappe.throw(
+			_("An HTML template is sent with its data: an address with a method cannot carry it"),
+			RVInvalidInput,
+		)
 	if data is None and not method:
 		frappe.throw(_("Give the data to print or the method that returns it"), RVInvalidInput)
 	if data is not None:
@@ -376,7 +383,7 @@ def render_jinja(template: str, ctx: dict, what: str) -> str:
 		compiled = get_jenv().from_string(template)
 		with safe_render_flags():
 			return compiled.render(ctx)
-	except (frappe.ValidationError, frappe.PermissionError, frappe.DoesNotExistError):
+	except frappe.ValidationError, frappe.PermissionError, frappe.DoesNotExistError:
 		raise
 	except Exception as e:
 		_broken(e, what)
@@ -387,7 +394,9 @@ def _broken(e, what: str) -> None:
 
 	line = e.lineno if isinstance(e, TemplateSyntaxError) else _template_line(sys.exc_info()[2])
 	frappe.log_error(title=f"Report View custom print: {what}")
-	message = _("The print format {0} could not be rendered. Ask the person who wrote it to check it.").format(what)
+	message = _(
+		"The print format {0} could not be rendered. Ask the person who wrote it to check it."
+	).format(what)
 	if frappe.conf.get("developer_mode"):
 		detail = f"{type(e).__name__}: {e}"
 		if line:
@@ -399,7 +408,18 @@ def _broken(e, what: str) -> None:
 # ---------------------------------------------------------------- an inline template
 
 _INLINE_TEXT_TYPES = {"Data", "Small Text", "Text", "Long Text"}
-_INLINE_FORMATTED = {"Int", "Float", "Currency", "Percent", "Date", "Datetime", "Time", "Check", "Duration", "Rating"}
+_INLINE_FORMATTED = {
+	"Int",
+	"Float",
+	"Currency",
+	"Percent",
+	"Date",
+	"Datetime",
+	"Time",
+	"Check",
+	"Duration",
+	"Rating",
+}
 _CURRENCY = re.compile(r"^[A-Z]{3}$")
 _inline_env = None
 
@@ -412,7 +432,9 @@ def inline_env():
 		from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 		# None prints nothing (a field the data does not have)
-		env = ImmutableSandboxedEnvironment(loader=None, autoescape=False, finalize=lambda v: "" if v is None else v)
+		env = ImmutableSandboxedEnvironment(
+			loader=None, autoescape=False, finalize=lambda v: "" if v is None else v
+		)
 		env.globals.clear()
 		_inline_env = env
 	return _inline_env
@@ -477,12 +499,14 @@ def render_inline(payload: dict, data, title: str | None = None) -> dict:
 	``doc``, ``rows``, ``title``, ``company`` (a name), ``printed_by``, ``printed_on``,
 	``lang``, ``_()``, ``format_value()``, ``range()`` and Jinja's filters."""
 	ctx = context(None, data, title)
-	safe = {k: ctx[k] for k in ("data", "doc", "rows", "title", "company", "printed_by", "printed_on", "lang")}
+	safe = {
+		k: ctx[k] for k in ("data", "doc", "rows", "title", "company", "printed_by", "printed_on", "lang")
+	}
 	safe.update({"_": inline_translate, "format_value": inline_format_value, "range": _budget_range()})
 	compiled = compile_inline(payload.get("html") or "")
 	try:
 		html = compiled.render(safe)
-	except (frappe.ValidationError, frappe.PermissionError, frappe.DoesNotExistError):
+	except frappe.ValidationError, frappe.PermissionError, frappe.DoesNotExistError:
 		raise
 	except Exception as e:
 		_broken(e, _("Sent template"))
@@ -508,7 +532,9 @@ def _template_line(tb) -> int | None:
 # a CSS block may not close the <style> it is printed in
 _STYLE_END = re.compile(r"</\s*style", re.IGNORECASE)
 # rules that cannot be nested: kept at the top of the scoped CSS
-_TOP_RULES = re.compile(r"@(?:import|charset)[^;]*;|@font-face\s*\{[^}]*\}|@page\s*[^{]*\{[^}]*\}", re.IGNORECASE)
+_TOP_RULES = re.compile(
+	r"@(?:import|charset)[^;]*;|@font-face\s*\{[^}]*\}|@page\s*[^{]*\{[^}]*\}", re.IGNORECASE
+)
 FLOW_SCOPE = ".rv-page-flow"
 
 
@@ -531,13 +557,33 @@ def render_format(pf, data, title: str | None = None) -> dict:
 	server's PDF gets it as well."""
 	ctx = context(pf, data, title)
 	html = render_jinja(pf.html or "", ctx, pf.name)
-	return {"name": pf.name, "type": "Jinja", "html": html, "css": scoped_css(pf.css), "title": str.__str__(ctx["title"])}
+	return {
+		"name": pf.name,
+		"type": "Jinja",
+		"html": html,
+		"css": scoped_css(pf.css),
+		"title": str.__str__(ctx["title"]),
+	}
 
 
 def render_letterhead(name: str, company: str | None) -> dict:
-	"""A letter head with ``doc`` = ``{company}`` (nothing for who may not read them)."""
+	"""A letter head with ``doc`` = ``{company}`` (nothing for who may not read them). A
+	company the user may not read prints as their default company: a builder letter head
+	reads the company's record (tax ID, address, logo) when it prints."""
 	if not frappe.has_permission("Letter Head", "read"):
 		return {}
+	if (
+		company
+		and frappe.db.exists("Company", company)
+		and not frappe.has_permission("Company", "read", doc=company)
+	):
+		company = default_company(None)
+		if (
+			company
+			and frappe.db.exists("Company", company)
+			and not frappe.has_permission("Company", "read", doc=company)
+		):
+			company = None
 	found = frappe.get_list("Letter Head", filters={"name": name, "disabled": 0}, fields=["name"], limit=1)
 	if not found:
 		frappe.throw(_("Letter Head {0} not found").format(name), frappe.DoesNotExistError)
@@ -573,5 +619,9 @@ def render_signature(name: str, ctx: dict) -> dict:
 		"Print Signature", filters={"name": name, **filters}, or_filters=or_filters, fields=["name"], limit=1
 	)
 	if not found:
-		frappe.throw(_("Print Signature {0} is not available for this print").format(name), frappe.DoesNotExistError)
-	return printing.render_signature(frappe.get_doc("Print Signature", found[0].name), {**ctx, "standalone": False})
+		frappe.throw(
+			_("Print Signature {0} is not available for this print").format(name), frappe.DoesNotExistError
+		)
+	return printing.render_signature(
+		frappe.get_doc("Print Signature", found[0].name), {**ctx, "standalone": False}
+	)

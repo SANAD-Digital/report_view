@@ -25,6 +25,8 @@ PKG = os.path.join(HERE, "..", "report_view")
 CSS_OUT = os.path.join(PKG, "public", "css", "rv_fonts.css")
 README_OUT = os.path.join(PKG, "public", "fonts", "README.md")
 
+# core/fonts.py reads its constants from report_view/letterhead_contract.json (core/contract.py)
+sys.path.insert(0, os.path.join(HERE, ".."))
 _spec = importlib.util.spec_from_file_location("rv_fonts", os.path.join(PKG, "core", "fonts.py"))
 fonts = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(fonts)
@@ -35,16 +37,22 @@ LICENCE_FILES = ("OFL.txt", "COPYING", "LICENSE")
 MAGIC = {"ttf": (b"\x00\x01\x00\x00", b"true", b"OTTO"), "woff2": (b"wOF2",)}
 
 EXCLUDED = [
-	("B Badr, B Baran, B Bardiya, B Compset, B Davat, B Elham, B Esfehan, B Fantezy, B Farnaz, "
-	 "B Ferdosi, B Hamid, B Helal, B Homa, B Jadid, B Jalal, B Koodak, B Kourosh, B Lotus, B Mahsa, "
-	 "B Mehr, B Mitra, B Morvarid, B Narm, B Nasim, B Nazanin, B Roya, B Setareh, B Shiraz, "
-	 "B Tabassom, B Tehran, B Titr, B Traffic, B Vahid, B Yagut, B Yas, B Yekan, B Zar, B Ziba "
-	 "(the «B …» series)", "© 2000 Borna Rayaneh, no licence to redistribute."),
+	(
+		"B Badr, B Baran, B Bardiya, B Compset, B Davat, B Elham, B Esfehan, B Fantezy, B Farnaz, "
+		"B Ferdosi, B Hamid, B Helal, B Homa, B Jadid, B Jalal, B Koodak, B Kourosh, B Lotus, B Mahsa, "
+		"B Mehr, B Mitra, B Morvarid, B Narm, B Nasim, B Nazanin, B Roya, B Setareh, B Shiraz, "
+		"B Tabassom, B Tehran, B Titr, B Traffic, B Vahid, B Yagut, B Yas, B Yekan, B Zar, B Ziba "
+		"(the «B …» series)",
+		"© 2000 Borna Rayaneh, no licence to redistribute.",
+	),
 	("B Sina", "«MRT Magic Pack» (Win2Farsi, Mohammad Reza Tavakoli): no licence to redistribute."),
 	("B Titr TG E", "© 2009 Reza Teimouri-Neda Studio: no licence to redistribute."),
 	("DecoType Naskh Variants", "© DecoType, shipped with Microsoft Office: not redistributable."),
 	("PT Bold Heading", "Designed for Microsoft Corp. by Platinum Inc.: not redistributable."),
-	("Iranian Sans (IranianSans.*, irsans.ttf)", "© 2006 Nevisa, all rights reserved: no licence to redistribute."),
+	(
+		"Iranian Sans (IranianSans.*, irsans.ttf)",
+		"© 2006 Nevisa, all rights reserved: no licence to redistribute.",
+	),
 ]
 
 
@@ -108,7 +116,13 @@ def write_readme():
 	rows = []
 	for e in fonts.registry():
 		weights = ", ".join(sorted(e.get("weights", {}))) + (" (+ italic)" if e.get("italic") else "")
-		formats = "system" if e.get("system") else ("woff2 + ttf" if any("woff2" in f for _s, _w, f in fonts.font_files(e)) else "ttf (unchanged)")
+		formats = (
+			"system"
+			if e.get("system")
+			else (
+				"woff2 + ttf" if any("woff2" in f for _s, _w, f in fonts.font_files(e)) else "ttf (unchanged)"
+			)
+		)
 		rows.append(
 			f"| {e['family']} | `{e['slug']}` | {e['category']} | {', '.join(e['scripts'])} | {weights or '—'} | {formats} | {e['licence']} | {e['source']} |"
 		)
@@ -151,4 +165,6 @@ if __name__ == "__main__":
 	check()
 	write_css()
 	write_readme()
-	print(f"build_fonts: {len(fonts.registry())} families; wrote {os.path.relpath(CSS_OUT)} and {os.path.relpath(README_OUT)}")
+	print(
+		f"build_fonts: {len(fonts.registry())} families; wrote {os.path.relpath(CSS_OUT)} and {os.path.relpath(README_OUT)}"
+	)

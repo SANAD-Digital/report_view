@@ -1,12 +1,15 @@
 // The font library of Report View (report_view/fonts.json, core/fonts.py): its families,
 // their CSS stacks and @font-face rules, grouped for a font picker. Pure: the registry is
 // handed in (fonts_registry.js imports the JSON into the bundles; node tests read the file),
-// so the same rules are tested in node (tests/js/fonts.test.mjs).
+// so the same rules are tested in node (tests/js/fonts.test.mjs, with tests/js/_json.mjs).
 
-export const DEFAULT_FONT = "IBM Plex Sans Arabic";
-export const ASSET_BASE = "/assets/report_view/fonts/";
-export const CATEGORIES = Object.freeze(["sans", "naskh", "kufi", "serif", "display", "mono"]);
-const GENERIC = { serif: "serif", naskh: "serif", mono: "monospace" };
+import CONTRACT from "../../../letterhead_contract.json";
+
+// the library's constants: report_view/letterhead_contract.json ("fonts"), as core/fonts.py reads them
+export const DEFAULT_FONT = CONTRACT.fonts.default;
+export const ASSET_BASE = CONTRACT.fonts.asset_base;
+export const CATEGORIES = Object.freeze([...CONTRACT.fonts.categories]);
+const GENERIC = Object.freeze({ ...CONTRACT.fonts.generic });
 const FORMATS = [
 	["woff2", "woff2"],
 	["ttf", "truetype"],

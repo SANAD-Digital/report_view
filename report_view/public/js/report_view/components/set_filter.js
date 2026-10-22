@@ -7,12 +7,11 @@
 // (with a text) and closes; Escape closes (components/popover.js).
 
 import { open_popover } from "./popover.js";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
+import { esc, fmt_int } from "../util.js";
 
 const NULL_KEY = "\u0000";
+// The values are searched after this much quiet in the search field (ms).
+const SEARCH_DEBOUNCE_MS = 250;
 const key_of = (v) => (v === null || v === undefined || v === "" ? NULL_KEY : String(v));
 
 /** The selection after a value is switched (null = all selected). */
@@ -51,7 +50,7 @@ export class SetList {
 		this.selected = selected;
 		const on = new Set((selected || []).map(key_of));
 		const is_on = (v) => !selected || on.has(key_of(v));
-		const n = (x) => esc(frappe.format(x, { fieldtype: "Int" }, { inline: true }));
+		const n = (x) => esc(fmt_int(x));
 		const count = selected ? selected.length : all.length;
 		const rows = values
 			.map(
@@ -122,7 +121,7 @@ export function open_set_filter({ root, anchor, title, load, selected, on_change
 	let timer = null;
 	search.addEventListener("input", () => {
 		clearTimeout(timer);
-		timer = setTimeout(() => fill(search.value.trim()), 250);
+		timer = setTimeout(() => fill(search.value.trim()), SEARCH_DEBOUNCE_MS);
 	});
 	search.addEventListener("keydown", (e) => {
 		if (e.key !== "Enter") return;

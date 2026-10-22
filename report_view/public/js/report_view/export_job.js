@@ -20,7 +20,7 @@ export class ExportJobError extends Error {
  * Waits for an export job to finish.
  * @param {string} job the id the server gave
  * @param {object} o
- * @param {(job: string) => Promise<{state: string, row_count?: number, error?: string}>} o.status
+ * @param {(job: string) => Promise<{state: string, row_count?: number, error?: string, error_code?: string, cancellable?: boolean}>} o.status
  * @param {() => boolean} [o.cancelled] true once the user stopped waiting
  * @param {(state: object) => void} [o.on_state] every state read
  * @param {(ms: number) => Promise<void>} [o.sleep]
@@ -36,6 +36,8 @@ export async function wait_for_export(job, { status, cancelled = () => false, on
 		if (cancelled()) throw new ExportJobError("cancelled");
 		on_state(state || {});
 		if (state?.state === "done") return state;
+		// the server cancelled it (the user's cancel, from this page or another)
+		if (state?.state === "cancelled" || state?.error_code === "cancelled") throw new ExportJobError("cancelled");
 		if (state?.state === "failed") throw new ExportJobError("failed", state.error || "");
 		if (now() - start >= limit_ms) throw new ExportJobError("timeout");
 		await wait(interval_ms);

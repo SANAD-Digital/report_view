@@ -6,10 +6,7 @@
 
 import { visible_columns } from "../engine/view_config.js";
 import { LIMIT_GROUPS } from "../state/column_groups.js";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
+import { esc } from "../util.js";
 
 /** @param {import("../view_controls.js").ViewControls} controls */
 export function open_column_groups(controls) {

@@ -17,6 +17,8 @@ export const MM = 96 / 25.4;
  * shrink it to (about 7.2pt): below it the cells are cut, never the font. */
 export const PAGE_FONT = { comfortable: 12, compact: 11 };
 export const MIN_FONT_SCALE = 0.8;
+// paginate() never cuts more pages than this (a guard against a row taller than the page).
+const MAX_PAGINATE = 50000;
 /** Font size of the grid the nominal column widths were made for. */
 export const SCREEN_FONT = 13;
 /** A text column gives up to this share of its width before every column shrinks. */
@@ -128,7 +130,7 @@ export function paginate({ count, row_h, body_h, first_h = 0, tail_h = 0 }) {
 	const rows = Math.max(0, Math.floor(count) || 0);
 	const rh = Math.max(1, row_h || 1);
 	let at = 0;
-	for (let i = 0; i < 50000; i++) {
+	for (let i = 0; i < MAX_PAGINATE; i++) {
 		const room = body_h - (i === 0 ? first_h : 0);
 		const remaining = rows - at;
 		// rows that leave room for the tail on this page

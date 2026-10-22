@@ -12,6 +12,7 @@ import { CURRENCY_COUNT_PREFIX } from "../engine/view_config.js";
 import { entry_at } from "../engine/row_layout.js";
 import { column_runs } from "../engine/queries.js";
 import { header_bands } from "../state/column_groups.js";
+import { is_empty } from "../engine/columns_util.js";
 
 // Pinned columns next to the label need room: on a narrower grid only the label is pinned.
 const MIN_WIDTH_FOR_PINS = 600;
@@ -30,10 +31,6 @@ const HIERARCHICAL = new Set(["tree", "levels", "group"]);
 // (.rv-drow.op) for an opening.
 const SUMMARY_CLASS = { opening: "opening", internal_total: "foot", closing: "foot closing", group_header: "group d0" };
 const BLANK = { html: "", sign: "" };
-
-function empty(v) {
-	return v === null || v === undefined || v === "";
-}
 
 /** Runs [a, b) of a set of row numbers, rows this close read together. */
 function row_runs(rows) {
@@ -410,7 +407,7 @@ export class GridRows {
 		const m = this.model;
 		const fmt = this.fmt;
 		out = { key: m.label.key, html: fmt.caption_html(m.label, row) };
-		if (empty(row[m.label.key])) {
+		if (is_empty(row[m.label.key])) {
 			const from = [...m.pinned, ...m.data].find((d) => !d.numeric && typeof row[d.column.key] === "string" && row[d.column.key]);
 			if (from) out = { key: from.column.key, html: fmt.caption_html(from.column, row) };
 		}

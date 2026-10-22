@@ -5,10 +5,7 @@
 // tokens (light / dark / compact) are defined on .rv.
 
 import { icons } from "./icons.js";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
+import { esc } from "../util.js";
 
 export class Header {
 	/**

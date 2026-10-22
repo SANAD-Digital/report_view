@@ -7,10 +7,7 @@
 
 import { icons } from "./icons.js";
 import { open_popover, close_popover } from "./popover.js";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
+import { esc } from "../util.js";
 
 export class SearchBox {
 	/**

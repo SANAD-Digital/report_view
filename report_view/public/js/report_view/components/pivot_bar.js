@@ -6,10 +6,7 @@
 
 import { icons } from "./icons.js";
 import { DRAG_PIVOT, accepts, dragged } from "./group_panel.js";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
+import { esc } from "../util.js";
 
 export class PivotBar {
 	/**

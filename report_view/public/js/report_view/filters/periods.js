@@ -29,7 +29,7 @@ export function ym(y, m) {
 	return [Math.floor(k / 12), ((k % 12) + 12) % 12];
 }
 
-export function days_in_month(y, m) {
+function days_in_month(y, m) {
 	return new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
 }
 
@@ -39,7 +39,7 @@ export function eom(y, m) {
 	return iso(yy, mm, days_in_month(yy, mm));
 }
 
-export function add_days(x, n) {
+function add_days(x, n) {
 	const p = parse_iso(x);
 	return new Date(Date.UTC(p.y, p.m, p.d + n)).toISOString().slice(0, 10);
 }

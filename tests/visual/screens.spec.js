@@ -1,12 +1,21 @@
 // Screenshots of the real page components (tests/visual/harness.html) for the design check,
 // and the browser-side checks of the engine: RTL scrolling, folding, handle lifecycle.
 // Phase 5a-1: subtotal rows, column widths, pinned columns and rows, fold in the URL.
-// Saved to docs/progress/screens/phase-5a1/. Fails on any console error or warning.
+// Saved to <screens>/phase-5a1/. Fails on any console error or warning.
 const fs = require("node:fs");
 const path = require("node:path");
 const { test, expect } = require("@playwright/test");
 
-const OUT = path.resolve(__dirname, "../../docs/progress/screens/phase-5a1");
+// <screens>: test-results/screens/ (git-ignored) on every run; RV_SHOTS=docs writes them to
+// docs/progress/screens/ instead, at the end of a phase (docs/progress/_template.md), so a run
+// of the tests does not rewrite the tracked pictures.
+const SHOTS_ROOT = path.resolve(__dirname, process.env.RV_SHOTS === "docs" ? "../../docs/progress/screens" : "../../test-results/screens");
+const shots_dir = (name) => {
+	const dir = path.join(SHOTS_ROOT, name);
+	fs.mkdirSync(dir, { recursive: true });
+	return dir;
+};
+const OUT = shots_dir("phase-5a1");
 
 // The one documented exception to "no console warnings" (ADR-012): the Perspective client
 // prints this wherever window.chrome is missing (headless shell, Firefox, Safari).
@@ -997,9 +1006,8 @@ test("lifecycle: no handle is left after 20 changes of fold, subtotals, widths a
 // ---------------------------------------------------------------------------------------
 // Design parity, wave 1 (docs/progress/phase-5a2-wave1.md): every item of the main screen
 // next to its reference capture in reference/design/screens/, light and dark, RTL and LTR,
-// at the design's 1440x1100. Saved to docs/progress/screens/phase-5a2/.
-const OUT2 = path.resolve(__dirname, "../../docs/progress/screens/phase-5a2");
-fs.mkdirSync(OUT2, { recursive: true });
+// at the design's 1440x1100. Saved to <screens>/phase-5a2/.
+const OUT2 = shots_dir("phase-5a2");
 const shot2 = (page, name, full = false) => page.screenshot({ path: path.join(OUT2, `${name}.png`), fullPage: full });
 const VARIANTS = [
 	{ id: "light-rtl", query: "lang=ar" },
@@ -1437,9 +1445,9 @@ test("a MultiSelectList filter has one frame (no design input frame on its wrapp
 });
 
 // ---------------------------------------------------------------- Charts dashboard (phase 5d)
-// Screenshots in docs/progress/screens/phase-5a2/dashboard-*.png, compared with
+// Screenshots in <screens>/phase-5a2/dashboard-*.png, compared with
 // reference/design/screens/charts.png. The page opens on the table, then the Charts tab.
-const CHARTS_OUT = path.resolve(__dirname, "../../docs/progress/screens/phase-5a2");
+const CHARTS_OUT = shots_dir("phase-5a2");
 const dash_rv = (charts) => rv({ charts });
 const cards = (page) => page.evaluate(() => window.rv_page.charts.debug_cards());
 
@@ -1584,8 +1592,12 @@ function same_card(card, grid, label) {
 // The dashboard's filters as the grid's own: a slicer of values, a card's filter, a cross-filter.
 const as_grid_filters = (slicers) => slicers.map((s) => ({ key: s.key, type: "set", values: s.values, exclude: false }));
 
-test("dashboard: the numbers of every card are the grid's for the same filters (tb, ar, gl)", async ({ page }) => {
-	test.setTimeout(120_000);
+// One step of a dashboard test: its own time limit, so a slow step names itself under load.
+const STEP_MS = 15_000;
+const step = (page, fn, arg) => page.waitForFunction(fn, arg, { timeout: STEP_MS });
+
+test("dashboard: the numbers of every card are the grid's for the same filters (tb)", async ({ page }) => {
+	test.setTimeout(90_000);
 	const problems = watch_console(page);
 	// trial balance: the closing card reads the tree "as is" (its top rows); the others the facts
 	await open(page, "report=tb&lang=ar", { height: 1400 });
@@ -1610,13 +1622,19 @@ test("dashboard: the numbers of every card are the grid's for the same filters (
 	});
 	same_card(tb[1], await grid_by(page, "account", tb[1].series, [{ key: "account__root_type", type: "set", values: ["Expense"], exclude: false }]), "tb expenses");
 	same_card(tb[2], await grid_by(page, "account", tb[2].series), "tb moving");
+	expect(problems, "console errors/warnings").toEqual([]);
+});
 
-	// receivables and the general ledger: every card by its dimension; the measures side by side = the grand total
-	for (const report of ["ar", "gl"]) {
+// receivables and the general ledger: every card by its dimension; the measures side by side = the grand total
+for (const report of ["ar", "gl"]) {
+	test(`dashboard: the numbers of every card are the grid's for the same filters (${report})`, async ({ page }) => {
+		test.setTimeout(90_000);
+		const problems = watch_console(page);
 		await open(page, `report=${report}&lang=en`, { height: 1400 });
 		await to_charts(page);
 		await load_all(page);
 		const list = await cards(page);
+		expect(list.length).toBeGreaterThan(0);
 		for (const c of list) {
 			if (c.route === "totals") {
 				const totals = await page.evaluate(() => window.rv_page.debug_totals().totals);
@@ -1625,11 +1643,11 @@ test("dashboard: the numbers of every card are the grid's for the same filters (
 			}
 			same_card(c, await grid_by(page, c.x, c.series), `${report} ${c.id}`);
 		}
-	}
-	expect(problems, "console errors/warnings").toEqual([]);
-});
+		expect(problems, "console errors/warnings").toEqual([]);
+	});
+}
 
-test("dashboard: add, edit, duplicate, resize and remove a card; kept in the URL and the user's settings", async ({ page }) => {
+test("dashboard: add a card and edit it: type, dimension, measures, Top N, sort and title", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, "report=gl&lang=ar", { height: 1400 });
 	await to_charts(page);
@@ -1637,56 +1655,77 @@ test("dashboard: add, edit, duplicate, resize and remove a card; kept in the URL
 	expect(await ids()).toEqual(["accounts", "vouchers", "dates"]);
 	// add: a new card opens its editor
 	await page.locator('[data-action="add-card"]').click();
-	await page.waitForSelector(".rv-ced-pop");
+	await page.waitForSelector(".rv-ced-pop", { timeout: STEP_MS });
 	expect((await ids()).length).toBe(4);
 	await shot_dash(page, "dashboard-gl-editor-rtl");
 	// edit: type, dimension, measures, Top N, sort, title
 	const id = (await ids())[3];
 	await page.locator('.rv-ced-pop .rv-ctype[data-type="donut"]').click();
-	await page.waitForFunction((id) => window.rv_page.state.charts?.cards.find((c) => c.id === id)?.type === "donut", id);
+	await step(page, (id) => window.rv_page.state.charts?.cards.find((c) => c.id === id)?.type === "donut", id);
 	await page.selectOption('.rv-ced-pop [data-f="x"]', "party");
-	await page.waitForFunction((id) => window.rv_page.state.charts.cards.find((c) => c.id === id).x === "party", id);
+	await step(page, (id) => window.rv_page.state.charts.cards.find((c) => c.id === id).x === "party", id);
 	await page.locator('.rv-ced-pop .rv-chart-measures input[data-key="credit"]').check();
-	await page.waitForFunction((id) => window.rv_page.state.charts.cards.find((c) => c.id === id).series.includes("credit"), id);
+	await step(page, (id) => window.rv_page.state.charts.cards.find((c) => c.id === id).series.includes("credit"), id);
 	await page.locator('.rv-ced-pop [data-top="5"]').click();
-	await page.waitForFunction((id) => window.rv_page.state.charts.cards.find((c) => c.id === id).top === 5, id);
+	await step(page, (id) => window.rv_page.state.charts.cards.find((c) => c.id === id).top === 5, id);
 	await page.fill(".rv-ced-pop .rv-ced-title", "حسب الطرف");
 	await page.press(".rv-ced-pop .rv-ced-title", "Enter");
-	await page.waitForFunction((id) => window.rv_page.state.charts.cards.find((c) => c.id === id).title === "حسب الطرف", id);
+	await step(page, (id) => window.rv_page.state.charts.cards.find((c) => c.id === id).title === "حسب الطرف", id);
 	await page.keyboard.press("Escape");
-	await page.waitForFunction((id) => {
-		const c = window.rv_page.charts.debug_cards().find((x) => x.id === id);
-		return c.type === "donut" && c.x === "party" && c.loaded;
-	}, id);
-	expect(await page.locator(`.rv-dcard[data-card="${id}"] h3`).textContent()).toBe("حسب الطرف");
+	await step(
+		page,
+		(id) => {
+			const c = window.rv_page.charts.debug_cards().find((x) => x.id === id);
+			return c.type === "donut" && c.x === "party" && c.loaded;
+		},
+		id
+	);
+	// the card is drawn again with its title (a draw follows the last change)
+	await expect(page.locator(`.rv-dcard[data-card="${id}"] h3`)).toHaveText("حسب الطرف", { timeout: STEP_MS });
 	// a donut with more than one measure says it shows the first one
 	await expect(page.locator(`.rv-dcard[data-card="${id}"] .rv-chart-note`)).toBeVisible();
+	// the edited card is in the user's settings once the burst of changes is written
+	await page.evaluate(() => window.rv_page.flush_settings());
+	const saved = await page.evaluate((id) => frappe.model.user_settings.store["Report View:General Ledger"]?.charts?.cards.find((c) => c.id === id), id);
+	expect(saved).toMatchObject({ type: "donut", x: "party", top: 5, title: "حسب الطرف" });
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("dashboard: full width, duplicate and remove a card; kept in the URL and the user's settings; reset", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=gl&lang=ar", { height: 1400 });
+	await to_charts(page);
+	const ids = async () => (await cards(page)).map((c) => c.id);
+	expect(await ids()).toEqual(["accounts", "vouchers", "dates"]);
 	// card menu: full width, duplicate, remove
 	const menu = async (card, item) => {
 		await page.locator(`.rv-dcard[data-card="${card}"] .rv-dcard-menu`).click();
 		await page.locator(`.rv-pop [data-item="${item}"]`).click();
 	};
 	await menu("accounts", "size");
-	await page.waitForFunction(() => document.querySelector('.rv-dcard[data-card="accounts"]').classList.contains("wide"));
+	await step(page, () => document.querySelector('.rv-dcard[data-card="accounts"]').classList.contains("wide"));
 	await menu("accounts", "duplicate");
-	await page.waitForFunction(() => window.rv_page.charts.debug_cards().length === 5);
+	await step(page, () => window.rv_page.charts.debug_cards().length === 4);
 	expect((await ids())[1]).not.toBe("accounts");
 	await menu("vouchers", "remove");
-	await page.waitForFunction(() => !window.rv_page.charts.debug_cards().some((c) => c.id === "vouchers"));
+	await step(page, () => !window.rv_page.charts.debug_cards().some((c) => c.id === "vouchers"));
 	// the dashboard is in the URL (rv) and in the user's settings (no cross-filter there)
-	await page.waitForFunction(() => /[?&]rv=/.test(window.location.search));
-	await page.waitForFunction(() => frappe.model.user_settings.store["Report View:General Ledger"]?.charts?.cards.length === 4, null, { timeout: 5000 });
+	await step(page, () => /[?&]rv=/.test(window.location.search));
+	await page.evaluate(() => window.rv_page.flush_settings());
+	const saved = await page.evaluate(() => frappe.model.user_settings.store["Report View:General Ledger"]?.charts);
+	expect(saved.cards.length).toBe(3);
+	expect(saved.cross).toBe(null);
 	// a link with this dashboard opens it
 	const charts = await page.evaluate(() => window.rv_page.state.charts);
 	await open(page, `report=gl&lang=ar&rv=${dash_rv(charts)}`);
 	await to_charts(page);
-	expect((await ids()).length).toBe(4);
+	expect((await ids()).length).toBe(3);
 	expect((await ids()).includes("vouchers")).toBe(false);
 	// back to the report's default
 	await page.locator('[data-action="dash-menu"]').click();
 	await page.locator('.rv-pop [data-item="reset"]').click();
-	await page.waitForFunction(() => window.rv_page.state.charts === null);
-	await page.waitForFunction(() => window.rv_page.charts.debug_cards().map((c) => c.id).join() === "accounts,vouchers,dates");
+	await step(page, () => window.rv_page.state.charts === null);
+	await step(page, () => window.rv_page.charts.debug_cards().map((c) => c.id).join() === "accounts,vouchers,dates");
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
@@ -1855,9 +1894,9 @@ test("dashboard from the bundles written by `bench build` (charts bundle loaded 
 });
 
 // ------------------------------------------------------------------ Pivot (phase 5b tasks 2, 3, 5)
-// Screenshots to docs/progress/screens/phase-5a2/pivot-*.png (reference:
+// Screenshots to <screens>/phase-5a2/pivot-*.png (reference:
 // reference/design/screens/pivot.png, pivot_drill.png, sidecols_pivot.png).
-const PIVOT_OUT = path.resolve(__dirname, "../../docs/progress/screens/phase-5a2");
+const PIVOT_OUT = shots_dir("phase-5a2");
 const pivot_shot = (page, name, full = false) => page.screenshot({ path: path.join(PIVOT_OUT, `${name}.png`), fullPage: full });
 const PIVOT_DESIGN = { width: 1440, height: 1100 };
 const pivot_handles = (page) => page.evaluate(() => window.rv_page.debug_handles().map((h) => h.kind).sort().join(","));
@@ -2181,10 +2220,9 @@ test("pivot lifecycle: no handle left after 20 switches and pivot changes, a re-
 // ------------------------------------------------------------------------------------------
 // Pages view (ADR-014; docs/progress/pages-print.md): the report as printed pages next to
 // the table, compared with reference/design/screens/print.png. Saved to
-// docs/progress/screens/pages/. The harness answers the print options, a letter head and
+// <screens>/pages/. The harness answers the print options, a letter head and
 // the translations; the language re-run answers the same fixture.
-const OUT3 = path.resolve(__dirname, "../../docs/progress/screens/pages");
-fs.mkdirSync(OUT3, { recursive: true });
+const OUT3 = shots_dir("pages");
 const shot3 = (page, name, full = false) => page.screenshot({ path: path.join(OUT3, `${name}.png`), fullPage: full });
 const PAGES = rv({ mode: "pages" });
 const pages_settings = (s) => `&pages=${encodeURIComponent(JSON.stringify(s))}`;
@@ -2339,11 +2377,11 @@ test("pages: paper, orientation, margins, content and columns change the pages; 
 	const after = await pages_state(page);
 	expect(after.titles.length).toBe(before - 1);
 	expect(after.titles).not.toContain("Account Type");
+	// the burst of changes written now (the page writes it after a pause, or when it is left)
+	await page.evaluate(() => window.rv_page.flush_settings());
 	const saved = await page.evaluate(() => frappe.model.user_settings.store["Report View:Trial Balance"]?.pages);
-	await page.waitForTimeout(900);
-	const saved2 = await page.evaluate(() => frappe.model.user_settings.store["Report View:Trial Balance"]?.pages);
-	expect((saved2 || saved).orientation).toBe("landscape");
-	expect((saved2 || saved).hidden).toEqual(["account__account_type"]);
+	expect(saved.orientation).toBe("landscape");
+	expect(saved.hidden).toEqual(["account__account_type"]);
 	const hidden_in_grid = await page.evaluate(() => window.rv_page.state.columns.hidden);
 	expect(hidden_in_grid).not.toContain("account__account_type");
 	await shot3(page, "pages-tb-settings-changed-light-ltr");
@@ -2447,7 +2485,8 @@ test("pages: only the pages near the viewport carry content; far ones give it ba
 		const stage = document.querySelector(".rv-print-stage");
 		stage.scrollTop = stage.scrollHeight / 2;
 	});
-	await page.waitForTimeout(600);
+	// the readout follows the scroll, the pages near it are filled
+	await page.waitForFunction(() => !document.querySelector(".rv-print-pos").textContent.includes("الصفحة 1 من"));
 	await settle(page);
 	const mid = await page.evaluate(() => ({ filled: window.rv_page.pages.filled.size, pos: document.querySelector(".rv-print-pos").textContent }));
 	expect(mid.filled).toBeLessThan(40);
@@ -2485,7 +2524,7 @@ test("pages: the standard template's five print styles, in a list of their own; 
 	// the compact look holds more rows on a page
 	expect(rows.compact).toBeLessThan(rows.classic);
 	const saved = await page.evaluate(async () => {
-		await new Promise((r) => setTimeout(r, 900));
+		await window.rv_page.flush_settings();
 		return frappe.model.user_settings.store["Report View:Trial Balance"].pages;
 	});
 	expect([saved.style, saved.template]).toEqual(["minimal", ""]);
@@ -2611,7 +2650,7 @@ test("pages: a watermark, text or image, on every page or the first, light and t
 	await page.click('[data-seg="wm_type"][data-value="text"]');
 	await settle(page);
 	await page.locator('input[data-text="wm_text"]').fill("سري");
-	await page.waitForTimeout(500);
+	await page.waitForFunction(() => [...document.querySelectorAll(".rv-page[data-page] .rv-page-wm span")].some((s) => s.textContent === "سري"));
 	await settle(page);
 	let m = await marks();
 	expect(m.every((x) => x && x.tag === "SPAN" && x.text === "سري")).toBe(true);
@@ -2636,13 +2675,14 @@ test("pages: a watermark, text or image, on every page or the first, light and t
 	await page.click('[data-seg="wm_type"][data-value="image"]');
 	await settle(page);
 	await page.locator('input[data-text="wm_image"]').fill("/assets/frappe/images/frappe-framework-logo.svg");
-	await page.waitForTimeout(500);
+	await page.waitForFunction(() => document.querySelector(".rv-page[data-page] .rv-page-wm img"));
 	await settle(page);
 	m = await marks();
 	expect(m[0].tag).toBe("IMG");
 	// an address that is not one stays out
+	// refused as it is typed (no timer to wait for)
 	await page.locator('input[data-text="wm_image"]').fill("javascript:alert(1)");
-	await page.waitForTimeout(500);
+	await settle(page);
 	const saved = await page.evaluate(() => window.rv_page.pages.settings.wm_image);
 	expect(saved).toBe("/assets/frappe/images/frappe-framework-logo.svg");
 	expect(problems.filter((x) => !/frappe-framework-logo/.test(x)), "console errors/warnings").toEqual([]);
@@ -2938,6 +2978,37 @@ test("pages: in compact density the toolbar spans the pages, as in the comfortab
 	expect(problems).toEqual([]);
 });
 
+test("pages: on a phone the page readout and the pages kept follow the phone's gap and padding (far into a long report)", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=gl&lang=en&rows=10000&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`, { width: 390, height: 844 });
+	await settle(page);
+	const read = (k) =>
+		page.evaluate(async (k) => {
+			const v = window.rv_page.pages;
+			const cs = getComputedStyle(v.sheets);
+			const sheet = v.sheets.children[k];
+			// the stage scrolled so that page k stands in the middle of it
+			const top = sheet.getBoundingClientRect().top - v.stage.getBoundingClientRect().top + v.stage.scrollTop;
+			v.stage.scrollTop = top + sheet.getBoundingClientRect().height / 2 - v.stage.clientHeight / 2;
+			v.update_position();
+			return { gap: cs.rowGap, pad: cs.paddingBlockStart, metrics: v.sheet_metrics(), pages: v.pages.length, pos: document.querySelector(".rv-print-pos").textContent };
+		}, k);
+	const far = await read(140);
+	expect(far.pages).toBeGreaterThan(150);
+	expect(far.gap).toBe("12px");
+	expect(far.metrics).toMatchObject({ gap: 12, pad: 12 });
+	expect(far.pos).toBe(`Page 141 of ${far.pages.toLocaleString("en-US")}`);
+	// the page in the middle is drawn once the stage has settled, and not given back
+	await page.waitForFunction(() => window.rv_page.pages.filled.has(140));
+	await page.evaluate(() => window.rv_page.pages.trim_filled());
+	expect(await page.evaluate(() => [139, 140, 141].every((i) => window.rv_page.pages.filled.has(i)))).toBe(true);
+	// back to a desktop width: the stylesheet's values there
+	await page.setViewportSize({ width: 1440, height: 1000 });
+	await page.waitForFunction(() => window.rv_page.pages.sheet_metrics().gap === 24);
+	expect((await read(140)).pos).toBe(`Page 141 of ${far.pages.toLocaleString("en-US")}`);
+	expect(problems).toEqual([]);
+});
+
 // ------------------------------------------------------------ production hardening (front end)
 
 test("a11y: a column title sorts with Enter and Space, keeps the focus, and aria-sort says the sort", async ({ page }) => {
@@ -3019,11 +3090,16 @@ test("Excel: a large export is a server job: its state is shown, it can be stopp
 	await page.evaluate(() => {
 		const server = window.RV_SERVER;
 		window.rv_job_calls = [];
+		window.rv_cancels = [];
 		window.RV_SERVER = (method, args) => {
+			if (method === "report_view.api.export_xlsx_cancel") {
+				window.rv_cancels.push(args.job);
+				return { state: "cancelled", error_code: "cancelled", cancellable: false };
+			}
 			if (method !== "report_view.api.export_xlsx_status") return server(method, args);
 			window.rv_job_calls.push(args.job);
 			const n = window.rv_job_calls.length;
-			return { state: window.rv_job_hold ? "running" : n < 2 ? "queued" : n < 3 ? "running" : "done", row_count: 25000, error: null };
+			return { state: window.rv_job_hold ? "running" : n < 2 ? "queued" : n < 3 ? "running" : "done", row_count: 25000, error: null, cancellable: window.rv_job_hold === true };
 		};
 	});
 	const job = page.locator(".rv-headbar .rv-xjob");
@@ -3039,7 +3115,7 @@ test("Excel: a large export is a server job: its state is shown, it can be stopp
 	await expect(button).toBeEnabled();
 	expect(await page.evaluate(() => [...new Set(window.rv_job_calls)])).toEqual(["0123456789abcdef"]);
 
-	// stopping: the indicator goes, no file, the button is back
+	// stopping: the server is asked to cancel the job (it says it can); the indicator goes, no file, the button is back
 	await page.evaluate(() => {
 		window.rv_job_calls = [];
 		window.rv_job_hold = true;
@@ -3050,9 +3126,12 @@ test("Excel: a large export is a server job: its state is shown, it can be stopp
 	await job.locator('[data-action="export-stop"]').click();
 	await expect(job).toBeHidden();
 	await expect(button).toBeEnabled();
+	// the button comes back once the wait for the job has ended: no status is asked any more
 	const calls = await page.evaluate(() => window.rv_job_calls.length);
-	await page.waitForTimeout(2000);
+	expect(await page.evaluate(() => window.rv_page.export_job)).toBe(null);
+	await page.evaluate(() => new Promise((r) => setTimeout(r, 0)));
 	expect(await page.evaluate(() => window.rv_job_calls.length)).toBe(calls);
+	expect(await page.evaluate(() => window.rv_cancels)).toEqual(["0123456789abcdef"]);
 	expect(problems).toEqual([]);
 });
 
@@ -3220,6 +3299,125 @@ test("pages: print fills the pages in runs read at once, then gives the far ones
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
+test("pages: pages that cannot be drawn or laid out never go to print or PDF: a message says so and nothing is printed", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=gl&lang=en&rows=2500&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await settle(page);
+	const out = await page.evaluate(async () => {
+		const v = window.rv_page.pages;
+		const note = () => document.querySelector(".rv-print-note").textContent;
+		let printed = 0;
+		window.print = () => (printed += 1);
+		let posted = 0;
+		const real_fetch = window.fetch;
+		window.fetch = (...a) => (String(a[0]).includes("pages_pdf") ? ((posted += 1), Promise.reject(new Error("not to be sent"))) : real_fetch(...a));
+		// the far pages are not drawn yet: reading their rows fails
+		const read = v.rows.read_values;
+		v.rows.read_values = () => Promise.reject(new Error("the view is gone"));
+		window.rv_dialogs = [];
+		document.querySelector('.rv-print-ft [data-action="print"]').click();
+		await new Promise((r) => setTimeout(r, 0));
+		while (v.printing) await new Promise((r) => setTimeout(r, 20));
+		const print = {
+			printed,
+			dialogs: window.rv_dialogs.map((d) => d.title),
+			message: window.rv_dialogs[0]?.message || "",
+			note: note(),
+			root: Boolean(document.querySelector("body > .rv-print-root")),
+			in_stage: Boolean(document.querySelector(".rv-print-stage .rv-print-sheets")),
+			button: document.querySelector('.rv-print-ft [data-action="print"]').disabled,
+		};
+		window.rv_dialogs = [];
+		await v.pdf();
+		const pdf = { posted, dialogs: window.rv_dialogs.map((d) => d.title), button: document.querySelector('.rv-print-ft [data-action="pdf"]').disabled };
+		v.rows.read_values = read;
+		// a layout that fails: the change does not reject, the panel says why, print refuses
+		const layout = v.layout_standard;
+		v.layout_standard = () => Promise.reject(new Error("no room"));
+		v.update({ orientation: "landscape" });
+		const ready = await v.ready.then(
+			() => "resolved",
+			() => "rejected"
+		);
+		const layout_note = note();
+		window.rv_dialogs = [];
+		await v.print();
+		const after_layout = { printed, dialogs: window.rv_dialogs.map((d) => d.title) };
+		v.layout_standard = layout;
+		v.update({ orientation: "portrait" });
+		await v.ready;
+		window.fetch = real_fetch;
+		return { print, pdf, ready, layout_note, after_layout, error: v.layout_error, pages: v.pages.length };
+	});
+	expect(out.print.printed).toBe(0);
+	expect(out.print.dialogs).toEqual(["Nothing was printed"]);
+	expect(out.print.message).toMatch(/of [\d,]+ pages could not be drawn, so nothing was printed/);
+	expect(out.print.message).toContain("the view is gone");
+	expect(out.print.note).toMatch(/could not be drawn/);
+	// the sheets are back on the stage, the button again usable
+	expect(out.print).toMatchObject({ root: false, in_stage: true, button: false });
+	expect(out.pdf).toEqual({ posted: 0, dialogs: ["Nothing was printed"], button: false });
+	expect(out.ready).toBe("resolved");
+	expect(out.layout_note).toContain("The pages could not be laid out: no room");
+	expect(out.after_layout).toEqual({ printed: 0, dialogs: ["Nothing was printed"] });
+	// a layout that works again clears the failure
+	expect(out.error).toBe(null);
+	expect(out.pages).toBeGreaterThan(40);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: the link to the letter head builder follows the permission to write Letter Heads, not a role", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, `report=tb&lang=en&rv=${PAGES}`);
+	await settle(page);
+	const links = await page.evaluate(() => {
+		const v = window.rv_page.pages;
+		v.open_secs = new Set(["head"]);
+		const seen = {};
+		for (const [name, can] of [["none", undefined], ["no", () => false], ["yes", (dt) => dt === "Letter Head"]]) {
+			if (can) frappe.model.can_write = can;
+			else delete frappe.model.can_write;
+			v.render_panel();
+			seen[name] = document.querySelector(".rv-print-lhb")?.getAttribute("href") || null;
+		}
+		delete frappe.model.can_write;
+		return seen;
+	});
+	expect(links.none).toBe(null);
+	expect(links.no).toBe(null);
+	expect(links.yes).toMatch(/^\/desk\/rv-letterhead/);
+	expect(problems).toEqual([]);
+});
+
+test("harness: frappe.call sends POST unless told, refuses a verb the method's whitelist refuses, and calls error on a failure", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=tb&lang=en");
+	await settle(page);
+	const out = await page.evaluate(async () => {
+		const ask = (opts) =>
+			new Promise((resolve) => {
+				let always = null;
+				frappe.call({ ...opts, always: (r) => (always = r), callback: (r) => resolve({ ok: true, always: Boolean(always), r }), error: (r) => resolve({ ok: false, always: Boolean(always), r }) });
+			});
+		window.rv_calls = [];
+		const get = await ask({ method: "report_view.api.get_meta", args: { report_name: "Trial Balance" }, type: "GET" });
+		const wrong = await ask({ method: "report_view.api.get_meta", args: { report_name: "Trial Balance" } });
+		const failed = await ask({ method: "report_view.api.no_such_method", type: "POST" });
+		const rejected = await frappe.call({ method: "report_view.api.no_such_method" }).then(
+			() => "resolved",
+			(r) => r.exc_type
+		);
+		return { get: get.ok, wrong: [wrong.ok, wrong.always, wrong.r.exc_type], failed: [failed.ok, failed.always], rejected, calls: window.rv_calls.map((c) => c.type), table: window.RV_HTTP_METHODS["report_view.api.run"] };
+	});
+	expect(out.get).toBe(true);
+	expect(out.wrong).toEqual([false, true, "PermissionError"]);
+	expect(out.failed).toEqual([false, true]);
+	expect(out.rejected).toBe("ValidationError");
+	expect(out.calls).toEqual(["GET", "POST", "POST", "POST"]);
+	expect(out.table).toEqual(["POST"]);
+	expect(problems).toEqual(["error: harness: report_view.api.get_meta allows GET, the page sent POST"]);
+});
+
 test("pages: the default colours of the rules, border and watermark are the paper's tokens; a chosen colour is kept as chosen", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, `report=gl&lang=en&rv=${PAGES}${pages_settings({ orientation: "portrait", pb_on: true, wm_type: "text", wm_text: "DRAFT", head_line_w: 1 })}`);
@@ -3347,8 +3545,8 @@ test("pages: on a phone the sheet has a scrim and a close button, and no field t
 });
 
 // ---------------------------------------------------------------- print presets (ADR-020)
-// The shots go to RV_SHOTS when it is set (a review folder), else beside the other pages shots.
-const PRESET_OUT = process.env.RV_SHOTS || OUT3;
+// The shots go to RV_SHOTS when it names a folder (a review), else beside the other pages shots.
+const PRESET_OUT = process.env.RV_SHOTS && process.env.RV_SHOTS !== "docs" ? process.env.RV_SHOTS : OUT3;
 fs.mkdirSync(PRESET_OUT, { recursive: true });
 const preset_shot = (page, name, full = false) => page.screenshot({ path: path.join(PRESET_OUT, `${name}.png`), fullPage: full });
 const preset_state = (page) =>
@@ -3400,7 +3598,7 @@ test("pages: print presets: save as new, the changed dot, save over it, apply, e
 	expect(st.store[0].settings.hidden).toEqual([]);
 	expect(st.dot).toBe(false);
 	// the user's settings remember the preset applied
-	await page.waitForTimeout(900);
+	await page.evaluate(() => window.rv_page.flush_settings());
 	expect(await page.evaluate(() => frappe.model.user_settings.store["Report View:Trial Balance"].pages.preset)).toBe(st.store[0].name);
 	// a change: the dot; «Save» writes it into the preset
 	await page.click('details[data-sec="paper"] > summary');

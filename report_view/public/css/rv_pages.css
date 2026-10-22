@@ -15,14 +15,6 @@
 .rv-print-count{font-size:var(--fs-xs);color:var(--tx-3);white-space:nowrap;font-variant-numeric:tabular-nums}
 .rv-print-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 .rv-print-row .rv-input{width:100%}
-.rv-print-fields{display:flex;flex-direction:column;gap:8px}
-.rv-print-fields .rv-field > span{font-size:var(--fs-xs);color:var(--tx-3);font-weight:500}
-.rv-print-fields .rv-input{width:100%}
-.rv-orient{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.rv-orient button{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 6px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);cursor:pointer;font-size:var(--fs-xs);color:var(--tx-2);transition:border-color .12s,background .12s}
-.rv-orient button:hover{border-color:var(--line-3);background:var(--hover)}
-.rv-orient button.on{border-color:var(--pri);background:var(--pri-soft);color:var(--pri-tx);font-weight:500}
-.rv-orient i{display:block;border:1.5px solid currentColor;border-radius:2px}
 .rv-print-side .rv-setlist.tall{max-height:none;overflow:visible}
 .rv-print-ft{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);background:var(--surface-2);flex:none}
 .rv-print-ft .rv-btn{flex:none}
@@ -159,10 +151,6 @@
 .rv-page-topnum{display:flex;align-items:center;font-size:var(--pp-num-fs,8pt);line-height:1.3;color:var(--pp-tx-3);border-bottom:var(--pp-num-line,.6px solid var(--pp-line-2));padding-block:var(--pp-num-mb,1.5mm 0);padding-inline:var(--pp-num-mi,0);margin-bottom:2mm}
 .rv-page-topnum.center{justify-content:center}
 .rv-page-topnum.end{justify-content:flex-end}
-.rv-range-field > span,.rv-line-field > span{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.rv-line-field b{font-weight:600;color:var(--tx-2)}
-.rv-range-field b{font-weight:600;color:var(--tx-2)}
-.rv-range-field input[type=range]{width:100%;accent-color:var(--pri);margin:2px 0 0}
 /* a report print format flows as it came: its own styles, the page's font */
 .rv-page-flow{flex:none;min-width:0;overflow:hidden}
 .rv-page-flow table{max-width:100%}
@@ -228,15 +216,9 @@
 
 
 /* ---------- panel: groups with a switch, segmented choices, rule controls ---------- */
-.rv-print-group{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
-.rv-print-gh{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.rv-print-gh h4{margin:0}
 .rv-print-sw{display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--tx-2);cursor:pointer}
 .rv-print-seg{display:flex;width:100%}
 .rv-print-seg button{flex:1;justify-content:center;padding:0 6px;font-size:var(--fs-xs)}
-.rv-line-ctl{display:flex;align-items:center;gap:8px}
-.rv-line-ctl input[type=range]{flex:1;min-width:0;accent-color:var(--pri)}
-.rv-line-ctl input[type=color]{width:30px;height:24px;padding:0 2px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);cursor:pointer;flex:none}
 
 /* ---------- loading: a line on the stage, grey bars until the first pages ---------- */
 /* stays at the top of the stage, over the pages, without taking room from them */
@@ -274,7 +256,6 @@
 .rv-psec-bd .rv-field > span{font-size:var(--fs-xs);color:var(--tx-3);font-weight:500;display:flex;align-items:center;gap:6px}
 .rv-psec-bd .rv-field > span .rv-link{margin-inline-start:auto;font-size:var(--fs-xs)}
 .rv-unit{font-style:normal;color:var(--tx-4)}
-.rv-orient.sm button{flex-direction:row;padding:0 8px;height:var(--ctl);gap:6px}
 .rv-num{display:flex;align-items:center;position:relative}
 .rv-num input{width:100%;padding-inline-end:30px;font-variant-numeric:tabular-nums}
 .rv-num i{position:absolute;inset-inline-end:8px;font-style:normal;font-size:var(--fs-xs);color:var(--tx-4);pointer-events:none}
@@ -315,7 +296,7 @@
 .rv-print-side .bd{padding:10px;gap:8px}
 
 .rv-psec{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);overflow:hidden;transition:box-shadow .15s,border-color .15s}
-.rv-psec[open]{border-color:var(--line-2);box-shadow:0 1px 2px rgba(17,24,20,.04),0 4px 14px rgba(17,24,20,.05)}
+.rv-psec[open]{border-color:var(--line-2);box-shadow:var(--sh-open)}
 .rv-psec > summary{gap:10px;min-height:52px;padding:8px 12px;border-radius:0}
 .rv-psec[open] > summary{border-bottom:1px solid var(--line);background:linear-gradient(var(--surface),var(--surface-2))}
 .rv-psec > summary .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--pri-soft);color:var(--pri-tx)}
@@ -354,7 +335,7 @@
 .rv-box4{grid-template-columns:1fr 92px 1fr;gap:6px 8px}
 .rv-box4 input.rv-input{height:var(--ctl-sm);text-align:center}
 .rv-box4-top input,.rv-box4-bottom input{width:100%}
-.rv-box4-page{position:relative;height:58px;border:1px solid var(--line-3);border-radius:3px;background:var(--surface);box-shadow:0 1px 3px rgba(17,24,20,.08)}
+.rv-box4-page{position:relative;height:58px;border:1px solid var(--line-3);border-radius:3px;background:var(--surface);box-shadow:var(--sh-mini)}
 .rv-box4-page i{position:absolute;top:var(--m-top,12%);bottom:var(--m-bottom,12%);inset-inline-start:var(--m-start,12%);inset-inline-end:var(--m-end,12%);border:1px dashed var(--pri);border-radius:1px;background:repeating-linear-gradient(0deg,var(--pri-soft) 0 3px,transparent 3px 6px);transition:inset .15s,top .15s,bottom .15s}
 .rv-psec-bd .rv-field > span .rv-link{font-size:11px;font-weight:500}
 
@@ -419,7 +400,7 @@
 .rv-print-side .rv-rg .rv-psec[open] > summary .ic{color:var(--pri-tx)}
 
 /* the menu of the open tool */
-.rv-print-pop{text-align:start;position:fixed;z-index:1040;display:flex;flex-direction:column;overflow:auto;overscroll-behavior:contain;background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-lg);box-shadow:var(--sh-2),0 12px 32px rgba(17,24,20,.14);scrollbar-width:thin}
+.rv-print-pop{text-align:start;position:fixed;z-index:var(--z-pop);display:flex;flex-direction:column;overflow:auto;overscroll-behavior:contain;background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-lg);box-shadow:var(--sh-2),var(--sh-menu);scrollbar-width:thin}
 .rv-pop-sec + .rv-pop-sec{border-top:1px solid var(--line)}
 .rv-pop-hd{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:12px 44px 2px 14px;padding-inline:14px 44px;text-align:start}
 .rv-print-pop:focus{outline:0}
@@ -461,7 +442,7 @@
 .rv-print-thumbs button[aria-current="page"] i{border-color:var(--pri);box-shadow:0 0 0 1.5px var(--pri)}
 
 /* a narrow screen: head, actions and tools one under the other; the menu is a sheet from
-   the bottom; no thumbnails */
+   the bottom; no thumbnails (the same width as MOBILE_QUERY of views/pages_view.js) */
 @media (max-width:900px){
   .rv-print-side{grid-template-columns:minmax(0,1fr);grid-template-areas:"hd" "ft" "bd"}
   .rv-print-ft{justify-content:stretch}
@@ -477,7 +458,7 @@
   .rv-pop-hd strong{font-size:var(--fs-md, 15px)}
   .rv-pop-x{top:2px;width:40px;height:40px}
   .rv-print-pop .rv-psec-bd .rv-input,.rv-print-pop [data-link] .form-control{height:36px;font-size:16px}
-  .rv-print-scrim{display:block;position:fixed;inset:0;z-index:1039;background:var(--scrim);animation:rv-fade-in .18s ease-out}
+  .rv-print-scrim{display:block;position:fixed;inset:0;z-index:var(--z-scrim);background:var(--scrim);animation:rv-fade-in .18s ease-out}
   /* the tools: one line that scrolls sideways; a shadow shows at an end while there is more
      past it (scroll shadows: no mask, which would clip the menu and the scrim inside it) */
   .rv-print-side .bd{padding:4px 10px;scroll-snap-type:x proximity;background:linear-gradient(90deg,var(--surface) 30%,transparent) left center/32px 100% no-repeat local,linear-gradient(270deg,var(--surface) 30%,transparent) right center/32px 100% no-repeat local,radial-gradient(farthest-side at 0 50%,color-mix(in srgb,var(--tx) 18%,transparent),transparent) left center/12px 100% no-repeat scroll,radial-gradient(farthest-side at 100% 50%,color-mix(in srgb,var(--tx) 18%,transparent),transparent) right center/12px 100% no-repeat scroll,var(--surface)}

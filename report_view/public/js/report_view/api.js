@@ -23,7 +23,7 @@ const EXC_TYPES = [
 ];
 const QUIET_HANDLERS = Object.fromEntries(EXC_TYPES.map((t) => [t, () => {}]));
 
-export class RVError extends Error {
+class RVError extends Error {
 	constructor({ exc_type, message, http_status }) {
 		super(message || exc_type || "Error");
 		this.name = "RVError";
@@ -55,8 +55,36 @@ function message_of(r) {
 		const list = parse_server_messages(r._server_messages);
 		if (list.length) return list.join("\n");
 	}
-	if (r.exception) return String(r.exception).split(":").slice(1).join(":").trim();
+	// "frappe.exceptions.ValidationError: the words": the words; text of our own as it is
+	if (r.exception) return String(r.exception).replace(/^[\w.]+:\s*/, "").trim();
 	return "";
+}
+
+/**
+ * Text of server HTML (a message may carry markup): read by an inert document, so no image
+ * loads and no handler of it runs. Callers escape it again before it goes into HTML.
+ */
+export function html_to_text(html) {
+	const s = String(html ?? "");
+	if (!s.includes("<") && !s.includes("&")) return s.trim();
+	if (typeof DOMParser !== "undefined") return (new DOMParser().parseFromString(s, "text/html").body.textContent || "").trim();
+	return String(frappe.utils.html2text(s)).trim();
+}
+
+/**
+ * The words of an error, as plain text: a thrown Error (an RVError's message), a string, the
+ * answer of a failed request (Frappe's JSON, or jQuery's xhr carrying it in responseJSON).
+ * The one parser of Frappe's error answers in the page: escape the result for HTML.
+ */
+export function error_text(e) {
+	if (e === null || e === undefined) return __("Unknown error", null, "Report View");
+	if (typeof e === "string") return html_to_text(e);
+	if (e instanceof Error && e.message) return html_to_text(e.message);
+	const answer = e.responseJSON && typeof e.responseJSON === "object" ? e.responseJSON : e;
+	const text = message_of(answer);
+	if (text) return html_to_text(text);
+	if (typeof e.message === "string" && e.message) return html_to_text(e.message);
+	return __("Unknown error", null, "Report View");
 }
 
 function exc_type_of(r) {
@@ -66,11 +94,11 @@ function exc_type_of(r) {
 	return null;
 }
 
-export function to_error(r, http_status = null) {
+function to_error(r, http_status = null) {
 	const text = message_of(r);
 	return new RVError({
 		exc_type: exc_type_of(r),
-		message: text ? frappe.utils.html2text(text) : __("The server could not complete the request."),
+		message: text ? html_to_text(text) : __("The server could not complete the request."),
 		http_status,
 	});
 }
@@ -181,6 +209,9 @@ export const api = {
 
 	// A queued export (export_jobs): its state, then its file (once; the server removes it).
 	export_xlsx_status: (job) => message(call("report_view.api.export_xlsx_status", { job })),
+
+	// Cancels the user's own queued or running export (answers as the status).
+	export_xlsx_cancel: (job) => message(call("report_view.api.export_xlsx_cancel", { job }, { type: "POST" })),
 
 	async export_xlsx_download(job, report_name) {
 		const res = await fetch(`/api/method/report_view.api.export_xlsx_download?${new URLSearchParams({ job })}`, {

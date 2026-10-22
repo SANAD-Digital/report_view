@@ -6,6 +6,7 @@
 import { RID, KIND, SORT_PREFIX, perspective_type } from "./schema.js";
 import { DEPTH, HAS_CHILDREN, LEAVES, PATH, TOP, LEVELS, ANC_PREFIX, LEVEL_PREFIX, tree_index } from "./tree_nodes.js";
 import { edge_rows } from "./report_rows.js";
+import { row_currency_key, is_empty } from "./columns_util.js";
 
 // max -> high: Perspective's "max" returns null and "low" returns 0 when a null is present.
 export const AGGREGATES = {
@@ -21,10 +22,6 @@ export const CURRENCY_COUNT_PREFIX = "__curn__";
 export const QUICK_PREFIX = "__qf__";
 
 const TEXT_OPS = { contains: "contains", equals: "==", starts_with: "begins with" };
-
-function empty(v) {
-	return v === null || v === undefined || v === "";
-}
 
 /**
  * Columns of the report in their default order: the report's own order, with the columns an
@@ -87,10 +84,6 @@ export function aggregate_of(column, view_state) {
 	return AGGREGATES[agg] || null;
 }
 
-function row_currency_key(column) {
-	return column.currency?.kind === "row" ? column.currency.key : null;
-}
-
 /** Engine column that orders `key`: the collator sort key of a string column, else itself. */
 function sort_column(key, by_key) {
 	const column = by_key.get(key);
@@ -120,8 +113,8 @@ export function to_filter(filters, columns) {
 				skip(f, "FILTER_TYPE_MISMATCH");
 				continue;
 			}
-			const values = (f.values || []).filter((v) => !empty(v)).map(String);
-			const with_null = (f.values || []).some(empty);
+			const values = (f.values || []).filter((v) => !is_empty(v)).map(String);
+			const with_null = (f.values || []).some(is_empty);
 			if (f.exclude) {
 				if (values.length) filter.push([f.key, "not in", values]);
 				if (with_null) filter.push([f.key, "is not null", null]);
@@ -150,7 +143,7 @@ export function to_filter(filters, columns) {
 			const op = TEXT_OPS[f.op || "contains"];
 			if (type !== "string") skip(f, "FILTER_TYPE_MISMATCH");
 			else if (!op) skip(f, "FILTER_OP_UNSUPPORTED");
-			else if (!empty(f.value)) filter.push([f.key, op, String(f.value)]);
+			else if (!is_empty(f.value)) filter.push([f.key, op, String(f.value)]);
 		}
 	}
 	return { filter, notices };
@@ -173,7 +166,7 @@ export function pinned_columns(visible, view_state) {
 }
 
 /** Depth to which the "as is" tree opens: rows down to this depth are shown. */
-export function tree_depth(view_state, normalized) {
+function tree_depth(view_state, normalized) {
 	return view_state?.tree?.depth ?? normalized.tree?.initial_depth ?? 2;
 }
 

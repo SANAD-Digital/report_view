@@ -1,5 +1,6 @@
 // N3: row classification (docs/architecture.md §3.2). Pure module.
 // Twin of report_view/core/normalize.py (_classify_rows).
+import { has_value } from "../engine/columns_util.js";
 
 export const KINDS = [
 	"data",
@@ -11,9 +12,7 @@ export const KINDS = [
 	"separator",
 ];
 
-export function has_value(v) {
-	return v !== null && v !== undefined && v !== "";
-}
+export { has_value };
 
 function is_nonzero_measure(v) {
 	if (!has_value(v)) return false;
@@ -33,19 +32,10 @@ function num(v) {
 }
 
 /**
- * Classify every row in place (sets __kind, __bold, __label_raw and strips the
- * quotes from the matched label column).
- * ctx: {columns, label_key, tree_enabled, register, translate}
- */
-export function classify_rows(rows, ctx) {
-	const classifier = make_classifier(rows, ctx);
-	rows.forEach((row, rid) => classifier.classify(row, rid));
-	classifier.finish();
-}
-
-/**
- * The same classification a row at a time, so that a caller may give the main thread back
+ * Classifies the rows in place (sets __kind, __bold, __label_raw and strips the quotes from
+ * the matched label column), a row at a time, so that a caller may give the main thread back
  * between runs of rows: classify(row, rid) for every row in order, then finish() (N3.7).
+ * ctx: {columns, label_key, tree_enabled, register, translate}
  * @returns {{classify: (row: object, rid: number) => void, finish: () => void}}
  */
 export function make_classifier(rows, ctx) {

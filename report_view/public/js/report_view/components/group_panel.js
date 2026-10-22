@@ -5,16 +5,13 @@
 // group.by of the view state, i.e. group_by of the Perspective view.
 
 import { icons } from "./icons.js";
+import { esc } from "../util.js";
 
 // Data types of what is dragged around the page.
 export const DRAG_COLUMN = "application/x-rv-column";
 export const DRAG_GROUP = "application/x-rv-group";
 // A chip of the pivot columns bar (components/pivot_bar.js), by its index.
 export const DRAG_PIVOT = "application/x-rv-pivot";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
 
 /** The column key or group index a drag event carries (null for anything else). */
 export function dragged(e) {

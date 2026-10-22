@@ -5,13 +5,10 @@
 // the hints shown are those of what works now.
 
 import { icons } from "./icons.js";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
+import { esc, fmt_int } from "../util.js";
 
 function num(n) {
-	return `<b>${esc(frappe.format(n, { fieldtype: "Int" }, { inline: true }))}</b>`;
+	return `<b>${esc(fmt_int(n))}</b>`;
 }
 
 export class StatusBar {

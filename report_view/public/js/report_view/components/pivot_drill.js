@@ -5,12 +5,9 @@
 // before anything is drawn. Each row is shown with the report's own values.
 
 import { open_popover } from "./popover.js";
+import { esc, fmt_int } from "../util.js";
 
 export const DRILL_LIMIT = 200;
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
 
 /**
  * @param {object} o
@@ -45,7 +42,7 @@ export function open_pivot_drill({ root, cell, load, row_of, label_html, value_o
 		.then(({ count, rids }) => {
 			if (!handle.el.isConnected) return;
 			const rows = rids.map(row_of).filter(Boolean);
-			const n = frappe.format(count, { fieldtype: "Int" }, { inline: true });
+			const n = fmt_int(count);
 			sub.textContent =
 				count > rows.length
 					? __("{0} · {1} rows, the largest {2} shown", [cell.value_title, n, rows.length])

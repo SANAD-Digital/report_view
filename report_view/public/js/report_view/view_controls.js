@@ -15,12 +15,8 @@ import { icons } from "./components/icons.js";
 import { open_popover, close_popover, menu_content } from "./components/popover.js";
 import { open_set_filter } from "./components/set_filter.js";
 import { parse_number, parse_date } from "./components/header_cells.js";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
-
-const empty = (v) => v === null || v === undefined || v === "";
+import { esc, fmt_float } from "./util.js";
+import { is_empty } from "./engine/columns_util.js";
 
 export class ViewControls {
 	/** @param {import("./index.js").ReportViewPage} page */
@@ -151,7 +147,7 @@ export class ViewControls {
 	/** A value of a column as markup (no link), for lists of values. */
 	value_html(key, value) {
 		const c = this.column(key);
-		if (empty(value)) return `<span class="rv-muted">${esc(__("Not Set"))}</span>`;
+		if (is_empty(value)) return `<span class="rv-muted">${esc(__("Not Set"))}</span>`;
 		if (!c) return esc(value);
 		const type = perspective_type(c.fieldtype);
 		let v = value;
@@ -198,7 +194,7 @@ export class ViewControls {
 		const s = this.state;
 		if (!s || !this.report) return [];
 		const or = __("or");
-		const num = (n) => frappe.format(n, { fieldtype: "Float" }, { inline: true });
+		const num = (n) => fmt_float(n);
 		const out = [];
 		for (const f of s.filters) {
 			let v = "";
@@ -281,7 +277,7 @@ export class ViewControls {
 				const f = this.filter_of(facet);
 				const chosen = f?.type === "set" ? f.values : [];
 				facets = out.values
-					.filter((v) => !empty(v.value))
+					.filter((v) => !is_empty(v.value))
 					.map((v) => ({
 						label: this.value_text(facet, v.value),
 						on: chosen.includes(v.value),

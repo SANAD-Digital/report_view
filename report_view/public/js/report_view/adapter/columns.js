@@ -1,7 +1,7 @@
 // N1: column normalisation (docs/architecture.md §3.2 and "N1 values fixed in phase 3").
 // Pure module: no frappe, no DOM. Twin of report_view/core/normalize.py (_build_columns).
 
-export const MEASURE_TYPES = new Set(["Currency", "Float", "Int", "Percent", "Duration"]);
+const MEASURE_TYPES = new Set(["Currency", "Float", "Int", "Percent", "Duration"]);
 export const DIMENSION_TYPES = new Set([
 	"Link",
 	"Dynamic Link",
@@ -16,7 +16,7 @@ const ROLES = new Set(["dimension", "measure", "attribute"]);
 const AGGS = new Set(["sum", "avg", "count", "min", "max"]);
 
 // Canonical Frappe field types, used to repair case ("float" -> "Float").
-export const FIELDTYPES = [
+const FIELDTYPES = [
 	"Autocomplete",
 	"Attach",
 	"Attach Image",
@@ -75,7 +75,7 @@ export function scrub(txt) {
 }
 
 // Same rule as frappe.desk.query_report.get_column_as_dict (Q:1094-1117).
-export function column_as_dict(col) {
+function column_as_dict(col) {
 	if (typeof col === "string") {
 		const parts = col.split(":");
 		const out = {};

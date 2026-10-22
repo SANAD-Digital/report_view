@@ -6,10 +6,7 @@
 // two totals; nothing is summed here.
 
 import { icons } from "./icons.js";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
+import { esc, fmt_int } from "../util.js";
 
 export class Summary {
 	constructor({ parent }) {
@@ -54,7 +51,7 @@ export class Summary {
 					pill = "ok";
 					icon = icons.check_xs();
 					pill_text = filtered
-						? __("Balanced within {0} of {1}", [frappe.format(shown, { fieldtype: "Int" }, { inline: true }), frappe.format(total, { fieldtype: "Int" }, { inline: true })])
+						? __("Balanced within {0} of {1}", [fmt_int(shown), fmt_int(total)])
 						: __("Balanced");
 				} else if (filtered) {
 					icon = icons.funnel(12);

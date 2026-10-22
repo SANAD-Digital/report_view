@@ -11,7 +11,7 @@
 import { RtView, ROW_PATH, caret, css_int, engine_value } from "./rt_base.js";
 import { KIND } from "../engine/schema.js";
 import { CURRENCY_COUNT_PREFIX } from "../engine/view_config.js";
-import { esc } from "../util.js";
+import { esc, fmt_int } from "../util.js";
 
 const CELL_CLASSES = ["num", "zero", "neg", "pv", "band-end", "tot"];
 // Design widths (Main.dc.html pivotModel): 156px a value column, 12px more for a total.
@@ -323,7 +323,7 @@ export class PivotView extends RtView {
 		const column = v.column;
 		if (value === null || value === undefined) return { html: "", sign: "" };
 		if (v.agg === "count") {
-			return { html: `<bdi class="rv-n">${esc(frappe.format(value, { fieldtype: "Int" }, { inline: true }))}</bdi>`, sign: value === 0 ? "zero" : "" };
+			return { html: `<bdi class="rv-n">${esc(fmt_int(value))}</bdi>`, sign: value === 0 ? "zero" : "" };
 		}
 		const ck = column?.currency?.kind === "row" ? column.currency.key : null;
 		const row = { __kind: "group", ...(rec?.currencies || {}), [column.key]: value, __mixed: { [column.key]: Boolean(ck && rec?.mixed[ck]) } };

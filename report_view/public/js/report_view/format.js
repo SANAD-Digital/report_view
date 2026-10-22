@@ -3,6 +3,7 @@
 // report produced, never for rows Perspective computed (groups, grand total).
 // Display rules of the design (§11.1 #51): a zero shows "—" (class .zero), a negative value
 // gets .neg. The precision stays the one of System Settings (the zero test uses it too).
+import { esc, fmt_int } from "./util.js";
 
 const ORIGINAL_KINDS = new Set(["data", "internal_total", "opening", "closing"]);
 const FORMAT_OPTS = { inline: true, always_show_decimals: true };
@@ -11,10 +12,6 @@ const FORMAT_OPTS = { inline: true, always_show_decimals: true };
 // snd_accounting wraps the result with $(out), which needs HTML, not bare text.
 const REPORT_FORMAT_OPTS = { for_print: false, always_show_decimals: true };
 const NUMERIC_TYPES = new Set(["Currency", "Float", "Int", "Percent"]);
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
 
 // Decimals Frappe uses to show a value of this column (same fallbacks as
 // frappe.form.formatters.Currency / Float).
@@ -196,7 +193,7 @@ export function make_formatter({ report_settings, columns }) {
 
 	function count_html(n) {
 		if (n === null || n === undefined) return "";
-		return `<span class="rv-gcount">${esc(frappe.format(n, { fieldtype: "Int" }, { inline: true }))}</span>`;
+		return `<span class="rv-gcount">${esc(fmt_int(n))}</span>`;
 	}
 
 	return {

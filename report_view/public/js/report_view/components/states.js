@@ -1,8 +1,5 @@
 // Overlay states of the grid (docs/architecture.md §11.1 #58-60, ADR-009), basic phase-3 form.
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
+import { esc } from "../util.js";
 
 function button(label, cls = "") {
 	const b = document.createElement("button");

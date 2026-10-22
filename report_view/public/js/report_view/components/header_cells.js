@@ -8,10 +8,7 @@
 
 import { icons } from "./icons.js";
 import { DRAG_COLUMN } from "./group_panel.js";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
+import { esc } from "../util.js";
 
 const DEBOUNCE_MS = 350;
 

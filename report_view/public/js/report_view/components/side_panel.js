@@ -10,6 +10,7 @@
 import { icons } from "./icons.js";
 import { SetList } from "./set_filter.js";
 import { DRAG_COLUMN, DRAG_GROUP, DRAG_PIVOT, accepts, dragged } from "./group_panel.js";
+import { esc, fmt_int } from "../util.js";
 
 // A selector that finds a control of the panel again once the panel is drawn anew.
 function focus_key(el) {
@@ -19,10 +20,8 @@ function focus_key(el) {
 	return null;
 }
 
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
-
+// A filter typed in a section is applied after this much quiet (ms).
+const TYPING_DEBOUNCE_MS = 350;
 const AGGS = [
 	["sum", "Sum"],
 	["avg", "Average"],
@@ -71,7 +70,7 @@ export class SidePanel {
 		}
 		const count = this.tabs.querySelector(".rv-tabcount");
 		count.hidden = !filters.active;
-		count.textContent = filters.active ? frappe.format(filters.active, { fieldtype: "Int" }, { inline: true }) : "";
+		count.textContent = filters.active ? fmt_int(filters.active) : "";
 		this.panel.hidden = !side;
 		if (!side) {
 			this.panel.replaceChildren();
@@ -330,7 +329,7 @@ export class SidePanel {
 
 	filters_panel(filters) {
 		const sections = filters.sections;
-		const badge = `<span class="rv-count-badge"${filters.active ? "" : " hidden"}>${esc(filters.active ? frappe.format(filters.active, { fieldtype: "Int" }, { inline: true }) : "")}</span>`;
+		const badge = `<span class="rv-count-badge"${filters.active ? "" : " hidden"}>${esc(filters.active ? fmt_int(filters.active) : "")}</span>`;
 		this.panel.innerHTML = `${this.header(__("Filters", null, "Report View"), badge)}<div class="rv-panel-bd"></div>`;
 		const clear = document.createElement("button");
 		clear.type = "button";
@@ -368,7 +367,7 @@ export class SidePanel {
 			let t = null;
 			return (...a) => {
 				clearTimeout(t);
-				t = setTimeout(() => fn(...a), 350);
+				t = setTimeout(() => fn(...a), TYPING_DEBOUNCE_MS);
 			};
 		};
 		if (s.kind === "text") {

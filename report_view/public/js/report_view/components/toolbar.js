@@ -5,10 +5,7 @@
 
 import { icons } from "./icons.js";
 import { SearchBox } from "./search.js";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
+import { esc } from "../util.js";
 
 const MODES = [
 	{ mode: "grid", icon: () => icons.table(), label: () => __("Table") },

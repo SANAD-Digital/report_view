@@ -180,7 +180,7 @@
 .rv-accname{overflow:hidden;text-overflow:ellipsis}
 .rv-glabel{overflow:hidden;text-overflow:ellipsis}
 .rv-gcount{margin-inline-start:6px;font-size:10.5px;font-weight:600;color:var(--tx-3);background:var(--surface-3);border:1px solid var(--line);border-radius:999px;padding:0 6px;line-height:16px;font-variant-numeric:tabular-nums}
-/* range selection (wave 2: .sel with the edges .st .sb .ss .se) */
+/* range selection, scheduled in docs/phases/phase-5c.md §1 (.sel with the edges .st .sb .ss .se); not drawn yet */
 .rv-c.sel{background:var(--sel)}
 .rv-c.sel::after{content:'';position:absolute;inset:0;pointer-events:none;border:0 solid var(--sel-line)}
 .rv-c.sel.st::after{border-top-width:1.5px}

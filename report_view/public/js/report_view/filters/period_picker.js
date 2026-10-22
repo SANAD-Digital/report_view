@@ -21,14 +21,11 @@ import {
 	iso,
 	ym,
 } from "./periods.js";
+import { esc } from "../util.js";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
 
 function user_date(d) {
 	return d ? frappe.datetime.str_to_user(d) : "";

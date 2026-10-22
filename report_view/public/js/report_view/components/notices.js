@@ -4,10 +4,7 @@
 // One bar, built once per distinct set of notices; closing it keeps that set closed.
 
 import { icons } from "./icons.js";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
+import { esc } from "../util.js";
 
 const FILTER_TEXTS = {
 	FILTER_SEARCH_UNSUPPORTED: () => __("The free-text search is not applied on screen."),

@@ -3,6 +3,7 @@
 //   used for the "as is" tree. Their values are the report's own values.
 // - facts: the leaves only, with level columns from the parent chain, used for everything
 //   Perspective computes (user grouping, filters, pivot, charts).
+import { has_value } from "./columns_util.js";
 
 export const DEPTH = "__depth";
 export const HAS_CHILDREN = "__has_children";
@@ -14,10 +15,6 @@ export const ANC_PREFIX = "__anc_";
 export const LEVEL_PREFIX = "level_";
 
 const NODE_KINDS = new Set(["data", "group_header"]);
-
-function has_value(v) {
-	return v !== null && v !== undefined && v !== "";
-}
 
 /** Text that names a tree row: its label column, else its first dimension with a value. */
 export function row_label(row, label_key, columns) {

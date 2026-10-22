@@ -12,26 +12,20 @@
 import { RID, KIND, SORT_PREFIX, perspective_type } from "./schema.js";
 import { PATH, LEVEL_PREFIX, tree_index } from "./tree_nodes.js";
 import { to_filter, quick_filter_terms, ordered_columns, AGGREGATES, CURRENCY_COUNT_PREFIX } from "./view_config.js";
+import { row_currency_key } from "./columns_util.js";
 
 // Split columns one pivot shows (combinations of the pivot columns x values). Above it the
 // pivot is drawn without its split, with a notice: a table thousands of columns wide is of
 // no use and costs memory in the engine.
 export const MAX_PIVOT_COLUMNS = 500;
 // view_state limits (§7.2: 20 analysis dimensions).
-export const MAX_PIVOT_DIMS = 20;
-export const MAX_PIVOT_VALUES = 20;
+const MAX_PIVOT_DIMS = 20;
+const MAX_PIVOT_VALUES = 20;
 export const PIVOT_AGGS = ["sum", "avg", "count", "min", "max"];
 // Engine column of the i-th value: values may repeat a measure with another aggregate.
-export const VALUE_PREFIX = "__pv";
+const VALUE_PREFIX = "__pv";
 const ROW_TYPES = new Set(["string", "date", "boolean"]);
 const LINK_TYPES = new Set(["Link", "Dynamic Link"]);
-
-/** Level number of a tree level key ("level_2" -> 2), else null. */
-export function pivot_level(key) {
-	if (typeof key !== "string" || !key.startsWith(LEVEL_PREFIX)) return null;
-	const n = Number(key.slice(LEVEL_PREFIX.length));
-	return Number.isInteger(n) && n > 0 ? n : null;
-}
 
 /**
  * Dimensions a pivot may group or split by: the levels of a report tree (top-level groups
@@ -140,10 +134,6 @@ export function resolve_pivot(view_state, normalized, register = {}, label_key =
 function order_column(dim) {
 	if (dim.level !== null) return PATH;
 	return dim.type === "string" ? SORT_PREFIX + dim.key : dim.key;
-}
-
-function row_currency_key(column) {
-	return column?.currency?.kind === "row" ? column.currency.key : null;
 }
 
 /**

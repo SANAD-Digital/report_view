@@ -28,7 +28,13 @@
   --sh-2:0 2px 8px rgba(17,24,20,.06);
   --sh-pop:0 12px 32px rgba(17,24,20,.14),0 2px 6px rgba(17,24,20,.06);
   --sh-drawer:0 0 48px rgba(17,24,20,.18);
+  /* the Pages view: an open section, the little page of the margin fields, a tool's menu */
+  --sh-open:0 1px 2px rgba(17,24,20,.04),0 4px 14px rgba(17,24,20,.05);
+  --sh-mini:0 1px 3px rgba(17,24,20,.08);
+  --sh-menu:0 12px 32px rgba(17,24,20,.14);
   --pin-sh:-6px 0 8px -6px rgba(17,24,20,.16);
+  /* layers over Desk (its modals are at 1050+): the scrim of a sheet, a tool's menu, the list of a field in it */
+  --z-scrim:1039; --z-pop:1040; --z-dropdown:1050;
   --r-xs:3px; --r-sm:5px; --r:7px; --r-lg:10px; --r-xl:14px;
   /* density — comfortable */
   --rh:36px; --fs:13px; --fs-sm:12.5px; --fs-xs:11.5px; --cp:12px;
@@ -56,6 +62,9 @@
   --sh-1:0 1px 2px rgba(0,0,0,.3); --sh-2:0 2px 8px rgba(0,0,0,.3);
   --sh-pop:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);
   --sh-drawer:0 0 48px rgba(0,0,0,.5);
+  --sh-open:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.3);
+  --sh-mini:0 1px 3px rgba(0,0,0,.3);
+  --sh-menu:0 12px 32px rgba(0,0,0,.45);
   --pin-sh:-6px 0 8px -6px rgba(0,0,0,.55);
   color-scheme:dark;
 }

@@ -89,18 +89,22 @@ export async function body_rows(view, post) {
 
 /**
  * In a tree of uneven depth a leaf fills its missing levels itself (N9): the first of those
- * rows stands for the leaf and stays closed, so the copies below it never show.
+ * rows stands for the leaf and stays closed, so the copies below it never show. The rows are
+ * read once and closed from the last up, sent together: the worker runs them in order, and a
+ * row closed below never moves the rows above it.
  */
 async function close_filled_levels(view, post) {
 	const first = post.index[LEVELS];
 	const cols = await view.to_columns({ start_col: first, end_col: first + 1 });
 	const paths = cols[ROW_PATH];
 	const levels = cols[LEVELS];
+	const rows = [];
 	for (let i = paths.length - 1; i > 0; i--) {
 		const depth = paths[i].length;
 		const open = i + 1 < paths.length && paths[i + 1].length > depth;
-		if (open && depth <= post.group_keys.length && depth === levels[i] + 1) await view.collapse(i);
+		if (open && depth <= post.group_keys.length && depth === levels[i] + 1) rows.push(i);
 	}
+	await Promise.all(rows.map((i) => view.collapse(i)));
 }
 
 /** __ROW_PATH__ of the body rows of a grouped view (without its grand total row). */
@@ -111,8 +115,11 @@ async function body_paths(view) {
 
 /**
  * Opens the listed groups of a grouped view that is closed down to its first level. A level
- * at a time, from the last row up, so that the row indices read for a level stay valid.
+ * at a time, from the last row up, so that the row indices read for a level stay valid; a
+ * level is read only when the one above opened something.
  * @param {(path: Array) => boolean} is_open
+ * @returns {Promise<Array<Array>|null>} the body paths as they stand when nothing was opened
+ *   after the last read (row_depths reuses them), else null
  */
 async function open_groups(view, post, is_open) {
 	for (let level = 1; level <= post.group_keys.length; level++) {
@@ -121,41 +128,48 @@ async function open_groups(view, post, is_open) {
 		for (let i = paths.length - 1; i >= 0; i--) {
 			if (paths[i].length === level && is_open(paths[i])) targets.push(i + 1);
 		}
-		if (!targets.length) return;
+		if (!targets.length) return paths;
 		await Promise.all(targets.map((row) => view.expand(row)));
 	}
+	return null;
 }
 
 /**
  * Folds a grouped view as the view state says: down to post.depth, or the listed groups
  * (group.expanded as paths; tree.expanded as the __rid of the open parents of a re-grouped
  * tree, found through `level_rids`).
+ * @returns {Promise<{paths: Array<Array>}|null>} the body paths when they were read last and
+ *   still stand (pass them to row_depths), else null
  */
 export async function set_depth(view, post, level_rids = null) {
 	const tree_open = post.shape === "levels" && Array.isArray(post.tree?.expanded) && level_rids ? post.tree.expanded : null;
 	if (post.expanded) {
 		const open = new Set(post.expanded.map((path) => JSON.stringify(path)));
 		await view.set_depth(0);
-		await open_groups(view, post, (path) => open.has(JSON.stringify(path)));
-	} else if (tree_open) {
+		const paths = await open_groups(view, post, (path) => open.has(JSON.stringify(path)));
+		return paths ? { paths } : null;
+	}
+	if (tree_open) {
 		// A leaf that fills a missing level is no parent: it is never in the list, so it stays closed.
 		const open = new Set(tree_open.map(Number));
 		await view.set_depth(0);
-		await open_groups(view, post, (path) => open.has(level_rids.get(JSON.stringify(path))));
-	} else {
-		await view.set_depth(post.depth);
-		if (post.shape === "levels") await close_filled_levels(view, post);
+		const paths = await open_groups(view, post, (path) => open.has(level_rids.get(JSON.stringify(path))));
+		return paths ? { paths } : null;
 	}
+	await view.set_depth(post.depth);
+	if (post.shape === "levels") await close_filled_levels(view, post);
+	return null;
 }
 
 /**
  * Depth of every body row, in view order, and the row paths of a grouped view: what the grid
  * needs to place the subtotal rows and to know which groups are open (engine/row_layout.js).
+ * `known_paths`: the body paths set_depth read last, when they still stand (not read again).
  * @returns {Promise<{depths: Array<number>, paths: Array<Array>|null}>}
  */
-export async function row_depths(view, post) {
+export async function row_depths(view, post, known_paths = null) {
 	if (post.row_offset) {
-		const paths = await body_paths(view);
+		const paths = known_paths || (await body_paths(view));
 		return { depths: paths.map((path) => path.length), paths };
 	}
 	if (post.shape !== "tree") return { depths: null, paths: null };

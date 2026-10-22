@@ -469,11 +469,11 @@ export class ReportSession {
 		const view = await this.handles.view(this.tables[spec.table], spec.config, post.shape);
 		try {
 			if (stale()) return await this._drop(view);
-			if (post.depth !== null) await queries.set_depth(view, post, this.level_rids);
+			const known = post.depth !== null ? await queries.set_depth(view, post, this.level_rids) : null;
 			if (stale()) return await this._drop(view);
 			const [body_rows, structure, total, groups] = await Promise.all([
 				queries.body_rows(view, post),
-				queries.row_depths(view, post),
+				queries.row_depths(view, post, known?.paths),
 				this._totals(view, post),
 				this._groups(post),
 			]);

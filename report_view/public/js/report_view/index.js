@@ -2,9 +2,10 @@
 // Flow: get_meta -> report script -> filters -> api.run -> adapter -> enrichment ->
 // Perspective tables (engine/perspective_engine.js) -> view of the view state -> grid.
 
-import { api } from "./api.js";
+import { api, error_text } from "./api.js";
 import { register, get_config } from "./register.js";
 import { normalize_async } from "./adapter/normalize.js";
+import { keep_raw, raw_data_cache } from "./adapter/raw_data.js";
 import { enrich_batches, apply_enrichment } from "./adapter/enrich.js";
 import {
 	get_engine,
@@ -46,13 +47,14 @@ import { ViewControls } from "./view_controls.js";
 import { NoticeBar, describe_notices } from "./components/notices.js";
 import { icons } from "./components/icons.js";
 import { wait_for_export, ExportJobError } from "./export_job.js";
+import { esc, fmt_int, session_lang, download_blob, load_user_settings, settings_saver } from "./util.js";
 
 const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
 // Local preferences of this browser (the theme is not part of the view state, §7.1).
 const THEME_KEY = "report_view:theme";
 const DENSITY_KEY = "report_view:density";
-// The pages settings of a report are saved after a burst of changes.
-const PAGES_SAVE_MS = 800;
+// A change of the report's filters runs it again after this much quiet (ms), as query-report.
+const RUN_DEBOUNCE_MS = 300;
 
 function read_pref(key) {
 	try {
@@ -81,10 +83,6 @@ const ERROR_TITLES = {
 	RVExportMismatch: () => __("The exported totals do not match the screen"),
 };
 
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
-
 function query_report_url(name, filters) {
 	const params = new URLSearchParams();
 	for (const [k, v] of Object.entries(filters || {})) {
@@ -101,6 +99,8 @@ export class ReportViewPage {
 		this.page = wrapper.page;
 		this.rtl = frappe.utils.is_rtl();
 		this.facade = make_facade(this);
+		// frappe.query_report.raw_data, rebuilt from the normalised rows on first read
+		this.raw_cache = raw_data_cache();
 		this.update_url = make_url_updater(window);
 		this.run_token = 0;
 		this.render_token = 0;
@@ -109,10 +109,15 @@ export class ReportViewPage {
 		this.visible = false;
 		this.density = read_pref(DENSITY_KEY) === "compact" ? "compact" : "comfortable";
 		this.controls = new ViewControls(this);
+		// the user settings of the pages and of the charts, saved after a burst of changes and
+		// flushed when the page is left (flush_settings)
+		this.pages_saver = settings_saver();
+		this.charts_saver = settings_saver();
 		this.make_dom();
 		this.watch_theme();
 		this.fit_height = this.fit_height.bind(this);
-		window.addEventListener("resize", this.fit_height);
+		// the window's size is listened to while the page is shown (show / hide)
+		this.listen_window(true);
 		// The server bar grows or shrinks with its note and filters: keep the grid in the window.
 		this.resize_observer = new ResizeObserver(() => this.fit_height());
 		this.resize_observer.observe(this.$(".rv-server"));
@@ -283,12 +288,8 @@ export class ReportViewPage {
 	}
 
 	save_user_charts(dashboard) {
-		if (!frappe.model?.user_settings?.save) return;
 		// One request after a burst of changes (ticking slicer values one by one).
-		clearTimeout(this._charts_save);
-		const key = this.user_settings_key();
-		const value = dashboard ? { ...dashboard, cross: null } : null;
-		this._charts_save = setTimeout(() => frappe.model.user_settings.save(key, "charts", value), 800);
+		this.charts_saver.save(this.user_settings_key(), "charts", dashboard ? { ...dashboard, cross: null } : null);
 	}
 
 	save_user_groups(groups) {
@@ -475,15 +476,32 @@ export class ReportViewPage {
 		if (this.charts) await this.charts.close();
 	}
 
+	/** The window's resize and the Desk theme, listened to only while the page is shown. */
+	listen_window(on) {
+		if (Boolean(this.window_listening) === on) return;
+		this.window_listening = on;
+		if (on) {
+			window.addEventListener("resize", this.fit_height);
+			this.theme_observer?.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+			// the theme may have changed while the page was hidden
+			if (this.theme_observer) this.apply_theme();
+		} else {
+			window.removeEventListener("resize", this.fit_height);
+			this.theme_observer?.disconnect();
+		}
+	}
+
+	/** Writes the user settings still waiting for their burst to end (leaving the page; the tests). */
+	flush_settings() {
+		return Promise.all([this.pages_saver.flush(), this.charts_saver.flush()]);
+	}
+
 	// Theme: the Desk theme by default (data-theme is the resolved light/dark value, also in
 	// "automatic" mode); the header button stores a local choice in localStorage.
+	// (observed while the page is shown: listen_window)
 	watch_theme() {
 		this.apply_theme();
 		this.theme_observer = new MutationObserver(() => this.apply_theme());
-		this.theme_observer.observe(document.documentElement, {
-			attributes: true,
-			attributeFilter: ["data-theme"],
-		});
 	}
 
 	is_dark() {
@@ -555,6 +573,7 @@ export class ReportViewPage {
 	show() {
 		this.restore_facade = install_facade(this);
 		this.visible = true;
+		this.listen_window(true);
 		cancel_dispose();
 		const name = frappe.get_route()[1];
 		if (!name) {
@@ -579,7 +598,12 @@ export class ReportViewPage {
 		if (this.restore_facade) this.restore_facade();
 		this.restore_facade = null;
 		this.visible = false;
-		this.close_session().finally(() => schedule_dispose());
+		this.listen_window(false);
+		// a change made just before leaving is saved now, not lost with the timer
+		this.flush_settings();
+		this.close_session()
+			.catch((e) => frappe.show_alert?.({ message: __("Report View could not close the report's tables: {0}", [error_text(e)]), indicator: "orange" }))
+			.finally(() => schedule_dispose());
 	}
 
 	/** Deletes the main view and the tables of the current result (views first). */
@@ -604,7 +628,7 @@ export class ReportViewPage {
 	async open_session(token) {
 		const { handles } = await get_engine();
 		const session = await ReportSession.create(handles, this.report, {
-			locale: frappe.boot.lang,
+			locale: session_lang(),
 			quick_filters: this.config?.quick_filters || [],
 		});
 		if (token !== this.run_token || !this.visible || this.session) {
@@ -635,7 +659,8 @@ export class ReportViewPage {
 	async load(name) {
 		this.report_name = name;
 		this.report = null;
-		this.raw = null;
+		this.raw_kept = null;
+		this.raw_report = null;
 		this.run_token += 1;
 		warm_up();
 		await this.close_session();
@@ -713,7 +738,7 @@ export class ReportViewPage {
 			this._run_wanted = true;
 			return;
 		}
-		this._run_timer = setTimeout(() => this.run(), 300);
+		this._run_timer = setTimeout(() => this.run(), RUN_DEBOUNCE_MS);
 	}
 
 	// Several filters written as one change (the period: fiscal year, then the dates):
@@ -779,8 +804,8 @@ export class ReportViewPage {
 				tone: "warn",
 				title: __("Too many rows for Report View"),
 				text: __("The report returned {0} rows; the limit is {1}. Narrow the filters or open the standard report.", [
-					format_int(res.row_count),
-					format_int(res.limit),
+					fmt_int(res.row_count),
+					fmt_int(res.limit),
 				]),
 				actions: [{ label: __("Open standard report"), href: query_report_url(this.report_name, values) }],
 			});
@@ -806,7 +831,7 @@ export class ReportViewPage {
 			return;
 		}
 
-		this.raw = res.raw;
+		const kept = keep_raw(res.raw);
 		const report = await normalize_async(
 			{
 				raw: res.raw,
@@ -817,7 +842,11 @@ export class ReportViewPage {
 			},
 			{ translate: __ }
 		);
+		// the raw rows are not kept next to their normalised copy (the answer is dropped with
+		// this call): raw_data rebuilds them from the normalised rows
 		if (token !== this.run_token) return;
+		this.raw_kept = kept;
+		this.raw_report = report;
 		report.__report_type = this.meta.report?.report_type;
 		await this.enrich(report);
 		if (token !== this.run_token) return;
@@ -850,7 +879,7 @@ export class ReportViewPage {
 					fields = fields.filter((f) => !dropped.has(f));
 				}
 			} catch (e) {
-				frappe.show_alert({ message: __("Extra columns could not be loaded: {0}", [e.message]), indicator: "orange" });
+				frappe.show_alert({ message: __("Extra columns could not be loaded: {0}", [error_text(e)]), indicator: "orange" });
 				continue;
 			}
 			apply_enrichment(report, rule, values, fields, (f) => __(frappe.unscrub(f)), field_meta);
@@ -1100,8 +1129,14 @@ export class ReportViewPage {
 
 	// ------------------------------------------------------------ the Pages view (ADR-014)
 
+	/** The answer of `run` as the server sent it (ADR-006 raw_data), or null before a result. */
+	raw_data() {
+		return this.raw_cache(this.raw_kept, this.raw_report);
+	}
+
 	/** What the pages print around the table: the report, its criteria and the company. */
 	pages_context() {
+		const host = this;
 		const company = this.last_filters?.company || frappe.defaults?.get_default?.("company") || null;
 		return {
 			report_name: this.report_name,
@@ -1109,7 +1144,10 @@ export class ReportViewPage {
 			filters: this.last_filters || {},
 			defs: this.report_settings?.filters || [],
 			group_labels: (this.state?.group?.by || []).map((k) => this.controls.title(k)),
-			raw: this.raw,
+			// read by a report print format only (query_report.raw_data): rebuilt then
+			get raw() {
+				return host.raw_data();
+			},
 			report_settings: this.report_settings,
 		};
 	}
@@ -1182,19 +1220,11 @@ export class ReportViewPage {
 	}
 
 	async pages_settings_load() {
-		if (!frappe.model?.user_settings?.get) return null;
-		try {
-			return (await frappe.model.user_settings.get(this.user_settings_key()))?.pages || null;
-		} catch {
-			return null;
-		}
+		return (await load_user_settings(this.user_settings_key(), "pages")) || null;
 	}
 
 	pages_settings_save(settings) {
-		if (!frappe.model?.user_settings?.save) return;
-		clearTimeout(this._pages_save);
-		const key = this.user_settings_key();
-		this._pages_save = setTimeout(() => frappe.model.user_settings.save(key, "pages", settings), PAGES_SAVE_MS);
+		this.pages_saver.save(this.user_settings_key(), "pages", settings);
 	}
 
 	// Export model v1 (docs/architecture.md §4.1). Quick filters travel with their definitions
@@ -1229,7 +1259,7 @@ export class ReportViewPage {
 				include_signatures: false,
 				columns: cols.map((c) => ({ key: c.key, width: this.state.columns.widths[c.key] || c.width || null })),
 			},
-			locale: { lang: frappe.boot.lang, rtl: this.rtl },
+			locale: { lang: session_lang(), rtl: this.rtl },
 		};
 	}
 
@@ -1261,13 +1291,16 @@ export class ReportViewPage {
 		const job = { id: queued.job, stopped: false };
 		this.export_job = job;
 		const rows = Number(queued.row_count) || 0;
+		// stop: the server is asked to cancel the job where it says it can (`cancellable`);
+		// either way the page stops waiting for it
 		const stop = () => {
 			job.stopped = true;
 			this.header.set_export_job(null);
+			if (job.cancellable) api.export_xlsx_cancel(job.id).catch(() => frappe.show_alert?.({ message: __("The export could not be cancelled on the server; its file will not be downloaded"), indicator: "orange" }));
 		};
 		const show = (state) => {
 			const running = state === "running" ? __("Building the Excel file") : __("The Excel file is queued");
-			const text = rows ? __("{0} · {1} rows", [running, format_int(rows)]) : running;
+			const text = rows ? __("{0} · {1} rows", [running, fmt_int(rows)]) : running;
 			this.header.set_export_job({ text, on_stop: stop });
 		};
 		show("queued");
@@ -1275,7 +1308,10 @@ export class ReportViewPage {
 			await wait_for_export(job.id, {
 				status: (id) => api.export_xlsx_status(id),
 				cancelled: () => job.stopped || this.export_job !== job,
-				on_state: (s) => show(s.state),
+				on_state: (s) => {
+					job.cancellable = s.cancellable === true;
+					show(s.state);
+				},
 			});
 			this.header.set_export_job({ text: __("Downloading the Excel file"), on_stop: stop });
 			const file = await api.export_xlsx_download(job.id, this.report_name);
@@ -1293,14 +1329,7 @@ export class ReportViewPage {
 	}
 
 	save_file({ blob, filename }) {
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = filename;
-		document.body.appendChild(a);
-		a.click();
-		a.remove();
-		setTimeout(() => URL.revokeObjectURL(url), 1000);
+		download_blob(blob, filename);
 	}
 
 	// Raw values read by the Playwright test: totals of the current view.
@@ -1333,10 +1362,6 @@ export class ReportViewPage {
 	debug_dispose_engine() {
 		return dispose_engine();
 	}
-}
-
-function format_int(n) {
-	return frappe.format(n, { fieldtype: "Int" }, { inline: true });
 }
 
 frappe.provide("report_view");

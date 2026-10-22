@@ -10,26 +10,27 @@
 
 export const CARD_TYPES = ["bar", "stacked", "hbar", "hstacked", "line", "area", "donut", "kpi"];
 // Value desc / asc, or the order of the categories (text A-Z, dates in time, report order).
-export const CARD_SORTS = ["desc", "asc", "label"];
+const CARD_SORTS = ["desc", "asc", "label"];
 // Top N categories (0 = all of them, up to the limit of the type).
 export const CARD_TOPS = [5, 10, 20, 0];
 export const CARD_AGGS = ["sum", "avg", "count", "min", "max"];
-export const CARD_SIZES = ["half", "full"];
+const CARD_SIZES = ["half", "full"];
 export const LIMIT_CARDS = 12;
 export const LIMIT_SLICERS = 8;
-export const LIMIT_SERIES = 7;
+const LIMIT_SERIES = 7;
 const LIMIT_VALUES = 200;
 const LIMIT_CARD_FILTERS = 4;
 const LIMIT_TITLE = 140;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const ID_RE = /^[A-Za-z0-9_-]{1,24}$/;
 
-function str_list(v, limit) {
+/** Strings of a list, each once (a card's series): unlike view_state's str_list, which keeps repeats. */
+function unique_str_list(v, limit) {
 	return Array.isArray(v) ? [...new Set(v.filter((x) => typeof x === "string"))].slice(0, limit) : [];
 }
 
 /** A value of a category or a slicer: text, number, boolean or null (nothing else). */
-export function is_value(v) {
+function is_value(v) {
 	return v === null || typeof v === "string" || typeof v === "boolean" || Number.isFinite(v);
 }
 
@@ -57,7 +58,7 @@ function sanitize_card(c, used) {
 		id,
 		type: CARD_TYPES.includes(c.type) ? c.type : "bar",
 		x: typeof c.x === "string" ? c.x : null,
-		series: str_list(c.series, LIMIT_SERIES),
+		series: unique_str_list(c.series, LIMIT_SERIES),
 		agg: CARD_AGGS.includes(c.agg) ? c.agg : null,
 		sort: CARD_SORTS.includes(c.sort) ? c.sort : null,
 		top: CARD_TOPS.includes(c.top) ? c.top : null,

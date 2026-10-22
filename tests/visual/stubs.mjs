@@ -279,13 +279,19 @@ window.frappe = {
 					})
 			);
 	},
-	show_alert() {},
+	// alerts and dialogs are kept (window.rv_alerts, window.rv_dialogs): a test can read what
+	// the page said
+	show_alert(opts) {
+		(window.rv_alerts ||= []).push(typeof opts === "string" ? { message: opts } : opts);
+	},
 	// frappe.confirm: the harness answers yes at once
 	confirm(message, yes) {
 		window.rv_confirmed = message;
 		yes && yes();
 	},
-	msgprint() {},
+	msgprint(opts) {
+		(window.rv_dialogs ||= []).push(typeof opts === "string" ? { message: opts } : opts);
+	},
 	breadcrumbs: { add() {} },
 	csrf_token: "",
 	provide(ns) {
@@ -294,8 +300,47 @@ window.frappe = {
 		return o;
 	},
 	// The answer comes in a task of its own, as a response from the server does: the page's
-	// work on it is not merged with the harness's own setup in one long task.
-	call({ method, args, callback }) {
-		setTimeout(() => Promise.resolve(window.RV_SERVER(method, args)).then((message) => callback({ message })), 0);
+	// work on it is not merged with the harness's own setup in one long task. As Frappe's:
+	// POST unless `type` says otherwise; a verb the method's @frappe.whitelist(methods=…)
+	// refuses is an error (and a console error the tests see); a failure of the server calls
+	// `error` with Frappe's answer (`always` either way) and rejects the returned promise.
+	call(opts) {
+		const { method, args, callback, error, always } = opts;
+		const type = String(opts.type || "POST").toUpperCase();
+		(window.rv_calls ||= []).push({ method, type });
+		const answer = new Promise((resolve, reject) => {
+			setTimeout(() => {
+				const fail = (e) => {
+					const r = {
+						exc_type: e?.exc_type || "ValidationError",
+						exception: `frappe.exceptions.${e?.exc_type || "ValidationError"}: ${e?.message || e}`,
+						_server_messages: JSON.stringify([JSON.stringify({ message: String(e?.message || e) })]),
+					};
+					if (always) always(r);
+					if (error) error(r);
+					reject(r);
+				};
+				const allowed = window.RV_HTTP_METHODS?.[method];
+				if (allowed && !allowed.includes(type)) {
+					console.error(`harness: ${method} allows ${allowed.join("/")}, the page sent ${type}`);
+					return fail({ exc_type: "PermissionError", message: `Not permitted: ${type}` });
+				}
+				let result;
+				try {
+					result = window.RV_SERVER(method, args);
+				} catch (e) {
+					return fail(e);
+				}
+				Promise.resolve(result).then((message) => {
+					const r = { message };
+					if (always) always(r);
+					if (callback) callback(r);
+					resolve(r);
+				}, fail);
+			}, 0);
+		});
+		// as jQuery's deferred of Frappe: a failure nobody waits for is not an unhandled rejection
+		answer.catch(() => {});
+		return answer;
 	},
 };

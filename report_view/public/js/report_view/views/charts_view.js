@@ -15,6 +15,7 @@ import { SVGRenderer } from "echarts/renderers";
 
 import { chart_config, dashboard_state, popover, set_filter, icons_module } from "./charts_shared.js";
 import { chart_option } from "./chart_option.js";
+import { esc, fmt_int } from "../util.js";
 
 const {
 	MAX_SERIES,
@@ -37,10 +38,6 @@ echarts.use([BarChart, LineChart, PieChart, GridComponent, TooltipComponent, SVG
 const PALETTE = ["--c1", "--c2", "--c3", "--c4", "--c5", "--c6", "--c7"];
 const HBAR_ROW = 28;
 const REFRESH_MS = 40;
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
 
 const svg = (body, attrs = 'fill="currentColor"') => `<svg width="30" height="22" viewBox="0 0 30 22" ${attrs} aria-hidden="true">${body}</svg>`;
 // Chart type pictures (Main.dc.html, integrated chart), plus line, area and number.
@@ -140,11 +137,12 @@ export class ChartsView {
 		// Cards are read when they come into view (and a little before).
 		this.visibility = new IntersectionObserver((entries) => this.on_visible(entries), { rootMargin: "240px 0px" });
 		// The theme and the density of the page: drawn again, in place.
+		// Observed while the dashboard is shown (show), not after close.
+		this.theme_root = root;
 		this.theme_observer = new MutationObserver(() => {
 			this._theme = null;
 			for (const card of this.cards.values()) card.schedule_draw();
 		});
-		this.theme_observer.observe(root, { attributes: true, attributeFilter: ["class"] });
 	}
 
 	// ------------------------------------------------------------ state
@@ -155,6 +153,9 @@ export class ChartsView {
 	 */
 	async show(ctx) {
 		this.ctx = ctx;
+		// the theme may have changed while the dashboard was closed
+		this._theme = null;
+		this.theme_observer.observe(this.theme_root, { attributes: true, attributeFilter: ["class"] });
 		this.refresh_now();
 	}
 
@@ -580,6 +581,7 @@ export class ChartsView {
 		this.grid_el.replaceChildren();
 		this.q(".rv-slicer-list").replaceChildren();
 		this._theme = null;
+		this.theme_observer.disconnect();
 		session_ids = new WeakMap();
 	}
 
@@ -755,7 +757,7 @@ class ChartCard {
 			const sort = card_sort(def);
 			if (sort !== "label") parts.push(SORT_LABELS[sort]());
 			if (post?.categories !== null && post?.categories !== undefined) {
-				const n = (x) => frappe.format(x, { fieldtype: "Int" }, { inline: true });
+				const n = fmt_int;
 				parts.push(
 					post.top ? __("Showing {0} of {1}", [n(this.data?.categories.length ?? post.limit), n(post.categories)]) : __("{0} categories", [n(post.categories)])
 				);

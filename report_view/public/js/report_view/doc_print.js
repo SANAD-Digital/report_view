@@ -11,12 +11,9 @@
 // or one sent with the data (html + css, staged with it: «Sent template»).
 
 import { PagesView } from "./views/pages_view.js";
-
-const SAVE_MS = 800;
-const CUSTOM = "Custom";
-const TOKEN = /^[a-f0-9]{24}$/;
-const METHOD = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$/;
-const OPTION_KEYS = ["letter_head", "lang", "heading", "signature"];
+import { error_text } from "./api.js";
+import { load_user_settings, settings_saver } from "./util.js";
+import { CUSTOM, TOKEN, METHOD, OPTION_KEYS } from "./custom_print_rules.js";
 const call = (method, args, type = "GET") => frappe.call({ method, args, type }).then((r) => r.message);
 
 class DocPrintPage {
@@ -25,9 +22,26 @@ class DocPrintPage {
 		this.page = wrapper.page;
 		this.rtl = Boolean(frappe.utils.is_rtl?.());
 		this.custom = new CustomPrintHost(this);
+		// the user's print settings, saved after a burst of changes, flushed when the page is left
+		this.saver = settings_saver();
 		this.make_dom();
 		this.fit_height = this.fit_height.bind(this);
-		window.addEventListener("resize", this.fit_height);
+		// the window's size is listened to while the page is shown
+		this.listen(true);
+		$(wrapper).on("hide", () => this.hide());
+	}
+
+	listen(on) {
+		if (Boolean(this.listening) === on) return;
+		this.listening = on;
+		if (on) window.addEventListener("resize", this.fit_height);
+		else window.removeEventListener("resize", this.fit_height);
+	}
+
+	/** Leaving the page: nothing listens, a change of the settings just made is saved now. */
+	hide() {
+		this.listen(false);
+		return this.saver.flush();
 	}
 
 	make_dom() {
@@ -44,7 +58,7 @@ class DocPrintPage {
 		if (this.kind === kind) return;
 		this.kind = kind;
 		this.doctype = this.name = this.custom_key = null;
-		this.pages?.destroy();
+		this.pages?.release();
 		const parent = document.createElement("div");
 		parent.className = "rv-pages";
 		this.root.replaceChildren(parent);
@@ -84,6 +98,7 @@ class DocPrintPage {
 	}
 
 	show() {
+		this.listen(true);
 		const route = frappe.get_route();
 		if (route[1] === CUSTOM) return this.show_custom(route.slice(2).join("/"));
 		const doctype = route[1];
@@ -100,7 +115,7 @@ class DocPrintPage {
 		this.options = null;
 		this.page.set_title(`${__(doctype)} ${name}`);
 		this.reset_pages();
-		this.pages.show_document().catch((e) => this.pages.note(e.message || String(e), true));
+		this.pages.show_document().catch((e) => this.pages.note(error_text(e), true));
 	}
 
 	/** A Custom print: its token, or its format and the method of its data. */
@@ -129,7 +144,7 @@ class DocPrintPage {
 		}
 		if (this.custom_key !== sig) return;
 		this.page.set_title(this.custom.title);
-		this.pages.show_document().catch((e) => this.pages.note(e.message || String(e), true));
+		this.pages.show_document().catch((e) => this.pages.note(error_text(e), true));
 	}
 
 	// ------------------------------------------------------------ the host of the pages
@@ -190,11 +205,11 @@ class DocPrintPage {
 	}
 
 	pages_settings_load() {
-		return load_settings(this.settings_key());
+		return load_user_settings(this.settings_key(), "pages");
 	}
 
 	pages_settings_save(settings) {
-		save_settings(this, this.settings_key(), settings);
+		this.saver.save(this.settings_key(), "pages", settings);
 	}
 }
 
@@ -350,7 +365,7 @@ class CustomPrintHost {
 	}
 
 	async pages_settings_load() {
-		const saved = await load_settings(this.settings_key());
+		const saved = await load_user_settings(this.settings_key(), "pages");
 		const choices = this.choices || {};
 		if (!saved && !Object.keys(choices).length) return null;
 		const out = { ...(saved || {}), ...choices };
@@ -360,40 +375,12 @@ class CustomPrintHost {
 	}
 
 	pages_settings_save(settings) {
-		save_settings(this, this.settings_key(), settings);
+		this.page.saver.save(this.settings_key(), "pages", settings);
 	}
-}
-
-/** The server's message of a failed call (Frappe shows it in its dialog too), or the error's. */
-function error_text(e) {
-	let text = e instanceof Error ? e.message : "";
-	try {
-		const msgs = JSON.parse(e?.responseJSON?._server_messages || e?._server_messages || "[]");
-		text = msgs.map((m) => JSON.parse(m).message).join(" ") || text;
-	} catch {
-		// not a server's answer
-	}
-	// text only: an inert document reads it (no image or handler of it runs)
-	return text ? new DOMParser().parseFromString(text, "text/html").body.textContent.trim() : "";
 }
 
 function company_of(data) {
 	return data && typeof data === "object" && !Array.isArray(data) && typeof data.company === "string" && data.company ? data.company : null;
-}
-
-async function load_settings(key) {
-	if (!frappe.model?.user_settings?.get) return null;
-	try {
-		return (await frappe.model.user_settings.get(key))?.pages || null;
-	} catch {
-		return null;
-	}
-}
-
-function save_settings(owner, key, settings) {
-	if (!frappe.model?.user_settings?.save) return;
-	clearTimeout(owner._save);
-	owner._save = setTimeout(() => frappe.model.user_settings.save(key, "pages", settings), SAVE_MS);
 }
 
 frappe.provide("report_view");

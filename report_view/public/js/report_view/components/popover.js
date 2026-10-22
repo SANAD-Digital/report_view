@@ -6,14 +6,57 @@
 
 let current = null;
 
+// Frappe's own overlays a popover or a menu may open (the list of a Link field, a dialog,
+// a menu, the date picker, the colour picker): a press inside them is not "outside".
+export const FRAPPE_OVERLAYS = ".awesomplete, .modal, .dropdown-menu, .datepicker, .pcr-app";
+// The room kept between a popover and the edges it is kept inside (px).
+export const POP_MARGIN = 8;
+
+/**
+ * Where a box of width `w` goes next to its anchor (window coordinates): its inline-start
+ * edge on the anchor's (the end edges with align "end"; mirrored in RTL), kept `margin`
+ * inside [min_x, max_x]; under the anchor, or above it when the room under it is less than
+ * `flip_under` and the room above is larger. `room` is the height left on that side.
+ * @param {DOMRect|{left:number,right:number,top:number,bottom:number}} a the anchor's box
+ * @returns {{left: number, top: number, bottom: number, up: boolean, room: number}}
+ */
+export function place_near(a, { w, gap = 4, margin = POP_MARGIN, align = "start", rtl = false, min_x = 0, max_x = window.innerWidth, flip_under = 0 }) {
+	const start = rtl === (align === "start") ? a.right - w : a.left;
+	const left = Math.max(min_x + margin, Math.min(start, max_x - margin - w));
+	const below = window.innerHeight - a.bottom - margin;
+	const above = a.top - margin;
+	const up = below < flip_under && above > below;
+	return { left, top: a.bottom + gap, bottom: window.innerHeight - a.top + gap, up, room: (up ? above : below) - gap };
+}
+
+/**
+ * A press of the document outside what `inside(target)` claims (and outside Frappe's
+ * overlays) calls `on_outside`; listened to only while `set(true)`.
+ * @returns {{set: (on: boolean) => void, readonly on: boolean}}
+ */
+export function outside_press(inside, on_outside) {
+	let on = false;
+	const handler = (e) => {
+		const t = e.target;
+		if (inside(t) || t?.closest?.(FRAPPE_OVERLAYS)) return;
+		on_outside(e);
+	};
+	return {
+		set(value) {
+			if (value === on) return;
+			on = value;
+			if (on) document.addEventListener("pointerdown", handler, true);
+			else document.removeEventListener("pointerdown", handler, true);
+		},
+		get on() {
+			return on;
+		},
+	};
+}
+
 /** Closes the open popover, if any. */
 export function close_popover() {
 	if (current) current.close();
-}
-
-/** The popover that is open now (or null). */
-export function open_popover_handle() {
-	return current;
 }
 
 /**
@@ -43,28 +86,25 @@ export function open_popover({ root, anchor, content, cls = "", width = null, al
 	const rtl = root.getAttribute("dir") === "rtl";
 	const place = () => {
 		const rr = root.getBoundingClientRect();
-		if (width) el.style.width = `${Math.min(width, rr.width - 16)}px`;
+		if (width) el.style.width = `${Math.min(width, rr.width - 2 * POP_MARGIN)}px`;
 		const a = at ? { left: at.x, right: at.x, top: at.y, bottom: at.y } : anchor.getBoundingClientRect();
 		const w = el.offsetWidth;
 		const h = el.offsetHeight;
-		const start_edge = rtl === (align === "start") ? a.right - w : a.left;
-		const left = Math.max(rr.left + 8, Math.min(start_edge, rr.right - 8 - w));
-		let top = a.bottom + 4;
-		if (top + h > window.innerHeight - 8) {
-			if (a.top - h - 4 > 8) top = a.top - h - 4;
-			else top = Math.max(8, window.innerHeight - 8 - h);
+		const p = place_near(a, { w, align, rtl, min_x: rr.left, max_x: rr.right });
+		// under the anchor; above it when its height does not fit under, else over it
+		let top = p.top;
+		if (top + h > window.innerHeight - POP_MARGIN) {
+			if (a.top - h - 4 > POP_MARGIN) top = a.top - h - 4;
+			else top = Math.max(POP_MARGIN, window.innerHeight - POP_MARGIN - h);
 		}
+		const left = p.left;
 		el.style.left = `${Math.round(left - rr.left)}px`;
 		el.style.top = `${Math.round(top - rr.top)}px`;
 	};
 	place();
 
-	const on_press = (e) => {
-		if (el.contains(e.target) || anchor?.contains(e.target)) return;
-		// A Frappe dropdown (awesomplete of a Link control) opened from inside the popover.
-		if (e.target.closest?.(".awesomplete, .dropdown-menu, .datepicker")) return;
-		handle.close();
-	};
+	// A Frappe dropdown (awesomplete of a Link control) opened from inside the popover is not outside.
+	const outside = outside_press((t) => el.contains(t) || Boolean(anchor?.contains(t)), () => handle.close());
 	// On the document: content that re-renders may drop the focus to the body. A Frappe
 	// dropdown open inside the popover (awesomplete of a Link control, the date picker of a
 	// Date control) takes the first Escape itself.
@@ -76,7 +116,7 @@ export function open_popover({ root, anchor, content, cls = "", width = null, al
 		handle.close();
 	};
 	const on_resize = () => handle.close();
-	document.addEventListener("pointerdown", on_press, true);
+	outside.set(true);
 	document.addEventListener("keydown", on_key, true);
 	window.addEventListener("resize", on_resize);
 
@@ -88,7 +128,7 @@ export function open_popover({ root, anchor, content, cls = "", width = null, al
 		close() {
 			if (handle.closed) return;
 			handle.closed = true;
-			document.removeEventListener("pointerdown", on_press, true);
+			outside.set(false);
 			document.removeEventListener("keydown", on_key, true);
 			window.removeEventListener("resize", on_resize);
 			anchor?.setAttribute("aria-expanded", "false");

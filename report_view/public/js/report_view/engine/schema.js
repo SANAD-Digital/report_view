@@ -8,7 +8,7 @@ export const SORT_PREFIX = "__sort__";
 // Rows per table.update: the client encodes a batch on the main thread (about 12 ms per
 // 1,000 rows of a 40-column report), so a batch stays well under a frame's worth of work;
 // the worker ingests one batch while the next is encoded (docs/architecture.md §8).
-export const BATCH_ROWS = 5000;
+const BATCH_ROWS = 5000;
 // The main thread is given back after this much work (build_table_input_async).
 const YIELD_BUDGET_MS = 40;
 // Unique values above which a collator sort is done in runs, with the main thread given
@@ -34,7 +34,7 @@ function valid_ymd(y, m, d) {
 	return t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d;
 }
 
-export function to_float(value) {
+function to_float(value) {
 	if (typeof value === "number") return Number.isFinite(value) ? value : null;
 	if (typeof value !== "string") return null;
 	const text = value.trim();
@@ -53,7 +53,7 @@ export function to_date(value) {
 }
 
 /** Milliseconds since the epoch, reading the naive site datetime as UTC, or null. */
-export function to_datetime(value) {
+function to_datetime(value) {
 	if (typeof value !== "string") return null;
 	const m = DATETIME_RE.exec(value.trim());
 	if (!m) return null;
@@ -64,13 +64,13 @@ export function to_datetime(value) {
 	return Date.UTC(y, mo - 1, d, h, mi, s, ms);
 }
 
-export function to_boolean(value) {
+function to_boolean(value) {
 	if (value === true || value === 1 || value === "1") return true;
 	if (value === false || value === 0 || value === "0") return false;
 	return null;
 }
 
-export function to_string(value) {
+function to_string(value) {
 	if (value === null || value === undefined || value === "") return null;
 	if (typeof value === "string") return value;
 	if (Array.isArray(value)) {

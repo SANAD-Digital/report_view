@@ -17,8 +17,10 @@ export class ReportViewQueryReportFacade {
 	get page() {
 		return this._host.page;
 	}
+	// the answer of `run` as the server sent it; the page keeps it without its rows and
+	// rebuilds them on first read (adapter/raw_data.js)
 	get raw_data() {
-		return this._host.raw || null;
+		return typeof this._host.raw_data === "function" ? this._host.raw_data() : this._host.raw || null;
 	}
 	get report_settings() {
 		return this._host.report_settings || {};

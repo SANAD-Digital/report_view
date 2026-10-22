@@ -4,12 +4,15 @@
 // - dist/app.css: the app's CSS files, in the bundle's order;
 // - dist/desk-ltr.css / desk-rtl.css: Frappe's built desk CSS, so Frappe controls look real;
 // - dist/messages-ar.js: Arabic translations of frappe, erpnext and report_view (.po files);
-// - dist/fonts.css + dist/fonts/: IBM Plex Sans Arabic (the design font) for the screenshots.
+// - dist/fonts.css + dist/fonts/: IBM Plex Sans Arabic (the design font) for the screenshots;
+// - dist/http_methods.js: the verbs every whitelisted method allows (@frappe.whitelist(methods=…)),
+//   checked by the frappe.call stub (a call with a verb its method refuses fails in the harness).
 // Usage: node tests/visual/build.mjs
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { http_methods } from "../js/_http_methods.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const app = path.resolve(here, "../..");
@@ -109,3 +112,6 @@ for (const f of [
 ]) {
 	fs.copyFileSync(path.join(app, "report_view/tests/fixtures/normalize", f), path.join(dist, f));
 }
+
+// 7. The verbs of the server's methods (tests/js/_http_methods.mjs reads the Python decorators).
+fs.writeFileSync(path.join(dist, "http_methods.js"), `window.RV_HTTP_METHODS = ${JSON.stringify(http_methods(app).table)};\n`);

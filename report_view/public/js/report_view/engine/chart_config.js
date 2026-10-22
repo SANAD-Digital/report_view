@@ -15,6 +15,7 @@ import { RID, KIND, SORT_PREFIX, perspective_type } from "./schema.js";
 import { DEPTH, PATH, TOP, LEVEL_PREFIX, tree_index } from "./tree_nodes.js";
 import { to_filter, quick_filter_terms, aggregate_of, ordered_columns, AGGREGATES, CURRENCY_COUNT_PREFIX } from "./view_config.js";
 import { CARD_TYPES, sanitize_dashboard } from "../state/dashboard_state.js";
+import { row_currency_key, has_value, is_empty } from "./columns_util.js";
 
 export { CARD_TYPES };
 // Categories one card shows at most, whatever its Top N.
@@ -119,7 +120,7 @@ function filterable(normalized) {
  * measures it has (else its first ones). strict: a card whose own filter names a column the
  * report does not have is dropped (a default card must not show more than it says).
  */
-export function resolve_cards(cards, normalized, view_state, { strict = false } = {}) {
+function resolve_cards(cards, normalized, view_state, { strict = false } = {}) {
 	const clean = sanitize_dashboard({ cards })?.cards || [];
 	const dims = filterable(normalized);
 	const measures = chart_measures(normalized, view_state);
@@ -179,9 +180,8 @@ export function date_text(value) {
 function set_terms(key, values, by_key) {
 	const type = column_type(key, by_key);
 	if (!type || !Array.isArray(values)) return [];
-	const empty = (v) => v === null || v === undefined || v === "";
-	const with_null = values.some(empty);
-	const plain = values.filter((v) => !empty(v));
+	const with_null = values.some(is_empty);
+	const plain = values.filter(has_value);
 	if (type === "string") {
 		if (with_null && !plain.length) return [[key, "is null", null]];
 		// "(empty) or values" needs an "or": the values only (the slicer's list says so).
@@ -194,7 +194,7 @@ function set_terms(key, values, by_key) {
 }
 
 /** Filter term of one category value (the cross-filter). */
-export function value_term(key, value, by_key) {
+function value_term(key, value, by_key) {
 	if (value === null || value === undefined || value === "") return [key, "is null", null];
 	const type = column_type(key, by_key);
 	if (type === "date") return [key, "==", date_text(value)];
@@ -226,10 +226,6 @@ export function dashboard_terms(dashboard, card, normalized) {
 }
 
 // ------------------------------------------------------------------ view config of a card
-
-function row_currency_key(column) {
-	return column?.currency?.kind === "row" ? column.currency.key : null;
-}
 
 /** The order of a card: the user's, else largest first for a Top N or a ranking type. */
 export function card_sort(card) {

@@ -24,7 +24,7 @@ export function decode_state(text) {
 }
 
 // Same serialisation as query_report.js update_url_with_filters: arrays as JSON.
-export function filters_to_params(filters) {
+function filters_to_params(filters) {
 	const params = new URLSearchParams();
 	for (const [k, v] of Object.entries(filters || {})) {
 		if (v === null || v === undefined || v === "") continue;

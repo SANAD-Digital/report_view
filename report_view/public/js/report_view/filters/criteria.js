@@ -8,10 +8,7 @@ import { ReportFilters } from "./report_filters.js";
 import { PeriodPicker } from "./period_picker.js";
 import { icons } from "../components/icons.js";
 import { open_popover, close_popover } from "../components/popover.js";
-
-function esc(s) {
-	return frappe.utils.escape_html(String(s ?? ""));
-}
+import { esc, fmt_int } from "../util.js";
 
 const DEFAULT_KEYS = { from_key: "from_date", to_key: "to_date", fiscal_year_key: "fiscal_year", company_key: "company" };
 
@@ -192,6 +189,6 @@ export class CriteriaBar {
 		if (!badge) return;
 		const n = this.changed_count();
 		badge.hidden = !n;
-		badge.textContent = n ? frappe.format(n, { fieldtype: "Int" }, { inline: true }) : "";
+		badge.textContent = n ? fmt_int(n) : "";
 	}
 }

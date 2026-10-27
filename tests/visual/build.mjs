@@ -4,7 +4,7 @@
 // - dist/app.css: the app's CSS files, in the bundle's order;
 // - dist/desk-ltr.css / desk-rtl.css: Frappe's built desk CSS, so Frappe controls look real;
 // - dist/messages-ar.js: Arabic translations of frappe, erpnext and report_view (.po files);
-// - dist/fonts.css + dist/fonts/: IBM Plex Sans Arabic (the design font) for the screenshots;
+// - dist/fonts.css + dist/fonts/: IBM Plex Sans Arabic (the design font, from the app) for the screenshots;
 // - dist/http_methods.js: the verbs every whitelisted method allows (@frappe.whitelist(methods=…)),
 //   checked by the frappe.call stub (a call with a verb its method refuses fails in the harness).
 // Usage: node tests/visual/build.mjs
@@ -87,19 +87,22 @@ const messages = {
 };
 fs.writeFileSync(path.join(dist, "messages-ar.js"), `window.RV_MESSAGES = ${JSON.stringify(messages)};\n`);
 
-// 5. Design font, from the woff2 files already on this bench (test only, not shipped).
-const font_src = path.join(bench, "apps/payroll_entry_tool/payroll_entry_tool/public/css/_payroll_entry_tool_fonts.scss");
-const font_dir = path.join(bench, "apps/payroll_entry_tool/payroll_entry_tool/public/fonts/payroll_entry_tool");
-let fonts = "";
-if (fs.existsSync(font_src)) {
-	fonts = fs
-		.readFileSync(font_src, "utf8")
-		.replace(/"PET IBM Plex Sans Arabic"/g, '"IBM Plex Sans Arabic"')
-		.replace(/url\("\/assets\/payroll_entry_tool\/fonts\/payroll_entry_tool\/([^"]+)"\)/g, (m, f) => {
-			fs.copyFileSync(path.join(font_dir, f), path.join(dist, "fonts", f));
-			return `url("fonts/${f}")`;
-		});
-}
+// 5. Design font: the app's own IBM Plex Sans Arabic (public/fonts, @font-face in
+// rv_fonts.css), so every machine draws the same text, with or without the font installed.
+const font_css = fs.readFileSync(path.join(app, "report_view/public/css/rv_fonts.css"), "utf8");
+const font_dir = path.join(app, "report_view/public/fonts");
+const fonts = (font_css.match(/@font-face\{font-family:'IBM Plex Sans Arabic'[^}]*\}/g) || [])
+	.map((rule) =>
+		rule
+			// the harness loads woff2 only: one file per weight
+			.replace(/,url\('[^']+\.ttf'\) format\('truetype'\)/, "")
+			.replace(/url\('\/assets\/report_view\/fonts\/([^']+)'\)/g, (m, f) => {
+				fs.copyFileSync(path.join(font_dir, f), path.join(dist, "fonts", path.basename(f)));
+				return `url("fonts/${path.basename(f)}")`;
+			})
+	)
+	.join("\n");
+if (!fonts) throw new Error("build: no IBM Plex Sans Arabic in rv_fonts.css");
 fs.writeFileSync(path.join(dist, "fonts.css"), fonts);
 
 // 6. Fixtures used by the harness.

@@ -9,9 +9,12 @@ const PORT = Number(process.env.RV_HARNESS_PORT || 8791);
 
 module.exports = defineConfig({
 	testDir: ".",
-	testMatch: /screens\.spec\.js$/,
+	testMatch: /\.spec\.js$/,
 	timeout: 60_000,
+	// one worker per spec file (the tests of a file run in order); the harness server is
+	// static, so the files are independent. RV_WORKERS overrides the count.
 	fullyParallel: false,
+	workers: Number(process.env.RV_WORKERS || 3),
 	retries: 0,
 	reporter: [["list"]],
 	outputDir: "../../test-results/visual",

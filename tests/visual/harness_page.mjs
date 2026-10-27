@@ -239,7 +239,7 @@ async function main() {
 			if (!r.is_default) return;
 			for (const o of store) if (o !== r && o.is_default && o.public === r.public && (r.public || o.owner === r.owner) && o.target === r.target) o.is_default = false;
 		};
-		if (fn === "list") {
+		if (fn === "list_presets") {
 			const rows = store.filter((r) => visible(r) && (!r.target || r.target === a.target)).map(preset_row);
 			rows.sort((x, y) => Number(y.specific) - Number(x.specific) || x.preset_name.localeCompare(y.preset_name));
 			return { mine: rows.filter((r) => !r.public), public: rows.filter((r) => r.public), can_publish };
@@ -305,6 +305,12 @@ async function main() {
 	await window.rv_settle();
 	document.body.dataset.ready = "1";
 }
+
+// What the tests read through a stable interface instead of the page's internals.
+window.rv_test = {
+	// the user settings the page saved for its report (the stub's store, under the page's own key)
+	saved_settings: () => frappe.model.user_settings.store[window.rv_page.user_settings_key()],
+};
 
 // Resolves when the table has drawn everything that is pending.
 window.rv_settle = async () => {

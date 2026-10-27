@@ -268,10 +268,14 @@ export class PivotView extends RtView {
 			const epoch = this.epoch;
 			const window = { start_row: 1 + y0, end_row: 1 + y0 + rows };
 			const split_end = Math.min(end, m.split_count);
-			const [t, p] = await Promise.all([
-				cur.totals.to_columns(window),
-				cur.view && split_end > x0 ? cur.view.to_columns({ ...window, start_col: x0, end_col: split_end }) : null,
-			]);
+			let t, p;
+			try {
+				[t, p] = await Promise.all([cur.totals.to_columns(window), cur.view && split_end > x0 ? cur.view.to_columns({ ...window, start_col: x0, end_col: split_end }) : null]);
+			} catch (e) {
+				// a draw asked for while the pivot was being replaced: the new one draws itself
+				if (this.current !== cur) return { ...base, data: [], row_headers: [], column_headers: [] };
+				throw e;
+			}
 			win = { epoch, y0, rows, t };
 			cells = { t, p };
 			if (this.current === cur && this.epoch === epoch) this.windows = [win, ...this.windows.filter((w) => w.y0 !== y0)].slice(0, 4);

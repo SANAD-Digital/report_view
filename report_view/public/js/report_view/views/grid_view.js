@@ -161,10 +161,15 @@ export class GridView extends RtView {
 			const cached = this.windows.find((w) => w.key === key);
 			plan = cached ? cached.plan : this.rows.plan(layout, y0, rows);
 			// Only the rows Perspective computed take their numbers from the view.
-			const [win, cells] = await Promise.all([
-				cached || this.read_records(cur, key, plan, layout),
-				this.rows.read_values(cur, plan, x0, end),
-			]);
+			let win, cells;
+			try {
+				[win, cells] = await Promise.all([cached || this.read_records(cur, key, plan, layout), this.rows.read_values(cur, plan, x0, end)]);
+			} catch (e) {
+				// a draw asked for (a resize, a scroll) while the view was being replaced: its
+				// view is gone and the new one draws itself; any other error is real
+				if (this.current !== cur || !this.session?.handles?.is_alive(cur.view)) return this.empty_response();
+				throw e;
+			}
 			// A scroll may read the next window before this one is drawn: keep the last few.
 			if (this.current === cur) this.windows = [win, ...this.windows.filter((w) => w.key !== key)].slice(0, 4);
 			values = cells;

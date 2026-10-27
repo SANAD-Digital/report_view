@@ -496,7 +496,16 @@ export class ChartCard {
 			if (handle.closed) return;
 			const def = view.dash?.cards.find((c) => c.id === this.id);
 			if (!def) return handle.close();
+			// a change drawn while the title is being typed keeps what was typed, and the caret
+			const typing = box.querySelector(".rv-ced-title");
+			const kept = typing && document.activeElement === typing ? { value: typing.value, start: typing.selectionStart, end: typing.selectionEnd } : null;
 			this.render_editor(box, def);
+			const title = kept && box.querySelector(".rv-ced-title");
+			if (title) {
+				title.value = kept.value;
+				title.focus();
+				title.setSelectionRange(kept.start, kept.end);
+			}
 			handle.place();
 		};
 		this.editor = { handle, render };

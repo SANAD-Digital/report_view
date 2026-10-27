@@ -15,7 +15,9 @@ module.exports = defineConfig({
 	retries: 0,
 	reporter: [["list"]],
 	outputDir: "../../test-results/visual",
-	use: { baseURL: `http://127.0.0.1:${PORT}` },
+	// The clock and language of the machine the pictures and dates were checked on, so a
+	// runner in another zone or locale (CI is UTC, en-US) sees the same periods and text.
+	use: { baseURL: `http://127.0.0.1:${PORT}`, timezoneId: "Asia/Aden", locale: "en-US" },
 	webServer: {
 		command: `node ${__dirname}/serve.mjs ${PORT}`,
 		url: `http://127.0.0.1:${PORT}/harness.html`,

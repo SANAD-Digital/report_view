@@ -1,5 +1,5 @@
-# Report View CI: lint, the JS unit tests, the visual harness (Chromium; Firefox and WebKit
-# reported, not yet required) and the server tests on a fresh Frappe 16 + ERPNext site.
+# Report View CI: lint, the JS unit tests, the visual harness (Chromium, Firefox
+# and WebKit, all required) and the server tests on a fresh Frappe 16 + ERPNext site.
 # Public actions only, pinned to their major versions; no secrets.
 name: CI
 
@@ -88,16 +88,24 @@ jobs:
         working-directory: apps/report_view
         run: npm ci --no-audit --no-fund
 
+      # spec on the log, TAP in a file: every failing test becomes a public annotation
+      # (the job log needs a sign-in, annotations do not)
       - name: node --test
         working-directory: apps/report_view
-        run: node --test tests/js/*.test.mjs
+        run: >
+          node --test --test-reporter=spec --test-reporter-destination=stdout
+          --test-reporter=tap --test-reporter-destination=node-test.tap
+          tests/js/*.test.mjs
+
+      - name: Failures as annotations
+        if: failure()
+        working-directory: apps/report_view
+        run: node tests/js/tap_annotations.mjs node-test.tap
 
   visual:
     name: Visual harness (${{ matrix.browser }})
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    # Firefox and WebKit run and report, and do not fail the workflow until they are green
-    continue-on-error: ${{ matrix.browser != 'chromium' }}
     strategy:
       fail-fast: false
       matrix:
@@ -139,7 +147,7 @@ jobs:
           RV_BROWSERS: ${{ matrix.browser }}
         run: |
           node tests/visual/build.mjs
-          tests/node_modules/.bin/playwright test -c tests/visual
+          tests/node_modules/.bin/playwright test -c tests/visual --reporter=github,list
 
       - name: Results
         if: failure()

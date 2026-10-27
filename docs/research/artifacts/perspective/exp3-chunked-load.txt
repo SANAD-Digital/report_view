@@ -1,4 +1,0 @@
-{'n': 500000, 'chunk': 0, 'format': 'columns', 'load_ms': 2431, 'size': 500000, 'wasm_heap_mb': 450, 'wasm_used_mb': 92, 'total_m1': 24989941901.34, 'error': None}
-{'n': 500000, 'chunk': 50000, 'format': 'columns', 'load_ms': 2226, 'size': 500000, 'wasm_heap_mb': 137, 'wasm_used_mb': 106, 'total_m1': 24989941901.34, 'error': None}
-{'n': 500000, 'chunk': 50000, 'format': 'rows', 'load_ms': 4200, 'size': 500000, 'wasm_heap_mb': 168, 'wasm_used_mb': 106, 'total_m1': 24989941901.34, 'error': None}
-{'n': 100000, 'chunk': 20000, 'format': 'rows', 'load_ms': 963, 'size': 100000, 'wasm_heap_mb': 56, 'wasm_used_mb': 27, 'total_m1': 4996007908.29, 'error': None}

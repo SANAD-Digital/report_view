@@ -1,8 +1,0 @@
-STAGE start | js_heap=15MB wasm_heap=16MB wasm_used=0MB
-STAGE rows generated | js_heap=89MB wasm_heap=16MB wasm_used=0MB
-STAGE table loaded (1st) | js_heap=53MB wasm_heap=357MB wasm_used=46MB
-STAGE table deleted | js_heap=53MB wasm_heap=357MB wasm_used=0MB
-STAGE table loaded (2) | js_heap=147MB wasm_heap=357MB wasm_used=46MB
-STAGE table loaded (3) | js_heap=147MB wasm_heap=357MB wasm_used=46MB
-STAGE table loaded (4) | js_heap=147MB wasm_heap=357MB wasm_used=46MB
-{"ok":true,"exp":"exp3_rows","n":250000,"stages":["start | js_heap=15MB wasm_heap=16MB wasm_used=0MB","rows generated | js_heap=89MB wasm_heap=16MB wasm_used=0MB","table loaded (1st) | js_heap=53MB wasm_heap=357MB wasm_used=46MB","table deleted | js_heap=53MB wasm_heap=357MB wasm_used=0MB","table loaded (2) | js_heap=147MB wasm_heap=357MB wasm_used=46MB","table loaded (3) | js_heap=147MB wasm_heap=357MB wasm_used=46MB","table loaded (4) | js_heap=147MB wasm_heap=357MB wasm_used=46MB"],"load_ms":2091}

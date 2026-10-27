@@ -214,4 +214,10 @@ jobs:
         working-directory: /home/runner/frappe-bench
         env:
           TYPE: server
-        run: bench --site test_site run-tests --app report_view
+        # the job's log needs a sign-in; every FAIL and ERROR also becomes a public annotation
+        run: |
+          set -o pipefail
+          bench --site test_site run-tests --app report_view 2>&1 | tee /tmp/run-tests.log || {
+            python apps/report_view/scripts/ci_annotate.py /tmp/run-tests.log
+            exit 1
+          }

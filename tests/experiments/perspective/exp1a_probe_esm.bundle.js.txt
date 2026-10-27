@@ -1,6 +1,0 @@
-// TEMPORARY probe (phase 1, axis F, experiment 1a). Deleted after the experiment.
-import perspective from "@finos/perspective";
-import "regular-table";
-window.__rv_psp_probe = perspective;
-// does esbuild (target es2017, iife) keep a dynamic import() of a runtime URL intact?
-window.__rv_dynamic_import = (url) => import(url);

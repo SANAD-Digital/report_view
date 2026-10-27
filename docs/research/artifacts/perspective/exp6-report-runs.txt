@@ -1,4 +1,0 @@
-_fy from=2026-01-01 show_net_values=1: rows=32 total={'opening_debit': 0.0, 'opening_credit': 0.0, 'debit': 30303624.0, 'credit': 30303624.0, 'closing_debit': 7553469.0, 'closing_credit': 7553469.0}
-_fy from=2026-01-01 show_net_values=0: rows=32 total={'opening_debit': 0.0, 'opening_credit': 0.0, 'debit': 30303624.0, 'credit': 30303624.0, 'closing_debit': 30303624.0, 'closing_credit': 30303624.0}
-_mid from=2026-07-01 show_net_values=1: rows=32 total={'opening_debit': 2459291.0, 'opening_credit': 2459291.0, 'debit': 16636858.0, 'credit': 16636858.0, 'closing_debit': 7553469.0, 'closing_credit': 7553469.0}
-_mid from=2026-07-01 show_net_values=0: rows=32 total={'opening_debit': 13666766.0, 'opening_credit': 13666766.0, 'debit': 16636858.0, 'credit': 16636858.0, 'closing_debit': 30303624.0, 'closing_credit': 30303624.0}

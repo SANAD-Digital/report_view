@@ -310,8 +310,19 @@ async function main() {
 window.rv_settle = async () => {
 	const page = window.rv_page;
 	if (page.state?.mode === "pages") {
-		await page.pages.ready;
-		while (page.pages.queue.length || page.pages.filling.size) await new Promise((r) => setTimeout(r, 30));
+		const v = page.pages;
+		await v.ready;
+		// every sheet on screen is filled: the IntersectionObserver reports them a little
+		// later than the layout (later still on WebKit), so an empty queue alone is not enough
+		const on_screen_empty = () => {
+			const box = v.stage.getBoundingClientRect();
+			return [...v.page_sheets()].some((el) => {
+				const r = el.getBoundingClientRect();
+				return r.bottom > box.top && r.top < box.bottom && !v.filled.has(Number(el.dataset.page));
+			});
+		};
+		const start = Date.now();
+		while (v.queue.length || v.filling.size || (on_screen_empty() && Date.now() - start < 10000)) await new Promise((r) => setTimeout(r, 30));
 		await new Promise((r) => setTimeout(r, 150));
 		return;
 	}

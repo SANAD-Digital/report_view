@@ -16,6 +16,7 @@ import { BANDS, PAGE, REF_W, LIMITS, GRID_MM, NUDGE_MM, NUDGE_BIG_MM, find, slot
 import { render_band, esc } from "./render.js";
 import { element_aria, element_hint, band_label, slot_label } from "./labels.js";
 import { icons } from "./icons.js";
+import { frame_resize_observer } from "../util.js";
 
 const PX_MM = 96 / 25.4;
 const DRAG_PX = 4;
@@ -36,7 +37,7 @@ export class Canvas {
 			if (kind === "layout") this.render();
 			else if (kind === "select") this.update_selection();
 		});
-		this.ro = new ResizeObserver(() => this.fit && this.fit_page());
+		this.ro = frame_resize_observer(() => this.fit && this.fit_page());
 		this.ro.observe(this.stage);
 	}
 

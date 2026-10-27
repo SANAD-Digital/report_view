@@ -18,7 +18,7 @@ import { GridRows } from "./grid_rows.js";
 import { page_box, fit_columns, SCREEN_FONT } from "../engine/page_layout.js";
 import { icons } from "../components/icons.js";
 import { outside_press } from "../components/popover.js";
-import { esc, fmt_int, session_lang } from "../util.js";
+import { esc, fmt_int, frame_resize_observer, session_lang } from "../util.js";
 import { error_text } from "../api.js";
 import { PresetControl } from "./print_presets.js";
 import "../fonts_registry.js";
@@ -160,7 +160,7 @@ export class PagesView {
 			for (const input of this.bd.querySelectorAll(".rv-linkf input[aria-expanded='true']")) this.place_dropdown(input);
 			this.place_menu();
 		}, { passive: true, capture: true });
-		this.resize_observer = new ResizeObserver(() => this.apply_zoom());
+		this.resize_observer = frame_resize_observer(() => this.apply_zoom());
 		this.resize_observer.observe(this.stage);
 	}
 

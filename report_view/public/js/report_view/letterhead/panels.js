@@ -9,6 +9,7 @@ import { render_band, field_value, esc } from "./render.js";
 import { token_label, type_label, slot_label, band_label, color_label, element_name } from "./labels.js";
 import { icons } from "./icons.js";
 import { font_picker_html, bind_font_picker } from "../components/font_picker.js";
+import { frame_resize_observer } from "../util.js";
 
 const DESIGN = [
 	{ type: "text", glyph: "t_text" },
@@ -58,7 +59,7 @@ export class Library {
 			e.preventDefault();
 			this.set_tab(this.tab === "elements" ? "presets" : "elements", true);
 		});
-		this.ro = new ResizeObserver(() => fit_thumbs(parent));
+		this.ro = frame_resize_observer(() => fit_thumbs(parent));
 		this.ro.observe(parent);
 		host.store.on((kind) => kind === "layout" && this.mark_used());
 	}

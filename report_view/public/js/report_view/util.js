@@ -88,3 +88,28 @@ export function settings_saver({ delay = SETTINGS_SAVE_MS } = {}) {
 		},
 	};
 }
+
+/**
+ * A ResizeObserver whose work runs at the next frame, once for a burst of notifications.
+ * Work that changes layout inside the observer's own callback (a zoom, a table drawn again)
+ * makes the browser report "ResizeObserver loop completed with undelivered notifications"
+ * (Safari does, for sizes Chromium settles in the same pass); at the frame the change is
+ * observed in the next round instead. `disconnect()` also drops a frame not yet run.
+ */
+export function frame_resize_observer(fn) {
+	let frame = 0;
+	const ro = new ResizeObserver(() => {
+		if (frame) return;
+		frame = requestAnimationFrame(() => {
+			frame = 0;
+			fn();
+		});
+	});
+	const disconnect = ro.disconnect.bind(ro);
+	ro.disconnect = () => {
+		if (frame) cancelAnimationFrame(frame);
+		frame = 0;
+		disconnect();
+	};
+	return ro;
+}

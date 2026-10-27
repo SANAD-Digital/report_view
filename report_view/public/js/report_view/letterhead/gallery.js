@@ -7,6 +7,7 @@ import { field_value, missing_tokens, esc } from "./render.js";
 import { token_label } from "./labels.js";
 import { thumb_html, fit_thumbs } from "./panels.js";
 import { icons } from "./icons.js";
+import { frame_resize_observer } from "../util.js";
 
 // what a letter head usually shows; the gallery says which of these the company lacks
 const SHOWN = ["company_name_ar", "company_name", "address", "phone_no", "email", "website", "tax_id", "registration_details"];
@@ -24,7 +25,7 @@ export class Gallery {
 		parent.addEventListener("change", (e) => {
 			if (e.target.matches("[data-ref=company]")) this.host.set_company(e.target.value);
 		});
-		this.ro = new ResizeObserver(() => fit_thumbs(parent));
+		this.ro = frame_resize_observer(() => fit_thumbs(parent));
 		this.ro.observe(parent);
 	}
 

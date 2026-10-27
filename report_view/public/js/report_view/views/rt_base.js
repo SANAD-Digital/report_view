@@ -14,7 +14,7 @@
 import { apply_rtl } from "./rtl_adapter.js";
 import { perspective_type } from "../engine/schema.js";
 import { MIN_COLUMN_WIDTH } from "../state/view_state.js";
-import { esc } from "../util.js";
+import { esc, frame_resize_observer } from "../util.js";
 
 export const ROW_PATH = "__ROW_PATH__";
 export const MAX_AUTO_WIDTH = 640;
@@ -128,7 +128,7 @@ export class RtView {
 		this.mounted();
 		// The table's inner width, kept here: reading it while drawing forced a layout.
 		this.rt_width = rt.clientWidth;
-		this.resize_observer = new ResizeObserver(() => {
+		this.resize_observer = frame_resize_observer(() => {
 			if (this.rt !== rt || !this.current) return;
 			this.rt_width = rt.clientWidth;
 			this.resized();

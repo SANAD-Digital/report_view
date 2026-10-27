@@ -59,7 +59,7 @@
 ## عقد الواجهة (API)
 | الدالة | الطريقة | المعاملات | يعيد |
 |---|---|---|---|
-| `report_view.api.print_presets.list` (الدالة `list_presets`؛ `list` اسمها القديم يبقى لأن الشريط وحزمة الفحص البصري تناديانه) | GET | `context`, `target` | `{mine: [row], public: [row], can_publish, keys}` — هذا الهدف أولاً ثم العامة لكل الأهداف |
+| `report_view.api.print_presets.list_presets` | GET | `context`, `target` | `{mine: [row], public: [row], can_publish, keys}` — هذا الهدف أولاً ثم العامة لكل الأهداف |
 | `report_view.api.print_presets.save` | POST | `context`, `target`, `preset_name`, `settings` (JSON)، `public`, `for_all`, `description`, `is_default`، و`name` (تعديل: ما يُرسل فقط يتغير) أو `name` + `as_new=1` (نسخة) | `row` |
 | `report_view.api.print_presets.delete` | POST | `name` | `{name}` |
 | `report_view.api.print_presets.set_default` | POST | `name`, `value` (1/0) | `row` |

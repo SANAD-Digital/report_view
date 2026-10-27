@@ -67,10 +67,10 @@ class TestPrintPresets(RVTestCase):
 			frappe.db.get_value("Print Preset", mine["name"], "for_user"), self.users["restricted"]
 		)
 		with self.as_user("restricted"):
-			self.assertIn(mine["name"], _names(api.list("Report", TB), "mine"))
+			self.assertIn(mine["name"], _names(api.list_presets("Report", TB), "mine"))
 		for other in (self.users["accountant"], MANAGER):
 			with self.as_email(other):
-				out = api.list("Report", TB)
+				out = api.list_presets("Report", TB)
 				self.assertNotIn(mine["name"], _names(out, "mine") | _names(out, "public"))
 				self.assertNotIn(mine["name"], frappe.get_list("Print Preset", pluck="name"))
 				self.assertFalse(frappe.has_permission("Print Preset", "read", doc=mine["name"]))
@@ -93,7 +93,7 @@ class TestPrintPresets(RVTestCase):
 		self.assertTrue(public["public"])
 		for kind in ("accountant", "restricted"):
 			with self.as_user(kind):
-				out = api.list("Report", TB)
+				out = api.list_presets("Report", TB)
 				self.assertIn(public["name"], _names(out, "public"))
 				self.assertFalse(out["can_publish"])
 				row = next(r for r in out["public"] if r["name"] == public["name"])
@@ -103,7 +103,7 @@ class TestPrintPresets(RVTestCase):
 				with self.assertRaises(frappe.PermissionError):
 					api.delete(public["name"])
 		with self.as_email(PUBLISHER):
-			out = api.list("Report", TB)
+			out = api.list_presets("Report", TB)
 			self.assertTrue(out["can_publish"])
 			edited = api.save(
 				context="Report", target=TB, name=public["name"], description="Edited by a Report Manager"
@@ -132,11 +132,11 @@ class TestPrintPresets(RVTestCase):
 			own = _save(preset_name="TB only")
 			self.assertFalse(general["specific"])
 			self.assertTrue(own["specific"])
-			out = api.list("Report", TB)
+			out = api.list_presets("Report", TB)
 			order = [r["name"] for r in out["mine"]]
 			self.assertLess(order.index(own["name"]), order.index(general["name"]))
 			self.assertTrue(all(r["specific"] for r in out["mine"][: order.index(own["name"]) + 1]))
-			other = api.list("Report", "General Ledger")
+			other = api.list_presets("Report", "General Ledger")
 			self.assertIn(general["name"], _names(other, "mine"))
 			self.assertNotIn(own["name"], _names(other, "mine"))
 			self.assertEqual(sorted(out["keys"]), sorted(pp.SETTINGS_KEYS))
@@ -144,12 +144,12 @@ class TestPrintPresets(RVTestCase):
 	def test_the_target_is_checked_first(self):
 		with self.as_user("none"):
 			with self.assertRaises(frappe.PermissionError):
-				api.list("Report", TB)
+				api.list_presets("Report", TB)
 		with self.as_user("accountant"):
 			with self.assertRaises(RVInvalidInput):
-				api.list("Spreadsheet", TB)
+				api.list_presets("Spreadsheet", TB)
 			with self.assertRaises(frappe.DoesNotExistError):
-				api.list("Document", "No Such Doctype")
+				api.list_presets("Document", "No Such Doctype")
 
 	def test_delete_and_set_default_check_the_preset_target(self):
 		with self.as_user("accountant"):
@@ -164,7 +164,6 @@ class TestPrintPresets(RVTestCase):
 				api.set_default(general["name"])
 			self.assertTrue(frappe.db.exists("Print Preset", own["name"]))
 			api.delete(own["name"])
-		self.assertIs(api.list, api.list_presets)
 
 	def test_one_default_per_audience_and_target(self):
 		with self.as_user("accountant"):
@@ -237,7 +236,7 @@ class TestPrintPresets(RVTestCase):
 				for_all=1,
 			)
 			self.assertFalse(row["specific"])
-			self.assertIn(row["name"], _names(api.list("Custom", ""), "mine"))
+			self.assertIn(row["name"], _names(api.list_presets("Custom", ""), "mine"))
 		with self.as_user("none"):
 			with self.assertRaises(frappe.PermissionError):
-				api.list("Custom", "")
+				api.list_presets("Custom", "")

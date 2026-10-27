@@ -139,9 +139,3 @@ def set_default(name: str, value: int | str = 1) -> dict:
 	doc.is_default = 1 if _check(value) else 0
 	doc.save()
 	return pp.as_row(doc)
-
-
-# The toolbar (views/print_presets.js) and its visual harness call the list as
-# ``report_view.api.print_presets.list``: the old name stays, after every function of this
-# module, so nothing here reads the builtin through it.
-list = list_presets

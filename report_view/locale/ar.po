@@ -6,9 +6,6 @@ msgstr ""
 "Language: ar\n"
 "Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5);\n"
 
-msgid "(empty)"
-msgstr "(فارغ)"
-
 msgid "At most {0} names can be enriched per request"
 msgstr "يمكن إثراء {0} اسم على الأكثر في كل طلب"
 
@@ -362,9 +359,6 @@ msgstr "مريح"
 msgid "Compact"
 msgstr "مضغوط"
 
-msgid "Reports"
-msgstr "التقارير"
-
 msgid "Period"
 msgstr "الفترة"
 
@@ -388,9 +382,6 @@ msgstr "طريقة العرض"
 
 msgid "Table"
 msgstr "جدول"
-
-msgid "Pivot"
-msgstr "تحليل Pivot"
 
 msgid "Charts"
 msgstr "رسوم"
@@ -1216,9 +1207,6 @@ msgstr "إعدادات الطباعة"
 msgid "{0} pages"
 msgstr "{0} صفحة"
 
-msgid "Paper"
-msgstr "الورق"
-
 msgid "Paper size"
 msgstr "مقاس الورق"
 
@@ -1262,9 +1250,6 @@ msgstr "المحتوى"
 
 msgid "Applied filters"
 msgstr "الفلاتر المطبقة"
-
-msgid "Signature boxes"
-msgstr "خانات التوقيع"
 
 msgid "Page numbers"
 msgstr "ترقيم الصفحات"
@@ -1370,12 +1355,6 @@ msgstr "طلب ترجمة غير صالح"
 
 msgid "The print format is wider than the page: try landscape or a larger paper."
 msgstr "قالب الطباعة أعرض من الصفحة: جرّب الاتجاه الأفقي أو ورقاً أكبر."
-
-msgid "Letter head height"
-msgstr "ارتفاع الترويسة"
-
-msgid "Footer height"
-msgstr "ارتفاع التذييل"
 
 msgid "mm"
 msgstr "ملم"

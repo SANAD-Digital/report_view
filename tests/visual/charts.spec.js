@@ -125,14 +125,16 @@ test("dashboard: add a card and edit it: type, dimension, measures, Top N, sort 
 	await page.press(".rv-ced-pop .rv-ced-title", "Enter");
 	await step(page, (id) => window.rv_page.state.charts.cards.find((c) => c.id === id).title === "حسب الطرف", id);
 	await page.keyboard.press("Escape");
-	await step(
-		page,
-		(id) => {
-			const c = window.rv_page.charts.debug_cards().find((x) => x.id === id);
-			return c.type === "donut" && c.x === "party" && c.loaded;
-		},
-		id
-	);
+	// a card is read when it is on screen (IntersectionObserver): the new one may stand below
+	await page.locator(`.rv-dcard[data-card="${id}"]`).scrollIntoViewIfNeeded();
+	const drawn = (id) => {
+		const c = window.rv_page.charts.debug_cards().find((x) => x.id === id);
+		return c.type === "donut" && c.x === "party" && c.loaded;
+	};
+	await step(page, drawn, id).catch(async (e) => {
+		// say what the card is when it never comes
+		throw new Error(`${e.message}\n${JSON.stringify(await page.evaluate((id) => window.rv_page.charts.debug_cards().find((x) => x.id === id), id))}`);
+	});
 	// the card is drawn again with its title (a draw follows the last change)
 	await expect(page.locator(`.rv-dcard[data-card="${id}"] h3`)).toHaveText("حسب الطرف", { timeout: STEP_MS });
 	// a donut with more than one measure says it shows the first one

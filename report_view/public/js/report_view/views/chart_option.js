@@ -10,6 +10,9 @@ const FEW_LABELS = 12;
 const MIN_LABEL_ROOM = 72;
 const TURNED_MARGIN = 12;
 const LINE_ROOM = 18;
+// Under turned labels: ECharts sizes the grid from the text as the canvas measures it, and
+// the SVG may draw it a few pixels longer (another rasteriser, hinting): room for that.
+const TURNED_FOOT = 12;
 // The last tick label of a horizontal value axis is centred on the edge of the plot.
 const EDGE_MARGIN = 28;
 // Opacity of the categories that are not the one a cross-filter picked.
@@ -61,7 +64,7 @@ export function chart_option(p) {
 	return {
 		...base,
 		// Upright labels are centred on their category: a little room on both sides.
-		grid: { left: few ? 8 : TURNED_MARGIN, right: few ? 8 : TURNED_MARGIN, top: 16, bottom: 4, containLabel: true },
+		grid: { left: few ? 8 : TURNED_MARGIN, right: few ? 8 : TURNED_MARGIN, top: 16, bottom: few ? 4 : TURNED_FOOT, containLabel: true },
 		xAxis: {
 			type: "category",
 			data: labels,

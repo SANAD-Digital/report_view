@@ -3,7 +3,7 @@
 // working. The previous value is restored when the page is hidden. It does not inherit
 // from frappe.views.QueryReport and touches no prototype.
 
-export class ReportViewQueryReportFacade {
+class ReportViewQueryReportFacade {
 	constructor(host) {
 		this._host = host;
 		this.datatable = null;

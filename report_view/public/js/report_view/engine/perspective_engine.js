@@ -19,7 +19,7 @@ import * as queries from "./queries.js";
 import { SERVER_WASM, CLIENT_WASM, WORKER_JS } from "./assets.js";
 
 export { VERSION } from "./assets.js";
-export const IDLE_MS = 60000;
+const IDLE_MS = 60000;
 
 // ---------------------------------------------------------------- handles
 

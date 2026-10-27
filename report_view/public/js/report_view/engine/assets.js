@@ -5,7 +5,7 @@
 // Must equal the pinned version in package.json (tests/js/engine.test.mjs checks it): it
 // breaks the one-year cache of /assets on upgrade.
 export const VERSION = "3.8.0";
-export const BASE = "/assets/report_view/node_modules/@finos/perspective/dist";
+const BASE = "/assets/report_view/node_modules/@finos/perspective/dist";
 
 export const SERVER_WASM = `${BASE}/wasm/perspective-server.wasm?v=${VERSION}`;
 export const CLIENT_WASM = `${BASE}/wasm/perspective-js.wasm?v=${VERSION}`;

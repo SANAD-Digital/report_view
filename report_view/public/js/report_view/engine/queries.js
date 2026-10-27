@@ -8,7 +8,7 @@
 import { KIND, SORT_PREFIX, RID as RID_COL } from "./schema.js";
 import { DEPTH, LEVELS } from "./tree_nodes.js";
 
-export const MAX_UNIQUE_VALUES = 5000;
+const MAX_UNIQUE_VALUES = 5000;
 export const ROW_PATH = "__ROW_PATH__";
 
 /**

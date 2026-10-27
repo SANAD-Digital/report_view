@@ -64,7 +64,7 @@ function message_of(r) {
  * Text of server HTML (a message may carry markup): read by an inert document, so no image
  * loads and no handler of it runs. Callers escape it again before it goes into HTML.
  */
-export function html_to_text(html) {
+function html_to_text(html) {
 	const s = String(html ?? "");
 	if (!s.includes("<") && !s.includes("&")) return s.trim();
 	if (typeof DOMParser !== "undefined") return (new DOMParser().parseFromString(s, "text/html").body.textContent || "").trim();

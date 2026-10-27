@@ -69,7 +69,7 @@ const SRC_RE = new RegExp(C.image_src);
 export const is_image_src = (s) => typeof s === "string" && SRC_RE.test(s) && !s.includes("/../") && !s.includes(".__");
 
 export const GRID_MM = 1;
-export const SNAP_MM = 1.5;
+const SNAP_MM = 1.5;
 export const NUDGE_MM = 1;
 export const NUDGE_BIG_MM = 5;
 
@@ -242,13 +242,13 @@ export function clamp_layout(raw) {
 	return layout;
 }
 
-export function next_id(ids) {
+function next_id(ids) {
 	let n = ids.size + 1;
 	while (ids.has(`e${n}`)) n++;
 	return `e${n}`;
 }
 
-export function all_ids(layout) {
+function all_ids(layout) {
 	return new Set(BANDS.flatMap((b) => layout[b].elements.map((e) => e.id)));
 }
 

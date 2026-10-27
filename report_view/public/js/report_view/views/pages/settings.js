@@ -91,7 +91,7 @@ export const PERIOD_KEYS = new Set(["from_date", "to_date", "fiscal_year", "repo
 
 export const RTL_LANGS = new Set(["ar", "he", "fa", "ps", "ur"]);
 
-export const BOX = (top, bottom, start, end) => Object.freeze({ top, bottom, start, end });
+const BOX = (top, bottom, start, end) => Object.freeze({ top, bottom, start, end });
 
 export const DEFAULT_SETTINGS = Object.freeze({
 	size: "A4",
@@ -193,15 +193,15 @@ export const PAGE_STYLES = [
 	{ id: "minimal", label: () => __("Ink saving") },
 ];
 
-export const LH_HEIGHT = { min: 5, max: 90 };
+const LH_HEIGHT = { min: 5, max: 90 };
 
-export const FOOT_HEIGHT = { min: 0, max: 60 };
+const FOOT_HEIGHT = { min: 0, max: 60 };
 
 export const BOX_MM = { min: 0, max: 60 };
 
-export const NUMBER_POS = ["bottom-end", "bottom-center", "bottom-start", "top-end", "top-center", "top-start"];
+const NUMBER_POS = ["bottom-end", "bottom-center", "bottom-start", "top-end", "top-center", "top-start"];
 
-export const NUMBER_FORMATS = ["full", "short", "number", "dash"];
+const NUMBER_FORMATS = ["full", "short", "number", "dash"];
 
 // Settings drawn over the pages (the watermark, the border round the page): changed on
 // the pages already cut, without cutting them again.
@@ -222,7 +222,7 @@ export const FIT_RUN = 30;
 
 export const PAINT_KEYS = new Set(["pb_on", "pb_w", "pb_s", "pb_c", "pb_offset", "pb_radius", "pb_pages", "wm_type", "wm_text", "wm_image", "wm_size", "wm_scale", "wm_color", "wm_opacity", "wm_angle", "wm_pages"]);
 
-export const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "number_caption", "pb_on", "heading_replace"];
+const BOOL_KEYS = ["include_filters", "include_subtotals", "include_total", "signatures", "page_numbers", "printed_on", "number_caption", "pb_on", "heading_replace"];
 
 export const PAGE_SCOPES = ["all", "first", "rest"];
 
@@ -236,11 +236,11 @@ export function on_page(scope, n, total) {
 	return true;
 }
 
-export const ALIGN = ["start", "center", "end"];
+const ALIGN = ["start", "center", "end"];
 
-export const LH_FIT = ["contain", "wide"];
+const LH_FIT = ["contain", "wide"];
 
-export const LINE_STYLES = ["solid", "dashed", "dotted", "double"];
+const LINE_STYLES = ["solid", "dashed", "dotted", "double"];
 
 export const COLOR = /^#[0-9a-fA-F]{6}$/;
 
@@ -275,7 +275,7 @@ export const NUMS = {
 	pb_radius: [0, 20, 0.5],
 };
 
-export const BOXES = ["page_m", "lh_m", "heading_m", "foot_m", "num_m", "sig_m"];
+const BOXES = ["page_m", "lh_m", "heading_m", "foot_m", "num_m", "sig_m"];
 
 export const SIDES = ["top", "bottom", "start", "end"];
 
@@ -311,7 +311,7 @@ export const clamp = (v, [min, max, step]) => {
 	return Math.round(q * 100) / 100;
 };
 
-export function sanitize_box(raw, fallback) {
+function sanitize_box(raw, fallback) {
 	if (!raw || typeof raw !== "object") return { ...fallback };
 	const out = {};
 	for (const side of SIDES) out[side] = clamp(raw[side], [BOX_MM.min, BOX_MM.max, 0.5]) ?? fallback[side];

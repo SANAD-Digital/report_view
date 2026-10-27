@@ -3,9 +3,9 @@
 // done, then downloads the file once. Pure module: the calls, the clock and the wait are
 // injected, so the loop is tested in node.
 
-export const POLL_MS = 1500;
+const POLL_MS = 1500;
 // The page stops waiting after this long; the job itself is the server's.
-export const LIMIT_MS = 10 * 60 * 1000;
+const LIMIT_MS = 10 * 60 * 1000;
 
 export class ExportJobError extends Error {
 	constructor(reason, message) {

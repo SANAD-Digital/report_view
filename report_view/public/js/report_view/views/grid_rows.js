@@ -20,7 +20,7 @@ const MIN_WIDTH_FOR_PINS = 600;
 const RUN_GAP = 8;
 // Formatted report cells kept for a scroll back; beyond this the cache starts again (a
 // window is cheap to format, a cell per row of a long report is not cheap to keep).
-export const HTML_CACHE_MAX = 50000;
+const HTML_CACHE_MAX = 50000;
 // A column without a band: not the empty string, so that regular-table does not merge its
 // band cell with the one of the pinned columns.
 const NO_BAND = " ";

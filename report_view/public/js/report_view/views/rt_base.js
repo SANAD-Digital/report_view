@@ -17,7 +17,7 @@ import { MIN_COLUMN_WIDTH } from "../state/view_state.js";
 import { esc, frame_resize_observer } from "../util.js";
 
 export const ROW_PATH = "__ROW_PATH__";
-export const MAX_AUTO_WIDTH = 640;
+const MAX_AUTO_WIDTH = 640;
 // Last content written in a cell's .rv-cc, and a number as format.js wraps it.
 const CELL_HTML = new WeakMap();
 const BARE_NUMBER = /^<bdi class="rv-n">([^<]*)<\/bdi>$/;

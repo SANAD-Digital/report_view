@@ -8,7 +8,7 @@ let current = null;
 
 // Frappe's own overlays a popover or a menu may open (the list of a Link field, a dialog,
 // a menu, the date picker, the colour picker): a press inside them is not "outside".
-export const FRAPPE_OVERLAYS = ".awesomplete, .modal, .dropdown-menu, .datepicker, .pcr-app";
+const FRAPPE_OVERLAYS = ".awesomplete, .modal, .dropdown-menu, .datepicker, .pcr-app";
 // The room kept between a popover and the edges it is kept inside (px).
 export const POP_MARGIN = 8;
 

@@ -21,7 +21,7 @@ export function session_lang() {
 }
 
 // A downloaded file's object URL is given back after this long: the browser has read it by then.
-export const BLOB_REVOKE_MS = 30000;
+const BLOB_REVOKE_MS = 30000;
 
 /** Saves a file the page made (a blob) under `name`, through a link the browser follows. */
 export function download_blob(blob, name) {
@@ -36,7 +36,7 @@ export function download_blob(blob, name) {
 }
 
 // User settings are saved after a burst of changes (typing a margin, ticking values).
-export const SETTINGS_SAVE_MS = 800;
+const SETTINGS_SAVE_MS = 800;
 
 /** One field of Frappe's user settings under `key` (null when there is none, or no user settings). */
 export async function load_user_settings(key, field) {

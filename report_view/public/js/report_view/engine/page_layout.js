@@ -22,7 +22,7 @@ const MAX_PAGINATE = 50000;
 /** Font size of the grid the nominal column widths were made for. */
 export const SCREEN_FONT = 13;
 /** A text column gives up to this share of its width before every column shrinks. */
-export const TEXT_SHRINK = 0.45;
+const TEXT_SHRINK = 0.45;
 
 /** The page margins of a preset, the same on the four sides (mm). */
 export function preset_margins(name) {

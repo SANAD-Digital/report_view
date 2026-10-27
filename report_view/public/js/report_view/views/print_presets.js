@@ -156,7 +156,7 @@ export class PresetControl {
 		// a sent template (Custom, no format) offers the presets of every Custom format
 		this.target = t && t.context && (t.target || t.context === "Custom") ? t : null;
 		if (!this.target) return Promise.resolve(null);
-		return call("list", { context: this.target.context, target: this.target.target }).catch(() => null);
+		return call("list_presets", { context: this.target.context, target: this.target.target }).catch(() => null);
 	}
 
 	/**

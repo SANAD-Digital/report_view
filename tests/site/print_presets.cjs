@@ -35,7 +35,7 @@ async function api_client(user, pwd) {
 	const a = await api_client(user, password("RV_PW", "RV_ACCOUNTANT_PASSWORD"));
 	const created = [];
 	// 1. the API is live (a server restart loads report_view.api.print_presets)
-	const first = await a.get("list", { context: "Report", target: "Trial Balance" });
+	const first = await a.get("list_presets", { context: "Report", target: "Trial Balance" });
 	check("list answers for a report the user may print", first.status === 200 && Array.isArray(first.body.message?.mine), `HTTP ${first.status}`);
 	if (first.status !== 200) {
 		for (const [s, n, i] of results) console.log(s, n, i);
@@ -53,13 +53,13 @@ async function api_client(user, pwd) {
 	check("save: an unknown setting is refused", bad.status === 417 && /evil/.test(JSON.stringify(bad.body)), `HTTP ${bad.status}`);
 	const big = await a.post("save", { context: "Report", target: "Trial Balance", preset_name: "RV big", settings: JSON.stringify({ wm_text: "x".repeat(40000) }) });
 	check("save: settings over 32 KB are refused", big.status === 417, `HTTP ${big.status}`);
-	const again = await a.get("list", { context: "Report", target: "Trial Balance" });
+	const again = await a.get("list_presets", { context: "Report", target: "Trial Balance" });
 	check("list: the private preset is the user's", again.body.message?.mine.some((r) => r.name === mine.body.message?.name));
 
 	// 2. privacy: another user neither sees nor edits it
 	if (process.env.RV_USER2 && process.env.RV_PW2) {
 		const b = await api_client(process.env.RV_USER2, process.env.RV_PW2);
-		const other = await b.get("list", { context: "Report", target: "Trial Balance" });
+		const other = await b.get("list_presets", { context: "Report", target: "Trial Balance" });
 		const names = [...(other.body.message?.mine || []), ...(other.body.message?.public || [])].map((r) => r.name);
 		check("another user does not see the private preset", other.status === 200 && !names.includes(mine.body.message.name), `HTTP ${other.status}`);
 		const edit = await b.post("save", { context: "Report", target: "Trial Balance", name: mine.body.message.name, preset_name: "taken" });
@@ -124,7 +124,7 @@ async function api_client(user, pwd) {
 		await settle();
 		s = await state();
 		check("after a reload the preset is shown again", s.name === name && !s.dot, JSON.stringify(s));
-		const listed = await a.get("list", { context: "Document", target: "Journal Entry" });
+		const listed = await a.get("list_presets", { context: "Document", target: "Journal Entry" });
 		const row = listed.body.message?.mine.find((r) => r.preset_name === name);
 		check("the preset is the document type's own", row?.specific === true && row?.target === "Journal Entry");
 		if (row) created.push(row.name);
@@ -133,7 +133,7 @@ async function api_client(user, pwd) {
 		await page.click('.rv-preset-pop [data-act="delete"]');
 		await page.locator(".modal.show .btn-primary").last().click();
 		await page.waitForFunction((n) => document.querySelector(".rv-preset-btn .nm")?.textContent !== n, name, { timeout: 15000 }).catch(() => {});
-		const after = await a.get("list", { context: "Document", target: "Journal Entry" });
+		const after = await a.get("list_presets", { context: "Document", target: "Journal Entry" });
 		check("«Delete» removes it", !after.body.message?.mine.some((r) => r.preset_name === name));
 	}
 	check("no errors in the console", problems.length === 0, problems.join(" | "));

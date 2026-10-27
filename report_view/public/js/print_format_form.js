@@ -123,27 +123,11 @@ function help_html(frm) {
 	</div>`;
 }
 
-const HELP_CSS = `.rv-cp-help{margin:var(--margin-md,12px) 0;padding:var(--padding-md,12px);border:1px solid var(--border-color);border-radius:var(--border-radius-md,8px);background:var(--subtle-fg,var(--control-bg));color:var(--text-color);font-size:var(--text-sm,13px)}
-.rv-cp-help h5{margin:0 0 6px;font-weight:600}
-.rv-cp-help h6{margin:14px 0 6px;font-weight:600;color:var(--text-color)}
-.rv-cp-help p{margin:0 0 6px;color:var(--text-muted)}
-.rv-cp-vars{width:100%;border-collapse:collapse}
-.rv-cp-vars td{padding:3px 8px;border-bottom:1px solid var(--border-color);vertical-align:top}
-.rv-cp-vars td:first-child{white-space:nowrap;width:1%}
-.rv-cp-code{margin:0;padding:8px 10px;border-radius:var(--border-radius,6px);background:var(--control-bg);color:var(--text-color);font-size:12px;white-space:pre;overflow:auto;direction:ltr;text-align:left;tab-size:4}`;
 
-function add_style() {
-	if (document.getElementById("rv-cp-help-css")) return;
-	const style = document.createElement("style");
-	style.id = "rv-cp-help-css";
-	style.textContent = HELP_CSS;
-	document.head.appendChild(style);
-}
 
 function render_help(frm) {
 	frm.$wrapper.find(".rv-cp-help").remove();
 	if (!is_custom(frm)) return;
-	add_style();
 	// under the two fields a Custom format is made of: HTML, then CSS
 	const field = frm.fields_dict.css || frm.fields_dict.html;
 	if (field?.$wrapper) field.$wrapper.after(help_html(frm));

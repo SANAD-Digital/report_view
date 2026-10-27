@@ -12,8 +12,9 @@ required_apps = ["erpnext"]
 # Entry button on the query-report page (ADR-007)
 app_include_js = ["report_view_entry.bundle.js"]
 
-# the @font-face rules of the font library (public/fonts, ADR-018): a file loads only when a font is used
-app_include_css = ["/assets/report_view/css/rv_fonts.css"]
+# Desk-wide CSS (hashed bundle): the @font-face rules of the font library (public/fonts,
+# ADR-018; a file loads only when a font is used) and the Print Format form's help box
+app_include_css = ["rv_desk.bundle.css"]
 
 # The "Design with the builder" button of the Letter Head form (ADR-018)
 doctype_js = {

@@ -2,8 +2,9 @@
 transaction (rolled back by IntegrationTestCase).
 
 The company and fiscal year come from the site: the company with the most GL entries
-and the fiscal year of its latest entry. On a site without them, a company, a second
-company and a fiscal year are created when this module is imported; the first
+and the fiscal year of its latest entry. On a fresh site the setup wizard runs first
+(``report_view.install.before_tests``); a second company and a fiscal year missing are
+created when this module is imported; the first
 ``IntegrationTestCase.setUpClass`` commits them, as Frappe does with its test records.
 """
 
@@ -15,6 +16,8 @@ from functools import cache
 import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, getdate, nowdate
+
+from report_view.install import before_tests
 
 DOMAIN = "rvtest.invalid"
 FIXTURES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures", "normalize")
@@ -122,6 +125,9 @@ def site_data() -> frappe._dict:
 	)
 
 
+# Test discovery imports this module before the ``before_tests`` hook runs: a fresh site
+# gets its setup wizard here first (ERPNext's fixtures, a company, a fiscal year).
+before_tests()
 _SITE = site_data()
 COMPANY = _SITE.company
 COMPANY_ABBR = _SITE.abbr
@@ -342,7 +348,9 @@ class RVTestCase(IntegrationTestCase):
 		users = list(cls.users.values())
 		leaked = frappe.get_all("User", filters={"name": ["in", users]}, pluck="name")
 		logs = frappe.get_all("Error Log", filters={"owner": ["in", users]}, pluck="name")
-		frappe.clear_cache()
+		# only the caches of the test users (roles, permissions, defaults, boot), not the site's
+		for user in users:
+			frappe.clear_cache(user=user)
 		if leaked or logs:
 			purge_users(leaked)
 			for name in logs:

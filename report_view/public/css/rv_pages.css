@@ -532,3 +532,16 @@ button.rv-preset-star:focus-visible{outline:2px solid var(--pri);outline-offset:
   .rv-print-hd .rv-preset-acts .rv-btn{height:36px}
   .rv-preset-acts{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
 }
+
+/* Print (views/pages/output.js prepare_print): the sheets alone in the document, in
+   .rv-print-root, one sheet per paper. The paper's @page size and colour are set by the
+   view; the PDF takes these rules from the sheets' styles in use. */
+@media print{
+  body>*:not(.rv-print-root){display:none!important}
+  .rv-print-root{display:block!important;position:static!important;background:transparent!important}
+  .rv-print-root .rv-print-sheets{display:block!important;padding:0!important;gap:0!important;zoom:1!important}
+  .rv-print-root .rv-print-more{display:none!important}
+  .rv-print-root .rv-page{content-visibility:visible!important;box-shadow:none!important;margin:0!important;break-after:page;page-break-after:always;break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .rv-print-root .rv-page *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .rv-print-root .rv-page:last-child{break-after:auto;page-break-after:auto}
+}

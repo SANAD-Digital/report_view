@@ -425,20 +425,13 @@ export class PagesOutput {
 		return keep;
 	}
 
+	// The paper's size and colour, the only rules of print that depend on the pages; the
+	// others are static, in rv_pages.css (`@media print`, .rv-print-root).
 	print_css() {
 		const b = this.box;
 		// the paper's colour (rv_tokens.css) under the sheets: <html> and <body> are not in .rv
 		const paper = getComputedStyle(this.root).getPropertyValue("--pp-bg").trim();
 		return `@page{size:${b.paper_w_mm}mm ${b.paper_h_mm}mm;margin:0}
-@media print{
-html,body{width:${b.paper_w_mm}mm!important;min-width:0!important;height:auto!important;margin:0!important;padding:0!important;${paper ? `background:${paper}!important;` : ""}overflow:visible!important}
-body>*:not(.rv-print-root){display:none!important}
-.rv-print-root{display:block!important;position:static!important;background:transparent!important}
-.rv-print-root .rv-print-sheets{display:block!important;padding:0!important;gap:0!important;zoom:1!important}
-.rv-print-root .rv-print-more{display:none!important}
-.rv-print-root .rv-page{content-visibility:visible!important;box-shadow:none!important;margin:0!important;break-after:page;page-break-after:always;break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.rv-print-root .rv-page *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.rv-print-root .rv-page:last-child{break-after:auto;page-break-after:auto}
-}`;
+@media print{html,body{width:${b.paper_w_mm}mm!important;min-width:0!important;height:auto!important;margin:0!important;padding:0!important;${paper ? `background:${paper}!important;` : ""}overflow:visible!important}}`;
 	}
 }

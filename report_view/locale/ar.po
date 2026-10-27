@@ -362,9 +362,6 @@ msgstr "مضغوط"
 msgid "Period"
 msgstr "الفترة"
 
-msgid "As on"
-msgstr "بتاريخ"
-
 msgid "Fiscal Year"
 msgstr "السنة المالية"
 

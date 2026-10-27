@@ -44,7 +44,7 @@ cd apps/report_view && npm --prefix tests run visual       # الاختبارا�
 cd apps/report_view && npm --prefix tests run e2e          # على موقع حي
 ```
 كلمات مرور مستخدمي الاختبار خارج المستودع (المستودع عام): `~/.config/report_view/test-users.env`.
-قيمة `$SITE` ومسار الـ bench مسجّلة في `docs/progress/phase-0.md`.
+قيم البيئة خارج المستودع (المستودع عام): اسم موقع التطوير `$SITE` ومسار الـ bench `$BENCH` في `~/.config/report_view/site.env` على خادم التطوير (حمّلها بـ `set -a; . ~/.config/report_view/site.env; set +a`)، وكلمات مرور مستخدمي الاختبار في `~/.config/report_view/test-users.env`. `docs/progress/phase-0.md` يذكرها بأسمائها فقط.
 
 ## تعريف «منتهٍ» لأي مهمة
 - كل الاختبارات تمر، ولا أخطاء ولا تحذيرات في console المتصفح أو سجل الخادم.

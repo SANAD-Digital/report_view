@@ -30,7 +30,7 @@ npx playwright test trial_balance → 6 skipped
 
 ## إصلاحات المنسّق
 - **البناء كان يفشل** (ذكر الوكيل أنه نجح دون قراءة المخرجات): `@import` في `report_view.bundle.css` لا يُحل في مجلد البناء المؤقت ⇒ حُوّل إلى `.scss` بمسارات SCSS. ومصدر Arquero 8 يستورد `@uwdata/flechette` بأرقام BigInt و `for await`، وهدف البناء في Frappe es2017 ثابت ⇒ Arquero يُحمَّل من `node_modules/arquero/dist/arquero.min.js` كملف مستقل، ويُحقن في المحرك بـ `use_arquero` (مع الرجوع إلى `globalThis.aq`). الاختبارات في node تمرّر الحزمة نفسها.
-- مستند الصفحة زُامن بـ `bench --site acc.dev.sanad.digital reload-doc report_view page report_view`؛ الضيف يُحوَّل إلى تسجيل الدخول.
+- مستند الصفحة زُامن بـ `bench --site $SITE reload-doc report_view page report_view`؛ الضيف يُحوَّل إلى تسجيل الدخول.
 - ترجمات نصوص الواجهة (34) أُضيفت إلى `report_view/locale/ar.po`.
 
 ## انحرافات
@@ -123,4 +123,4 @@ bench compile-po-to-mo --app report_view --locale ar --force → MO file created
 ```
 
 ### لم يُتحقق منه
-- لا تحقق على `acc.dev.sanad.digital` نفسه (لا حساب دخول): سلوك عناصر Frappe الحقيقية (awesomplete، datepicker) داخل `.rv-field`، و console الموقع، ومسار التنقل في رأس Desk. المنصة البصرية تستخدم CSS Desk الحقيقي و DOM العناصر نفسه، لا JS Frappe.
+- لا تحقق على `$SITE` نفسه (لا حساب دخول): سلوك عناصر Frappe الحقيقية (awesomplete، datepicker) داخل `.rv-field`، و console الموقع، ومسار التنقل في رأس Desk. المنصة البصرية تستخدم CSS Desk الحقيقي و DOM العناصر نفسه، لا JS Frappe.

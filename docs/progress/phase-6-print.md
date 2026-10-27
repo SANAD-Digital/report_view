@@ -28,13 +28,13 @@
 ## شروط القبول
 | الشرط | النتيجة | الدليل |
 |---|---|---|
-| اختبارات بايثون كاملة | نجح | 32 اختبار وحدة + 205 اختبار تكامل، كلها OK (126 ث) | `bench --site acc.dev.sanad.digital run-tests --app report_view` |
+| اختبارات بايثون كاملة | نجح | 32 اختبار وحدة + 205 اختبار تكامل، كلها OK (126 ث) | `bench --site $SITE run-tests --app report_view` |
 | لا تسرب من الاختبارات إلى الموقع | نجح | بعد التشغيل الكامل لا `rv_t_*` في `tabUser` ولا User Permission لهم (استعلام القراءة بعد التشغيل)؛ `RVTestCase._rollback_and_check` يفشل الصنف إن بقي شيء |
 | اختبارات الوحدة JS | نجح | `npm run -s test:js` ⇒ 200/200 |
 | الحزمة تُبنى | نجح | `bench build --app report_view` ⇒ `DONE Total Build Time: 2.408s` بعد إخراج Playwright من `node_modules` |
 | المجموعة البصرية (دورة الحياة) | نجح | `node tests/visual/build.mjs && npm --prefix tests exec -- playwright test -c tests/visual -g lifecycle` ⇒ 5/5 |
 | تسجيل الدخول بكلمات المرور الجديدة | نجح | `npm --prefix tests run e2e -- login` (بعد تحميل ملف البيئة) ⇒ 5/5 |
-| Playwright غير منشور | نجح | `curl https://acc.dev.sanad.digital/assets/report_view/node_modules/playwright-core/package.json` ⇒ 404 |
+| Playwright غير منشور | نجح | `curl https://$SITE/assets/report_view/node_modules/playwright-core/package.json` ⇒ 404 |
 | ترجمة عربية لكل نص | نجح | تدقيق `po_audit`: 0 نص مفقود لا يترجمه frappe أو erpnext (عدا مفتاح ديناميكي `key`)، و 0 مدخل ميت، و 0 ترجمة فارغة؛ `bench compile-po-to-mo --app report_view` |
 | ruff | نجح للملفات التي لا يعدّلها وكيل آخر الآن | `ruff check` و `ruff format --check` على 58 ملفاً نظيفان |
 

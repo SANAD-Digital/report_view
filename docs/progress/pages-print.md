@@ -38,7 +38,7 @@
 | RTL و LTR، فاتح وداكن، 390px | نجح | `pages-tb-{light,dark}-{rtl,ltr}.png`، `pages-tb-390-rtl.png` |
 | لا أخطاء ولا تحذيرات console | نجح | كل اختبار بصري يفشل عند أي خطأ؛ على الموقع لا خطأ من التطبيق (خطأ CORS لخط `snd_print_style` من ثيم الموقع، ليس منا) |
 | اختبارات الوحدة | نجح | `npm run -s test:js` ⇒ 127/127 (كانت 122) |
-| اختبارات بايثون | نجح | `bench --site acc.dev.sanad.digital run-tests --app report_view` ⇒ 58/58 (كانت 51) |
+| اختبارات بايثون | نجح | `bench --site $SITE run-tests --app report_view` ⇒ 58/58 (كانت 51) |
 | المجموعة البصرية كاملة | نجح (مع اختبار واحد حساس للحِمل) | `node tests/visual/build.mjs && npx playwright test -c tests/visual` ⇒ 166 اختباراً (كانت 148): التشغيلتان الكاملتان 165/166 وفي كل مرة فشل اختبار مختلف من الموجات السابقة بسبب الحِمل (كانت `bench build` واختبارات الموقع تعمل في الوقت نفسه): منتقي الفترة (أُصلح: Enter في حقل التاريخ يثبّت التاريخ ولا يطبّق) ثم «dashboard: add, edit…» (نجح وحده). اختبارات الصفحات الـ 19 كلها نجحت بعد آخر تعديل |
 | `bench build --app report_view` | نجح | `report_view.bundle.*.js` + css بلا ERROR؛ الموقع يعمل من المخرجات |
 

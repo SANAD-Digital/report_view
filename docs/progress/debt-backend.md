@@ -32,7 +32,7 @@
 
 ## 4. الاختبارات
 ```
-bench --site acc.dev.sanad.digital run-tests --app report_view
+bench --site $SITE run-tests --app report_view
 Ran 31 tests (unit)          OK
 Ran 51 tests (integration)   OK
 ```

@@ -4,11 +4,11 @@
 
 | البند | القيمة |
 |---|---|
-| bench | `/home/snd/frappe-bench` |
+| bench | `<bench>` |
 | frappe | 16.28.0، فرع `version-16`، commit `be4728af84` |
 | erpnext | 16.29.0، commit `a5de60c357` |
 | frappe-datatable | 1.20.5 (`apps/frappe/node_modules/frappe-datatable/package.json`) |
-| موقع التحقق | `acc.dev.sanad.digital` (استعلامات قراءة فقط عبر `bench console`؛ السكربت في `/tmp/claude-1001/.../scratchpad/verify.py`، ولم يُحفظ في المستودع) |
+| موقع التحقق | `$SITE` (استعلامات قراءة فقط عبر `bench console`؛ السكربت في `/tmp/claude-1001/.../scratchpad/verify.py`، ولم يُحفظ في المستودع) |
 
 كل رقم سطر أدناه يخص الملفات كما هي مثبَّتة في هذا الـ bench. اختصارات المسارات:
 

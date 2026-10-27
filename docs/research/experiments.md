@@ -1,9 +1,11 @@
 # المحور هـ — ثلاث تجارب حاسمة (PDF عربي، Excel RTL، حجم أكبر تقرير)
 
+> **ملاحظة (2026-10-27):** الأدلة الخام المذكورة هنا (`docs/research/artifacts/` و `tests/experiments/`) حُذفت من المستودع العام لأنها مخرجات تشغيل على موقع التطوير؛ هي باقية في تاريخ git قبل commit التنظيف.
+
 - التاريخ: 2026-09-30
-- الـ bench: `/home/snd/frappe-bench` — frappe 16.28.0، erpnext 16.29.0، Python 3.14.7 (`env/bin/python`)
-- الموقع: `acc.dev.sanad.digital` (خادم الويب يعطي 500؛ كل التجارب نُفّذت بسكربتات مباشرة عبر `frappe.init` + `frappe.connect`، قراءة فقط، مع `frappe.db.rollback()` في النهاية)
-- الملفات الناتجة: `/home/snd/frappe-bench/apps/report_view/docs/research/artifacts/`
+- الـ bench: `<bench>` — frappe 16.28.0، erpnext 16.29.0، Python 3.14.7 (`env/bin/python`)
+- الموقع: `$SITE` (خادم الويب يعطي 500؛ كل التجارب نُفّذت بسكربتات مباشرة عبر `frappe.init` + `frappe.connect`، قراءة فقط، مع `frappe.db.rollback()` في النهاية)
+- الملفات الناتجة: `<bench>/apps/report_view/docs/research/artifacts/`
 - السكربتات المؤقتة: `/tmp/claude-1001/-home-snd-frappe-bench-apps-report-view/80b6fc89-9d79-4ce6-8bf4-88166e120282/scratchpad/` (`exp1_wk.py`, `exp1_chrome.py`, `exp2_xlsx.py`, `exp3_survey.py`, `exp3_run.py`, `arabic_table.html`)
 
 ## 0. الأدوات المتاحة فعلاً على الخادم
@@ -11,7 +13,7 @@
 | الأداة | الحالة |
 |---|---|
 | `wkhtmltopdf` | `/usr/local/bin/wkhtmltopdf` — الإصدار `0.12.6.1 (with patched qt)` |
-| Chromium للمولّد chrome | موجود مسبقاً في `/home/snd/frappe-bench/chromium/chrome-linux/headless_shell` — `Google Chrome for Testing 133.0.6943.35` (تاريخ المجلد 2026-05-11) |
+| Chromium للمولّد chrome | موجود مسبقاً في `<bench>/chromium/chrome-linux/headless_shell` — `Google Chrome for Testing 133.0.6943.35` (تاريخ المجلد 2026-05-11) |
 | `pdftoppm` / `pdftocairo` / `gs` / ImageMagick | غير مثبتة |
 | `soffice` / `libreoffice` | غير مثبتة |
 | مكتبات Python في env الـ bench | `pypdfium2` و `PyMuPDF 1.28.0` و `pypdf` و `pdfplumber` و `PIL` متاحة (استُخدم `pypdfium2` لتحويل الصفحة الأولى إلى PNG)؛ `openpyxl 3.1.5`؛ `xlsxwriter` أيضاً |

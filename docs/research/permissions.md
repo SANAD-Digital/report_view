@@ -1,9 +1,9 @@
 # طبقات الصلاحيات في تقارير Frappe (المحور ب — المرحلة 1)
 
 - الإصدار المفحوص: frappe `v16.28.0` (فرع `version-16`)، erpnext `v16.29.0`. كل الملفات المذكورة أدناه خالية من تعديلات محلية (`git status --short` عليها فارغ).
-- الموقع: `acc.dev.sanad.digital`. كل التجارب نُفّذت بسكربتات بايثون مباشرة (خادم الويب يعطي 500)، بقراءة فقط، مع `frappe.db.rollback()` في نهاية كل سكربت وبدون أي `commit`.
+- الموقع: `$SITE`. كل التجارب نُفّذت بسكربتات بايثون مباشرة (خادم الويب يعطي 500)، بقراءة فقط، مع `frappe.db.rollback()` في نهاية كل سكربت وبدون أي `commit`.
 - السكربتات المؤقتة (غير مُدرجة في المستودع): `/tmp/claude-1001/-home-snd-frappe-bench-apps-report-view/80b6fc89-9d79-4ce6-8bf4-88166e120282/scratchpad/{find_users.py,find_users2.py,run_matrix.py,probe2.py,probe3.py}`.
-- المسارات المختصرة: `F/` = `/home/snd/frappe-bench/apps/frappe/frappe/`، `E/` = `/home/snd/frappe-bench/apps/erpnext/erpnext/`.
+- المسارات المختصرة: `F/` = `<bench>/apps/frappe/frappe/`، `E/` = `<bench>/apps/erpnext/erpnext/`.
 
 > تنبيه: مصفوفة الاختبار بمستخدمي `rv_admin / rv_accountant / rv_restricted / rv_noexport / rv_none` **ما زالت معلّقة** لأن هؤلاء المستخدمين لم يُنشأوا بعد. ما هو موثّق هنا نُفّذ بمستخدمين موجودين فعلاً على الموقع يمثّلون الحالات نفسها قدر الإمكان (انظر القسم 5).
 
@@ -80,7 +80,7 @@
 
 حدود هذه الطبقة مع Script Report التي تبني SQL بنفسها:
 - الطبقة تعمل **بعد** التنفيذ على النتيجة فقط، فلا تمنع القراءة من قاعدة البيانات ولا تؤثر على الإجماليات المحسوبة داخل التقرير (مثل صفوف Opening/Closing/Total في General Ledger، أو `report_summary`/`chart`).
-- إذا لم يُخرج التقرير عمود `Link` للـ doctype المقيّد (مثلاً GL لا يُخرج عمود `company`)، فلا تصفية أصلاً من Frappe؛ ما رأيناه من تقييد فعلي لمستخدم `ibraheem@alnajm.com` جاء من **ERPNext نفسه**:
+- إذا لم يُخرج التقرير عمود `Link` للـ doctype المقيّد (مثلاً GL لا يُخرج عمود `company`)، فلا تصفية أصلاً من Frappe؛ ما رأيناه من تقييد فعلي لمستخدم `user1@example.com` جاء من **ERPNext نفسه**:
   - `E/accounts/report/general_ledger/general_ledger.py:333-336` تستدعي `frappe.desk.reportview.build_match_conditions("GL Entry")` وتضيف الشرط إلى SQL (`where company=%(company)s {get_conditions(filters)}`, `:196-213`). الشرط الناتج للمستخدم المذكور: `IFNULL(\`tabGL Entry\`.\`company\`,'')='' OR \`tabGL Entry\`.\`company\` IN ('SND Accounting 2')` (لأن `apply_strict_user_permissions = 0` على الموقع).
   - `E/accounts/report/financial_statements.py:570-573` (يخدم Trial Balance عبر `set_gl_entries_by_account`) بنفس الأسلوب.
   - `E/accounts/report/accounts_receivable/accounts_receivable.py:883-884` عبر `build_qb_match_conditions("Payment Ledger Entry")` (`E/accounts/utils.py:2676-2703`)، و`add_user_permission_filters` (`:937-953`) لتقييد `party` يدوياً لأنه Dynamic Link.
@@ -134,14 +134,14 @@
 |----------|-----------------|-------------------|-----------------|
 | `Administrator` | rv_admin | System Manager (+ Auditor) | لا |
 | `ai-bench@example.com` | rv_admin (غير Administrator) | System Manager, Accounts Manager, Accounts User, Auditor | Party Type=Supplier (applicable_for Party Balance Certificate) |
-| `account@manager.com` | rv_accountant + تقييد على Customer | Accounts Manager, Accounts User, Auditor | Customer=`albashq` (عام)، Warehouse=`مخازن - SA`، Party Type ×4 (applicable_for Party Balance Certificate) |
-| `hosban30799@gmail.com` | rv_accountant الأدنى (Accounts User فقط) | Accounts User | لا |
-| `ibraheem@alnajm.com` | rv_restricted (Company) | Accounts Manager, Accounts User, Auditor | **Company=`SND Accounting 2`** (عام)، Warehouse/Currency (applicable_for Sales Invoice)، Party Type (applicable_for Account) |
+| `user4@example.com` | rv_accountant + تقييد على Customer | Accounts Manager, Accounts User, Auditor | Customer=`albashq` (عام)، Warehouse=`مخازن - SA`، Party Type ×4 (applicable_for Party Balance Certificate) |
+| `user2@example.com` | rv_accountant الأدنى (Accounts User فقط) | Accounts User | لا |
+| `user1@example.com` | rv_restricted (Company) | Accounts Manager, Accounts User, Auditor | **Company=`SND Accounting 2`** (عام)، Warehouse/Currency (applicable_for Sales Invoice)، Party Type (applicable_for Account) |
 | `ai-iso-a@example.com` | rv_none (حساب **معطّل** لكن `set_user` لا يتحقق من ذلك) | لا (Desk User, Projects User) | لا |
-| `t.azzan@sanad-erp.com` | rv_none (Website User بلا أدوار) | لا | لا |
+| `user3@example.com` | rv_none (Website User بلا أدوار) | لا | لا |
 | `Guest` | زائر | Guest | لا |
 
-لا يوجد على الموقع مستخدم يمثّل `rv_noexport` على `GL Entry` (كل الأدوار المحاسبية لها `export=1` هناك)؛ لكن `Sales Invoice` على الموقع `export=0` لكل الأدوار المحاسبية، فـ `account@manager.com` و`hosban30799@gmail.com` و`ibraheem@alnajm.com` يمثّلون rv_noexport لتقرير Accounts Receivable.
+لا يوجد على الموقع مستخدم يمثّل `rv_noexport` على `GL Entry` (كل الأدوار المحاسبية لها `export=1` هناك)؛ لكن `Sales Invoice` على الموقع `export=0` لكل الأدوار المحاسبية، فـ `user4@example.com` و`user2@example.com` و`user1@example.com` يمثّلون rv_noexport لتقرير Accounts Receivable.
 
 الفلاتر المستخدمة (`company = "SND Accounting"` ما لم يُذكر غيره):
 - Trial Balance: `fiscal_year=2026, from_date=2026-01-01, to_date=2026-12-31, with_period_closing_entry_for_opening=1, with_period_closing_entry_for_current_period=1, include_default_book_entries=1, show_net_values=1, show_group_accounts=1`
@@ -155,23 +155,23 @@
 |---|---|---|---|---|---|---|---|---|---|
 | Administrator | True | True | True | True | True | T/T/T | OK, 32 صفاً، 10 أعمدة | OK, 523 صفاً، 17 عموداً | OK, 196 صفاً، 25 عموداً |
 | ai-bench@example.com | True | True | True | True | True | T/T/T | OK, 32 | OK, 523 | OK, 196 |
-| account@manager.com | True | True | True | True | **False** | T/T/T | OK, 32 | OK, 523 | **OK, 4** (تقييد Customer=albashq عبر ERPNext `add_user_permission_filters`) |
-| hosban30799@gmail.com | True | True | True | True | **False** | T/T/T | OK, 32 | OK, 523 | OK, 196 |
-| ibraheem@alnajm.com | True | True | True | True | **False** | T/T/T | **OK, 1** (صف الإجمالي فقط) | **OK, 3** (Opening/Closing/Total فقط) | **OK, 0** |
-| ibraheem@alnajm.com بـ `company = SND Accounting 2` | — | — | — | — | — | — | OK, 1 | OK, 3 | OK, 0 |
+| user4@example.com | True | True | True | True | **False** | T/T/T | OK, 32 | OK, 523 | **OK, 4** (تقييد Customer=albashq عبر ERPNext `add_user_permission_filters`) |
+| user2@example.com | True | True | True | True | **False** | T/T/T | OK, 32 | OK, 523 | OK, 196 |
+| user1@example.com | True | True | True | True | **False** | T/T/T | **OK, 1** (صف الإجمالي فقط) | **OK, 3** (Opening/Closing/Total فقط) | **OK, 0** |
+| user1@example.com بـ `company = SND Accounting 2` | — | — | — | — | — | — | OK, 1 | OK, 3 | OK, 0 |
 | ai-iso-a@example.com (معطّل) | False | False | False | False | False | F/F/F | `PermissionError: You don't have access to Report: Trial Balance` | `PermissionError: ... General Ledger` | `PermissionError: ... Accounts Receivable` |
-| t.azzan@sanad-erp.com | False | False | False | False | False | F/F/F | `PermissionError` (نفس الرسالة) | `PermissionError` | `PermissionError` |
+| user3@example.com | False | False | False | False | False | F/F/F | `PermissionError` (نفس الرسالة) | `PermissionError` | `PermissionError` |
 | Guest | False | False | False | False | False | F/F/F | `PermissionError` | `PermissionError` | `PermissionError` |
 
 ملاحظات على النتائج:
-- `ibraheem@alnajm.com` مع `company = "SND Accounting"` (التي لا يملك عليها User Permission) **لم يُرفض** من `run` لأن الفلاتر لم تُمرَّر عبر `js_filters` وجدول `Report.filters` فارغ (الطبقة 3ب لم تعمل)؛ لكنّ SQL الخاص بـ ERPNext قيّد الصفوف إلى شركته فجاءت النتائج شبه فارغة. عند تكرار الاستدعاء مع `js_filters=[{"fieldname":"company","fieldtype":"Link","options":"Company"}]` رُفض بـ `ValidationError: You do not have permission to access Company: SND Accounting.` (`probe2.py`).
+- `user1@example.com` مع `company = "SND Accounting"` (التي لا يملك عليها User Permission) **لم يُرفض** من `run` لأن الفلاتر لم تُمرَّر عبر `js_filters` وجدول `Report.filters` فارغ (الطبقة 3ب لم تعمل)؛ لكنّ SQL الخاص بـ ERPNext قيّد الصفوف إلى شركته فجاءت النتائج شبه فارغة. عند تكرار الاستدعاء مع `js_filters=[{"fieldname":"company","fieldtype":"Link","options":"Company"}]` رُفض بـ `ValidationError: You do not have permission to access Company: SND Accounting.` (`probe2.py`).
 - عدد Error Log قبل/بعد التجربة ثابت (1461) — لم يُسجَّل أي رفض صلاحية عبر `query_report._run` لأنها تقع قبل `try` (`:276`).
-- تصدير (`export_query` مع `form_dict`): `ai-iso-a` → `PermissionError: You are not allowed to export GL Entry doctype` (من `can_export` قبل الوصول إلى فحص أدوار التقرير)؛ `account@manager.com` لتقرير AR → `PermissionError: You are not allowed to export Sales Invoice doctype`؛ `hosban30799@gmail.com` لتقرير GL → نجح (`response.type = binary`, `General Ledger.csv`, 83,064 بايت).
+- تصدير (`export_query` مع `form_dict`): `ai-iso-a` → `PermissionError: You are not allowed to export GL Entry doctype` (من `can_export` قبل الوصول إلى فحص أدوار التقرير)؛ `user4@example.com` لتقرير AR → `PermissionError: You are not allowed to export Sales Invoice doctype`؛ `user2@example.com` لتقرير GL → نجح (`response.type = binary`, `General Ledger.csv`, 83,064 بايت).
 - **مصفوفة rv_* الخمسة معلّقة** حتى إنشاء المستخدمين (سكربت `dev` المذكور في phase-0).
 
 ## 6. تجارب `get_filtered_data` بصفوف اصطناعية (`probe2.py`)
 
-مستخدم الجلسة والمعامل `user` = `ibraheem@alnajm.com` (Company = `SND Accounting 2`)، `ref_doctype = "GL Entry"`:
+مستخدم الجلسة والمعامل `user` = `user1@example.com` (Company = `SND Accounting 2`)، `ref_doctype = "GL Entry"`:
 
 | الأعمدة | الصفوف (قيمة `company` → `debit`) | الناتج (قيم `debit` المتبقية) |
 |---------|-----------------------------------|-------------------------------|
@@ -179,11 +179,11 @@
 | نفسها بدون عمود `company` (Link) — يبقى `company_text` (Data) | نفسها | `[1, 2, 3, 4, None]` (لا تصفية) |
 | أعمدة نصية `"Company:Link/Company:120"`, `"Debit:Currency:100"` وصفوف قوائم | `["SND Accounting",1]`, `["SND Accounting 2",2]`, `["",3]`, `[]` | `[["SND Accounting 2", 2], ["", 3], []]` |
 | `company:Link/Company`, `debit` فقط | نفسها | `[2, 3, 4, None]` |
-| نفسها لكن `user = "ai-iso-a@example.com"` (بلا User Permissions، والجلسة ما زالت ibraheem) | نفسها | `[1, 2, 3, 4, None]` (لا تصفية إطلاقاً رغم غياب أي دور قراءة) |
+| نفسها لكن `user = "ai-iso-a@example.com"` (بلا User Permissions، والجلسة ما زالت user1) | نفسها | `[1, 2, 3, 4, None]` (لا تصفية إطلاقاً رغم غياب أي دور قراءة) |
 
-`get_user_match_filters(["GL Entry","Account","Company","Customer"], "ibraheem@alnajm.com")` → `{'GL Entry': [{'Company': ['SND Accounting 2']}], 'Account': [{'Company': ['SND Accounting 2'], 'Party Type': ['Creditor']}], 'Company': [{'Company': ['SND Accounting 2']}]}` (لا مفتاح `Customer`).
+`get_user_match_filters(["GL Entry","Account","Company","Customer"], "user1@example.com")` → `{'GL Entry': [{'Company': ['SND Accounting 2']}], 'Account': [{'Company': ['SND Accounting 2'], 'Party Type': ['Creditor']}], 'Company': [{'Company': ['SND Accounting 2']}]}` (لا مفتاح `Customer`).
 
-مستخدم `account@manager.com` (Customer = `albashq`)، `ref_doctype = "Sales Invoice"`:
+مستخدم `user4@example.com` (Customer = `albashq`)، `ref_doctype = "Sales Invoice"`:
 
 | الأعمدة | الناتج |
 |---------|--------|

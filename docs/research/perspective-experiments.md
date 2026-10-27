@@ -1,9 +1,11 @@
 # المحور «و»: تجارب Perspective الحاسمة
 
+> **ملاحظة (2026-10-27):** الأدلة الخام المذكورة هنا (`docs/research/artifacts/` و `tests/experiments/`) حُذفت من المستودع العام لأنها مخرجات تشغيل على موقع التطوير؛ هي باقية في تاريخ git قبل commit التنظيف.
+
 - التاريخ: 2026-10-01
 - الفرع: `phase-1f-perspective-experiments`
 - الإصدارات: `@finos/perspective` 3.8.0، `regular-table` 0.9.1، Frappe 16.28.0، esbuild 0.14.54 (الخاص بـ Frappe)، Playwright Chromium (`chromium_headless_shell-1243`)، Node 24.20.0.
-- الموقع: `https://acc.dev.sanad.digital` (nginx أمام gunicorn).
+- الموقع: `https://$SITE` (nginx أمام gunicorn).
 - جهاز القياس: الخادم نفسه (4 أنوية AMD EPYC، ذاكرة 7.9GB منها نحو 1.1GB متاحة وقت القياس، متوسط الحمل بين 1 و5 لأن الـ bench يعمل عليه). الأرقام لذلك متحفظة وفيها ضجيج؛ كل قياس زمني وسيط ثلاث مرات والقيم الخام محفوظة في ملفات JSON.
 - كود التجارب: `tests/experiments/perspective/` (انظر `README.md` هناك). الأدلة: `docs/research/artifacts/perspective/`.
 - لم يُعدَّل أي كود إنتاج، ولا أي ملف في frappe أو erpnext. لم يُكتب شيء في قاعدة البيانات.

@@ -14,7 +14,7 @@
 - القالب المخصص **HTML و CSS فقط** (توضيح صاحب المشروع 2026-10-21): حقل `html` (HTML مع Jinja للبيانات) وحقل `css`، ولا شيء غيرهما؛ لا منشئ قوالب ولا JS ولا طباعة خام.
 - `doc_events` على Print Format: `before_validate` = `report_view.core.custom_print.before_validate_print_format`: القالب المخصص `custom_format=1`، `standard="No"`، `print_format_type="Jinja"`، `raw_printing=0`، بلا `doc_type` ولا `report` (والوحدة «Report View» إن لم تُحدد). فحص Frappe نفسه (`validate`) يطلب حينها HTML ويتحقق من صحة Jinja.
 - قالب مشحون «Report View Table» (`fixtures/print_format.json`): جدول منسّق بـ `frappe.format` لكل عمود، صفوف كائنات أو قوائم، إجمالي اختياري، وألوانه من لوحة الورق (`--pp-*`) فيتبع مظهر الصفحات.
-- التثبيت على acc.dev بلا migrate: `bench --site acc.dev.sanad.digital import-doc apps/report_view/report_view/fixtures/property_setter.json` ثم `… print_format.json`.
+- التثبيت على acc.dev بلا migrate: `bench --site $SITE import-doc apps/report_view/report_view/fixtures/property_setter.json` ثم `… print_format.json`.
 
 ### من يطبع بالقالب
 - `guard_custom_format(name)` أول سطر في كل دالة: صلاحية **select** على Print Format (Frappe يعطيها لكل Desk User، وبها تُعرض قوالب المستندات لهم؛ `read` لا يملكها إلا System Manager)، ثم القالب بـ `frappe.get_list`: موجود، غير معطّل، `print_format_for = Custom`. غير ذلك: `PermissionError` أو `DoesNotExistError`.

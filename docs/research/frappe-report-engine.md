@@ -1,14 +1,16 @@
 # محرك التقارير في Frappe (الخادم) — توثيق من الكود المثبَّت
 
+> **ملاحظة (2026-10-27):** الأدلة الخام المذكورة هنا (`docs/research/artifacts/` و `tests/experiments/`) حُذفت من المستودع العام لأنها مخرجات تشغيل على موقع التطوير؛ هي باقية في تاريخ git قبل commit التنظيف.
+
 **المحور أ من المرحلة 1 — مشروع report_view.**
 
 | البند | القيمة |
 |---|---|
-| bench | `/home/snd/frappe-bench` |
+| bench | `<bench>` |
 | frappe | 16.28.0، فرع `version-16`، commit `be4728af84` (2026-07-21) |
 | erpnext | 16.29.0، commit `a5de60c357` (2026-07-22) |
 | Python | 3.14 |
-| موقع التجربة | `acc.dev.sanad.digital` (التجارب عبر سكربت بايثون مباشر، قراءة فقط) |
+| موقع التجربة | `$SITE` (التجارب عبر سكربت بايثون مباشر، قراءة فقط) |
 | السكربتات والمخرجات الخام | `docs/research/artifacts/run_reports.py`، `run_reports_variants.py`، `query_report_run_tb_gl_ar.txt`، `query_report_run_variants_and_prepared.txt` |
 
 كل رقم سطر أدناه يخص الملفات كما هي مثبَّتة في هذا الـ bench. المسارات مختصرة: `Q` = `apps/frappe/frappe/desk/query_report.py`، `R` = `apps/frappe/frappe/core/doctype/report/report.py`، `P` = `apps/frappe/frappe/core/doctype/prepared_report/prepared_report.py`، `JS` = `apps/frappe/frappe/public/js/frappe/views/reports/query_report.js`.
@@ -352,7 +354,7 @@ if has_common(frappe.get_roles(), allowed): return True
 
 ---
 
-## 5. التجربة الفعلية على `acc.dev.sanad.digital` (Administrator، قراءة فقط)
+## 5. التجربة الفعلية على `$SITE` (Administrator، قراءة فقط)
 
 بيانات الموقع المكتشفة بالاستعلام: شركة `SND Accounting` (عملة YER)، سنة مالية واحدة `2026` (2026-01-01 → 2026-12-31)، 538 قيد GL كلها لهذه الشركة بين 2026-03-18 و2026-09-29، 22 فاتورة مبيعات مرحّلة. إعدادات التقارير الثلاثة في قاعدة البيانات مطابقة لملفات JSON في erpnext: كلها `Script Report`، `is_standard=Yes`، `prepared_report=0`، `timeout=0`؛ `add_total_row` = 0 لـ Trial Balance وGeneral Ledger و**1** لـ Accounts Receivable؛ `ref_doctype` = `GL Entry` للأولين و`Sales Invoice` للثالث؛ الأدوار: Accounts User/Accounts Manager/Auditor (TB, GL) وAccounts User/Accounts Manager (AR).
 
@@ -427,6 +429,6 @@ if has_common(frappe.get_roles(), allowed): return True
 3. **مستخدم الفحوص داخل مهمة الخلفية**: `generate_report` يمرّر `user=instance.owner` إلى `generate_report_result`، لكن `has_unrestricted_read_access` (Q:998) و`Meta.get_masked_fields` (meta.py:202) و`Report.is_permitted` (R:154) تعتمد على `frappe.session.user`. ما هو `session.user` فعلياً داخل عامل RQ لهذه المهمة (Administrator أم المالك)؟ لم يُتحقق منه تجريبياً (يتطلب كتابة/إدراج وثيقة).
 4. **تطابق فلاتر التقرير المُعدّ**: البحث في P:249-258 تطابق نصي تام؛ لم يُختبر ما إذا كانت الواجهة تُرسل دائماً نفس مجموعة المفاتيح عند العرض والتوليد (مثلاً فلاتر `Check` بقيمة 0 تُحذف في `get_filter_values` JS:1490 `f.get_value?.()`). السلوك عند اختلاف المفاتيح = لا نتيجة (`doc: None`).
 5. **`Custom Report` مع Prepared Report**: `get_completed_prepared_report` يبحث باسم `report.custom_report` (Q:357) بينما `generate_report` يخزّن `instance.report_name` كما أُرسل من الواجهة؛ لم يُختبر التطابق لعدم وجود Custom Report على الموقع (`frappe.get_all("Report", {"report_type": "Custom Report"})` أعاد قائمة فارغة).
-6. **خادم الويب يعيد 500** على `acc.dev.sanad.digital`؛ كل التجارب هنا عبر سكربت بايثون مباشر، فلم يُتحقق من الشكل الفعلي للرد بعد المرور بـ `json_handler` عبر HTTP (مثلاً تمثيل `timedelta` لعمود `Time`).
+6. **خادم الويب يعيد 500** على `$SITE`؛ كل التجارب هنا عبر سكربت بايثون مباشر، فلم يُتحقق من الشكل الفعلي للرد بعد المرور بـ `json_handler` عبر HTTP (مثلاً تمثيل `timedelta` لعمود `Time`).
 7. **`Report.timeout`** يظهر في النموذج بشرط `prepared_report`، لكنه يُقرأ في P:79 لأي وثيقة Prepared Report؛ هل يُطبَّق على التنفيذ المباشر (غير المُعدّ) بأي شكل؟ لم أجد استخداماً آخر له في `query_report.py` أو `report.py`.
 8. **`Report Builder` عبر `run`**: `get_report_result` تعيد `None` (Q:61-74) فالرد `result: [], columns: []` بلا خطأ؛ لم يُختبر فعلياً.

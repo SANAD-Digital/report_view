@@ -1,5 +1,7 @@
 # المرحلة 3 — جزء الخادم
 
+> **ملاحظة (2026-10-27):** الأدلة الخام المذكورة هنا (`docs/research/artifacts/` و `tests/experiments/`) حُذفت من المستودع العام لأنها مخرجات تشغيل على موقع التطوير؛ هي باقية في تاريخ git قبل commit التنظيف.
+
 كتبه المنسّق من التقرير النهائي لوكيل `backend-dev`، لأن الكتابة النهائية للملف رُفضت أثناء عمل الوكيل.
 
 ## ما بُني
@@ -24,7 +26,7 @@
 
 ## الاختبارات
 ```
-bench --site acc.dev.sanad.digital run-tests --app report_view
+bench --site $SITE run-tests --app report_view
 Ran 12 tests ... OK      (normalize, engine)
 Ran 37 tests in 7.852s OK (guard, api_run, get_meta, enrich, export)
 ```
@@ -58,7 +60,7 @@ Ran 37 tests in 7.852s OK (guard, api_run, get_meta, enrich, export)
 
 ## آثار على الموقع المشترك
 - تشغيلات مبكرة تركت 4 سجلات Error Log (تُكتب مؤجلة فلا يمحوها التراجع)؛ حذفها الوكيل، واختبار الاختلاف صار يستبدل `log_error`.
-- نُفّذ `bench compile-po-to-mo --app report_view --locale ar` و `bench --site acc.dev.sanad.digital clear-cache`.
+- نُفّذ `bench compile-po-to-mo --app report_view --locale ar` و `bench --site $SITE clear-cache`.
 
 ## شكل الحالات المشتركة `report_view/tests/fixtures/normalize/*.json`
 

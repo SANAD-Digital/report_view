@@ -1,5 +1,7 @@
 # المرحلة 5أ-1 — الخادم: مطابقة تصدير Excel لما يعرضه المتصفح
 
+> **ملاحظة (2026-10-27):** الأدلة الخام المذكورة هنا (`docs/research/artifacts/` و `tests/experiments/`) حُذفت من المستودع العام لأنها مخرجات تشغيل على موقع التطوير؛ هي باقية في تاريخ git قبل commit التنظيف.
+
 - الفرع: `phase-5a1-grid-basics` (بلا commit؛ التغييرات في شجرة العمل)
 - التاريخ: 2026-10-01
 - المرجع: قرار المنسّق بتفويض صاحب المشروع «ما على الشاشة = ما في Excel»؛ `docs/architecture.md` §4.2، §4.3، §7.1، §8أ.6؛ ADR-008 (تعديل 5أ-1)؛ ADR-012؛ `docs/progress/phase-5a1-frontend.md` §5 و §6
@@ -113,7 +115,7 @@
 
 ### 3.3 المخرج
 ```
-cd /home/snd/frappe-bench && bench --site acc.dev.sanad.digital run-tests --app report_view
+cd <bench> && bench --site $SITE run-tests --app report_view
 
 Running 26 unit tests for report_view
 Ran 26 tests in 0.686s

@@ -1,8 +1,8 @@
 # كتالوج التقارير القياسية (المحور د من المرحلة 1)
 
 - التاريخ: 2026-09-30
-- الإصدارات المفحوصة: frappe 16.28.0، erpnext 16.29.0، hrms 16.14.0 (مسار الـ bench: `/home/snd/frappe-bench`)
-- الموقع: `acc.dev.sanad.digital`، الشركة المستخدمة في التشغيل: `SND Accounting` (عملتها `YER`)، السنة المالية الوحيدة: `2026` (2026-01-01 → 2026-12-31)
+- الإصدارات المفحوصة: frappe 16.28.0، erpnext 16.29.0، hrms 16.14.0 (مسار الـ bench: `<bench>`)
+- الموقع: `$SITE`، الشركة المستخدمة في التشغيل: `SND Accounting` (عملتها `YER`)، السنة المالية الوحيدة: `2026` (2026-01-01 → 2026-12-31)
 - طريقة التحقق: قراءة ملفات `.py` و `.js` و `.json` لكل تقرير في الإصدار المثبت، ثم تشغيل كل تقرير فعلياً عبر `frappe.desk.query_report.run` بمستخدم `Administrator` من سكربت بايثون (بدون أي كتابة في قاعدة البيانات، مع `frappe.db.rollback()` في النهاية). السكربت والنتائج الخام في المجلد المؤقت للجلسة (`scratchpad/run_reports.py` و `scratchpad/run_results.json`).
 - عدد التقارير: 31 (30 مطلوبة + `Accounts Payable` مضاف لأنه توأم `Accounts Receivable` بنفس الصنف البرمجي).
 
@@ -29,7 +29,7 @@
 
 ## 2. مسارات الملفات
 
-| # | التقرير | المجلد (نسبةً إلى `/home/snd/frappe-bench/apps/`) | ملفات إضافية |
+| # | التقرير | المجلد (نسبةً إلى `<bench>/apps/`) | ملفات إضافية |
 |---|---|---|---|
 | 1 | Trial Balance | `erpnext/erpnext/accounts/report/trial_balance/` | `.html` (قالب طباعة) |
 | 2 | General Ledger | `erpnext/erpnext/accounts/report/general_ledger/` | `.html` |

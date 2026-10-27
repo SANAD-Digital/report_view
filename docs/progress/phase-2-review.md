@@ -3,8 +3,8 @@
 - المراجِع: وكيل مراجعة الأمان والجودة.
 - التاريخ: 2026-09-30. الفرع: `phase-2-architecture` (commit `db38680`).
 - النطاق: قسم الصلاحيات فقط في `docs/architecture.md` (§2، §4.2، §5.2-5.3، §6، §12) و ADR-002، 005، 006، 007، 009، 010، 011. لا يوجد كود إنتاج؛ المراجعة وثائق مقابل كود frappe 16.28.0 المثبت.
-- الاختصارات: `F/` = `/home/snd/frappe-bench/apps/frappe/frappe/`، `Q` = `F/desk/query_report.py`، `P` = `F/permissions.py`.
-- سكربتات التحقق (قراءة فقط مع `rollback`) على `acc.dev.sanad.digital`: `/tmp/claude-1001/-home-snd-frappe-bench-apps-report-view/80b6fc89-9d79-4ce6-8bf4-88166e120282/scratchpad/review2_probe.py` و `review2_probe2.py`.
+- الاختصارات: `F/` = `<bench>/apps/frappe/frappe/`، `Q` = `F/desk/query_report.py`، `P` = `F/permissions.py`.
+- سكربتات التحقق (قراءة فقط مع `rollback`) على `$SITE`: `/tmp/claude-1001/-home-snd-frappe-bench-apps-report-view/80b6fc89-9d79-4ce6-8bf4-88166e120282/scratchpad/review2_probe.py` و `review2_probe2.py`.
 - البنود 2-4 من بروتوكول المراجعة (مصفوفة المستخدمين، مطابقة الإجماليات، الاختبارات) لا تنطبق هنا: لا يوجد كود، ومستخدمو `rv_*` غير موجودين بعد (`phase-0.md`).
 
 ## الحكم: **رفض**
@@ -20,7 +20,7 @@
 **ح1. العروض المحفوظة مقروءة عبر REST القياسي دون `guard_report`، ولكل مستخدمي الموقع بمن فيهم Website Users**
 - الموضع: §6 «DocPerm للنوعين: الدور `All`: read, create…»، و ADR-010 («الشرط الثاني يُفحص في الـ API لأن `permission_query_conditions` لا يستطيع فحصه»)، و §2.7 («كل الدوال… تبدأ بـ guard_report»).
 - الدليل:
-  - الدور `All` يُعطى لكل مستخدم مسجّل، ومنهم Website User: `P:558` (`roles += [ALL_USER_ROLE, GUEST_ROLE]`)، أما `Desk User` فيُضاف لمستخدمي النظام فقط (`P:559-560`). التحقق على الموقع: `t.azzan@sanad-erp.com` (Website User) أدواره `['All', 'Guest']`.
+  - الدور `All` يُعطى لكل مستخدم مسجّل، ومنهم Website User: `P:558` (`roles += [ALL_USER_ROLE, GUEST_ROLE]`)، أما `Desk User` فيُضاف لمستخدمي النظام فقط (`P:559-560`). التحقق على الموقع: `user3@example.com` (Website User) أدواره `['All', 'Guest']`.
   - `/api/resource/Report View Saved View` و `frappe.client.get_list` و `frappe.desk.reportview.get` تمر بـ `frappe.get_list` الذي يطبّق DocPerm و `permission_query_conditions` فقط (`F/database/query.py:1563-1598`). لا يُستدعى فيها `guard_report` ولا أي فحص لصلاحية التقرير.
   - `/api/resource/.../<name>` يمر بـ `check_permission("read")`، فيستدعي hook `has_permission` (`P:237`، `P:481-498`). والـ hook المقترح في §6 يفحص `visibility` فقط.
 - الأثر: أي مستخدم مسجّل، حتى بلا أي دور محاسبي، يقرأ `title` و `state` (وفيه قيم الفلاتر مثل أسماء الشركات والحسابات) و `columns_ref` لكل عرض `Public`، ولكل عرض `Roles` يحمل دوره، **حتى لو كان العرض لتقرير لا يحق له فتحه**. هذا يخالف ADR-010 نفسه: «يملك صلاحية التقرير نفسه».
@@ -44,7 +44,7 @@
 
 **ع1. `guard_print` ينجح لمن ليس له `print` إذا شُورك معه أي مستند من `ref_doctype`**
 - الموضع: §2.0 `guard_print`، و §2.2 (`perms.can_print`)، و §2.5، و §12.
-- الدليل: `frappe.has_permission(doctype, "print")` بلا `doc`: إن لم تمنح الأدوار `print` يُستدعى `false_if_not_shared` (`P:208-209`). `print` ضمن `share_rights` (`P:178`) ويُترجَم إلى `read` (`P:185`)، ثم «if atleast one shared doc of that type, then return True» (`P:199-202`). تحقق على الموقع (`review2_probe.py`): 10 مستخدمين من 16 لديهم DocShare على `User` (منهم `hosban30799@gmail.com` و `account@manager.com`) نتيجتهم `get_role_permissions("User")["print"] = 0`، لكن `has_permission("User","print") = True`، ومع `ignore_share_permissions=True` صارت `False`. الأصل لا يعتمد على المشاركة هنا، فهو يبني `can_print` من صلاحيات الأدوار (`F/utils/user.py:117-162`).
+- الدليل: `frappe.has_permission(doctype, "print")` بلا `doc`: إن لم تمنح الأدوار `print` يُستدعى `false_if_not_shared` (`P:208-209`). `print` ضمن `share_rights` (`P:178`) ويُترجَم إلى `read` (`P:185`)، ثم «if atleast one shared doc of that type, then return True» (`P:199-202`). تحقق على الموقع (`review2_probe.py`): 10 مستخدمين من 16 لديهم DocShare على `User` (منهم `user2@example.com` و `user4@example.com`) نتيجتهم `get_role_permissions("User")["print"] = 0`، لكن `has_permission("User","print") = True`، ومع `ignore_share_permissions=True` صارت `False`. الأصل لا يعتمد على المشاركة هنا، فهو يبني `can_print` من صلاحيات الأدوار (`F/utils/user.py:117-162`).
 - التعديل المطلوب: `guard_print` = `frappe.has_permission(report.ref_doctype, "print", ignore_share_permissions=True)`. المعامل موجود في الغلاف العام (`F/__init__.py:600-634`). يُطبَّق نفس الشيء على `perms.can_print` في `get_meta`. ويُضاف إلى §12 أن مشاركة مستند واحد لا تمنح طباعة تقرير كامل.
 
 **ع2. `prepared_report_name` يمرَّر بلا تحقق من التقرير أو المالك**
@@ -54,7 +54,7 @@
 
 **ع3. معالجة `js_filters` في §2.1 (3) لا تضيف شيئاً، والطبقة تبقى معتمدة على ما يرسله العميل**
 - الموضع: §2.1 الفحص (3)، و §4.2 (8)، و ADR-002، و §12 («`js_filters` إلزامي»).
-- الدليل: `validate_filters_permissions` تمر على `report.filters + js_filters` (`Q:1146`)، و `get_script()["filters"]` هو `report.filters` نفسه (`Q:210`). أي أن بناء `js_filters` من `get_script` عند غيابها لا يضيف أي تعريف، فجدول `Report.filters` مفحوص أصلاً. وهو فارغ للتقارير الثلاثة على الموقع (`review2_probe.py`: `REPORT_FILTERS … 0`). وتعريفات العميل قابلة للتزوير: تحقق `review2_probe2.py` بالمستخدم `ibraheem@alnajm.com` والشركة `SND Accounting` أعطى `js_filters=[]` ← نجاح، و `[{"fieldname":"company","fieldtype":"Data"}]` ← نجاح، و `Link/Company` ← `ValidationError`. كما أن `MultiSelectList` (party و cost_center و project في `general_ledger.js:39,75,155,166`، و `trial_balance.js:50,61`) لا تُفحص إطلاقاً لأن الشرط `fieldtype == "Link"` (`Q:1149`).
+- الدليل: `validate_filters_permissions` تمر على `report.filters + js_filters` (`Q:1146`)، و `get_script()["filters"]` هو `report.filters` نفسه (`Q:210`). أي أن بناء `js_filters` من `get_script` عند غيابها لا يضيف أي تعريف، فجدول `Report.filters` مفحوص أصلاً. وهو فارغ للتقارير الثلاثة على الموقع (`review2_probe.py`: `REPORT_FILTERS … 0`). وتعريفات العميل قابلة للتزوير: تحقق `review2_probe2.py` بالمستخدم `user1@example.com` والشركة `SND Accounting` أعطى `js_filters=[]` ← نجاح، و `[{"fieldname":"company","fieldtype":"Data"}]` ← نجاح، و `Link/Company` ← `ValidationError`. كما أن `MultiSelectList` (party و cost_center و project في `general_ledger.js:39,75,155,166`، و `trial_balance.js:50,61`) لا تُفحص إطلاقاً لأن الشرط `fieldtype == "Link"` (`Q:1149`).
 - الحكم على §4.2 (8): **صحيح حرفياً**، فغياب `js_filters` لا يعطي أكثر من استدعاء `frappe.desk.query_report.run` مباشرة (`Q:222-244`، whitelisted ويقبل غياب `js_filters`). لكن كلمة «إلزامي» في §2.1 و §12 توهم بحماية غير موجودة. وتوصية `risks.md` C2 («يرفض الطلب إن وصلته فلاتر بلا تعريفات») أُسقطت بلا تعليل.
 - التعديل المطلوب:
   1. صياغة صريحة في §2.1 و §12: «طبقة فلاتر Link في Frappe تعتمد على تعريفات يرسلها العميل. Report View يساوي الأصل ولا يزيد عليه».
@@ -225,7 +225,7 @@
   - `update` لا يحمي `owner`، فـ `RESERVED_KEYWORDS` لا تضمه (`F/model/base_document.py:292`، `:1598-1607`).
   - `_save` يفحص `check_permission("write")` على المستند **بعد التعديل في الذاكرة** (`F/model/document.py:577`). `is_user_owner` يقرأ `doc.owner` من الذاكرة (`P:233-234`، `P:241`)، فتتحول `if_owner` لصالح المهاجم، وكذلك يفعل الـ hook المقترح (`doc.owner == user`).
   - `set_user_and_timestamp` لا يعيد `owner` إلا للمستند الجديد (`F/model/document.py:797-801`)، و `db_update` يكتب كل الحقول ومنها `owner` (`F/model/base_document.py:804-827`).
-  - تحقق فعلي في الذاكرة دون حفظ (`review2_probe6.py`) على نوعين في Frappe بنفس النمط (`All` + `write` مع `if_owner`): `Contact` و `Address` لمستخدم `a.kuhlani@sanad-erp.com` ومالكهما Administrator: `has_permission("write")` = `False`، وبعد `doc.update({"owner": user})` = `True`. في المقابل، تطبيق `ai_agent` يمنع ذلك في hook خاص (`review2_probe5.py`)، فالمنع ممكن من الـ hook.
+  - تحقق فعلي في الذاكرة دون حفظ (`review2_probe6.py`) على نوعين في Frappe بنفس النمط (`All` + `write` مع `if_owner`): `Contact` و `Address` لمستخدم `user5@example.com` ومالكهما Administrator: `has_permission("write")` = `False`، وبعد `doc.update({"owner": user})` = `True`. في المقابل، تطبيق `ai_agent` يمنع ذلك في hook خاص (`review2_probe5.py`)، فالمنع ممكن من الـ hook.
 - الأثر: مستخدم يعرف اسم عرض خاص لغيره (الاسم hash يصل عبر روابط أو سجلات) يرسل `{"owner": "<me>"}`. ينجح الحفظ، ويعيد الرد المستند كاملاً بما فيه `state`، ثم يملك العرض ويستطيع حذفه. وإن لم يعرف الاسم فيستطيع ذلك مع أي عرض `Public` أو `Roles` يراه. هذا يكسر «الخاص لا يراه ولا يعدّله إلا مالكه» مباشرة.
 - التعديل المطلوب في §6 وفي ADR-010:
   1. الـ hook لـ `write/delete/cancel/submit/amend/share` يقارن **بالمالك المخزّن** لا بالذاكرة: `(frappe.db.get_value(doc.doctype, doc.name, "owner") if not doc.is_new() else doc.owner) == user`. هذه قراءة قيمة واحدة للمقارنة، لا تعيد بيانات للمستخدم. ويُسجَّل استثناؤها من قاعدة «لا db» صراحة.

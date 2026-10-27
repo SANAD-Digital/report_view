@@ -763,8 +763,9 @@ test("pages: on a phone the page readout and the pages kept follow the phone's g
 	expect(far.gap).toBe("12px");
 	expect(far.metrics).toMatchObject({ gap: 12, pad: 12 });
 	expect(far.pos).toBe(`Page 141 of ${far.pages.toLocaleString("en-US")}`);
-	// the page in the middle is drawn once the stage has settled, and not given back
-	await page.waitForFunction(() => window.rv_page.pages.filled.has(140));
+	// the page in the middle and its neighbours are drawn once the stage has settled (they
+	// are filled a few at a time, in the order the observer reports them), and not given back
+	await page.waitForFunction(() => [139, 140, 141].every((i) => window.rv_page.pages.filled.has(i)));
 	await page.evaluate(() => window.rv_page.pages.trim_filled());
 	expect(await page.evaluate(() => [139, 140, 141].every((i) => window.rv_page.pages.filled.has(i)))).toBe(true);
 	// back to a desktop width: the stylesheet's values there

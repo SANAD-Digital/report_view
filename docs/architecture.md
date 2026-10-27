@@ -208,7 +208,7 @@ guard_report_quiet(report_name) -> Report | None
 
 ### 2.6 `report_view.api.get_entry_state(report_name)`
 
-للزر في query-report (ADR-007). GET. الفحوص: `guard_report_quiet` (أي فشل ⇒ `{"show": false}` بلا رسائل في `_server_messages`). لا يكشف أكثر من الأصل: من يرى الزر فتح query-report للتقرير نفسه. المخرجات: `{"show": true, "route": ["report-view", <name>]}` أو `{"show": false}`. لاحقاً (المرحلة 4) يُقيَّد بـ `Global Settings.entry_button_scope` و `Report View Settings.show_entry_button`؛ إلى أن توجد هذه الإعدادات يظهر الزر لكل من يملك صلاحية التقرير.
+للزر في query-report (ADR-007). GET. الفحوص: `guard_report_quiet` (رفض التقرير — لا صلاحية، غير موجود، غير صالح — ⇒ `{"show": false}` بلا رسائل في `_server_messages`؛ أي خطأ آخر يُرمى لأنه خلل). لا يكشف أكثر من الأصل: من يرى الزر فتح query-report للتقرير نفسه. المخرجات: `{"show": true, "route": ["report-view", <name>]}` أو `{"show": false}`. لاحقاً (المرحلة 4) يُقيَّد بـ `Global Settings.entry_button_scope` و `Report View Settings.show_entry_button`؛ إلى أن توجد هذه الإعدادات يظهر الزر لكل من يملك صلاحية التقرير.
 
 ### 2.7 العروض المحفوظة: `report_view.api.views.*` — «لم يُبنَ»
 
@@ -287,7 +287,7 @@ POST. `guard_report` أولاً. `lang` من `frappe.translate.get_all_languages
 | `report_view.api.custom_print.render_heading` | POST | `custom_print.resolve` | 60 | ADR-019 |
 | `report_view.api.custom_print.render_signature` | POST | `custom_print.resolve` | 60 | ADR-019 |
 | `report_view.api.custom_print.get_translations` | POST | `custom_print.resolve` | — | ADR-019 |
-| `report_view.api.print_presets.list` | GET | `guard_target` (التقرير أو المستند أو قالب Custom) | — | ADR-020 |
+| `report_view.api.print_presets.list_presets` | GET | `guard_target` (التقرير أو المستند أو قالب Custom) | — | ADR-020 |
 | `report_view.api.print_presets.save` | POST | `guard_target` ثم صلاحية الإعداد | 60 | ADR-020 |
 | `report_view.api.print_presets.delete` | POST | صلاحية الإعداد (`has_permission` لـ Print Preset) | — | ADR-020 |
 | `report_view.api.print_presets.set_default` | POST | صلاحية الإعداد | — | ADR-020 |

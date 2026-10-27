@@ -9,6 +9,7 @@ permission first (``report_view.api``), and every record is read with
 """
 
 import re
+import sys
 from html import unescape
 
 import frappe
@@ -37,7 +38,8 @@ class Text(str):
 	``frappe.db.get_value("Customer", doc.customer)``). The string methods a template uses
 	return a ``Text`` again, except ``replace`` and ``translate``: the query builder quotes a
 	value with them before it formats it, so a lookup gets the value as it is (the
-	``|replace`` filter of Jinja prints escaped all the same)."""
+	``|replace`` filter of Jinja prints escaped all the same); for the same reason the query
+	builder's own ``format`` of it is not escaped."""
 
 	__slots__ = ()
 
@@ -48,6 +50,11 @@ class Text(str):
 		return str(self)
 
 	def __format__(self, spec: str) -> str:
+		# pypika quotes a query value with ``"{value}".format(value=...)``: a lookup in a
+		# template (``frappe.db.get_value("Customer", doc.customer)``) gets the value as it
+		# is. Everything else that formats a Text prints it escaped.
+		if sys._getframe(1).f_globals.get("__name__", "").startswith("pypika."):
+			return format(str.__str__(self), spec)
 		return format(str(self), spec)
 
 	def __add__(self, other):

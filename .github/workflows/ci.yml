@@ -53,7 +53,6 @@ jobs:
           --ignore-pattern 'report_view/public/dist/'
           --ignore-pattern 'report_view/public/js/lib/'
           --ignore-pattern 'report_view/templates/includes/'
-          --ignore-pattern 'tests/experiments/'
           --ignore-pattern 'tests/visual/dist/'
           --ignore-pattern 'node_modules/'
           report_view tests

@@ -64,7 +64,14 @@ npm --prefix tests ci
 npm --prefix tests run visual
 # end-to-end tests against a running site (RV_BASE_URL=https://your.site)
 npm --prefix tests run e2e
+# scripted checks of print, letter heads and presets on a running site (tests/site/*.cjs):
+# RV_SITE=https://your.site plus the test users' passwords (see tests/site/_password.cjs)
+RV_SITE=https://your.site node tests/site/doc_print.cjs
 ```
+
+Neither the site nor a password has a default in the repository: the scripts stop with a
+message when `RV_SITE` / `RV_BASE_URL` or a password is not set. Keep them in a private env
+file (`chmod 600`) and load it with `set -a; . <file>; set +a`.
 
 Both Playwright configs run Chromium only unless `RV_BROWSERS` says otherwise
 (`RV_BROWSERS=firefox`, `RV_BROWSERS=webkit`, or `RV_BROWSERS=chromium,firefox,webkit`):

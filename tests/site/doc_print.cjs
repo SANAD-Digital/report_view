@@ -7,7 +7,7 @@
 const fs = require("node:fs");
 const { chromium } = require("playwright");
 const password = require("./_password.cjs");
-const BASE = process.env.RV_SITE || "https://acc.dev.sanad.digital";
+const BASE = require("./_site.cjs")();
 const SHORT = process.env.RV_SHORT_DOC, LONG = process.env.RV_LONG_DOC;
 const results = [];
 const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", name, info]); };

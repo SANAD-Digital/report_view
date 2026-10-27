@@ -6,7 +6,7 @@
 // [RV_USER=… RV_PW=…] [RV_SHOTS=<dir>] node tests/site/letterhead.cjs
 const { chromium } = require("playwright");
 const password = require("./_password.cjs");
-const BASE = process.env.RV_SITE || "https://acc.dev.sanad.digital";
+const BASE = require("./_site.cjs")();
 const USER = process.env.RV_USER || "rv_admin@rv.test";
 const SHOTS = process.env.RV_SHOTS || "";
 const results = [];

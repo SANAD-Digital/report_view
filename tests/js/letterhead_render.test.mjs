@@ -9,7 +9,7 @@ const { PRESETS, build_preset, blank_layout, brand_from_rgb } = await import("..
 const { clamp_layout, default_layout, LIMITS, REF_W } = await import("../../report_view/public/js/report_view/letterhead/model.js");
 
 const CTX = {
-	values: { company_name: "SND Accounting", company_name_ar: "شركة سند للمحاسبة", phone_no: "777999579", email: "info@championsys.cloud", website: "championsys.cloud", address: "Sana'a\nYemen", tax_id: "" },
+	values: { company_name: "Example Trading", company_name_ar: "شركة المثال للتجارة", phone_no: "555010099", email: "info@example.com", website: "example.com", address: "Sana'a\nYemen", tax_id: "" },
 	logo: "/files/logo.png",
 	qr: {},
 };
@@ -22,7 +22,7 @@ test("band: the ADR structure — comment, root, slots with their directions and
 	assert.ok(html.startsWith("<!-- rv-lh v1 header h=35 -->"));
 	assert.match(html, /<div class="rvlh" data-rv-lh="header" data-h="35" dir="ltr" style="position:relative;width:100%;height:35mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact">/);
 	assert.match(html, /<div data-slot="right" dir="rtl" style="position:absolute;top:6mm;right:0;width:34%;padding:0 1mm;box-sizing:border-box;text-align:right">/);
-	assert.match(html, /<div data-el="e1" style="font-size:9pt;font-weight:400;color:#5B6660;margin:0 0 1mm">هاتف: <bdi dir="ltr">777999579<\/bdi><\/div>/);
+	assert.match(html, /<div data-el="e1" style="font-size:9pt;font-weight:400;color:#5B6660;margin:0 0 1mm">هاتف: <bdi dir="ltr">555010099<\/bdi><\/div>/);
 	// empty slots are not written outside the editor
 	assert.doesNotMatch(html, /data-slot="left"/);
 	// nothing the old printers cannot read
@@ -85,7 +85,7 @@ test("address on several lines, page numbers, QR", () => {
 		header: { elements: [{ id: "a", type: "field", slot: "right", props: { token: "address" } }, { id: "q", type: "qr", slot: "left", w: 16, h: 16, props: { source: "website" } }] },
 		footer: { elements: [{ id: "p", type: "page", slot: "center", props: { format: "both" } }] },
 	});
-	const ctx = { ...CTX, qr: { "championsys.cloud": "<svg id=qr></svg>" } };
+	const ctx = { ...CTX, qr: { "example.com": "<svg id=qr></svg>" } };
 	const [header, footer] = [render_band(l, "header", ctx), render_band(l, "footer", ctx)];
 	assert.match(header, />Sana&#39;a<br>Yemen</);
 	assert.match(header, /<span style="display:inline-block;vertical-align:top;width:16mm;height:16mm"><svg id=qr><\/svg><\/span>/);
@@ -94,7 +94,7 @@ test("address on several lines, page numbers, QR", () => {
 	assert.match(page_html("ar", [2, 5]), /صفحة <span class="page">2<\/span> من <span class="topage">5<\/span>/);
 	assert.match(page_html("en"), /^<span dir="ltr">Page /);
 	assert.match(page_html("both"), /^<span dir="ltr">Page .*<\/span> \| <span dir="rtl">صفحة /, "both = en | ar");
-	assert.deepEqual(qr_texts(l, CTX), ["championsys.cloud"]);
+	assert.deepEqual(qr_texts(l, CTX), ["example.com"]);
 });
 
 test("images: public files only, cover as a background, never object-fit", () => {
@@ -117,7 +117,7 @@ test("a footer of height 0 is not written", () => {
 
 test("helpers: direction and colours", () => {
 	assert.equal(is_rtl_text("  123 شركة"), true);
-	assert.equal(is_rtl_text("SND شركة"), false);
+	assert.equal(is_rtl_text("ACME شركة"), false);
 	const l = default_layout();
 	assert.equal(resolve_color(l, "primary"), "#1E5C45");
 	assert.equal(resolve_color(l, "#123456"), "#123456");
@@ -135,7 +135,7 @@ test("presets: six styles, valid layouts, real data, the last two with free elem
 		assert.ok(new TextEncoder().encode(JSON.stringify(l)).length < LIMITS.bytes);
 		for (const b of ["header", "footer"]) for (const e of l[b].elements) if (e.slot === null) assert.ok(e.x + e.w <= REF_W + 0.01, `${p.id} ${e.id} inside`);
 		const html = render_band(l, "header", CTX);
-		assert.match(html, /شركة سند للمحاسبة|SND Accounting/, `${p.id} shows the company`);
+		assert.match(html, /شركة المثال للتجارة|Example Trading/, `${p.id} shows the company`);
 		assert.doesNotMatch(html, /الرقم الضريبي/, `${p.id}: the empty tax id is not printed`);
 	}
 	const free = (id) => build_preset(id).header.elements.filter((e) => e.slot === null && e.type !== "line").length;

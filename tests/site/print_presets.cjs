@@ -6,7 +6,7 @@
 // [RV_USER=… RV_PW=…] [RV_USER2=… RV_PW2=…] node tests/site/print_presets.cjs
 const { chromium, request } = require("playwright");
 const password = require("./_password.cjs");
-const BASE = process.env.RV_SITE || "https://acc.dev.sanad.digital";
+const BASE = require("./_site.cjs")();
 const results = [];
 const check = (name, ok, info = "") => {
 	results.push([ok ? "PASS" : "FAIL", name, info]);

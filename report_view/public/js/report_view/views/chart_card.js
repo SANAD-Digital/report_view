@@ -146,10 +146,21 @@ export class ChartCard {
 		this.render_head();
 		if (this.sig !== this.loaded_sig) {
 			if (this.visible) this.load();
+			else this.forget_read();
 		} else {
 			// Same numbers: the cross-filter highlight or the title may have changed.
 			this.schedule_draw();
 		}
+	}
+
+	// A read in flight stands for what the card showed before: it is dropped, so that the
+	// card reads again when it comes on screen, even when it then asks for that very view
+	// again (a slicer added and removed while the card was off screen).
+	forget_read() {
+		if (!this.loading_sig) return;
+		this.token += 1;
+		this.loading_sig = null;
+		this.el.removeAttribute("aria-busy");
 	}
 
 	load_if_stale() {
@@ -174,16 +185,17 @@ export class ChartCard {
 			out = await ctx.session.read_card(ctx.state, def, this.view.dash);
 		} catch (e) {
 			if (token !== this.token) return;
+			this.loading_sig = null;
 			// The result was replaced (its tables deleted) while the card was being read.
 			if (ctx.session.closed || this.view.ctx?.session !== ctx.session) return;
-			this.loading_sig = null;
 			this.show_state("error", __("This chart could not be drawn"), e?.message || "");
 			return;
 		} finally {
 			if (token === this.token) this.el.removeAttribute("aria-busy");
 		}
-		if (token !== this.token || this.view.ctx !== ctx) return;
+		if (token !== this.token) return;
 		this.loading_sig = null;
+		if (this.view.ctx !== ctx) return;
 		this.loaded_sig = sig;
 		this.spec = out.spec;
 		this.data = out.data;

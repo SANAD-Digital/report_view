@@ -228,7 +228,7 @@ def main(site, company):
 			SYNTHETIC_RAW,
 			{"party_type": "Customer"},
 			{"tree": True, "name_field": "label"},
-			description="Hand-written (not from a run): shapes absent from acc.dev data; "
+			description="Hand-written (not from a run): shapes absent from the development data; "
 			"mixed list/dict rows, duplicate fieldnames, leaked numeric skip_total_row, "
 			"group header without indent, Link to a filter, empty chart",
 		)

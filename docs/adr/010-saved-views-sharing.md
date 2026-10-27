@@ -1,6 +1,6 @@
 # ADR-010: نموذج مشاركة العروض المحفوظة
 
-- الحالة: مقبول، لم يُبنَ (2026-10-22): لا DocType `Report View Saved View` ولا `report_view.api.views`؛ `get_meta` يعيد `defaults: {saved_view: null}` دائماً. الإعدادات المحفوظة للطباعة (ADR-020) شيء آخر
+- الحالة: مقبول، لم يُبنَ (2026-10-22): لا DocType `Report View Saved View` ولا `report_view.api.views`؛ `get_meta` يعيد `defaults: {saved_view: null}` دائماً. الإعدادات المحفوظة للطباعة (ADR-020) شيء آخر. مخطط له وسيُبنى بعد هذا (قرار صاحب المشروع 2026-10-27)؛ `RVViewNotFound` و `RVNotOwner` في `core/errors.py` محجوزان له (`architecture.md` §2.7)
 - التاريخ: 2026-09-30
 
 ## السياق

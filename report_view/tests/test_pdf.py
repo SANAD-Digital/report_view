@@ -6,6 +6,7 @@ import sys
 import tempfile
 import threading
 import time
+import unittest
 from io import BytesIO
 from unittest.mock import patch
 
@@ -16,6 +17,9 @@ from report_view.api.pdf import pages_pdf_document, pages_pdf_report
 from report_view.core.errors import RVInvalidInput, RVLimitExceeded
 from report_view.core.pdf import MAX_HTML_BYTES, RVPdfBusy, RVPdfTimeout, html_to_pdf, render_pdf
 from report_view.tests.utils import COMPANY, RVTestCase
+
+# the classes that start Chromium (about 50 real renders): RV_SKIP_CHROMIUM=1 skips them
+needs_chromium = unittest.skipIf(os.environ.get("RV_SKIP_CHROMIUM"), "RV_SKIP_CHROMIUM is set")
 
 
 def _pages_html(body_extra: str = "", head_extra: str = "") -> str:
@@ -41,6 +45,21 @@ def _chromium_pids() -> set[int]:
 	return {pid for pid, profile in pdf._engine_processes() if profile.startswith(prefix)}
 
 
+class TestFrappeInternals(RVTestCase):
+	"""The PDF agent uses parts of Frappe that are not public API (ADR-016): a Frappe
+	release that moves or renames them fails here, by name, before any PDF does."""
+
+	def test_the_frappe_internals_the_pdf_agent_uses_exist(self):
+		from frappe.utils import print_utils
+		from frappe.utils.pdf_generator import cdp_connection
+
+		self.assertTrue(callable(print_utils.find_or_download_chromium_executable))
+		client = cdp_connection.CDPSocketClient
+		for method in ("connect", "send", "start_listener", "remove_listener", "disconnect"):
+			self.assertTrue(callable(getattr(client, method, None)), method)
+
+
+@needs_chromium
 class TestPdf(RVTestCase):
 	def test_two_a4_pages(self):
 		pdf = html_to_pdf(_pages_html())
@@ -200,6 +219,7 @@ def _sheets_html(n: int, rows: int = 0) -> str:
 	)
 
 
+@needs_chromium
 class TestPdfBatches(RVTestCase):
 	def test_many_sheets_print_in_batches_and_merge_in_order(self):
 		from report_view.core import pdf
@@ -270,6 +290,7 @@ class TestPdfBatches(RVTestCase):
 			self.assertIn("orig marker", text)
 
 
+@needs_chromium
 class TestPdfJobs(RVTestCase):
 	"""More than SYNC_PAGES sheets: a background job, its progress, its file, for its owner only."""
 
@@ -277,7 +298,7 @@ class TestPdfJobs(RVTestCase):
 		from report_view.api import pdf as api_pdf
 
 		for address in self.users.values():
-			frappe.cache.delete_value(api_pdf._active_key(address))
+			frappe.cache.delete_value(api_pdf.JOBS.active_key(address))
 		super().tearDown()
 
 	def _start(self, kind="accountant", sheets=None, title="Long"):
@@ -367,7 +388,7 @@ class TestPdfJobs(RVTestCase):
 			progress = kwargs["progress"]
 
 			def cancel_on_first_batch(done, total):
-				frappe.cache.set_value(api_pdf._cancel_key(job), 1)
+				frappe.cache.set_value(api_pdf.JOBS.cancel_key(job), 1)
 				progress(done, total)
 
 			return real(html, **{**kwargs, "progress": cancel_on_first_batch})
@@ -477,6 +498,7 @@ class TestPdfJobs(RVTestCase):
 				api_pdf.pages_pdf_report("Trial Balance", None, "Bad")
 
 
+@needs_chromium
 class TestPdfEngine(RVTestCase):
 	"""The engine's limits and lifetime: slots, a Chromium that dies with its parent, cleanup."""
 

@@ -52,8 +52,6 @@ KEEP_SECONDS = PDF_JOBS.keep_seconds
 # A job that has not reported for this long is lost (its worker was killed): a running job
 # reports every couple of seconds, even inside a long batch.
 STALE_SECONDS = PDF_JOBS.stale_seconds
-# A queued job whose queue has no worker at all is failed after this long.
-NO_WORKER_SECONDS = PDF_JOBS.no_worker_seconds
 QUEUE_CONF = PDF_JOBS.queue_conf
 # calls per user and minute of each endpoint that prints
 PRINT_RATE_LIMIT = 10
@@ -331,14 +329,6 @@ def _release_active(user: str | None, job: str) -> None:
 
 def _key(job: str) -> str:
 	return JOBS.key(job)
-
-
-def _cancel_key(job: str) -> str:
-	return JOBS.cancel_key(job)
-
-
-def _active_key(user: str) -> str:
-	return JOBS.active_key(user)
 
 
 def _rq_id(job: str) -> str:

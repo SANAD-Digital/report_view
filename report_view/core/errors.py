@@ -40,6 +40,8 @@ class RVExportMismatch(frappe.ValidationError):
 	http_status_code = 409
 
 
+# Reserved for the saved views (ADR-010, planned; architecture.md §2.7): get_view,
+# save_view, delete_view and set_default raise them. The browser already knows their names.
 class RVViewNotFound(frappe.DoesNotExistError):
 	"""Saved view missing, not visible, or belonging to another report."""
 

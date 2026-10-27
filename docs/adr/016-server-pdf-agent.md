@@ -129,3 +129,7 @@
 - **الاختبارات**: `TestPdfSandbox` في `tests/test_pdf.py`: الفحص مُحاكى بالحالتين (`--no-sandbox` موجود فقط حين لا يعمل العزل)، الحفظ لكل ملف وإعادة السؤال بعد «لا»، السجل، `status()`، وقراءة الفحص لما يطبعه ملف تنفيذي بديل (نجاح، انهيار SIGTRAP كما يفعل Chromium، صمت، تعليق حتى المهلة). بقية `test_pdf` تعمل على هذا الخادم بالعزل مطفأً (الفحص الحقيقي يقول «لا») وتبقى خضراء.
 - **لم يُتحقق منه هنا**: تشغيل المحرك والعزل مفعّل فعلاً (يحتاج root لتحميل الملف). بعد تشغيل الأمر أعلاه: `bench --site <site> run-tests --app report_view --module report_view.tests.test_pdf` يجب أن يبقى أخضر، و«محرك PDF» يقول «مفعّل».
 
+
+## تعديل (2026-10-27): واجهات Frappe الداخلية المستعملة
+- `frappe.utils.pdf_generator.cdp_connection.CDPSocketClient` (`connect`، `send`، `start_listener`، `remove_listener`، `disconnect`، `loop`، `connection`) و `frappe.utils.print_utils.find_or_download_chromium_executable` ليستا واجهة عامة في Frappe؛ إصدار فرعي قد ينقلهما. اختبار `TestFrappeInternals` في `tests/test_pdf.py` يستوردهما ويفشل باسمهما قبل أي PDF.
+- `pypdf` (الدمج والعنوان) معلن في `pyproject.toml` (`pypdf>=6`)؛ Frappe يثبّت إصداره بنفسه.

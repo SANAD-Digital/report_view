@@ -1,5 +1,5 @@
 {
- "description": "Hand-written (not from a run): shapes absent from acc.dev data; mixed list/dict rows, duplicate fieldnames, leaked numeric skip_total_row, group header without indent, Link to a filter, empty chart",
+ "description": "Hand-written (not from a run): shapes absent from the development data; mixed list/dict rows, duplicate fieldnames, leaked numeric skip_total_row, group header without indent, Link to a filter, empty chart",
  "expected": {
   "chart": null,
   "columns": [

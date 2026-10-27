@@ -42,7 +42,7 @@ def tb_model(**overrides) -> dict:
 
 
 def fixture_report(name: str) -> tuple[dict, dict]:
-	"""NormalizedReport of a shared fixture (a real run on acc.dev) and its report filters."""
+	"""NormalizedReport of a shared fixture (a real run on the development site) and its report filters."""
 	case = next(c for c in load_fixtures() if c["name"] == name)
 	i = case["input"]
 	return normalize(i["raw"], i["filters"], i["report_settings"], i["register"]), i["filters"]
@@ -450,7 +450,7 @@ class TestExportSafetyAndJobs(RVTestCase):
 		from report_view.core.export import jobs
 
 		for user in self.users.values():
-			frappe.cache.delete_value(jobs._running_key(user))
+			frappe.cache.delete_value(jobs.JOBS.active_key(user))
 
 	def test_text_that_looks_like_a_formula_stays_text(self):
 		columns = [

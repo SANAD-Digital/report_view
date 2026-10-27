@@ -33,13 +33,14 @@ def guard_report(report_name: str) -> Report:
 
 
 def guard_report_quiet(report_name: str) -> Report | None:
-	"""Like ``guard_report`` but returns ``None`` on any failure, without leaving
-	rejection messages in ``frappe.local.message_log``."""
+	"""Like ``guard_report`` but returns ``None`` when the report is refused (not
+	permitted, not found, invalid), without leaving the rejection's messages in
+	``frappe.local.message_log``. Any other error is a bug and is raised."""
 	message_log = getattr(frappe.local, "message_log", None)
 	mark = len(message_log) if message_log is not None else 0
 	try:
 		return guard_report(report_name)
-	except Exception:
+	except (frappe.PermissionError, frappe.DoesNotExistError, frappe.ValidationError):
 		message_log = getattr(frappe.local, "message_log", None)
 		if message_log is not None:
 			del message_log[mark:]

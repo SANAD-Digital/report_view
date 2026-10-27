@@ -14,13 +14,10 @@ from frappe.www.printview import get_html_and_style
 from report_view.core import printing
 from report_view.core.errors import RVInvalidInput
 from report_view.core.guard import guard_doc_print
-from report_view.core.inputs import parse_json_arg
 from report_view.core.settings import get_print_max_pages, print_defaults
 
-MAX_TRANSLATION_MESSAGES = 2000
 
-
-def _print_format_filters(doctype: str) -> dict:
+def _doc_print_format_filters(doctype: str) -> dict:
 	return {"doc_type": doctype, "disabled": 0, "print_format_type": "Jinja"}
 
 
@@ -33,34 +30,15 @@ def get_doc_print_options(doctype: str, name: str) -> dict:
 	meta = frappe.get_meta(doctype)
 	defaults = print_defaults()
 	formats = frappe.get_list(
-		"Print Format", filters=_print_format_filters(doctype), fields=["name"], order_by="name asc", limit=0
+		"Print Format",
+		filters=_doc_print_format_filters(doctype),
+		fields=["name"],
+		order_by="name asc",
+		limit=0,
 	)
-	letter_heads = []
-	default_letter_head = None
-	if frappe.has_permission("Letter Head"):
-		letter_heads = frappe.get_list(
-			"Letter Head",
-			filters={"disabled": 0},
-			fields=["name", "is_default"],
-			order_by="name asc",
-			limit=0,
-		)
-		names = {lh.name for lh in letter_heads}
-		company = doc.get("company")
-		if company and frappe.has_permission("Company", doc=company):
-			rows = frappe.get_list(
-				"Company", filters={"name": company}, fields=["default_letter_head"], limit=1
-			)
-			default_letter_head = rows[0].default_letter_head if rows else None
-		if doc.get("letter_head") in names:
-			default_letter_head = doc.letter_head
-		if not default_letter_head:
-			default_letter_head = next((lh.name for lh in letter_heads if lh.is_default), None)
-		if defaults.get("letter_head") in names and not doc.get("letter_head"):
-			default_letter_head = defaults["letter_head"]
-		if default_letter_head not in names:
-			default_letter_head = None
-	defaults.pop("letter_head", None)
+	letter_heads, default_letter_head = printing.letter_heads(
+		doc.get("company"), defaults.pop("letter_head", None), own=doc.get("letter_head")
+	)
 	headings = []
 	if frappe.has_permission("Print Heading"):
 		headings = frappe.get_list("Print Heading", fields=["name"], order_by="name asc", limit=0)
@@ -107,7 +85,7 @@ def render_doc_print(doctype: str, name: str, print_format: str | None = None) -
 	if print_format:
 		found = frappe.get_list(
 			"Print Format",
-			filters={"name": print_format, **_print_format_filters(doctype)},
+			filters={"name": print_format, **_doc_print_format_filters(doctype)},
 			fields=["name"],
 			limit=1,
 		)
@@ -142,13 +120,7 @@ def render_doc_signature(doctype: str, name: str, signature: str) -> dict:
 def get_doc_translations(doctype: str, name: str, lang: str, messages: list | str) -> dict:
 	"""Translations of the page's own words in ``lang`` (an enabled language)."""
 	guard_doc_print(doctype, name)
-	messages = parse_json_arg(messages, "messages", list)
-	if not isinstance(lang, str) or lang not in (frappe.translate.get_all_languages() or []):
-		frappe.throw(_("Language {0} is not enabled on this site").format(lang), RVInvalidInput)
-	if len(messages) > MAX_TRANSLATION_MESSAGES or not all(isinstance(m, str) for m in messages):
-		frappe.throw(_("Invalid translation request"), RVInvalidInput)
-	translations = frappe.translate.get_all_translations(lang)
-	return {m: translations[m] for m in dict.fromkeys(messages) if m in translations}
+	return printing.translations(lang, messages)
 
 
 @frappe.whitelist(methods=["GET"])

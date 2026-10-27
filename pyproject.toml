@@ -1,7 +1,7 @@
 [project]
 name = "report_view"
 authors = [
-    { name = "a@a.com", email = "a@a.com"}
+    { name = "Sanad Digital", email = "sanad@digital.info"}
 ]
 description = "Report View"
 requires-python = ">=3.14"
@@ -9,6 +9,8 @@ readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     # "frappe~=16.0.0" # Installed and managed by bench.
+    # merges and titles the server PDFs (ADR-016); Frappe pins its own version
+    "pypdf>=6",
 ]
 
 [build-system]

@@ -13,11 +13,7 @@ from frappe import _
 from report_view.api import _rate_limit
 from report_view.core import custom_print as cp
 from report_view.core import printing
-from report_view.core.errors import RVInvalidInput
-from report_view.core.inputs import parse_json_arg
 from report_view.core.settings import get_print_max_pages, print_defaults
-
-MAX_TRANSLATION_MESSAGES = 2000
 
 
 @frappe.whitelist(methods=["GET"])
@@ -89,29 +85,7 @@ def get_options(
 	pf, payload = cp.resolve(print_format, token)
 	company = company if isinstance(company, str) and company else cp.default_company(None)
 	defaults = print_defaults()
-	letter_heads = []
-	default_letter_head = None
-	if frappe.has_permission("Letter Head"):
-		letter_heads = frappe.get_list(
-			"Letter Head",
-			filters={"disabled": 0},
-			fields=["name", "is_default"],
-			order_by="name asc",
-			limit=0,
-		)
-		names = {lh.name for lh in letter_heads}
-		if company and frappe.has_permission("Company", doc=company):
-			rows = frappe.get_list(
-				"Company", filters={"name": company}, fields=["default_letter_head"], limit=1
-			)
-			default_letter_head = rows[0].default_letter_head if rows else None
-		if defaults.get("letter_head") in names:
-			default_letter_head = defaults["letter_head"]
-		if not default_letter_head:
-			default_letter_head = next((lh.name for lh in letter_heads if lh.is_default), None)
-		if default_letter_head not in names:
-			default_letter_head = None
-	defaults.pop("letter_head", None)
+	letter_heads, default_letter_head = printing.letter_heads(company, defaults.pop("letter_head", None))
 	headings = []
 	if frappe.has_permission("Print Heading"):
 		headings = frappe.get_list("Print Heading", fields=["name"], order_by="name asc", limit=0)
@@ -229,10 +203,4 @@ def get_translations(
 ) -> dict:
 	"""Translations of the page's own words in ``lang`` (an enabled language)."""
 	cp.resolve(print_format, token)
-	messages = parse_json_arg(messages, "messages", list)
-	if not isinstance(lang, str) or lang not in (frappe.translate.get_all_languages() or []):
-		frappe.throw(_("Language {0} is not enabled on this site").format(lang), RVInvalidInput)
-	if len(messages) > MAX_TRANSLATION_MESSAGES or not all(isinstance(m, str) for m in messages):
-		frappe.throw(_("Invalid translation request"), RVInvalidInput)
-	translations = frappe.translate.get_all_translations(lang)
-	return {m: translations[m] for m in dict.fromkeys(messages) if m in translations}
+	return printing.translations(lang, messages)

@@ -20,6 +20,7 @@ from report_view.core.errors import RVInvalidInput
 from report_view.core.inputs import parse_json_arg
 
 MAX_FILTER_META = 200
+MAX_TRANSLATION_MESSAGES = 2000
 SIGNATURE_TEMPLATE = "report_view/templates/includes/print_signature.html"
 _HTML_TAG = re.compile(r"<[A-Za-z/!]")
 # a CSS block may not close the <style> it is printed in
@@ -117,6 +118,41 @@ def escaped(value):
 	if isinstance(value, dict):
 		return frappe._dict({k: escaped(v) for k, v in value.items()})
 	return value
+
+
+def translations(lang, messages: list | str) -> dict:
+	"""Translations of ``messages`` in ``lang`` (an enabled language): a print page prints
+	in a language other than the session's. Keys with a context come as Frappe keys them
+	(``"<msgid>:<context>"``)."""
+	messages = parse_json_arg(messages, "messages", list)
+	if not isinstance(lang, str) or lang not in (frappe.translate.get_all_languages() or []):
+		frappe.throw(_("Language {0} is not enabled on this site").format(lang), RVInvalidInput)
+	if len(messages) > MAX_TRANSLATION_MESSAGES or not all(isinstance(m, str) for m in messages):
+		frappe.throw(_("Invalid translation request"), RVInvalidInput)
+	all_translations = frappe.translate.get_all_translations(lang)
+	return {m: all_translations[m] for m in dict.fromkeys(messages) if m in all_translations}
+
+
+def letter_heads(
+	company: str | None, site_default: str | None, own: str | None = None
+) -> tuple[list, str | None]:
+	"""The enabled letter heads the user may read, and the one a print starts with: the
+	document's own (``own``), else the site's standard one, else the company's default,
+	else the one marked default. Only a letter head of the list; nothing for a user who
+	may not read letter heads (as on Frappe's print page)."""
+	if not frappe.has_permission("Letter Head"):
+		return [], None
+	rows = frappe.get_list(
+		"Letter Head", filters={"disabled": 0}, fields=["name", "is_default"], order_by="name asc", limit=0
+	)
+	company_default = None
+	if isinstance(company, str) and company and frappe.has_permission("Company", doc=company):
+		found = frappe.get_list("Company", filters={"name": company}, fields=["default_letter_head"], limit=1)
+		company_default = found[0].default_letter_head if found else None
+	names = {lh.name for lh in rows}
+	marked = next((lh.name for lh in rows if lh.is_default), None)
+	chosen = next((n for n in (own, site_default, company_default, marked) if n and n in names), None)
+	return rows, chosen
 
 
 def filter_objects(filters: dict | str, filter_meta: list | str | None) -> tuple[dict, dict]:

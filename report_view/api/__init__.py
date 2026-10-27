@@ -27,7 +27,6 @@ from report_view.core.limits import rate_limit as _rate_limit
 from report_view.core.settings import get_print_max_pages, get_row_limit, load_settings, print_defaults
 
 MAX_ENRICH_NAMES = 5000
-MAX_TRANSLATION_MESSAGES = 2000
 # rows a server-rendered report print format may hold per printed page (print_max_pages)
 PRINT_ROWS_PER_PAGE = 40
 _FIELD_RE = re.compile(r"^[A-Za-z0-9_]+$")
@@ -82,6 +81,7 @@ def get_meta(report_name: str) -> dict:
 		"settings": settings,
 		"include_js": list(frappe.get_hooks("report_view_include_js") or []),
 		"limits": {"max_rows": get_row_limit()},
+		# the saved views (ADR-010, planned) fill these; until then there is no default view
 		"defaults": {"saved_view": None, "source": None},
 	}
 
@@ -231,29 +231,7 @@ def get_print_options(report_name: str, company: str | None = None) -> dict:
 	report = _guard(report_name)
 	guard_print(report)
 	defaults = print_defaults()
-	letter_heads: list[dict] = []
-	default_letter_head = None
-	if frappe.has_permission("Letter Head"):
-		letter_heads = frappe.get_list(
-			"Letter Head",
-			filters={"disabled": 0},
-			fields=["name", "is_default"],
-			order_by="name asc",
-			limit=0,
-		)
-		if isinstance(company, str) and company and frappe.has_permission("Company", doc=company):
-			rows = frappe.get_list(
-				"Company", filters={"name": company}, fields=["default_letter_head"], limit=1
-			)
-			default_letter_head = rows[0].default_letter_head if rows else None
-		if not default_letter_head:
-			default_letter_head = next((lh.name for lh in letter_heads if lh.is_default), None)
-		# the site's standard letter head comes before the company's
-		if defaults.get("letter_head") in {lh.name for lh in letter_heads}:
-			default_letter_head = defaults["letter_head"]
-		if default_letter_head not in {lh.name for lh in letter_heads}:
-			default_letter_head = None
-	defaults.pop("letter_head", None)
+	letter_heads, default_letter_head = printing.letter_heads(company, defaults.pop("letter_head", None))
 	headings = []
 	if frappe.has_permission("Print Heading"):
 		headings = frappe.get_list("Print Heading", fields=["name"], order_by="name asc", limit=0)
@@ -264,7 +242,7 @@ def get_print_options(report_name: str, company: str | None = None) -> dict:
 		defaults["signature"] = ""
 	print_formats = frappe.get_list(
 		"Print Format",
-		filters=_print_format_filters(report_name, report.name),
+		filters=_report_print_format_filters(report_name, report.name),
 		fields=["name", "print_format_type"],
 		order_by="name asc",
 		limit=0,
@@ -291,7 +269,7 @@ def get_print_options(report_name: str, company: str | None = None) -> dict:
 	}
 
 
-def _print_format_filters(report_name: str, resolved_name: str) -> dict:
+def _report_print_format_filters(report_name: str, resolved_name: str) -> dict:
 	"""Report print formats offered by the Pages view: enabled, for this report (a Custom
 	Report resolves to its reference report), JS (rendered in the browser with
 	query-report's context, as the query-report dialog does) or Jinja (rendered on the
@@ -319,13 +297,13 @@ def get_print_format(report_name: str, name: str) -> dict:
 
 
 def _print_format_doc(report, report_name: str, name: str):
-	"""A report print format offered for the report (``_print_format_filters``). The caller
+	"""A report print format offered for the report (``_report_print_format_filters``). The caller
 	has checked the report and the print permission."""
 	if not isinstance(name, str) or not name.strip():
 		frappe.throw(_("Print format name is required"), RVInvalidInput)
 	found = frappe.get_list(
 		"Print Format",
-		filters={"name": name, **_print_format_filters(report_name, report.name)},
+		filters={"name": name, **_report_print_format_filters(report_name, report.name)},
 		fields=["name"],
 		limit=1,
 	)
@@ -383,7 +361,7 @@ def render_print_format(
 	raw = response["raw"]
 	columns = []
 	for col in raw.get("columns") or []:
-		c = normalize._parse_column(col)
+		c = normalize.parse_column(col)
 		columns.append(
 			frappe._dict(
 				fieldname=c.get("fieldname"),
@@ -467,10 +445,4 @@ def get_translations(report_name: str, lang: str, messages: list | str) -> dict:
 	enables; keys with a context come as Frappe keys them (``"<msgid>:<context>"``).
 	"""
 	_guard(report_name)
-	messages = parse_json_arg(messages, "messages", list)
-	if not isinstance(lang, str) or lang not in (frappe.translate.get_all_languages() or []):
-		frappe.throw(_("Language {0} is not enabled on this site").format(lang), RVInvalidInput)
-	if len(messages) > MAX_TRANSLATION_MESSAGES or not all(isinstance(m, str) for m in messages):
-		frappe.throw(_("Invalid translation request"), RVInvalidInput)
-	translations = frappe.translate.get_all_translations(lang)
-	return {m: translations[m] for m in dict.fromkeys(messages) if m in translations}
+	return printing.translations(lang, messages)

@@ -1,4 +1,15 @@
-exclude: 'node_modules|.git'
+# vendored and generated files stay byte for byte: fonts and their licences, JSON
+# fixtures, the generated @font-face sheet, lockfiles
+exclude: |
+    (?x)^(
+        .*node_modules.*|
+        \.git/.*|
+        report_view/public/fonts/.*|
+        report_view/public/css/rv_fonts\.css|
+        .*/fixtures/.*\.json|
+        .*package-lock\.json|
+        yarn\.lock
+    )$
 default_stages: [pre-commit]
 fail_fast: false
 
@@ -30,21 +41,8 @@ repos:
       - id: ruff-format
         name: "Run ruff formatter"
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.7.1
-    hooks:
-      - id: prettier
-        types_or: [javascript, vue, scss]
-        # Ignore any files that might contain jinja / bundles
-        exclude: |
-            (?x)^(
-                report_view/public/dist/.*|
-                .*node_modules.*|
-                .*boilerplate.*|
-                report_view/templates/includes/.*|
-                report_view/public/js/lib/.*
-            )$
-
+  # No Prettier: the JS and CSS were never formatted with it, and CI does not run it
+  # (.github/workflows/ci.yml, job Lint: ruff and ESLint only).
 
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v8.44.0
@@ -56,7 +54,8 @@ repos:
         exclude: |
             (?x)^(
                 report_view/public/dist/.*|
-                cypress/.*|
+                tests/experiments/.*|
+                tests/visual/dist/.*|
                 .*node_modules.*|
                 .*boilerplate.*|
                 report_view/templates/includes/.*|

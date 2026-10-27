@@ -7,6 +7,7 @@ import frappe
 from frappe.translate import get_all_languages
 
 from report_view import api
+from report_view.core import printing
 from report_view.core.errors import RVInvalidInput, RVNoPrint
 from report_view.tests.utils import COMPANY, RVTestCase, report_print_format
 
@@ -103,7 +104,7 @@ class TestApiPages(RVTestCase):
 			with self.assertRaises(RVInvalidInput):
 				api.get_translations("Trial Balance", "ar", ["Total", 5])
 			with self.assertRaises(RVInvalidInput):
-				api.get_translations("Trial Balance", "ar", ["x"] * (api.MAX_TRANSLATION_MESSAGES + 1))
+				api.get_translations("Trial Balance", "ar", ["x"] * (printing.MAX_TRANSLATION_MESSAGES + 1))
 		with self.as_user("none"), self.assertRaises(frappe.PermissionError):
 			api.get_translations("Trial Balance", "ar", ["Total"])
 
@@ -669,10 +670,16 @@ class TestPrintEscaping(RVTestCase):
 		)
 		value = Text(name)
 		self.assertEqual(str(value), "RV Esc &amp; Co &apos;x&apos;")
-		self.assertEqual(frappe.db.get_value("Print Heading", value, "name"), name)
-		self.assertEqual(frappe.db.get_value("Print Heading", {"name": value}, "name"), name)
+		# every way a template looks a record up, compared at once (a failure names them all)
+		found = {
+			"sql": frappe.db.sql("select %s", value)[0][0],
+			"get_value": frappe.db.get_value("Print Heading", value, "name"),
+			"get_value_dict": frappe.db.get_value("Print Heading", {"name": value}, "name"),
+			"get_list_in": frappe.get_list("Print Heading", filters={"name": ["in", [value]]}, pluck="name"),
+			"get_doc": frappe.get_doc("Print Heading", value).name,
+		}
 		self.assertEqual(
-			frappe.get_list("Print Heading", filters={"name": ["in", [value]]}, pluck="name"), [name]
+			found,
+			{"sql": name, "get_value": name, "get_value_dict": name, "get_list_in": [name], "get_doc": name},
 		)
-		self.assertEqual(frappe.get_doc("Print Heading", value).name, name)
 		self.assertEqual(frappe.as_json({"v": value}), frappe.as_json({"v": name}))

@@ -8,7 +8,7 @@
 - `CLAUDE.md`: الربط عبر `hooks.py` فقط، وكل hook يُوثَّق في ADR.
 
 ## القرار
-الـ hooks التي يسجّلها التطبيق. هذا الجدول هو السجل الوحيد لها ويطابق `report_view/hooks.py` (آخر مراجعة 2026-10-22). كل صف يشير إلى الـ ADR الذي يحمل السبب، وأي إضافة أو حذف في `hooks.py` يعدّل هذا الجدول في الـ commit نفسه. `tests/test_hooks.py` يتحقق من أن مرشّح `fixtures` يذكر كل سجل مشحون.
+الـ hooks التي يسجّلها التطبيق. هذا الجدول هو السجل الوحيد لها ويطابق `report_view/hooks.py` (آخر مراجعة 2026-10-27). كل صف يشير إلى الـ ADR الذي يحمل السبب، وأي إضافة أو حذف في `hooks.py` يعدّل هذا الجدول في الـ commit نفسه. `tests/test_hooks.py` يتحقق من أن مرشّح `fixtures` يذكر كل سجل مشحون.
 
 | المفتاح في `hooks.py` | القيمة | السبب | القرار |
 |---|---|---|---|
@@ -29,6 +29,7 @@
 | `doc_events` | `Letter Head.on_trash` = `report_view.core.letterhead.delete_layout` | تخطيط المنشئ (`Letter Head Layout`) يُحذف مع ورقه، وإلا تعذّر حذف الورق | ADR-018 |
 | `scheduler_events.hourly` | `report_view.core.export.jobs.cleanup` | ملفات تصدير Excel في الخلفية التي لم تُنزَّل تُحذف بعد ساعة (`private/rv_xlsx`). الملف خاص بصاحبه ويُحذف عند تنزيله؛ هذا لما لم يُنزَّل | هذا الـ ADR (2026-10-22؛ الآلية في `docs/architecture.md` §2.4) |
 | `scheduler_events.hourly` | `report_view.core.pdf.cleanup_stale` | عمليات Chromium وملفات تعريفها التي تركها عامل قُتل، وملفات وظائف PDF الأقدم من ساعة | ADR-016 |
+| `before_tests` | `report_view.install.before_tests` | موقع جديد (موقع CI) بلا شركة ولا سنة مالية حتى يعمل معالج الإعداد: يُشغَّل مرة بشركة ERPNext ودليل حساباتها وسنتها المالية، كما يفعل `before_tests` في Frappe. موقع مُعَدّ يبقى كما هو. `tests/utils.py` يستدعيه أيضاً عند استيراده لأن اكتشاف الاختبارات يسبق الـ hook | هذا الـ ADR (2026-10-27) |
 | `report_view_include_js` (مفتاح خاص بنا يقرؤه التطبيق من التطبيقات الأخرى، لا نعرّفه نحن) | قائمة bundles من أي تطبيق | يسمح للتطبيقات الأخرى بتسجيل `report_view.register` لتقاريرها؛ يُقرأ في `get_meta` ويُحمَّل بـ `frappe.require`. لا تطبيق على الـ bench يعرّفه حتى الآن | ADR-003 |
 
 **لم يُبنَ:** الـ hooks التي خطط لها هذا الـ ADR لـ `Report View Saved View` (`permission_query_conditions` و `has_permission`، المرحلة 4) لم تُسجَّل لأن الـ DocType نفسه لم يُبنَ (ADR-010). و `after_install` كان مخططاً لتحميل الإعدادات الافتراضية؛ الإعدادات تُقرأ من `report_view/defaults/*.json` مباشرة (`core/settings.py`) فلا تحتاجه، وصار لتثبيت Chromium (ADR-016).

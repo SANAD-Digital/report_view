@@ -73,7 +73,6 @@ ROLES = frozenset(("dimension", "measure", "attribute"))
 AGGS = frozenset(("sum", "avg", "count", "min", "max"))
 
 KIND_DATA = "data"
-KIND_FRAPPE_TOTAL = "frappe_total"
 KIND_INTERNAL_TOTAL = "internal_total"
 KIND_OPENING = "opening"
 KIND_CLOSING = "closing"
@@ -193,7 +192,7 @@ def normalize(
 # ---------------------------------------------------------------- N1 columns
 
 
-def _parse_column(col: Any) -> dict:
+def parse_column(col: Any) -> dict:
 	"""Same rule as ``get_column_as_dict`` (Q:1094-1117)."""
 	if isinstance(col, str):
 		parts = col.split(":")
@@ -249,7 +248,7 @@ def _build_columns(
 	seen: dict[str, int] = {}
 	export_hidden_cols = report_settings.get("export_hidden_cols") is True
 	for idx, raw_col in enumerate(raw_columns):
-		col = _parse_column(raw_col)
+		col = parse_column(raw_col)
 		fieldname = col["fieldname"]
 		seen[fieldname] = seen.get(fieldname, 0) + 1
 		key = fieldname if seen[fieldname] == 1 else f"{fieldname}__{seen[fieldname]}"

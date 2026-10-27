@@ -30,7 +30,7 @@ def after_migrate():
 def before_tests():
 	"""A fresh site (the CI's) has no company and no fiscal year until the setup wizard
 	runs: it runs here once, as Frappe's own ``before_tests`` does, with ERPNext's company,
-	chart of accounts and fiscal year. A site set up already (acc.dev) is left as it is."""
+	chart of accounts and fiscal year. A site set up already is left as it is."""
 	if frappe.is_setup_complete():
 		return
 	year = getdate(nowdate()).year

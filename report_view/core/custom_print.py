@@ -261,14 +261,6 @@ def is_inline(payload) -> bool:
 	return bool(payload and payload.get("html"))
 
 
-def data_of(data=None, token: str | None = None):
-	"""The data to render: the staged print's (``token``; any Custom format may print it)
-	or ``data`` as sent."""
-	if token:
-		return staged(token)["data"]
-	return parse_data(data)
-
-
 def route(token_or_format: str) -> str:
 	return f"/desk/rv-print/{CUSTOM}/{quote(token_or_format, safe='')}"
 
@@ -407,7 +399,6 @@ def _broken(e, what: str) -> None:
 
 # ---------------------------------------------------------------- an inline template
 
-_INLINE_TEXT_TYPES = {"Data", "Small Text", "Text", "Long Text"}
 _INLINE_FORMATTED = {
 	"Int",
 	"Float",

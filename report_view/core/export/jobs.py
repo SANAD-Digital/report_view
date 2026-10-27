@@ -223,10 +223,6 @@ def _key(job: str) -> str:
 	return JOBS.key(job)
 
 
-def _running_key(user: str) -> str:
-	return JOBS.active_key(user)
-
-
 def _get(job: str) -> dict | None:
 	return JOBS.get(job)
 

@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import frappe
 
 from report_view.core.errors import RVInvalidInput, RVNoExport, RVNoPrint, RVUnsupportedReport
@@ -37,6 +39,12 @@ class TestGuard(RVTestCase):
 			frappe.local.message_log = []
 			self.assertIsNone(guard_report_quiet("Trial Balance"))
 			self.assertEqual(frappe.local.message_log, [])
+		# a bug in the guard is not a refusal: it is raised
+		with (
+			patch("report_view.core.guard.guard_report", side_effect=KeyError("bug")),
+			self.assertRaises(KeyError),
+		):
+			guard_report_quiet("Trial Balance")
 
 	def test_guard_export(self):
 		with self.as_user("accountant"):

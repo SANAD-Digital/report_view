@@ -386,7 +386,7 @@ class TestGeneratedHtml(RVTestCase):
 			self.assertIn(name, frappe.render_template(html, {"doc": {"from_date": "2026-01-01"}}))
 		# a fixed company wins over the document's
 		fixed = lh.generate(lh.validate_layout(LAYOUT), company=OTHER_COMPANY)["header"]
-		self.assertIn(f'{{%- set _rvc = "{OTHER_COMPANY}" -%}}', fixed)
+		self.assertIn(f"{{%- set _rvc = {lh._jstr(OTHER_COMPANY)} -%}}", fixed)
 		out = frappe.render_template(fixed, {"doc": {"company": COMPANY}})
 		self.assertIn(frappe.db.get_value("Company", OTHER_COMPANY, "company_name"), out)
 

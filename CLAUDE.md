@@ -38,8 +38,12 @@
 bench build --app report_view
 bench --site $SITE run-tests --app report_view
 bench --site $SITE clear-cache
-cd apps/report_view && npx playwright test
+cd apps/report_view && node --test tests/js/*.test.mjs    # اختبارات الوحدات
+cd apps/report_view && npm --prefix tests ci               # أدوات الاختبار (Playwright) مرة واحدة
+cd apps/report_view && npm --prefix tests run visual       # الاختبارات المرئية (RV_BROWSERS=firefox,webkit لغير Chromium)
+cd apps/report_view && npm --prefix tests run e2e          # على موقع حي
 ```
+كلمات مرور مستخدمي الاختبار خارج المستودع (المستودع عام): `~/.config/report_view/test-users.env`.
 قيمة `$SITE` ومسار الـ bench مسجّلة في `docs/progress/phase-0.md`.
 
 ## تعريف «منتهٍ» لأي مهمة

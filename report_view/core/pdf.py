@@ -550,6 +550,37 @@ class _browser:
 		return False
 
 
+_MISSING_LIB = re.compile(r"error while loading shared libraries: ([^:\s]+)")
+
+
+def engine_failed(path: str, output: str) -> None:
+	"""The engine did not start: the reason goes to the Error Log, and the message says what to
+	do. A System Manager sees the cause (a library the server lacks, a binary that cannot run)
+	and the command that fixes it; everyone is told to print and save the PDF from the
+	browser meanwhile, which always works."""
+	frappe.log_error(title="Report View PDF engine could not start", message=f"{path}\n\n{output}"[-4000:])
+	missing = _MISSING_LIB.search(output or "")
+	fallback = _("Meanwhile use «Print» and choose «Save as PDF» in the print dialog.")
+	if "System Manager" not in frappe.get_roles():
+		frappe.throw(f"{_('The PDF engine could not start')}. {fallback}", title=_("PDF"))
+	if missing:
+		cause = _("The server lacks the system library {0} that Chromium needs.").format(
+			frappe.bold(missing.group(1))
+		)
+		fix = _("Install Chromium's system libraries (needs root); the command is printed by: {0}").format(
+			"<code>bench report-view-install-chromium</code>"
+		)
+	elif "Permission denied" in (output or "") or "Exec format error" in (output or ""):
+		cause = _("The Chromium at {0} cannot be run on this server.").format(
+			f"<code>{frappe.utils.escape_html(path)}</code>"
+		)
+		fix = _("Reinstall it: {0}").format("<code>bench report-view-install-chromium --force</code>")
+	else:
+		cause = _("Chromium did not answer (see the Error Log «Report View PDF engine could not start»).")
+		fix = _("Check «PDF engine» in Report View Global Settings.")
+	frappe.throw(f"{_('The PDF engine could not start')}.<br>{cause}<br>{fix}<br>{fallback}", title=_("PDF"))
+
+
 class _OwnChromium:
 	"""A headless Chromium with a fresh profile, in a session (process group) of its own that
 	is killed with the process that started it; its DevTools address read from stderr.
@@ -604,11 +635,12 @@ class _OwnChromium:
 				start_new_session=True,
 				preexec_fn=_die_with_parent(),
 			)
-		except OSError:
+		except OSError as e:
 			shutil.rmtree(self.profile, ignore_errors=True)
-			frappe.log_error(title="Report View PDF engine could not start")
-			frappe.throw(_("The PDF engine could not start"))
+			engine_failed(path, str(e))
 		lines: queue.Queue = queue.Queue()
+		# what Chromium printed before it failed: the reason a server lacks (a library...)
+		seen: list[str] = []
 
 		def read():
 			# keeps reading so Chromium never blocks on a full pipe
@@ -622,7 +654,9 @@ class _OwnChromium:
 			end = min(end, deadline)
 		while not self.devtools_url and time.monotonic() < end:
 			try:
-				m = _DEVTOOLS.search(lines.get(timeout=0.2))
+				line = lines.get(timeout=0.2)
+				seen.append(line)
+				m = _DEVTOOLS.search(line)
 			except queue.Empty:
 				if self.process.poll() is not None:
 					break
@@ -633,8 +667,13 @@ class _OwnChromium:
 			self.close()
 			if deadline and time.monotonic() >= deadline:
 				raise _Deadline
-			frappe.log_error(title="Report View PDF engine could not start", message=path)
-			frappe.throw(_("The PDF engine could not start"))
+			while not lines.empty():
+				seen.append(lines.get_nowait())
+			code = self.process.returncode if self.process else None
+			engine_failed(
+				path,
+				"".join(seen[-40:]) or (f"exit code {code}" if code is not None else "no answer in 15 s"),
+			)
 
 	def close(self):
 		if self.process:

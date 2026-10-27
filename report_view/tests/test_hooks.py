@@ -24,3 +24,13 @@ class TestFixtureFilters(UnitTestCase):
 			names = {n for f in entry["filters"] if f[:2] == ["name", "in"] for n in f[2]}
 			with self.subTest(doctype=entry["dt"]):
 				self.assertEqual(names, _file_names(entry["dt"]))
+
+	def test_every_shipped_record_goes_with_the_app(self):
+		"""``bench remove-app`` deletes the records of the app's module (ADR-019): the
+		Property Setter and the shipped Custom format must be of module Report View."""
+		for doctype in ("Property Setter", "Print Format"):
+			path = os.path.join(FIXTURES, doctype.lower().replace(" ", "_") + ".json")
+			with open(path, encoding="utf-8") as f:
+				for row in json.load(f):
+					with self.subTest(doctype=doctype, name=row["name"]):
+						self.assertEqual(row.get("module"), "Report View")

@@ -59,6 +59,29 @@ def supported() -> bool:
 	return platform.system() == "Linux" and platform.machine() in ("x86_64", "AMD64")
 
 
+def run_check(path: str | None = None) -> tuple[bool, str]:
+	"""Whether the binary runs on this server at all, and what it said when it does not (a
+	missing system library shows here: "error while loading shared libraries: libnss3.so")."""
+	path = path or chromium_path()
+	if not path:
+		return False, ""
+	try:
+		run = subprocess.run([path, "--version"], capture_output=True, text=True, timeout=20)
+	except (OSError, subprocess.SubprocessError) as e:
+		return False, str(e)
+	return run.returncode == 0, (run.stderr or "").strip()[-1000:]
+
+
+def apt_command() -> str:
+	"""The system packages the pinned build needs, as the installer lists them (APT_PACKAGES)."""
+	try:
+		with open(script_path()) as f:
+			m = re.search(r'^APT_PACKAGES="([^"]+)"', f.read(), re.M | re.S)
+	except OSError:
+		return ""
+	return "sudo apt-get install -y " + " ".join(m.group(1).replace("\\\n", " ").split()) if m else ""
+
+
 def installed_version(path: str | None = None) -> str | None:
 	path = path or chromium_path()
 	if not path:
@@ -101,7 +124,11 @@ def status() -> dict:
 	path = chromium_path()
 	version = installed_version(path)
 	pinned = pinned_version()
+	runs, run_error = run_check(path) if path else (False, "")
 	return {
+		"runs": runs,
+		"run_error": run_error,
+		"apt_command": apt_command(),
 		"supported": supported(),
 		"pinned": pinned,
 		"path": path or os.path.join(frappe.utils.get_bench_path(), DEFAULT_CHROMIUM),

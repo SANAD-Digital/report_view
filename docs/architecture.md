@@ -13,7 +13,7 @@
 
 ```
 apps/report_view/
-├── CLAUDE.md  START.md  README.md  package.json  yarn.lock  # مكتبات وقت التشغيل فقط
+├── CLAUDE.md  README.md  package.json  yarn.lock  # مكتبات وقت التشغيل فقط
 ├── docs/                      # التوثيق (عربي). لا يُنشر كأصول.
 ├── reference/                 # التصميم والنموذج (لا يُنشر)
 ├── scripts/                   # سكربتات تطوير (setup_test_users.py، extract_filter_defs.py، توليد بيانات)

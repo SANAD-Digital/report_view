@@ -645,6 +645,18 @@ class TestPrintEscaping(RVTestCase):
 		with patch("report_view.core.printing.document_signature", side_effect=frappe.PermissionError):
 			self.assertEqual(report_view_signature("RV Test Document", company), "")
 
+	def test_a_document_heading_prints_the_document_escaped(self):
+		from report_view.core.printing import document_context, render_heading
+
+		doc = frappe.get_doc("Company", COMPANY).as_dict()
+		doc.update(doctype="Company", rv_note=self.PAYLOAD)
+		context = document_context(frappe._dict(doc))
+		self.assertEqual(str(context["doc"].rv_note), self.ESCAPED)
+		out = render_heading(self.plain.name, context)
+		self.assertEqual(out["html"], f"Note: {self.ESCAPED}")
+		# the values still look up their records
+		self.assertEqual(frappe.db.get_value("Company", context["doc"].name, "name"), COMPANY)
+
 	def test_an_escaped_value_still_finds_its_record(self):
 		from report_view.core.printing import Text
 

@@ -452,6 +452,7 @@ class TestPdfJobs(RVTestCase):
 			return SimpleNamespace(
 				files={"html_gz": FileStorage(BytesIO(data), "pages.html.gz")},
 				host=None,
+				headers={},
 				host_url=frappe.utils.get_url() + "/",
 			)
 
@@ -699,3 +700,36 @@ class TestPdfSandbox(RVTestCase):
 			self.assertTrue(s["apparmor_command"].startswith("sudo bash "))
 		with patch.object(chromium, "chromium_path", return_value=None):
 			self.assertIs(chromium.status()["sandbox"], False)
+
+
+class TestEngineFailureMessage(RVTestCase):
+	"""An engine that does not start says why (ADR-016): the cause and its fix to a System
+	Manager, the browser's print to everyone, and the full output in the Error Log."""
+
+	OUT = "chrome-headless-shell: error while loading shared libraries: libnss3.so: cannot open shared object file"
+
+	def message(self, user=None):
+		from contextlib import nullcontext
+		from unittest.mock import patch
+
+		from report_view.core.pdf import engine_failed
+
+		with patch("frappe.log_error") as log, self.as_user(user) if user else nullcontext():
+			try:
+				engine_failed("/bench/chromium-rv/chrome-headless-shell", self.OUT)
+			except frappe.ValidationError:
+				pass
+			self.assertIn("libnss3.so", log.call_args.kwargs["message"])
+		return str(frappe.message_log[-1]) if frappe.message_log else ""
+
+	def test_system_manager_sees_the_missing_library(self):
+		frappe.message_log = []
+		text = self.message()
+		self.assertIn("libnss3.so", text)
+		self.assertIn("bench report-view-install-chromium", text)
+
+	def test_others_are_sent_to_the_browser_print(self):
+		frappe.message_log = []
+		text = self.message("accountant")
+		self.assertNotIn("libnss3.so", text)
+		self.assertIn("Save as PDF", text)

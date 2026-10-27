@@ -13,6 +13,7 @@ from html import unescape
 
 import frappe
 from frappe import _
+from frappe.model.base_document import BaseDocument
 from frappe.utils import escape_html, get_fullname, now_datetime, strip_html_tags
 
 from report_view.core.errors import RVInvalidInput
@@ -285,15 +286,17 @@ def report_signature(name: str, report_names: list[str], context: dict) -> dict:
 
 def document_context(doc) -> dict:
 	"""What a heading or a signature of a document may read: ``doc`` (the document),
-	``title`` (its type, translated), ``company``, ``printed_by``, ``printed_on``, ``lang``."""
+	``title`` (its type, translated), ``company``, ``printed_by``, ``printed_on``, ``lang``.
+	The document's strings print HTML-escaped (``Text``), as in its letter head."""
 	doctype = getattr(doc, "doctype", None)
+	values = escaped(doc.as_dict() if isinstance(doc, BaseDocument) else dict(doc or {}))
 	return {
-		"doc": doc,
+		"doc": values,
 		"title": _(doctype) if doctype else "",
 		"report_name": "",
 		"filters": frappe._dict(),
-		"company": getattr(doc, "company", None),
-		"printed_by": get_fullname(),
+		"company": values.get("company"),
+		"printed_by": Text(get_fullname()),
 		"printed_on": now_datetime(),
 		"lang": frappe.local.lang,
 	}

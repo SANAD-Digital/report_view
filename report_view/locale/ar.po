@@ -3609,3 +3609,33 @@ msgstr "عزل Chromium (sandbox): مفعّل"
 
 msgid "Chromium sandbox: off (the server forbids it; PDFs print with --no-sandbox). To turn it on, run once as root:"
 msgstr "عزل Chromium (sandbox): معطّل (الخادم يمنعه؛ ملفات PDF تُطبع بـ --no-sandbox). لتفعيله شغّل مرة واحدة بصلاحية root:"
+
+msgid "Meanwhile use «Print» and choose «Save as PDF» in the print dialog."
+msgstr "إلى أن يُصلح ذلك استعمل «طباعة» واختر «حفظ بصيغة PDF» في نافذة الطباعة."
+
+msgid "The server lacks the system library {0} that Chromium needs."
+msgstr "ينقص الخادمَ مكتبةُ النظام {0} التي يحتاجها Chromium."
+
+msgid "Install Chromium's system libraries (needs root); the command is printed by: {0}"
+msgstr "ثبّت مكتبات النظام التي يحتاجها Chromium (يحتاج صلاحية root)؛ الأمر يطبعه: {0}"
+
+msgid "The Chromium at {0} cannot be run on this server."
+msgstr "لا يمكن تشغيل Chromium الموجود في {0} على هذا الخادم."
+
+msgid "Reinstall it: {0}"
+msgstr "أعد تثبيته: {0}"
+
+msgid "Chromium did not answer (see the Error Log «Report View PDF engine could not start»)."
+msgstr "لم يستجب Chromium (راجع سجل الأخطاء «Report View PDF engine could not start»)."
+
+msgid "Check «PDF engine» in Report View Global Settings."
+msgstr "راجع «محرك PDF» في إعدادات Report View العامة."
+
+msgid "Report View's Chromium is installed but cannot run on this server: PDFs fail"
+msgstr "Chromium الخاص بـReport View مثبت لكنه لا يعمل على هذا الخادم: ملفات PDF تفشل"
+
+msgid "What Chromium said:"
+msgstr "ما قاله Chromium:"
+
+msgid "Install its system libraries once, as root:"
+msgstr "ثبّت مكتبات النظام مرة واحدة بصلاحية root:"

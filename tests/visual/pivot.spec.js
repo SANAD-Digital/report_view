@@ -278,9 +278,9 @@ test("pivot lifecycle: no handle left after 20 switches and pivot changes, a re-
 				await page.evaluate((n) => window.rv_page.controls.set_pivot_cols(n ? ["account__root_type"] : []), i % 8);
 				await pivot_changed(page, () => window.rv_page.pivot.current === window.rv_page.pivot_opened);
 			}
-			const pv = (await names()).filter((n) => /\/pivot/.test(n));
 			const split = (await page.evaluate(() => window.rv_page.debug_pivot().cols.length)) > 0;
-			expect(pv.length, `switch ${i}`).toBe(split ? 2 : 1);
+			// the pivot replaced is deleted once its last read is done: soon, not at once
+			await expect.poll(async () => (await names()).filter((n) => /\/pivot/.test(n)).length, { message: `switch ${i}` }).toBe(split ? 2 : 1);
 		} else {
 			await page.locator('.rv-views [data-mode="grid"]').click();
 			await grid_back(page);

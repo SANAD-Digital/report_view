@@ -101,6 +101,18 @@ jobs:
         working-directory: apps/report_view
         run: node tests/js/tap_annotations.mjs node-test.tap
 
+      # JS <-> Python parity (C23): the fixtures the Python tests compare with are what the
+      # browser code draws today. node --test above wrote the letter head golden file; the
+      # engine's screen cases are generated here. A difference means a fixture is stale.
+      - name: Parity fixtures are current
+        working-directory: apps/report_view
+        run: |
+          node report_view/tests/fixtures/screen/generate.mjs
+          if ! git diff --exit-code --stat -- report_view/tests/fixtures/screen/cases.json report_view/tests/fixtures/letterhead_parity.json; then
+            echo "::error title=Parity fixtures are stale::run node --test tests/js and node report_view/tests/fixtures/screen/generate.mjs, then commit the two fixtures"
+            exit 1
+          fi
+
   visual:
     name: Visual harness (${{ matrix.browser }})
     runs-on: ubuntu-24.04

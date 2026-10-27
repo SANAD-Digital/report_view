@@ -27,8 +27,10 @@ const load = (name) => normalize(JSON.parse(fs.readFileSync(path.join(FIXTURES, 
 
 // Rows of the grid body as grid_view.read_records names them: a report row (by __rid), a
 // group Perspective computed (with its aggregates), or the subtotal row of one of them.
-function screen_rows(session, opened, cols) {
-	const { post } = opened;
+// A grouping of the user is read as the grid reads it (views/grid_rows.js read_fold_rows):
+// its groups from the group view through the fold, its rows from the flat view of leaves.
+function screen_rows(session, opened, cols, leaves) {
+	const { post, fold } = opened;
 	const paths = cols.__ROW_PATH__ || null;
 	const depths = opened.depths || new Uint8Array(opened.body_rows);
 	const layout = build_layout(depths, { subtotals: post.subtotals && HIERARCHICAL.has(post.shape), top: 0 });
@@ -39,7 +41,15 @@ function screen_rows(session, opened, cols) {
 		const i = entry.row + post.row_offset;
 		const open = Boolean(layout.open[entry.row]);
 		let rec;
-		if (!post.row_offset) {
+		if (fold) {
+			const g = fold.group_at[entry.row];
+			if (g < 0) rec = { t: "row", rid: leaves.__rid[fold.leaf_at[entry.row]], depth: post.group_keys.length, parent: false };
+			else {
+				const p = fold.paths[g];
+				const depth = p.length - 1;
+				rec = { t: "group", depth, open, count: fold.counts[g], value: p[depth], node: null, vals: values(post.row_offset + g) };
+			}
+		} else if (!post.row_offset) {
 			const parent = Boolean(cols.__has_children?.[i]);
 			rec = { t: "row", rid: cols.__rid[i], depth: cols.__depth ? cols.__depth[i] : 0, parent, open };
 		} else {
@@ -68,7 +78,8 @@ async function dump(fixture, name, patch, lang = "ar") {
 	try {
 		const opened = await session.open({ ...default_state(), ...patch });
 		const { post } = opened;
-		const rows = screen_rows(session, opened, await opened.view.to_columns());
+		const leaves = opened.fold ? await opened.leaves.to_columns() : null;
+		const rows = screen_rows(session, opened, await opened.view.to_columns(), leaves);
 		await session.close_view(opened);
 		return {
 			name,

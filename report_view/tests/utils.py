@@ -111,10 +111,78 @@ def _other_company(company: str, fiscal_year: str) -> str:
 	return others[0][0] if others else _create_company(TEST_OTHER_COMPANY, "_TRV2")
 
 
+def _leaf_account(company: str, **filters) -> str | None:
+	return frappe.db.get_value(
+		"Account", {"company": company, "is_group": 0, "disabled": 0, **filters}, "name", order_by="name"
+	)
+
+
+def _party(doctype: str, name: str) -> str:
+	if not frappe.db.exists(doctype, name):
+		group_field, group_doctype = (
+			("customer_group", "Customer Group")
+			if doctype == "Customer"
+			else ("supplier_group", "Supplier Group")
+		)
+		doc = {
+			"doctype": doctype,
+			doctype.lower() + "_name": name,
+			group_field: frappe.db.get_value(group_doctype, {"is_group": 0}, "name"),
+		}
+		if doctype == "Customer":
+			doc["territory"] = frappe.db.get_value("Territory", {"is_group": 0}, "name")
+		frappe.get_doc(doc).insert()
+	return name
+
+
+def _seed_entries(company: str, fy: frappe._dict) -> None:
+	"""Submitted journal entries for a company that has none (a fresh site): sales on
+	credit, a purchase on credit and a receipt, over several months, so the accounting
+	reports have groups, leaves, parties and totals. On a site with data, nothing."""
+	if frappe.db.exists("GL Entry", {"company": company, "is_cancelled": 0}):
+		return
+	customer = _party("Customer", "_Test RV Customer")
+	supplier = _party("Supplier", "_Test RV Supplier")
+	receivable = _leaf_account(company, account_type="Receivable")
+	payable = _leaf_account(company, account_type="Payable")
+	cash = _leaf_account(company, account_type="Cash") or _leaf_account(company, account_type="Bank")
+	income = _leaf_account(company, root_type="Income", account_type=["in", ["", "Income Account"]])
+	expense = _leaf_account(company, root_type="Expense", account_type=["in", ["", "Expense Account"]])
+	cost_center = frappe.get_cached_value("Company", company, "cost_center")
+	last = min(getdate(fy.year_end_date), getdate(nowdate()))
+	entries = [
+		(1000, receivable, ("Customer", customer), income, None),
+		(400, expense, None, payable, ("Supplier", supplier)),
+		(600, cash, None, receivable, ("Customer", customer)),
+		(250, expense, None, cash, None),
+	]
+	for i, (amount, debit, debit_party, credit, credit_party) in enumerate(entries):
+		day = add_days(getdate(fy.year_start_date), 35 * i)
+		rows = []
+		for account, party, side in ((debit, debit_party, "debit"), (credit, credit_party, "credit")):
+			row = {"account": account, f"{side}_in_account_currency": amount, "cost_center": cost_center}
+			if party:
+				row.update(party_type=party[0], party=party[1])
+			rows.append(row)
+		je = frappe.get_doc(
+			{
+				"doctype": "Journal Entry",
+				"company": company,
+				"posting_date": min(getdate(day), last),
+				"user_remark": "Report View test data",
+				"accounts": rows,
+			}
+		)
+		je.insert()
+		je.submit()
+	frappe.db.commit()
+
+
 @cache
 def site_data() -> frappe._dict:
 	company = _main_company()
 	fy = _fiscal_year(company)
+	_seed_entries(company, fy)
 	return frappe._dict(
 		company=company,
 		abbr=frappe.db.get_value("Company", company, "abbr"),

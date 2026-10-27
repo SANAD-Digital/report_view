@@ -15,7 +15,8 @@ import sys
 MAX_ANNOTATIONS = 10
 TRACE_LINES = 25
 LOG_TAIL = 60
-_HEAD = re.compile(r"^(FAIL|ERROR): (\S+) \(([^)]+)\)")
+# unittest prints "FAIL: name (id)"; Frappe's runner " FAIL  name (id)"
+_HEAD = re.compile(r"^\s*(FAIL|ERROR):?\s+(\S+) \(([^)]+)\)")
 _RULE = re.compile(r"^(=|-){20,}$")
 
 
@@ -53,15 +54,14 @@ def annotations(lines: list[str]) -> list[str]:
 	if not found:
 		tail = "\n".join(lines[-LOG_TAIL:])
 		return [f"::error title=run-tests failed before or outside the tests::{_escape(tail)}"]
-	shown = found[: MAX_ANNOTATIONS - 1] if len(found) > MAX_ANNOTATIONS else found
-	out = [
+	# one annotation lists every failure; the others show the first tracebacks
+	names = "\n".join(title for title, _body in found)
+	out = [f"::error title={len(found)} failures and errors::{_escape(names)}"]
+	shown = found[: MAX_ANNOTATIONS - 1]
+	out += [
 		f"::error title={_title(title)}::{_escape(chr(10).join(body[-TRACE_LINES:]))}"
 		for title, body in shown
 	]
-	rest = found[len(shown) :]
-	if rest:
-		names = "\n".join(title for title, _body in rest)
-		out.append(f"::error title={len(rest)} more failures::{_escape(names)}")
 	return out
 
 

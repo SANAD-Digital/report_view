@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-globalThis.__ = (s, args) => String(s).replace(/\{(\d+)\}/g, (m, i) => (args && args[i] !== undefined ? args[i] : m));
+import "./_setup.mjs";
 const { preset_payload, preset_settings, check_choices, same_settings, default_preset, find_preset, stable, TARGET_KEYS } = await import(
 	"../../report_view/public/js/report_view/views/print_presets.js"
 );

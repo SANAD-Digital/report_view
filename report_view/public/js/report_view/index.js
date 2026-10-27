@@ -12,12 +12,10 @@ import {
 	warm_up,
 	schedule_dispose,
 	cancel_dispose,
-	dispose_engine,
-	debug_handles,
 	engine_ready,
 	ReportSession,
 } from "./engine/perspective_engine.js";
-import { fold_all, toggle_tree_node, visible_columns } from "./engine/view_config.js";
+import { fold_all, toggle_tree_node } from "./engine/view_config.js";
 import { default_state, sanitize, reconcile } from "./state/view_state.js";
 import { decode_state, make_url_updater } from "./state/url.js";
 import { sanitize_groups } from "./state/column_groups.js";
@@ -46,8 +44,11 @@ import * as dashboard_state from "./state/dashboard_state.js";
 import { ViewControls } from "./view_controls.js";
 import { NoticeBar, describe_notices } from "./components/notices.js";
 import { icons } from "./components/icons.js";
-import { wait_for_export, ExportJobError } from "./export_job.js";
-import { esc, fmt_int, session_lang, download_blob, load_user_settings, settings_saver } from "./util.js";
+import { esc, fmt_int, session_lang, settings_saver } from "./util.js";
+import { ERROR_TITLES } from "./host/error_titles.js";
+import { PagesHost } from "./host/pages_host.js";
+import { ExportFlow } from "./host/export_flow.js";
+import { DebugHooks } from "./host/debug_hooks.js";
 
 const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
 // Local preferences of this browser (the theme is not part of the view state, §7.1).
@@ -72,16 +73,6 @@ function write_pref(key, value) {
 	}
 }
 
-const ERROR_TITLES = {
-	PermissionError: () => __("You do not have permission to open this report"),
-	DoesNotExistError: () => __("Report not found"),
-	RVUnsupportedReport: () => __("This report type is not supported in Report View"),
-	RVInvalidInput: () => __("The request was not valid"),
-	RVReportError: () => __("The report raised an error"),
-	ValidationError: () => __("The report could not run"),
-	RVNoExport: () => __("You are not allowed to export this report"),
-	RVExportMismatch: () => __("The exported totals do not match the screen"),
-};
 
 function query_report_url(name, filters) {
 	const params = new URLSearchParams();
@@ -1127,240 +1118,17 @@ export class ReportViewPage {
 		});
 	}
 
-	// ------------------------------------------------------------ the Pages view (ADR-014)
-
 	/** The answer of `run` as the server sent it (ADR-006 raw_data), or null before a result. */
 	raw_data() {
 		return this.raw_cache(this.raw_kept, this.raw_report);
 	}
+}
 
-	/** What the pages print around the table: the report, its criteria and the company. */
-	pages_context() {
-		const host = this;
-		const company = this.last_filters?.company || frappe.defaults?.get_default?.("company") || null;
-		return {
-			report_name: this.report_name,
-			company: company ? String(company) : null,
-			filters: this.last_filters || {},
-			defs: this.report_settings?.filters || [],
-			group_labels: (this.state?.group?.by || []).map((k) => this.controls.title(k)),
-			// read by a report print format only (query_report.raw_data): rebuilt then
-			get raw() {
-				return host.raw_data();
-			},
-			report_settings: this.report_settings,
-		};
-	}
-
-	pages_options(company) {
-		return api.get_print_options(this.report_name, company);
-	}
-
-	pages_letterhead(name) {
-		const ctx = this.pages_context();
-		return api.render_letterhead(name, { ...ctx.filters, company: ctx.filters.company || ctx.company });
-	}
-
-	/** A report print format: a JS template as it is, a Jinja one rendered by the server. */
-	async pages_format(name, lang = null, type = null, view_columns = null) {
-		// a Jinja format known from the options is rendered at once (one request, not two)
-		const format = type === "Jinja" ? { type } : await api.get_print_format(this.report_name, name);
-		if (format.type !== "Jinja") return format;
-		const meta = (this.report_settings?.filters || []).map((df) => ({ fieldname: df.fieldname, label: __(df.label || ""), fieldtype: df.fieldtype }));
-		return api.render_print_format(this.report_name, name, this.last_filters, this.filters.js_filters(), meta, this.prepared_report_name, lang, view_columns);
-	}
-
-	/** A print heading or signature (ADR-015), rendered by the server with the filters on screen. */
-	pages_part(kind, name, lang = null, view_columns = null) {
-		const meta = (this.report_settings?.filters || []).map((df) => ({ fieldname: df.fieldname, label: __(df.label || ""), fieldtype: df.fieldtype }));
-		const render = kind === "heading" ? api.render_print_heading : api.render_print_signature;
-		return render(this.report_name, name, this.last_filters, meta, lang, view_columns);
-	}
-
-	/** The PDF of the pages (ADR-016): the server's engine prints the very sheets. */
-	pages_pdf_target() {
-		return { method: "report_view.api.pdf.pages_pdf_report", args: { report_name: this.report_name } };
-	}
-
-	/** The print presets of the pages (ADR-020): those of this report and of every report. */
-	pages_preset_target() {
-		return { context: "Report", target: this.report_name };
-	}
-
-		pages_translations(lang, messages) {
-		return api.get_translations(this.report_name, lang, messages);
-	}
-
-	/**
-	 * The report run again in another language (its labels and captions translated by the
-	 * server), normalised like the one on screen with the captions of that language. Null
-	 * when it cannot stand for the rows shown (a different result).
-	 * @param {Promise<object>} pack_p the translation pack of the language
-	 */
-	async pages_run_lang(lang, pack_p) {
-		const shown = this.report;
-		const [res, pack] = await Promise.all([
-			api.run(this.report_name, this.last_filters, this.filters.js_filters(), this.prepared_report_name, lang),
-			pack_p,
-		]);
-		if (res.message?.status !== "ok" || this.report !== shown) return null;
-		const report = await normalize_async(
-			{
-				raw: res.message.raw,
-				filters: this.last_filters,
-				report_settings: this.report_settings,
-				register: this.config,
-				server_messages: res.server_messages,
-			},
-			{ translate: (s) => pack?.[s] || s }
-		);
-		if (this.report !== shown || report.rows.length !== shown.rows.length) return null;
-		for (let i = 0; i < report.rows.length; i++) if (report.rows[i].__kind !== shown.rows[i].__kind) return null;
-		return report;
-	}
-
-	async pages_settings_load() {
-		return (await load_user_settings(this.user_settings_key(), "pages")) || null;
-	}
-
-	pages_settings_save(settings) {
-		this.pages_saver.save(this.user_settings_key(), "pages", settings);
-	}
-
-	// Export model v1 (docs/architecture.md §4.1). Quick filters travel with their definitions
-	// (ADR-013): the server applies the same expressions; an id with no definition is left
-	// out, as the screen leaves it out (a QUICK_FILTER_UNKNOWN notice).
-	export_model() {
-		const cols = visible_columns(this.report, this.state);
-		const defined = (this.config?.quick_filters || []).filter((q) => q && typeof q.id === "string" && typeof q.expression === "string");
-		const known = new Set(defined.map((q) => q.id));
-		return {
-			version: 1,
-			format: "xlsx",
-			filters: this.last_filters,
-			js_filters: this.filters.js_filters(),
-			prepared_report_name: this.prepared_report_name,
-			view_state: {
-				...this.state,
-				quick_filters: (this.state.quick_filters || []).filter((id) => known.has(id)),
-				report_filters: this.last_filters,
-			},
-			quick_filters: defined.map((q) => ({ id: q.id, expression: q.expression })),
-			scope: "all",
-			selection: null,
-			// Read from the view (§8أ.6): the facts that pass the filters and the total shown.
-			expected: this.opened.expected,
-			layout: {
-				title: __(this.report_name),
-				orientation: "landscape",
-				page_size: "A4",
-				include_filters: true,
-				include_subtotals: true,
-				include_signatures: false,
-				columns: cols.map((c) => ({ key: c.key, width: this.state.columns.widths[c.key] || c.width || null })),
-			},
-			locale: { lang: session_lang(), rtl: this.rtl },
-		};
-	}
-
-	async export_xlsx() {
-		// The file is the table's: the server exports the grid view only.
-		if (!this.opened || this.state.mode !== "grid" || this.export_job) return;
-		this.header.set_exporting(true);
-		try {
-			let out = await api.export_xlsx(this.report_name, this.export_model());
-			if (out.queued) out = await this.wait_export_job(out.queued);
-			if (!out) return;
-			this.save_file(out);
-			frappe.show_alert({ message: __("Excel file downloaded"), indicator: "green" });
-		} catch (e) {
-			// HTTP 429 and the other refusals: the server's own message, once (no retry)
-			const title = (ERROR_TITLES[e.exc_type] || (() => __("Export failed")))();
-			frappe.msgprint({ title, message: esc(e.message), indicator: "red" });
-		} finally {
-			this.header.set_exporting(false);
-		}
-	}
-
-	/**
-	 * A large export runs on the server (export_jobs): its state is asked for until it is
-	 * done, shown next to the button with a way to stop waiting, then the file is downloaded.
-	 * @returns {Promise<{blob, filename}|null>} null when the user stopped waiting
-	 */
-	async wait_export_job(queued) {
-		const job = { id: queued.job, stopped: false };
-		this.export_job = job;
-		const rows = Number(queued.row_count) || 0;
-		// stop: the server is asked to cancel the job where it says it can (`cancellable`);
-		// either way the page stops waiting for it
-		const stop = () => {
-			job.stopped = true;
-			this.header.set_export_job(null);
-			if (job.cancellable) api.export_xlsx_cancel(job.id).catch(() => frappe.show_alert?.({ message: __("The export could not be cancelled on the server; its file will not be downloaded"), indicator: "orange" }));
-		};
-		const show = (state) => {
-			const running = state === "running" ? __("Building the Excel file") : __("The Excel file is queued");
-			const text = rows ? __("{0} · {1} rows", [running, fmt_int(rows)]) : running;
-			this.header.set_export_job({ text, on_stop: stop });
-		};
-		show("queued");
-		try {
-			await wait_for_export(job.id, {
-				status: (id) => api.export_xlsx_status(id),
-				cancelled: () => job.stopped || this.export_job !== job,
-				on_state: (s) => {
-					job.cancellable = s.cancellable === true;
-					show(s.state);
-				},
-			});
-			this.header.set_export_job({ text: __("Downloading the Excel file"), on_stop: stop });
-			const file = await api.export_xlsx_download(job.id, this.report_name);
-			return job.stopped ? null : file;
-		} catch (e) {
-			if (!(e instanceof ExportJobError)) throw e;
-			if (e.reason === "cancelled") return null;
-			const message =
-				e.reason === "timeout" ? __("The Excel file is taking longer than expected. Try again in a few minutes.") : e.message || __("The Excel file could not be prepared.");
-			throw Object.assign(new Error(message), { exc_type: null });
-		} finally {
-			if (this.export_job === job) this.export_job = null;
-			this.header.set_export_job(null);
-		}
-	}
-
-	save_file({ blob, filename }) {
-		download_blob(blob, filename);
-	}
-
-	// Raw values read by the Playwright test: totals of the current view.
-	debug_totals() {
-		return this.opened ? { mode: this.result.mode, totals: this.opened.expected.totals } : null;
-	}
-
-	// What the pivot shows (read by the Playwright tests).
-	debug_pivot() {
-		const o = this.pivot_opened;
-		if (!o) return null;
-		return {
-			rows: o.post.rows,
-			cols: o.post.cols,
-			values: o.post.values.map((v) => ({ key: v.key, agg: v.agg, name: v.name })),
-			column_paths: o.column_paths,
-			body_rows: o.body_rows,
-			total: o.total,
-			blocked: o.post.blocked,
-			shown: this.pivot.current === o && Boolean(this.pivot.rt),
-		};
-	}
-
-	// Views and tables not deleted yet (development counter, §8أ.3).
-	debug_handles() {
-		return debug_handles();
-	}
-
-	// What the idle timer does a minute after the page was left: used by the tests.
-	debug_dispose_engine() {
-		return dispose_engine();
+// Methods of ReportViewPage kept in host/*.js, one module per concern, installed on its
+// prototype (as views/pages_view.js does): one object and one `this` for every caller.
+for (const part of [PagesHost, ExportFlow, DebugHooks]) {
+	for (const [name, d] of Object.entries(Object.getOwnPropertyDescriptors(part.prototype))) {
+		if (name !== "constructor") Object.defineProperty(ReportViewPage.prototype, name, d);
 	}
 }
 

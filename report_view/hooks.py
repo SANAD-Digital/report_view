@@ -261,7 +261,8 @@ scheduler_events = {
 # Testing
 # -------
 
-# before_tests = "report_view.install.before_tests"
+# a fresh site gets its setup wizard (company, fiscal year) before the tests
+before_tests = "report_view.install.before_tests"
 
 # Extend DocType Class
 # ------------------------------

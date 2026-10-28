@@ -61,9 +61,11 @@
   --z-scrim:1039; --z-pop:1040; --z-dropdown:1050;
   /* radii: Frappe's scale (--radius is the radius of its buttons and fields) */
   --r-xs:var(--radius-1); --r-sm:var(--radius-3); --r:var(--radius); --r-lg:var(--radius-md); --r-xl:var(--radius-lg);
-  /* density, comfortable: Frappe's sizes. The rows are those of Frappe's report grid
-     (frappe-datatable: body cells 33px, header rows 35px), which has no variable for them. */
-  --rh:33px; --fs:var(--text-base); --fs-sm:var(--text-sm); --fs-xs:var(--text-xs); --cp:var(--padding-sm);
+  /* density, comfortable: Frappe's sizes. The header rows are those of Frappe's report grid
+     (frappe-datatable: 35px), which has no variable for them; the body rows are the roomier
+     ones of the approved table design (canvas "Report tables and row details": 40px with
+     their line). --rd-btn: the row details button of the first column. */
+  --rh:39px; --rd-btn:24px; --fs:var(--text-base); --fs-sm:var(--text-sm); --fs-xs:var(--text-xs); --cp:var(--padding-sm);
   --bh:var(--list-row-height); --hh:35px; --fh:35px; --ctl:var(--input-height); --ctl-sm:calc(var(--input-height) - 4px);
   --gap:var(--margin-sm); --pad:var(--padding-md); --ind:18px;
   /* the text of the ECharts plots (axes, labels, tooltips): the size of Frappe Charts' values */
@@ -76,7 +78,7 @@
   --rh:var(--input-height); --fs:var(--text-sm); --fs-sm:var(--text-xs); --fs-xs:var(--text-2xs); --cp:var(--padding-xs);
   --bh:var(--input-height); --hh:var(--input-height); --fh:var(--list-row-height);
   --ctl:calc(var(--input-height) - 4px); --ctl-sm:calc(var(--input-height) - 8px);
-  --gap:var(--margin-xs); --pad:var(--padding-sm); --ind:14px;
+  --gap:var(--margin-xs); --pad:var(--padding-sm); --ind:14px; --rd-btn:20px;
 }
 /* Frappe's dark theme: only what Frappe has no variable for (the paper's shadow, the pinned edge) */
 [data-theme=dark] .rv{--pp-shadow:0 2px 14px rgba(0,0,0,.5); --pin-sh:-6px 0 8px -6px rgba(0,0,0,.55)}

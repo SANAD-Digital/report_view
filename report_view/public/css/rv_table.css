@@ -160,3 +160,36 @@
 /* A report formatter builds on query-report's default_formatter, whose numbers come in
    <div style="text-align: right">: the cell keeps its own alignment (end, RTL aware). */
 .rv .rv-n div,.rv .rv-pin-label div{display:inline;text-align:inherit !important}
+
+/* ---------- the approved look (canvas "Report tables and row details", Odoo's Trial Balance) ----------
+   The column groups are boxes over their columns: the band cell outlined on its top and
+   sides, the header's soft background; the groups take turns to be shaded (.shade, the
+   opening and closing balances of a trial balance) down to the last row. Header titles are
+   quieter than the bands; numbers are tabular and end-aligned; the debit and credit sides
+   keep the text colour (a negative is the semantic red, a zero muted); the totals row is
+   bold under a strong rule. */
+.rv regular-table thead th{background:var(--surface)}
+.rv regular-table thead th.rv-hd{font-weight:var(--fw-m);color:var(--tx-2)}
+.rv regular-table thead th.rv-hb{font-size:var(--fs-sm);font-weight:var(--fw-b);color:var(--tx);border-bottom:0;border-inline-end:0}
+.rv regular-table thead th.rv-hb:not(.empty){background:var(--hdr);box-shadow:inset 0 1px 0 var(--line-2),inset 1px 0 0 var(--line-2),inset -1px 0 0 var(--line-2);border-start-start-radius:var(--r);border-start-end-radius:var(--r)}
+.rv regular-table thead th.shade,.rv regular-table tbody td.shade{background:var(--surface-2)}
+.rv regular-table thead th.rv-hd.shade:hover{background:var(--hover)}
+.rv regular-table td.num,.rv-row .rv-c.num{font-variant-numeric:tabular-nums}
+.rv regular-table td.dr .rv-n,.rv regular-table td.cr .rv-n{color:var(--tx)}
+.rv regular-table td.neg .rv-n,.rv regular-table td.cr.neg .rv-n{color:var(--err)}
+.rv regular-table td.zero .rv-n{color:var(--tx-4)}
+.rv-rt-bottom .rv-c.dr .rv-n,.rv-rt-bottom .rv-c.cr .rv-n,.rv-rt-top .rv-c.dr .rv-n,.rv-rt-top .rv-c.cr .rv-n{color:inherit}
+.rv-rt-bottom .rv-c.neg .rv-n,.rv-rt-top .rv-c.neg .rv-n{color:var(--err)}
+.rv-rt-bottom .rv-c.zero .rv-n,.rv-rt-top .rv-c.zero .rv-n{color:var(--tx-4)}
+.rv-row.rv-rt-total{border-top:2px solid var(--tx)}
+.rv-rt-bottom .rv-c.shade,.rv-rt-top .rv-c.shade{background:var(--surface-2)}
+/* the row the details panel shows */
+.rv regular-table tbody tr.rv-open > *{background:var(--sel)}
+
+/* ---------- row details button (.rv-rd-btn) in the label column ---------- */
+/* Before the indent: the same place in every row; groups and totals keep its room empty. */
+.rv regular-table .rv-lc > .rv-rd-btn,.rv regular-table .rv-lc > .rv-rd-sp{flex:none;width:var(--rd-btn);height:var(--rd-btn);margin-inline-start:calc(-1 * var(--lv,0) * var(--ind));margin-inline-end:calc(var(--lv,0) * var(--ind) + var(--gap))}
+.rv-rd-btn{display:inline-flex;align-items:center;justify-content:center;padding:0;border:1px solid transparent;border-radius:var(--r-sm);background:transparent;color:var(--tx-4);opacity:.55;cursor:pointer;transition:opacity .12s,color .12s,background-color .12s}
+.rv regular-table tbody tr:hover .rv-rd-btn,.rv regular-table tbody tr.rv-open .rv-rd-btn,.rv-rd-btn:focus-visible{opacity:1;color:var(--tx);background:var(--surface);border-color:var(--line-2)}
+.rv-rd-btn:focus-visible{outline:2px solid var(--focus,var(--pri));outline-offset:-1px}
+@media (hover:none){.rv-rd-btn{opacity:.8}}

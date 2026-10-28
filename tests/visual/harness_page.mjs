@@ -207,6 +207,13 @@ async function main() {
 			};
 			return { rows, fields, dropped_fields: [] };
 		}
+		// ADR-023: a row's details as the server renders the report's template with the row
+		if (method === "report_view.api.render_row_details") {
+			window.RV_ROW_CALLS = [...(window.RV_ROW_CALLS || []), JSON.parse(JSON.stringify(args))];
+			const row = typeof args.row === "string" ? JSON.parse(args.row) : args.row;
+			const text = (v) => String(v ?? "").replace(/[<>&"]/g, (c) => `&#${c.charCodeAt(0)};`);
+			return { html: `<h1 class="rd-t">${text(row.account_name || row.account)}</h1><p class="rd-v">${text(row.closing_debit)}</p>`, css: ".rd-t{font-size:18px}" };
+		}
 		if (method.startsWith("report_view.api.print_presets.")) return preset_server(method.split(".").pop(), args);
 		throw new Error(`harness: no stub for ${method}`);
 	};

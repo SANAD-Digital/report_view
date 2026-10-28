@@ -120,6 +120,10 @@ export class GridRows {
 		data.forEach((d, i) => {
 			d.band_end = Boolean(d.band) && data[i + 1]?.band !== d.band;
 		});
+		// The column groups take turns to be shaded, from the first (the design: the opening and
+		// closing balances shaded, the period's movement between them not).
+		const band_order = [...new Set(data.map((d) => d.band).filter(Boolean))];
+		for (const d of data) d.shade = Boolean(d.band) && band_order.indexOf(d.band) % 2 === 0;
 		const levels = data.some((d) => d.band) ? 2 : 1;
 		// Header rows: the bands (when any), the titles, then the floating filters. Title and
 		// filter cells are elements of components/header_cells.js, the same ones every draw.
@@ -362,7 +366,8 @@ export class GridRows {
 	/**
 	 * The label cell of a record.
 	 * @param {object} rec
-	 * @param {object} [opts] {foot_label(text): the subtotal caption in another language}
+	 * @param {object} [opts] {foot_label(text): the subtotal caption in another language,
+	 *   lead: markup before the indent (the table's row details button)}
 	 */
 	label_html(rec, opts = {}) {
 		const m = this.model;
@@ -391,7 +396,7 @@ export class GridRows {
 					: fmt.value_html(m.label, rec.row);
 			inner = `${lead}${label}${rec.parent ? fmt.count_html(rec.count) : ""}`;
 		}
-		return `<div class="rv-lc" style="--lv:${Number(rec.depth) || 0}">${inner}</div>`;
+		return `<div class="rv-lc" style="--lv:${Number(rec.depth) || 0}">${opts.lead || ""}${inner}</div>`;
 	}
 
 	// A summary row of the report standing in the body among the facts (shape "report").

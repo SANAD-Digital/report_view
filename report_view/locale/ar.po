@@ -4096,3 +4096,34 @@ msgstr "تفاصيل الصف لهذا التقرير بلا قالب يُعرض
 
 msgid "{0} is not valid"
 msgstr "{0} غير صالح"
+
+msgid "All fields of the row"
+msgstr "كل بيانات السطر"
+
+msgid "Choose one in Report View Settings."
+msgstr "اختر واحداً في إعدادات Report View."
+
+msgid "Next row"
+msgstr "السطر التالي"
+
+msgid "Previous row"
+msgstr "السطر السابق"
+
+msgid "No print format is set for this report's row details"
+msgstr "لم يُحدَّد قالب طباعة لتفاصيل السطر في هذا التقرير"
+
+msgid "Open {0}"
+msgstr "فتح {0}"
+
+msgid "Row details are not configured for this report"
+msgstr "تفاصيل السطر غير مُعدّة لهذا التقرير"
+
+msgid "The row details could not be shown"
+msgstr "تعذّر عرض تفاصيل السطر"
+
+msgid "↑ ↓ to move between rows"
+msgstr "↑ ↓ للتنقل بين الأسطر"
+
+msgctxt "Report View"
+msgid "Row details"
+msgstr "تفاصيل السطر"

@@ -417,3 +417,78 @@
 .rv-fontpick-opt .n{font-size:13.5px}
 .rv-fontpick-opt .s{font-size:15px}
 .rv-fontpick-none{margin:0;padding:10px 8px;font-size:var(--fs-xs);color:var(--tx-3)}
+
+/* ---------- row details (components/row_details.js; canvas Drawer.dc.html, Dialog.dc.html) ---------- */
+.rv-rd-scrim{position:fixed;inset:0;z-index:var(--z-scrim);background:var(--scrim);animation:rv-rd-fade .16s ease-out}
+.rv-rd{position:fixed;z-index:var(--z-pop);display:flex;flex-direction:column;min-height:0;background:var(--surface);color:var(--tx);box-shadow:var(--sh-drawer);outline:0;font-size:var(--fs)}
+.rv-rd-drawer{top:0;bottom:0;inset-inline-end:0;width:min(100vw,var(--rd-w));animation:rv-rd-slide .2s ease-out}
+.rv-rd-drawer.w-narrow{--rd-w:420px}
+.rv-rd-drawer.w-medium{--rd-w:520px}
+.rv-rd-drawer.w-wide{--rd-w:720px}
+.rv-rd-dialog{inset:0;margin:auto;width:min(calc(100vw - 2 * var(--pad)),var(--rd-w));height:min(calc(100vh - 6 * var(--pad)),860px);border-radius:var(--r-xl);overflow:hidden;animation:rv-rd-fade .16s ease-out}
+.rv-rd-dialog.w-narrow{--rd-w:560px}
+.rv-rd-dialog.w-medium{--rd-w:800px}
+.rv-rd-dialog.w-wide{--rd-w:1040px}
+@keyframes rv-rd-fade{from{opacity:0}}
+@keyframes rv-rd-slide{from{opacity:0;margin-inline-end:-24px}}
+@media (prefers-reduced-motion:reduce){.rv-rd,.rv-rd-scrim{animation:none}}
+
+.rv-rd-hd{flex:none;display:flex;align-items:flex-start;gap:var(--gap);padding:var(--padding-lg,20px) var(--padding-lg,20px) var(--pad);border-bottom:1px solid var(--line)}
+.rv-rd-hgroup{flex:1;min-width:0}
+.rv-rd-sub{font-size:var(--fs-xs);color:var(--tx-3)}
+.rv-rd-heading{display:flex;align-items:baseline;gap:var(--gap);margin-top:4px;min-width:0}
+.rv-rd-code{flex:none;color:var(--tx-3);font-size:var(--fs);font-variant-numeric:tabular-nums}
+.rv-rd-title{margin:0;min-width:0;font-size:var(--text-lg,16px);font-weight:var(--fw-b);color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-rd-icon{flex:none;width:var(--ctl);height:var(--ctl);display:inline-flex;align-items:center;justify-content:center;padding:0;border:1px solid var(--line-2);border-radius:var(--r);background:var(--btn-bg);color:var(--tx-2);cursor:pointer}
+.rv-rd-icon:hover{background:var(--btn-bg-h);color:var(--tx)}
+.rv-rd-icon.ghost{border-color:transparent;background:transparent}
+.rv-rd-icon.ghost:hover{background:var(--btn-ghost-h)}
+.rv-rd :focus-visible{outline:2px solid var(--focus,var(--pri));outline-offset:1px}
+
+.rv-rd-body{flex:1;min-height:0;overflow:auto;padding:var(--padding-lg,20px);display:flex;flex-direction:column;gap:var(--padding-lg,20px);outline:0}
+.rv-rd-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap)}
+.rv-rd-tile{min-width:0;padding:var(--pad);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface-2)}
+.rv-rd-tile-k{font-size:var(--fs-xs);color:var(--tx-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-rd-tile-v{margin-top:4px;font-size:var(--text-lg,16px);font-weight:var(--fw-b);font-variant-numeric:tabular-nums;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-rd-tile-v.neg{color:var(--err)}
+.rv-rd-tile-v.zero{color:var(--tx-4)}
+.rv-rd-sec h3{margin:0 0 var(--gap);font-size:var(--fs);font-weight:var(--fw-b);color:var(--tx)}
+.rv-rd-fields{margin:0;display:grid;grid-template-columns:minmax(120px,40%) minmax(0,1fr);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.rv-rd-fields dt,.rv-rd-fields dd{margin:0;padding:var(--cp) var(--pad);border-bottom:1px solid var(--line);min-width:0;overflow-wrap:anywhere}
+.rv-rd-fields dt{color:var(--tx-3);background:var(--surface-2);font-weight:var(--fw)}
+.rv-rd-fields dd{font-weight:var(--fw-m);color:var(--tx)}
+.rv-rd-fields dt:nth-last-of-type(1),.rv-rd-fields dd:last-child{border-bottom:0}
+.rv-rd-fields dd.num{font-variant-numeric:tabular-nums}
+.rv-rd-fields dd.neg{color:var(--err)}
+.rv-rd-fields dd.zero{color:var(--tx-4)}
+.rv-rd-fields a{color:inherit;text-decoration:underline;text-decoration-color:var(--line-3);text-underline-offset:3px}
+.rv-rd-empty{color:var(--tx-4)}
+.rv-rd-state{margin:auto;max-width:360px;text-align:center;color:var(--tx-3)}
+.rv-rd-state-t{font-weight:var(--fw-b);color:var(--tx)}
+.rv-rd-state-s{margin-top:4px;font-size:var(--fs-sm)}
+/* the server's template: a page on the backdrop of a print preview */
+.rv-rd-body:has(> .rv-rd-paper){background:var(--surface-3);padding:var(--padding-lg,20px)}
+.rv-rd-paper{display:flex;justify-content:center}
+.rv-rd-frame{display:block;width:100%;max-width:720px;min-height:240px;border:0;background:var(--pp-bg);box-shadow:var(--pp-shadow)}
+
+.rv-rd-ft{flex:none;display:flex;align-items:center;gap:var(--gap);padding:var(--pad) var(--padding-lg,20px);border-top:1px solid var(--line)}
+.rv-rd-actions{display:flex;flex-wrap:wrap;gap:var(--gap);min-width:0}
+.rv-rd-actions:empty{display:none}
+.rv-rd-act{display:inline-flex;align-items:center;height:var(--ctl);padding:0 var(--pad);border:1px solid var(--line-2);border-radius:var(--r);background:var(--btn-bg);color:var(--tx);font:inherit;text-decoration:none;cursor:pointer;white-space:nowrap}
+.rv-rd-act:hover{background:var(--btn-bg-h);color:var(--tx);text-decoration:none}
+.rv-rd-act.pri{border-color:transparent;background:var(--pri);color:var(--on-pri);font-weight:var(--fw-b)}
+.rv-rd-act.pri:hover{background:var(--pri-h);color:var(--on-pri)}
+.rv-rd-hint{margin-inline-start:auto;font-size:var(--fs-xs);color:var(--tx-4);white-space:nowrap}
+
+/* a phone: the drawer is a bottom sheet, the dialog nearly the window */
+@media (max-width:900px){
+  .rv-rd-drawer{top:auto;bottom:0;inset-inline:0;width:auto;max-height:85vh;border-start-start-radius:var(--r-xl);border-start-end-radius:var(--r-xl);animation:rv-rd-fade .16s ease-out}
+  .rv-rd-dialog{width:calc(100vw - 2 * var(--gap));height:calc(100vh - 4 * var(--gap))}
+  .rv-rd-hint{display:none}
+}
+@media (max-width:480px){
+  .rv-rd-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rv-rd-fields{grid-template-columns:minmax(0,1fr)}
+  .rv-rd-fields dt{border-bottom:0;padding-bottom:0}
+  .rv-rd-fields dd{padding-top:2px}
+}

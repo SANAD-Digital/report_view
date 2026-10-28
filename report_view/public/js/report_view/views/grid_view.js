@@ -23,8 +23,9 @@ import { RtView, css_int } from "./rt_base.js";
 import { GridRows } from "./grid_rows.js";
 import { build_layout, expanded_from_paths } from "../engine/row_layout.js";
 import { esc } from "../util.js";
+import { details_button_html } from "../components/row_details.js";
 
-const CELL_CLASSES = ["num", "dr", "cr", "band-end", "zero", "neg"];
+const CELL_CLASSES = ["num", "dr", "cr", "band-end", "shade", "zero", "neg"];
 
 export class GridView extends RtView {
 	/**
@@ -35,13 +36,21 @@ export class GridView extends RtView {
 	 * @param {(expanded: "all"|"none"|Array) => void} opts.on_fold_changed a group was opened or closed
 	 * @param {(key: string, width: number) => void} opts.on_column_resized a column got a new width
 	 * @param {import("../components/header_cells.js").HeaderCells} opts.cells title and filter cells of the headers
+	 * @param {(at: {y: number, row: object, opener: HTMLElement}) => void} [opts.on_row_details] a row's details button was pressed
 	 */
-	constructor({ parent, rtl, on_tree_toggle, on_fold_changed, on_column_resized, cells }) {
+	constructor({ parent, rtl, on_tree_toggle, on_fold_changed, on_column_resized, cells, on_row_details }) {
 		super({ parent, rtl });
 		this.cells = cells;
 		this.on_tree_toggle = on_tree_toggle || (() => {});
 		this.on_fold_changed = on_fold_changed || (() => {});
 		this.on_column_resized = on_column_resized || (() => {});
+		this.on_row_details = on_row_details || (() => {});
+		// the rows of the table were laid out again: a details panel on one of them closes
+		this.on_relayout = () => {};
+		// the report rows carry a details button (Report View Settings row_details, ADR-023)
+		this.details = false;
+		// the display row the details panel shows, marked in the table
+		this.detail_y = null;
 		this.layout = null;
 		this.rows = new GridRows({ cells });
 		this.refocus = null;
@@ -93,6 +102,7 @@ export class GridView extends RtView {
 		this.body_rows = this.layout.size;
 		this.epoch += 1;
 		this.windows = [];
+		this.on_relayout();
 	}
 
 	host_markup() {
@@ -125,6 +135,7 @@ export class GridView extends RtView {
 
 	cleared() {
 		this.layout = null;
+		this.on_relayout();
 	}
 
 	// ------------------------------------------------------------ data model
@@ -209,6 +220,13 @@ export class GridView extends RtView {
 
 	// A caret is a <button>: Enter and Space arrive here as clicks.
 	click(event) {
+		const details = event.target.closest?.(".rv-rd-btn");
+		if (details && this.rt?.contains(details)) {
+			event.preventDefault();
+			const at = this.record_at(details.closest("th"));
+			if (at && at.rec.type === "row") this.on_row_details({ y: at.y, row: at.rec.row, opener: details });
+			return;
+		}
 		const button = event.target.closest?.(".rv-caret");
 		if (!button || !this.rt?.contains(button)) return;
 		event.preventDefault();
@@ -254,6 +272,72 @@ export class GridView extends RtView {
 			th.querySelector(".rv-caret")?.focus();
 			return;
 		}
+	}
+
+	// ------------------------------------------------------------ row details (ADR-023)
+
+	// The button of a report row; the same room, empty, before a group or a total.
+	details_lead(rec) {
+		return rec.type === "row" && !this.rows.is_summary(rec) ? details_button_html() : '<span class="rv-rd-sp"></span>';
+	}
+
+	/**
+	 * The report row before or after a display row (groups, totals and spacers are passed
+	 * over), read as the table reads its windows.
+	 * @returns {Promise<{y: number, row: object}|null>}
+	 */
+	async step_row(y, dir, chunk = 32, limit = 8) {
+		const cur = this.current;
+		const layout = this.layout;
+		if (!cur || !layout) return null;
+		const epoch = this.epoch;
+		let at = y;
+		for (let n = 0; n < limit; n++) {
+			const y0 = dir > 0 ? at + 1 : Math.max(0, at - chunk);
+			const rows = dir > 0 ? Math.min(chunk, layout.size - y0) : at - y0;
+			if (rows <= 0) return null;
+			const plan = this.rows.plan(layout, y0, rows);
+			const recs = await this.rows.read_records(cur, plan, layout);
+			if (this.epoch !== epoch || this.current !== cur) return null;
+			for (let i = 0; i < rows; i++) {
+				const yy = dir > 0 ? y0 + i : y0 + rows - 1 - i;
+				const rec = recs.get(yy);
+				if (rec && rec.type === "row" && !this.rows.is_summary(rec)) return { y: yy, row: rec.row };
+			}
+			at = dir > 0 ? y0 + rows - 1 : y0;
+		}
+		return null;
+	}
+
+	/** The row the details panel shows (null: none), marked in the table and kept on screen. */
+	mark_details(y) {
+		this.detail_y = y;
+		const rt = this.rt;
+		if (!rt) return;
+		for (const tr of rt.querySelectorAll("tbody tr")) {
+			const meta = tr.firstElementChild && rt.getMeta(tr.firstElementChild);
+			tr.classList.toggle("rv-open", y !== null && meta?.y === y);
+		}
+		if (y === null) return;
+		const rh = this.row_height;
+		const fit = Math.max(1, Math.floor((rt.clientHeight - this.header_height) / rh) - 1);
+		const top = rt.scrollTop / rh;
+		if (y < top) rt.scrollTop = y * rh;
+		else if (y > top + fit - 1) rt.scrollTop = (y - fit + 1) * rh;
+	}
+
+	/** The focus to the details button of a display row, when it is drawn. */
+	focus_details(y) {
+		const rt = this.rt;
+		if (!rt) return false;
+		for (const th of rt.querySelectorAll("tbody tr > th:first-child")) {
+			if (rt.getMeta(th)?.y !== y) continue;
+			const button = th.querySelector(".rv-rd-btn");
+			if (!button) return false;
+			button.focus({ preventScroll: true });
+			return true;
+		}
+		return false;
 	}
 
 	// ------------------------------------------------------------ column widths (#39)
@@ -321,6 +405,7 @@ export class GridView extends RtView {
 			th.classList.toggle("empty", !leaf && !filter && !text);
 			th.classList.toggle("num", Boolean(col?.numeric));
 			th.classList.toggle("band-end", Boolean(col?.band_end));
+			th.classList.toggle("shade", Boolean(col?.shade) && (leaf || filter));
 			if (col && leaf) shown.push(meta.x);
 			if (leaf) {
 				leaves.push({ th, text, col, head, x: meta.x });
@@ -348,7 +433,7 @@ export class GridView extends RtView {
 					tr.className = "rv-tr stale";
 					continue;
 				}
-				tr.className = this.row_class(rec);
+				tr.className = meta.y === this.detail_y ? `${this.row_class(rec)} rv-open` : this.row_class(rec);
 				const stamp = `${this.epoch}:${meta.y}`;
 				for (let cell = lead; cell; cell = cell.nextElementSibling) {
 					const cm = cell === lead ? meta : rt.getMeta(cell);
@@ -357,7 +442,7 @@ export class GridView extends RtView {
 					const cell_stamp = `${stamp}:${head >= 0 ? `h${head}` : cm.x}`;
 					if (this.rendered.get(cell) === cell_stamp && cell.firstElementChild) continue;
 					if (head === 0) {
-						cell.innerHTML = rec.type === "spacer" ? "" : this.rows.label_html(rec);
+						cell.innerHTML = rec.type === "spacer" ? "" : this.rows.label_html(rec, this.details ? { lead: this.details_lead(rec) } : undefined);
 					} else {
 						const col = head > 0 ? m.pinned[head - 1] : m.data[cm.x];
 						if (!col) continue;
@@ -369,6 +454,7 @@ export class GridView extends RtView {
 								dr: col.side === "dr",
 								cr: col.side === "cr",
 								"band-end": col.band_end,
+								shade: col.shade,
 								zero: out.sign === "zero",
 								neg: out.sign === "neg",
 							},
@@ -389,7 +475,7 @@ export class GridView extends RtView {
 		const m = this.model;
 		const cell = (d) => {
 			const out = cell_of(d);
-			const classes = ["rv-c", d.numeric && "num", d.side, d.band_end && "band-end", out.sign].filter(Boolean).join(" ");
+			const classes = ["rv-c", d.numeric && "num", d.side, d.band_end && "band-end", d.shade && "shade", out.sign].filter(Boolean).join(" ");
 			return { classes, html: out.html };
 		};
 		const heads = m.pinned.map((d, i) => {

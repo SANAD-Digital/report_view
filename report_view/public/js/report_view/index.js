@@ -50,6 +50,7 @@ import { ERROR_TITLES } from "./host/error_titles.js";
 import { PagesHost } from "./host/pages_host.js";
 import { ExportFlow } from "./host/export_flow.js";
 import { DebugHooks } from "./host/debug_hooks.js";
+import { make_row_details } from "./host/row_details_host.js";
 
 const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
 // Local preferences of this browser (the density; the theme is Desk's own, ADR-022).
@@ -191,7 +192,10 @@ export class ReportViewPage {
 			on_tree_toggle: (rid) => this.toggle_tree(rid),
 			on_fold_changed: (expanded) => this.save_fold(expanded),
 			on_column_resized: (key, width) => this.save_width(key, width),
+			on_row_details: (at) => this.row_details.open(at),
 		});
+		// the button in the first column of a row: its details (Report View Settings, ADR-023)
+		this.row_details = make_row_details(this);
 		this.pivot = new PivotView({
 			parent: this.$(".rv-pivotgrid"),
 			rtl: this.rtl,
@@ -712,6 +716,7 @@ export class ReportViewPage {
 		this.header.set_report({ can_export: Boolean(this.meta.perms?.can_export), can_print, features: f });
 		this.toolbar.set_report({ can_print, modes: this.modes(), search: f.quick_search });
 		this.cells.floating = f.column_filters;
+		this.row_details.configure(this.meta);
 		this.apply_density();
 		if (frappe.breadcrumbs && this.meta.report?.module) frappe.breadcrumbs.add(this.meta.report.module);
 

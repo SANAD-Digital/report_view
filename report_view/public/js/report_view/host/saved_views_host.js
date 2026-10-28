@@ -42,7 +42,8 @@ export class SavedViewsHost {
 			rtl: this.rtl,
 			on: {
 				open: () => this.reload_views(),
-				apply: (name) => this.apply_saved_view(name),
+				// the last apply, kept so a caller (the tests) can wait for it to be drawn
+				apply: (name) => (this.view_job = this.apply_saved_view(name)),
 				save: () => this.save_view_over(),
 				save_new: () => this.save_view_new(),
 				edit: () => this.edit_view(),

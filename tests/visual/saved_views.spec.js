@@ -51,6 +51,8 @@ async function apply(page, name) {
 	await open_menu(page);
 	await page.click(`.rv-views-pop [data-apply="${name}"]`);
 	await expect(page.locator(".rv-views-pop")).toHaveCount(0);
+	// the apply drawn (its view opened, the grid shown), then the table settled
+	await page.evaluate(() => window.rv_page.view_job);
 	await page.waitForFunction((n) => (window.rv_page.applied_view?.name || "") === n, name);
 	await page.waitForFunction(() => window.rv_page.opened && window.rv_page.grid.current === window.rv_page.opened && window.rv_page.grid.rt);
 	await settle(page);
@@ -160,7 +162,8 @@ test("views: a view shared by another user is applied, never written; «Save as 
 	await expect(page.locator(".rv-views-pop [data-apply]")).toHaveCount(2);
 	await expect(page.locator(".rv-views-pop [data-apply='sv-0'] .meta")).toContainText("By sara");
 	await page.click(".rv-views-pop [data-apply='sv-0']");
-	await page.waitForFunction(() => window.rv_page.applied_view?.name === "sv-0");
+	await page.evaluate(() => window.rv_page.view_job);
+	await page.waitForFunction(() => window.rv_page.applied_view?.name === "sv-0" && window.rv_page.grid.current === window.rv_page.opened && window.rv_page.grid.rt);
 	await settle(page);
 	let st = await views_state(page);
 	expect(st.sort).toEqual(SORTED.sort);

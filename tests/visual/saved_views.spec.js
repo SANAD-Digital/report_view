@@ -91,8 +91,9 @@ test("views: save as new, the changed dot, save over, the standard view, apply, 
 	// a change: the dot, and the link carries the changed state
 	await page.evaluate(() => window.rv_page.controls.toggle_sort("closing_debit"));
 	await settle(page);
+	// the dot follows the link, written 300 ms after the view is drawn (later on a slow runner)
+	await expect.poll(async () => (await views_state(page)).dot, { timeout: 10_000 }).toBe(true);
 	q = await link(page);
-	expect((await views_state(page)).dot).toBe(true);
 	expect(q.view).toBe(st.store[0].name);
 	expect(q.rv).toBeTruthy();
 	await open_menu(page);
@@ -100,8 +101,7 @@ test("views: save as new, the changed dot, save over, the standard view, apply, 
 	await shot(page, "views-menu-changed-light-ltr");
 	await page.click('.rv-views-pop [data-act="save"]');
 	await expect.poll(async () => (await views_state(page)).store[0].state.sort.length).toBe(1);
-	await page.waitForTimeout(450);
-	expect((await views_state(page)).dot).toBe(false);
+	await expect.poll(async () => (await views_state(page)).dot, { timeout: 10_000 }).toBe(false);
 	const saved_sort = (await views_state(page)).store[0].state.sort;
 	await page.keyboard.press("Escape");
 	// the standard view: no view applied, nothing in the link
@@ -219,11 +219,10 @@ test("views: the default opens; a link opens its view; a view not there for the 
 	const rv = Buffer.from(JSON.stringify({ v: 1, sort: [{ key: "debit", dir: "asc" }] })).toString("base64url");
 	await open(page, `report=tb&lang=en&views=${enc(views)}&view=sv-0&rv=${rv}`);
 	await settle(page);
-	await page.waitForTimeout(450);
+	await expect.poll(async () => (await views_state(page)).dot, { timeout: 10_000 }).toBe(true);
 	st = await views_state(page);
 	expect(st.applied).toBe("sv-0");
 	expect(st.sort).toEqual([{ key: "debit", dir: "asc" }]);
-	expect(st.dot).toBe(true);
 	expect(problems).toEqual([]);
 });
 

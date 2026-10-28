@@ -3769,3 +3769,330 @@ msgstr "متغيرات صفحة الطباعة (ADR-024)، تُحرَّر بزر
 msgctxt "Print Format"
 msgid "Variables"
 msgstr "المتغيرات"
+
+msgid "Report View Settings"
+msgstr "إعدادات Report View"
+
+msgid "Report View settings"
+msgstr "إعدادات Report View"
+
+msgid "The report these settings are for: one record per report"
+msgstr "التقرير الذي تخصه هذه الإعدادات: سجل واحد لكل تقرير"
+
+msgid "Enabled in Report View"
+msgstr "مفعّل في Report View"
+
+msgid "Off: the standard report shows no button to Report View, and the Report View page says the report is not enabled"
+msgstr "عند الإطفاء: لا يظهر زر Report View في التقرير القياسي، وتقول صفحة Report View إن التقرير غير مفعّل"
+
+msgid "A note for the people who maintain these settings"
+msgstr "ملاحظة لمن يتولّى هذه الإعدادات"
+
+msgid "What the report shows"
+msgstr "ما يظهر في التقرير"
+
+msgid "Every tool is on by default: the report then looks exactly as without these settings. A tool turned off is hidden everywhere (its button, tab, panel and menu entries) and a link that asks for it opens the default view."
+msgstr "كل الأدوات مفعّلة افتراضياً، فيبدو التقرير كما هو بدون هذه الإعدادات. الأداة المطفأة تختفي من كل مكان (زرها وتبويبها ولوحتها وبنود قوائمها)، والرابط الذي يطلبها يفتح العرض الافتراضي."
+
+msgid "Grouping and columns"
+msgstr "التجميع والأعمدة"
+
+msgid "Row grouping"
+msgstr "تجميع الصفوف"
+
+msgid "The row-group bar, Group by in the column menu and the search options, dragging a column to group"
+msgstr "شريط تجميع الصفوف، و«تجميع حسب» في قائمة العمود وخيارات البحث، وسحب عمود للتجميع"
+
+msgid "The subtotal rows of groups and of the report tree, and their switch"
+msgstr "صفوف المجاميع الفرعية للمجموعات ولشجرة التقرير، ومفتاحها"
+
+msgid "The Column groups button and its dialog"
+msgstr "زر مجموعات الأعمدة ونافذته"
+
+msgid "Pin columns"
+msgstr "تثبيت الأعمدة"
+
+msgid "Pin left / right / No pin in the column menu"
+msgstr "التثبيت يساراً / يميناً / بلا تثبيت في قائمة العمود"
+
+msgid "Density switch"
+msgstr "مفتاح الكثافة"
+
+msgid "Comfortable / Compact in the page head (off: always comfortable)"
+msgstr "مريح / مضغوط في رأس الصفحة (عند الإطفاء: مريح دائماً)"
+
+msgid "Search and filters"
+msgstr "البحث والفلاتر"
+
+msgid "Search box"
+msgstr "مربع البحث"
+
+msgid "The search and filter box of the toolbar"
+msgstr "مربع البحث والتصفية في شريط الأدوات"
+
+msgid "Column filters"
+msgstr "فلاتر الأعمدة"
+
+msgid "The filter row under the column titles and Filter values in the column menu"
+msgstr "صف الفلاتر تحت عناوين الأعمدة، و«تصفية القيم» في قائمة العمود"
+
+msgid "Value lists"
+msgstr "قوائم القيم"
+
+msgid "Filtering a text column by a list of its values (in the filter row, the filters panel and the search)"
+msgstr "تصفية عمود نصي بقائمة من قيمه (في صف الفلاتر ولوحة الفلاتر والبحث)"
+
+msgid "Filters panel"
+msgstr "لوحة الفلاتر"
+
+msgid "The Filters tab of the side panel"
+msgstr "تبويب الفلاتر في اللوحة الجانبية"
+
+msgid "The report's quick filters (in the search options and the filters panel)"
+msgstr "الفلاتر السريعة للتقرير (في خيارات البحث ولوحة الفلاتر)"
+
+msgid "Period field"
+msgstr "حقل الفترة"
+
+msgid "The single Period field of the criteria bar (off: the report's own date filters)"
+msgstr "حقل الفترة الموحّد في شريط المعايير (عند الإطفاء: فلاتر التاريخ الخاصة بالتقرير)"
+
+msgid "Views and tools"
+msgstr "العروض والأدوات"
+
+msgid "Side panel"
+msgstr "اللوحة الجانبية"
+
+msgid "The tool panels at the side of the grid (Columns and Filters)"
+msgstr "لوحات الأدوات بجانب الجدول (الأعمدة والفلاتر)"
+
+msgid "Columns panel"
+msgstr "لوحة الأعمدة"
+
+msgid "The Columns tab of the side panel"
+msgstr "تبويب الأعمدة في اللوحة الجانبية"
+
+msgid "The Pivot analysis view: its tab, the pivot mode of the columns panel"
+msgstr "عرض التحليل المحوري: تبويبه، ووضع المحور في لوحة الأعمدة"
+
+msgid "The Charts view"
+msgstr "عرض الرسوم"
+
+msgid "Pages and print"
+msgstr "الصفحات والطباعة"
+
+msgid "The Pages view and the Print button"
+msgstr "عرض الصفحات وزر الطباعة"
+
+msgid "Excel export"
+msgstr "التصدير إلى Excel"
+
+msgid "The Excel button (the server refuses the export too)"
+msgstr "زر Excel (والخادم يرفض التصدير أيضاً)"
+
+msgid "Chart types"
+msgstr "أنواع الرسوم"
+
+msgid "The chart types the chart editor offers. A saved chart of a type turned off is dropped when the dashboard opens."
+msgstr "أنواع الرسوم التي يعرضها محرر الرسم. الرسم المحفوظ من نوع مطفأ يُسقط عند فتح اللوحة."
+
+msgid "Default view"
+msgstr "العرض الافتراضي"
+
+msgid "How the report opens when the link carries no view of its own. Column keys are the report's column fieldnames, one per line."
+msgstr "كيف يُفتح التقرير حين لا يحمل الرابط عرضاً خاصاً. مفاتيح الأعمدة هي أسماء حقول أعمدة التقرير، واحد في كل سطر."
+
+msgid "Empty: the table (or what the report's own configuration says)"
+msgstr "فارغ: الجدول (أو ما تقوله إعدادات التقرير نفسه)"
+
+msgid "Group rows by"
+msgstr "تجميع الصفوف حسب"
+
+msgid "Column keys, one per line, top level first"
+msgstr "مفاتيح الأعمدة، واحد في كل سطر، الأعلى أولاً"
+
+msgid "Hidden columns"
+msgstr "الأعمدة المخفية"
+
+msgid "Column keys, one per line"
+msgstr "مفاتيح الأعمدة، واحد في كل سطر"
+
+msgid "Pinned columns"
+msgstr "الأعمدة المثبتة"
+
+msgid "Column keys, one per line (needs Pin columns)"
+msgstr "مفاتيح الأعمدة، واحد في كل سطر (يحتاج تثبيت الأعمدة)"
+
+msgid "Row details"
+msgstr "تفاصيل الصف"
+
+msgid "The button in the first column that opens the whole row"
+msgstr "الزر في العمود الأول الذي يفتح الصف كاملاً"
+
+msgid "Row details button"
+msgstr "زر تفاصيل الصف"
+
+msgid "Opens in"
+msgstr "يُفتح في"
+
+msgid "Drawer"
+msgstr "درج جانبي"
+
+msgid "Dialog"
+msgstr "نافذة"
+
+msgid "Offer the row's document"
+msgstr "عرض مستند الصف"
+
+msgid "When the row carries a document link: Open document and its standard print"
+msgstr "حين يحمل الصف رابط مستند: «فتح المستند» وطباعته القياسية"
+
+msgid "Document fields"
+msgstr "حقول المستند"
+
+msgid "Content"
+msgstr "المحتوى"
+
+msgid "Fields: every column of the row, labelled and formatted"
+msgstr "الحقول: كل أعمدة الصف بعناوينها وتنسيقها"
+
+msgid "Fields"
+msgstr "الحقول"
+
+msgid "HTML template"
+msgstr "قالب HTML"
+
+msgid "Jinja, rendered on the server in a sandbox. It reads row (the row's values, escaped), columns, report, filters, _() and format_value(value, fieldtype, options); nothing else"
+msgstr "Jinja يُعرض على الخادم في بيئة معزولة. يقرأ row (قيم الصف مُهرَّبة) و columns و report و filters و _() و format_value(value, fieldtype, options) فقط"
+
+msgid "A Custom print format, rendered with data = the row"
+msgstr "صيغة طباعة مخصّصة، تُعرض و data = الصف"
+
+msgid "Advanced: the report's JSON"
+msgstr "متقدم: JSON التقرير"
+
+msgid "Report settings"
+msgstr "إعدادات التقرير"
+
+msgid "Enrich rules"
+msgstr "قواعد الإثراء"
+
+msgid "Balance pairs"
+msgstr "أزواج التوازن"
+
+msgid "Filter definitions"
+msgstr "تعريفات الفلاتر"
+
+msgid "Effective settings"
+msgstr "الإعدادات الفعلية"
+
+msgid "What the report reads: the shipped file with these settings over it"
+msgstr "ما يقرؤه التقرير: الملف المشحون وفوقه هذه الإعدادات"
+
+msgid "Shipped file"
+msgstr "الملف المشحون"
+
+msgid "Load from shipped defaults"
+msgstr "تحميل من الإعدادات المشحونة"
+
+msgid "Reset to shipped"
+msgstr "إعادة إلى المشحون"
+
+msgid "Open in Report View"
+msgstr "فتح في Report View"
+
+msgid "Choose the report first"
+msgstr "اختر التقرير أولاً"
+
+msgid "This report ships no settings file: the defaults are empty"
+msgstr "هذا التقرير لا يُشحن معه ملف إعدادات: القيم الافتراضية فارغة"
+
+msgid "Replace the values of this form with the report's shipped file?"
+msgstr "استبدال قيم هذا النموذج بالملف المشحون للتقرير؟"
+
+msgid "Clear the JSON parts and the default view, and set every tool as the shipped file has it?"
+msgstr "مسح أجزاء JSON والعرض الافتراضي، وضبط كل أداة كما في الملف المشحون؟"
+
+msgid "Choose the report to see its effective settings"
+msgstr "اختر التقرير لترى إعداداته الفعلية"
+
+msgid "Every tool is on"
+msgstr "كل الأدوات مفعّلة"
+
+msgid "Turned off:"
+msgstr "المطفأ:"
+
+msgid "{0} is not valid JSON: {1}"
+msgstr "{0} ليس JSON صالحاً: {1}"
+
+msgid "{0} must be {1}"
+msgstr "{0} يجب أن يكون {1}"
+
+msgid "an object"
+msgstr "كائناً"
+
+msgid "a list"
+msgstr "قائمة"
+
+msgid "Enrich rule {0} must be an object"
+msgstr "قاعدة الإثراء {0} يجب أن تكون كائناً"
+
+msgid "Enrich rule {0}: the source column must be a column fieldname"
+msgstr "قاعدة الإثراء {0}: عمود المصدر يجب أن يكون اسم حقل عمود"
+
+msgid "Enrich rule {0}: {1} is not a DocType"
+msgstr "قاعدة الإثراء {0}: {1} ليس DocType"
+
+msgid "Enrich rule {0}: the fields must be fieldnames of the DocType"
+msgstr "قاعدة الإثراء {0}: الحقول يجب أن تكون أسماء حقول في الـ DocType"
+
+msgid "Balance pair {0} must be an object"
+msgstr "زوج التوازن {0} يجب أن يكون كائناً"
+
+msgid "Balance pair {0} needs a label, a debit column and a credit column"
+msgstr "زوج التوازن {0} يحتاج عنواناً وعمود مدين وعمود دائن"
+
+msgid "Filter definition {0} must have a fieldname, a fieldtype of Link, Dynamic Link or MultiSelectList, and its options"
+msgstr "تعريف الفلتر {0} يجب أن يحمل اسم حقل، ونوعاً Link أو Dynamic Link أو MultiSelectList، وخياراته"
+
+msgid "Filter definition {0}: {1} is not a DocType"
+msgstr "تعريف الفلتر {0}: {1} ليس DocType"
+
+msgid "The filter definition of {0} is shipped with the app ({1} {2}) and cannot be changed here"
+msgstr "تعريف الفلتر {0} مشحون مع التطبيق ({1} {2}) ولا يمكن تغييره هنا"
+
+msgid "Charts are on: choose at least one chart type"
+msgstr "الرسوم مفعّلة: اختر نوع رسم واحداً على الأقل"
+
+msgid "The default view {0} is turned off in What the report shows"
+msgstr "العرض الافتراضي {0} مطفأ في «ما يظهر في التقرير»"
+
+msgid "{0}: {1} is not a column key"
+msgstr "{0}: {1} ليس مفتاح عمود"
+
+msgid "Group rows by needs Row grouping"
+msgstr "«تجميع الصفوف حسب» يحتاج «تجميع الصفوف»"
+
+msgid "Pinned columns needs Pin columns"
+msgstr "«الأعمدة المثبتة» يحتاج «تثبيت الأعمدة»"
+
+msgid "Excel export is turned off for this report"
+msgstr "التصدير إلى Excel مطفأ لهذا التقرير"
+
+msgid "Document fields needs a doctype_field and a name_field, both column fieldnames"
+msgstr "حقول المستند تحتاج doctype_field و name_field، وكلاهما اسم حقل عمود"
+
+msgid "Row details: the HTML template is empty"
+msgstr "تفاصيل الصف: قالب HTML فارغ"
+
+msgid "Row details: {0} is not a Custom print format"
+msgstr "تفاصيل الصف: {0} ليست صيغة طباعة مخصّصة"
+
+msgid "Row details: Document fields are needed to offer the row's document"
+msgstr "تفاصيل الصف: حقول المستند لازمة لعرض مستند الصف"
+
+msgid "This report's row details have no template to render"
+msgstr "تفاصيل الصف لهذا التقرير بلا قالب يُعرض"
+
+msgid "{0} is not valid"
+msgstr "{0} غير صالح"

@@ -200,7 +200,9 @@ export class ChartsView {
 		const x = (dims.find((d) => !used.has(d.key)) || dims[0])?.key ?? null;
 		this.change((d) => {
 			const id = new_card_id(d.cards);
-			d.cards.push({ id, type: "bar", x, series: measures.slice(0, 2), size: "half" });
+			// the first type the report's settings allow (ADR-023)
+			const type = ctx.config?.features?.chart_types?.[0] || "bar";
+			d.cards.push({ id, type, x: type === "kpi" ? null : x, series: measures.slice(0, 2), size: "half" });
 			// The new card opens its editor once it is on the page.
 			this._pending = { card: id };
 		});

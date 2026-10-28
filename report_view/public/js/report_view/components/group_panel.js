@@ -80,7 +80,8 @@ export class GroupPanel {
 	drop(e, at) {
 		const d = dragged(e);
 		this.el.classList.remove("drop");
-		if (!d) return;
+		// grouping turned off (Report View Settings): nothing is dropped outside the pivot
+		if (!d || (!this.grouping && !this.pivot_cols)) return;
 		e.preventDefault();
 		e.stopPropagation();
 		const by = [...this.by];
@@ -105,13 +106,19 @@ export class GroupPanel {
 	 * @param {object} s {by: string[], labels: {key: label}, foldable, subtotals, hierarchical,
 	 *   pivot: null, or {cols, on_column(key, at)} in pivot mode}
 	 */
-	set({ by, labels, foldable, subtotals, hierarchical, pivot = null }) {
+	set({ by, labels, foldable, subtotals, hierarchical, pivot = null, features = null }) {
 		this.by = [...by];
+		// what the report's settings keep of the bar (ADR-023)
+		const f = features || { grouping: true, column_groups: true, subtotals: true };
+		this.grouping = f.grouping;
 		// Pivot mode: the chips are the pivot's rows; subtotals and column groups belong to the table.
 		this.pivot_cols = pivot?.cols || null;
 		this.on_pivot_column = pivot?.on_column || null;
 		this.el.querySelector("[data-title]").textContent = pivot ? __("Pivot rows") : __("Row groups");
-		for (const x of this.el.querySelectorAll("[data-grid]")) x.hidden = Boolean(pivot);
+		for (const x of this.el.querySelectorAll("[data-grid]")) x.hidden = Boolean(pivot) || !f.column_groups;
+		const chips = Boolean(pivot) || f.grouping;
+		this.el.querySelector(".rv-gp-lbl").hidden = !chips;
+		this.chips_el.hidden = !chips;
 		const remove = esc(__("Remove from the grouping"));
 		this.chips_el.innerHTML = by.length
 			? by
@@ -138,8 +145,10 @@ export class GroupPanel {
 			b.addEventListener("click", () => this.on_change(this.by.filter((_, j) => j !== Number(b.dataset.remove))));
 		}
 		this.subtotals.checked = Boolean(subtotals);
-		for (const x of this.el.querySelectorAll("[data-subtotals]")) x.hidden = !hierarchical || Boolean(pivot);
+		for (const x of this.el.querySelectorAll("[data-subtotals]")) x.hidden = !hierarchical || Boolean(pivot) || !f.subtotals;
 		// "Column groups" is always there in the table; folding only where rows fold.
-		for (const x of this.el.querySelectorAll("[data-fold]")) x.hidden = !foldable || (Boolean(pivot) && x.classList.contains("rv-vsep"));
+		for (const x of this.el.querySelectorAll("[data-fold]")) x.hidden = !foldable || (x.classList.contains("rv-vsep") && (Boolean(pivot) || !f.column_groups));
+		// nothing left to show: no bar
+		this.el.hidden = !chips && ![...this.el.querySelectorAll(".rv-gp-tools > :not(.rv-vsep)")].some((x) => !x.hidden);
 	}
 }

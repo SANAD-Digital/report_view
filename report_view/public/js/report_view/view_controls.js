@@ -36,6 +36,11 @@ export class ViewControls {
 		return this.page.config || {};
 	}
 
+	/** What the report shows (state/features.js; every flag on until the settings are read). */
+	get features() {
+		return this.page.features;
+	}
+
 	column(key) {
 		return this.report?.columns.find((c) => c.key === key) || null;
 	}
@@ -81,7 +86,9 @@ export class ViewControls {
 		if (c.role === "measure") return type === "float" ? "range" : null;
 		if (type === "date" || type === "datetime") return "date";
 		if (type !== "string") return null;
-		return key === this.label_key() ? "text" : "set";
+		if (key === this.label_key()) return "text";
+		// value lists turned off (Report View Settings): no set filter on the column
+		return this.features.set_filters ? "set" : null;
 	}
 
 	/** A column that may be a level of a grouping: a dimension or attribute, not the label. */
@@ -293,7 +300,7 @@ export class ViewControls {
 			}
 		}
 		const by = s?.group.by || [];
-		const groups = this.report
+		const groups = this.report && this.features.grouping
 			? this.group_keys().map((k) => ({
 					label: this.title(k),
 					on: by.includes(k),
@@ -507,7 +514,7 @@ export class ViewControls {
 		const by = s.group.by;
 		const kind = this.kind(key);
 		const no_pin = __("A numeric column cannot be pinned: a group row has no value of its own for it");
-		const items = [
+		const pins = [
 			{
 				label: rtl ? __("Pin right") : __("Pin left"),
 				icon: icons.pin(),
@@ -530,17 +537,26 @@ export class ViewControls {
 				act: () => this.set_pin(key, null),
 			},
 			{ sep: true },
+		];
+		const f = this.features;
+		// Report View Settings (ADR-023): the pins and the grouping only where they are on
+		const items = [
+			...(f.pinning ? pins : []),
 			{ label: __("Autosize this column"), icon: icons.fit(), act: () => this.page.grid.autosize(key) },
 			{ label: __("Autosize all columns"), act: () => this.page.grid.autosize(null) },
-			{ sep: true },
-			{
-				label: this.groupable(key) ? __("Group by «{0}»", [this.title(key)]) : __("Group by this column"),
-				icon: icons.group(),
-				disabled: !this.groupable(key) || by.includes(key),
-				act: () => this.set_group([...by, key]),
-			},
 		];
-		if (kind === "set") items.push({ label: __("Filter values…"), icon: icons.funnel(15), act: () => this.open_set(key, anchor) });
+		if (f.grouping) {
+			items.push(
+				{ sep: true },
+				{
+					label: this.groupable(key) ? __("Group by «{0}»", [this.title(key)]) : __("Group by this column"),
+					icon: icons.group(),
+					disabled: !this.groupable(key) || by.includes(key),
+					act: () => this.set_group([...by, key]),
+				}
+			);
+		}
+		if (kind === "set" && f.column_filters) items.push({ label: __("Filter values…"), icon: icons.funnel(15), act: () => this.open_set(key, anchor) });
 		items.push(
 			{ sep: true },
 			{ label: __("Sort ascending"), icon: icons.sort_asc(15), act: () => this.set_sort(key, "asc") },
@@ -600,6 +616,7 @@ export class ViewControls {
 			pivot_agg: (i, agg) => this.set_pivot_agg(i, agg),
 			pivot_remove_value: (i) => this.remove_pivot_value(i),
 			pivotable: (key) => this.pivotable(key),
+			features: () => this.features,
 			clear_filters: () => this.clear_filters(),
 			set_filter: (key, f) => this.set_filter(key, f),
 			set_range: (key, kind, a, b) => this.set_range(key, kind, a, b),

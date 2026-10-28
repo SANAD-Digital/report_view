@@ -47,7 +47,7 @@ export class ExportFlow {
 
 	async export_xlsx() {
 		// The file is the table's: the server exports the grid view only.
-		if (!this.opened || this.state.mode !== "grid" || this.export_job) return;
+		if (!this.opened || this.state.mode !== "grid" || this.export_job || !this.features.excel) return;
 		this.header.set_exporting(true);
 		try {
 			let out = await api.export_xlsx(this.report_name, this.export_model());

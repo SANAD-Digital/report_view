@@ -26,14 +26,15 @@ function range_selector(defs, keys) {
 /**
  * Which filter goes where.
  * @param {Array} defs filter definitions of the report script
- * @param {object} period register.period ({from_key, to_key, fiscal_year_key, company_key})
+ * @param {object|false} period register.period ({from_key, to_key, fiscal_year_key, company_key}), false: no Period field
  * @returns {{keys: object, has_period: boolean, range: ?{key, value},
  *            place: Map<string, "main"|"period"|"more"|"hidden">}}
  */
 export function plan_criteria(defs, period = {}) {
 	const keys = { ...DEFAULT_KEYS, ...(period || {}) };
 	const names = new Set(defs.map((d) => d?.fieldname));
-	const has_period = names.has(keys.from_key) && names.has(keys.to_key);
+	// period === false: the Period field is turned off (Report View Settings, ADR-023)
+	const has_period = period !== false && names.has(keys.from_key) && names.has(keys.to_key);
 	const range = has_period ? range_selector(defs, keys) : null;
 	const covered = [keys.from_key, keys.to_key, keys.fiscal_year_key, range?.key];
 	const place = new Map();

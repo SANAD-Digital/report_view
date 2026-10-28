@@ -38,6 +38,10 @@ function same_list(a, b) {
 	return a.length === b.length && a.every((x) => b.includes(x));
 }
 
+function same_order(a, b) {
+	return a.length === b.length && a.every((x, i) => b[i] === x);
+}
+
 // Nothing of the view differs from the default one of the report: the URL carries no `rv`.
 function is_default_view(state, base) {
 	return (
@@ -48,13 +52,13 @@ function is_default_view(state, base) {
 		!state.filters.length &&
 		!(state.quick_filters || []).length &&
 		!(state.values || []).length &&
-		!state.group.by.length &&
-		state.group.subtotals !== false &&
+		same_order(state.group.by, base?.group?.by || []) &&
+		(state.group.subtotals !== false) === (base?.group?.subtotals !== false) &&
 		state.group.expanded === "all" &&
 		!state.columns.order.length &&
 		same_list(state.columns.hidden, base?.columns?.hidden || []) &&
 		!Object.keys(state.columns.widths).length &&
-		!state.columns.pinned.start.length &&
+		same_order(state.columns.pinned.start, base?.columns?.pinned?.start || []) &&
 		state.columns.groups === null &&
 		state.tree.depth === null &&
 		state.tree.expanded === null

@@ -56,7 +56,7 @@ apps/report_view/
     │   ├── page/report_view/  # مستند Page "report-view" (ADR-005): report_view.json، report_view.js
     │   └── doctype/
     │       ├── report_view_global_settings/   # Single
-    │       ├── report_view_settings/          # سجل لكل تقرير — «لم يُبنَ» (§5.2)
+    │       ├── report_view_settings/          # سجل لكل تقرير (§5.2، ADR-023)
     │       ├── report_view_column_rule/       # جدول فرعي — «لم يُبنَ»
     │       ├── report_view_enrich_rule/       # جدول فرعي — «لم يُبنَ»
     │       ├── report_view_drilldown/         # جدول فرعي — «لم يُبنَ»
@@ -176,7 +176,7 @@ guard_report_quiet(report_name) -> Report | None
 | البند | المواصفة |
 |---|---|
 | الطريقة | GET |
-| الفحوص بالترتيب | (1) `guard_report`؛ (2) الإعدادات من `report_view/defaults/<scrub(report)>.json` وحدها (`core/settings.load_settings`)؛ قراءة `Report View Settings` «لم يُبنَ»؛ (3) حساب `perms` بـ `can_export` و `has_permission(..., "print", ignore_share_permissions=True)` دون رمي |
+| الفحوص بالترتيب | (1) `guard_report`؛ (2) الإعدادات: `report_view/defaults/<scrub(report)>.json` وفوقه سجل `Report View Settings` (`core/settings.load_settings`، ADR-023)، ومنها `features` و `default_view` و `row_details` (الإعداد بلا القالب)؛ (3) حساب `perms` بـ `can_export` و `has_permission(..., "print", ignore_share_permissions=True)` دون رمي |
 | المخرجات | ```{"report": {"name", "report_type", "ref_doctype", "module", "is_standard", "prepared_report", "add_total_row", "reference_report"}, "script": <مخرج frappe.desk.query_report.get_script(report_name) كما هو: script, html_format, filters, custom_report_name, execution_time>, "perms": {"can_export": bool, "can_print": bool}, "settings": <الإعدادات الخادمية المدمجة §5.3>, "include_js": [bundle...] (من hook report_view_include_js), "limits": {"max_rows": int}, "defaults": {"saved_view": name \| null, "source": "user" \| "global" \| null}}``` — الافتراضي يُعاد فقط إن كان العرض مرئياً للمستخدم الآن (§6)، وإلا `null`. اليوم `defaults` دائماً `{saved_view: null, source: null}` لأن العروض المحفوظة «لم يُبنَ» |
 | الأخطاء | كما `guard_report` |
 | ملاحظات | `perms` للعرض فقط (إخفاء الأزرار). الفحص الحقيقي يتكرر في `export_xlsx` و `export_pdf`. `script` يُنفَّذ في المتصفح بـ `frappe.dom.eval` كما في الأصل (`QJ:425-427`). |
@@ -208,7 +208,7 @@ guard_report_quiet(report_name) -> Report | None
 
 ### 2.6 `report_view.api.get_entry_state(report_name)`
 
-للزر في query-report (ADR-007). GET. الفحوص: `guard_report_quiet` (رفض التقرير — لا صلاحية، غير موجود، غير صالح — ⇒ `{"show": false}` بلا رسائل في `_server_messages`؛ أي خطأ آخر يُرمى لأنه خلل). لا يكشف أكثر من الأصل: من يرى الزر فتح query-report للتقرير نفسه. المخرجات: `{"show": true, "route": ["report-view", <name>]}` أو `{"show": false}`. لاحقاً (المرحلة 4) يُقيَّد بـ `Global Settings.entry_button_scope` و `Report View Settings.show_entry_button`؛ إلى أن توجد هذه الإعدادات يظهر الزر لكل من يملك صلاحية التقرير.
+للزر في query-report (ADR-007). GET. الفحوص: `guard_report_quiet` (رفض التقرير — لا صلاحية، غير موجود، غير صالح — ⇒ `{"show": false}` بلا رسائل في `_server_messages`؛ أي خطأ آخر يُرمى لأنه خلل). لا يكشف أكثر من الأصل: من يرى الزر فتح query-report للتقرير نفسه. المخرجات: `{"show": true, "route": ["report-view", <name>]}` أو `{"show": false}`. `Report View Settings.enabled = 0` (ADR-023) يعيد `{"show": false}`؛ `entry_button_scope` «لم يُبنَ»، فبغير ذلك يظهر الزر لكل من يملك صلاحية التقرير.
 
 ### 2.7 العروض المحفوظة: `report_view.api.views.*` — «لم يُبنَ»
 
@@ -243,13 +243,17 @@ POST. `guard_report` أولاً. `lang` من `frappe.translate.get_all_languages
 
 ### 2.10 كل الدوال المتاحة (الموجودة فعلاً، 2026-10-22)
 
-46 دالة `@frappe.whitelist()`. «الحد» = طلبات لكل مستخدم في الدقيقة (`core/limits.rate_limit`، داخل طلب ويب فقط؛ الرفض `RateLimitExceededError` من Frappe). كل دالة تبدأ بالحارس المذكور. القسمان §2.5 و §2.7 خطة لم تُبنَ.
+50 دالة `@frappe.whitelist()` (+4 في 2026-10-28، ADR-023). «الحد» = طلبات لكل مستخدم في الدقيقة (`core/limits.rate_limit`، داخل طلب ويب فقط؛ الرفض `RateLimitExceededError` من Frappe). كل دالة تبدأ بالحارس المذكور. القسمان §2.5 و §2.7 خطة لم تُبنَ.
 
 | الدالة | الطريقة | الحارس الأول | الحد | المرجع |
 |---|---|---|---|---|
 | `report_view.api.run` | POST | `guard_report` | 30 | §2.1 |
 | `report_view.api.get_meta` | GET | `guard_report` | — | §2.2 |
 | `report_view.api.get_entry_state` | GET | `guard_report_quiet` | — | §2.6 |
+| `report_view.api.render_row_details` | POST | `guard_report` | 60 | ADR-023 |
+| `report_view.api.settings.shipped_values` | GET | `guard_report` ثم `only_for("System Manager")` | — | ADR-023 |
+| `report_view.api.settings.reset_values` | GET | `guard_report` ثم `only_for("System Manager")` | — | ADR-023 |
+| `report_view.api.settings.preview` | POST | `guard_report` ثم `only_for("System Manager")` | — | ADR-023 |
 | `report_view.api.enrich` | POST | `guard_report` | 60 | §2.3 |
 | `report_view.api.export_xlsx` | POST | `guard_report`، `guard_export` | 10 | §2.4 |
 | `report_view.api.export_xlsx_status` | GET | وظيفة المستخدم نفسه، ثم `guard_report` و `guard_export` | — | §2.4 |
@@ -625,7 +629,7 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 
 **`Report View Global Settings` (Single)** — كتابة: System Manager، Report View Manager؛ قراءة: الدور `Desk User`.
 
-> بُني في 2026-10-12 (ADR-015) بالحقول `max_rows` (الافتراضي في الكود والـ DocType **100,000**، `core/settings.DEFAULT_MAX_ROWS`) و `print_max_pages` وقسم «إعدادات الطباعة القياسية»، ثم `custom_print_open_in` (ADR-019)؛ بقية الحقول أدناه «لم يُبنَ». 100,000 رسمي بقرار صاحب المشروع (C21، 2026-10-22). `Report View Settings` كله «لم يُبنَ»: الإعدادات لكل تقرير تأتي من `defaults/*.json`.
+> بُني في 2026-10-12 (ADR-015) بالحقول `max_rows` (الافتراضي في الكود والـ DocType **100,000**، `core/settings.DEFAULT_MAX_ROWS`) و `print_max_pages` وقسم «إعدادات الطباعة القياسية»، ثم `custom_print_open_in` (ADR-019)؛ بقية الحقول أدناه «لم يُبنَ». 100,000 رسمي بقرار صاحب المشروع (C21، 2026-10-22). `Report View Settings` بُني في 2026-10-28 (ADR-023) بشكل غير الجدول أدناه، والجدول أدناه هو الخطة الأصلية.
 
 | الحقل | النوع | الافتراضي |
 |---|---|---|
@@ -636,7 +640,9 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 | `export_background_threshold` | Int | 20,000 |
 | `default_pdf_generator` | Select: `wkhtmltopdf` / `chrome` | `wkhtmltopdf` — «لم يُبنَ» (ADR-016: محرك Chromium خاص دائماً) |
 
-**`Report View Settings`** (اسم السجل = اسم التقرير) — نفس الصلاحيات (قراءة `Desk User`، كتابة System Manager و Report View Manager).
+**`Report View Settings`** (اسم السجل = اسم التقرير) — **بُني** (ADR-023): القراءة والكتابة لـ System Manager وحده (المتصفح يستلم النتيجة المدمجة عبر `get_meta.settings`). الحقول المبنية: `report`، `enabled`، `description`؛ مزايا «ما يظهر في التقرير» (Check لكل مفتاح من `features`: `grouping`, `subtotals`, `column_groups`, `pinning`, `density`, `quick_search`, `column_filters`, `set_filters`, `filters_panel`, `quick_filters`, `period_picker`, `side_panel`, `columns_panel`, `pivot`, `charts`, `pages`, `excel`) و `chart_<type>` لكل نوع رسم؛ العرض الافتراضي (`default_mode`, `default_group_by`, `default_hidden`, `default_pinned`)؛ تفاصيل الصف (`row_details_*`)؛ وأجزاء JSON (`report_settings`, `enrich_rules`, `balance_pairs`, `filter_defs`) بلا جداول فرعية، مع «Load from shipped defaults» و «Reset to shipped» و «Effective settings». `column_rules` و `drilldowns` و `signatures` و `pdf_generator` و `default_saved_view` و `show_entry_button` في الجدول أدناه «لم يُبنَ».
+
+الخطة الأصلية:
 
 | الحقل | النوع | ملاحظة |
 |---|---|---|
@@ -660,11 +666,12 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 من الأضعف للأقوى، مفتاحاً بمفتاح (ADR-003):
 
 1. الاستنتاج من الرد (§3).
-2. `defaults/<report>.json` المشحون (يُحمَّل عند التثبيت كسجل `Report View Settings` إن لم يوجد، فيصبح قابلاً للتعديل).
+2. `defaults/<report>.json` المشحون (لا يُنسخ إلى سجل عند التثبيت: يبقى الأساس، والسجل يُملأ منه بزر «Load from shipped defaults»).
 3. `report_view.register`.
 4. `Report View Settings`.
 
 قواعد خاصة:
+- (ADR-023، مبني) الخادم يدمج 2 و 4 في `core/settings.load_settings` ويخزن الناتج لكل تقرير في Redis حتى يتغير السجل أو الملف: `enabled`/`features`/`default_view`/`row_details` من السجل إن وُجد؛ `report_settings` دمج مفاتيح؛ `enrich_rules` و `balance_pairs` قوائم تُدمج بمفتاحها؛ **`filter_defs` المشحون يغلب دائماً لاسمه** والسجل يضيف فقط (ADR-021). المتصفح يضع `default_mode`/`default_view` للخادم فوق `register` (`state/features.js server_config`) ويقيّد حالة العرض بالمزايا (`restrict_state`).
 - `enrich_rules` و `drilldowns` و `pdf_generator` و `filter_defs` و `default_saved_view`: **الخادم فقط** (2 و 4).
 - (المرحلة 3) `defaults/<report>.json` يحمل أيضاً `report_settings` (نسخة خادمية من `tree`/`name_field`/`parent_field`/`initial_depth`/`export_hidden_cols` في سكربت التقرير) لأن الخادم لا ينفّذ JS ويحتاجها في تطبيع التصدير. تقرير بلا إعداد يُطبَّع في الخادم بـ `report_settings = {}` (فلا تُصدَّر أعمدته المخفية). و `get_meta.settings` يعيد `enrich_rules[].fields` قائمةً لا نصاً متعدد الأسطر، ومفتاح `source` = `"defaults"` أو `null`.
 - الإعدادات مقروءة لكل مستخدمي Desk، فلا تُخزَّن فيها أسرار (مفاتيح، كلمات مرور، روابط موقّعة). اقتراحات `register` تظهر في شاشة الإعدادات كزر «اعتماد».

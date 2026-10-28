@@ -123,8 +123,11 @@ export class GridRows {
 		const levels = data.some((d) => d.band) ? 2 : 1;
 		// Header rows: the bands (when any), the titles, then the floating filters. Title and
 		// filter cells are elements of components/header_cells.js, the same ones every draw.
+		// No filter row where the report's settings turned the column filters off (ADR-023).
 		const cells = this.cells;
-		const head = (d) => (cells ? [cells.leaf(d.column.key, d.title, d.numeric), cells.filter(d.column.key, d.title)] : [d.title]);
+		const floating = !cells || cells.floating !== false;
+		const head = (d) =>
+			cells ? [cells.leaf(d.column.key, d.title, d.numeric), ...(floating ? [cells.filter(d.column.key, d.title)] : [])] : [d.title];
 		const band_label = (d) => (d.band ? bands.get(d.band).label : NO_BAND);
 		return {
 			shape: post.shape,
@@ -139,7 +142,8 @@ export class GridRows {
 			heads: 1 + pinned.length,
 			data,
 			levels,
-			header_rows: levels + 1,
+			floating,
+			header_rows: levels + (floating ? 1 : 0),
 			headers: data.map((d) => (levels === 2 ? [band_label(d), ...head(d)] : head(d))),
 			bands,
 			by_key,

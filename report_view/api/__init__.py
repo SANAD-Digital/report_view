@@ -10,8 +10,8 @@ import frappe
 from frappe import _
 from frappe.desk import query_report
 
-from report_view.core import normalize, print_variables, printing, runner
-from report_view.core.errors import RVEnrichNotAllowed, RVInvalidInput, RVLimitExceeded
+from report_view.core import normalize, print_variables, printing, row_details, runner
+from report_view.core.errors import RVEnrichNotAllowed, RVInvalidInput, RVLimitExceeded, RVNoExport
 from report_view.core.export import jobs as export_jobs
 from report_view.core.export import model as export_model_mod
 from report_view.core.guard import (
@@ -60,8 +60,9 @@ def run(
 def get_meta(report_name: str) -> dict:
 	"""Report metadata, script, permissions and server settings (§2.2).
 
-	Settings come from ``report_view/defaults/<scrub(report)>.json`` only (``core/settings``);
-	``defaults`` is empty until the saved views exist (§2.7).
+	Settings are the shipped ``report_view/defaults/<scrub(report)>.json`` with the report's
+	``Report View Settings`` record over it (``core/settings``, ADR-023), its ``features``
+	included; ``defaults`` is empty until the saved views exist (§2.7).
 	"""
 	report = _guard(report_name)
 	settings = load_settings(report.name)
@@ -94,9 +95,22 @@ def get_entry_state(report_name: str) -> dict:
 	no rejection message left in ``_server_messages``.
 	"""
 	report = guard_report_quiet(report_name)
-	if not report:
+	# a report turned off in its Report View Settings (ADR-023) shows no button
+	if not report or not load_settings(report.name)["enabled"]:
 		return {"show": False}
 	return {"show": True, "route": ["report-view", report_name]}
+
+
+@frappe.whitelist(methods=["POST"])
+@_rate_limit(60)
+def render_row_details(
+	report_name: str, row: dict | str, filters: dict | str | None = None, columns: list | str | None = None
+) -> dict:
+	"""The row details of one row (ADR-023): the report's HTML template or Custom print
+	format rendered with it, ``{"html", "css"}``. The row is the browser's: untrusted data,
+	printed escaped, never permission to read anything (``core/row_details``)."""
+	report = _guard(report_name)
+	return row_details.render(report, load_settings(report.name), row, columns, filters)
 
 
 @frappe.whitelist(methods=["POST"])
@@ -174,6 +188,9 @@ def export_xlsx(report_name: str, export_model: dict | str) -> Any:
 	in the request; the server's count decides otherwise."""
 	report = _guard(report_name)
 	guard_export(report)
+	if not load_settings(report.name)["features"]["excel"]:
+		# Excel export turned off in the report's settings (ADR-023): not a permission
+		frappe.throw(_("Excel export is turned off for this report"), RVNoExport)
 	model = export_model_mod.parse(export_model, "xlsx")
 	hint = (model.get("expected") or {}).get("row_count")
 	if isinstance(hint, int) and hint > export_jobs.ASYNC_ROWS:

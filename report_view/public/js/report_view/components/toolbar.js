@@ -43,12 +43,18 @@ export class Toolbar {
 		this.set_mode("grid");
 	}
 
-	/** The tabs a report offers: Pages needs the print permission. */
-	set_report({ can_print }) {
+	/**
+	 * The tabs a report offers: Pages needs the print permission; `modes` the views its
+	 * settings keep (ADR-023, state/features.js allowed_modes). One view left: no switcher.
+	 * `search`: false hides the search box.
+	 */
+	set_report({ can_print, modes = null, search = true }) {
 		for (const tab of this.tabs) {
 			const m = MODES.find((x) => x.mode === tab.dataset.mode);
-			tab.hidden = m?.needs === "can_print" && !can_print;
+			tab.hidden = (m?.needs === "can_print" && !can_print) || (modes !== null && !modes.includes(tab.dataset.mode));
 		}
+		this.el.querySelector(".rv-views").hidden = this.tabs.filter((t) => !t.hidden).length < 2;
+		this.search.el.hidden = !search;
 	}
 
 	/** Marks the tab of the view shown (any mode without a tab of its own shows the table). */

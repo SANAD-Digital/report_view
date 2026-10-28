@@ -48,6 +48,17 @@ does (within ten minutes, or at the next restart). **PDF engine** in the setting
 "Chromium sandbox: on/off" and, when off, this command with the bench's real paths. Run it
 again after moving the bench or the Chromium (`--remove` deletes the profile).
 
+### Per-report settings
+
+**Report View Settings** (one record per report, System Manager; ⋯ menu of a Report View
+page → *Report View settings*) controls what a report shows: grouping, subtotals, column
+groups, pins, density, the search box, the column filters and value lists, the filters
+panel, quick filters, the period field, the side panel and its tabs, the pivot, charts (and
+which chart types), Pages and Excel; its default view; the row details; and the JSON parts of
+its shipped file (`report_view/defaults/<report>.json`). The record wins over the shipped
+file key by key; the shipped filter definitions can never be removed or changed (ADR-021,
+ADR-023). Every tool is on by default, so a report without a record looks as before.
+
 ### Tests
 
 ```bash

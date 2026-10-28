@@ -551,7 +551,7 @@ export class ChartCard {
 				)}"></label>
 				<div class="rv-ced-row"><span>${esc(__("Chart type"))}</span>
 					<div class="rv-chart-types rv-ced-types" role="radiogroup" aria-label="${esc(__("Chart type"))}">
-						${CARD_TYPES.map(
+						${CARD_TYPES.filter((t) => t === def.type || !this.ctx.config?.features || this.ctx.config.features.chart_types.includes(t)).map(
 							(t) =>
 								`<button type="button" class="rv-ctype${t === def.type ? " on" : ""}" role="radio" aria-checked="${t === def.type}" data-type="${t}" title="${esc(
 									TYPE_LABELS[t]()

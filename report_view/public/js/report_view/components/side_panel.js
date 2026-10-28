@@ -63,6 +63,11 @@ export class SidePanel {
 	refresh() {
 		const side = this.host.side();
 		const filters = this.host.filters();
+		// the tabs the report's settings keep (ADR-023); none: no side panel at all
+		const f = this.host.features();
+		this.tabs.hidden = !f.side_panel;
+		this.tabs.querySelector('[data-side="columns"]').hidden = !f.columns_panel;
+		this.tabs.querySelector('[data-side="filters"]').hidden = !f.filters_panel;
 		for (const b of this.tabs.querySelectorAll("[data-side]")) {
 			const on = b.dataset.side === side;
 			b.classList.toggle("on", on);
@@ -161,16 +166,20 @@ export class SidePanel {
 		}
 		const pcols = pivot ? pivot.cols.map((g, i) => chip(g, i, "data-uncol", "col")).join("") : "";
 		const on = Boolean(pivot);
+		// Report View Settings (ADR-023): no pivot switch and zone without the pivot, no
+		// row-group zone without grouping (in pivot mode the zone is the pivot's rows)
+		const f = this.host.features();
+		const hide = (show) => (show ? "" : " hidden");
 		const sw_label = esc(__("Pivot mode"));
 		this.panel.innerHTML = `${this.header(__("Columns"))}
 			<div class="rv-panel-bd">
-				<div class="rv-switch-row">
+				<div class="rv-switch-row"${hide(f.pivot)}>
 					<div>${esc(__("Pivot mode"))}<small>${esc(__("Turn the values of a dimension into columns"))}</small></div>
 					<button type="button" class="rv-switch${on ? " on" : ""}" role="switch" data-action="pivot-mode" aria-checked="${on}" aria-label="${sw_label}" title="${sw_label}"></button>
 				</div>
 				<input type="text" class="rv-input sm" data-action="col-search" aria-label="${esc(__("Search the columns"))}" placeholder="${esc(__("Search the columns…"))}" value="${esc(this.col_query)}">
 				<div class="rv-collist">${list}</div>
-				<div class="rv-zone" data-zone="groups">
+				<div class="rv-zone" data-zone="groups"${hide(pivot || f.grouping)}>
 					<div class="rv-zone-hd">${icons.group()}${esc(pivot ? __("Pivot rows") : __("Row groups"))}</div>
 					${groups ? `<div class="rv-zone-chips">${groups}</div>` : `<div class="rv-zone-empty">${esc(__("Drag columns here to group the rows"))}</div>`}
 					${pivot ? adder("rows", pivot.dims) : ""}
@@ -180,7 +189,7 @@ export class SidePanel {
 					${values ? `<div class="rv-zone-chips">${values}</div>` : `<div class="rv-zone-empty">${esc(__("Drag a numeric column here"))}</div>`}
 					${pivot ? adder("values", pivot.measures) : ""}
 				</div>
-				<div class="rv-zone${on ? "" : " off"}" data-zone="pivot">
+				<div class="rv-zone${on ? "" : " off"}" data-zone="pivot"${hide(f.pivot)}>
 					<div class="rv-zone-hd">${icons.pivot_cols()}${esc(__("Pivot columns"))}</div>
 					${
 						!on
@@ -248,7 +257,7 @@ export class SidePanel {
 				}
 				return;
 			}
-			if (d.type !== "column") return;
+			if (d.type !== "column" || !f.grouping) return;
 			const by = data.groups.map((g) => g.key);
 			if (!by.includes(d.key) && this.host.groupable(d.key)) this.host.set_group([...by, d.key]);
 		});
@@ -263,6 +272,7 @@ export class SidePanel {
 		});
 		zone("pivot", (d) => {
 			// A dimension dropped here turns the pivot mode on with it as a pivot column (design).
+			if (!f.pivot) return;
 			const key = d.type === "column" ? d.key : d.type === "pivot-row" && pivot ? pivot.rows[d.index]?.key : null;
 			if (!key || !this.host.pivotable(key)) return;
 			const cols = pivot ? pivot.cols.map((g) => g.key).filter((k) => k !== key) : [];

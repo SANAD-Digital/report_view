@@ -1,0 +1,501 @@
+{
+ "actions": [],
+ "autoname": "field:report",
+ "creation": "2026-10-28 12:00:00.000000",
+ "description": "What a report shows in Report View and the JSON its look depends on, one record per report (ADR-023)",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_general",
+  "report",
+  "enabled",
+  "column_break_general",
+  "description",
+  "section_features",
+  "heading_grouping",
+  "grouping",
+  "subtotals",
+  "column_groups",
+  "pinning",
+  "density",
+  "column_break_features_filters",
+  "heading_filters",
+  "quick_search",
+  "column_filters",
+  "set_filters",
+  "filters_panel",
+  "quick_filters",
+  "period_picker",
+  "column_break_features_views",
+  "heading_views",
+  "side_panel",
+  "columns_panel",
+  "pivot",
+  "charts",
+  "pages",
+  "excel",
+  "section_chart_types",
+  "chart_bar",
+  "chart_stacked",
+  "chart_hbar",
+  "chart_hstacked",
+  "column_break_chart_types",
+  "chart_line",
+  "chart_area",
+  "chart_donut",
+  "chart_kpi",
+  "section_default_view",
+  "default_mode",
+  "default_group_by",
+  "column_break_default_view",
+  "default_hidden",
+  "default_pinned",
+  "section_row_details",
+  "row_details_enabled",
+  "row_details_container",
+  "row_details_width",
+  "row_details_document",
+  "row_details_doc_fields",
+  "column_break_row_details",
+  "row_details_content",
+  "row_details_html",
+  "row_details_print_format",
+  "section_json",
+  "report_settings",
+  "enrich_rules",
+  "column_break_json",
+  "balance_pairs",
+  "filter_defs",
+  "section_effective",
+  "effective_settings"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_general",
+   "fieldtype": "Section Break",
+   "label": "General"
+  },
+  {
+   "fieldname": "report",
+   "fieldtype": "Link",
+   "label": "Report",
+   "options": "Report",
+   "reqd": 1,
+   "unique": 1,
+   "set_only_once": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "The report these settings are for: one record per report"
+  },
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled in Report View",
+   "default": "1",
+   "description": "Off: the standard report shows no button to Report View, and the Report View page says the report is not enabled",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_general",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description",
+   "description": "A note for the people who maintain these settings"
+  },
+  {
+   "fieldname": "section_features",
+   "fieldtype": "Section Break",
+   "label": "What the report shows",
+   "description": "Every tool is on by default: the report then looks exactly as without these settings. A tool turned off is hidden everywhere (its button, tab, panel and menu entries) and a link that asks for it opens the default view."
+  },
+  {
+   "fieldname": "heading_grouping",
+   "fieldtype": "Heading",
+   "label": "Grouping and columns"
+  },
+  {
+   "fieldname": "grouping",
+   "fieldtype": "Check",
+   "label": "Row grouping",
+   "default": "1",
+   "description": "The row-group bar, Group by in the column menu and the search options, dragging a column to group"
+  },
+  {
+   "fieldname": "subtotals",
+   "fieldtype": "Check",
+   "label": "Group subtotals",
+   "default": "1",
+   "description": "The subtotal rows of groups and of the report tree, and their switch"
+  },
+  {
+   "fieldname": "column_groups",
+   "fieldtype": "Check",
+   "label": "Column groups",
+   "default": "1",
+   "description": "The Column groups button and its dialog"
+  },
+  {
+   "fieldname": "pinning",
+   "fieldtype": "Check",
+   "label": "Pin columns",
+   "default": "1",
+   "description": "Pin left / right / No pin in the column menu"
+  },
+  {
+   "fieldname": "density",
+   "fieldtype": "Check",
+   "label": "Density switch",
+   "default": "1",
+   "description": "Comfortable / Compact in the page head (off: always comfortable)"
+  },
+  {
+   "fieldname": "column_break_features_filters",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "heading_filters",
+   "fieldtype": "Heading",
+   "label": "Search and filters"
+  },
+  {
+   "fieldname": "quick_search",
+   "fieldtype": "Check",
+   "label": "Search box",
+   "default": "1",
+   "description": "The search and filter box of the toolbar"
+  },
+  {
+   "fieldname": "column_filters",
+   "fieldtype": "Check",
+   "label": "Column filters",
+   "default": "1",
+   "description": "The filter row under the column titles and Filter values in the column menu"
+  },
+  {
+   "fieldname": "set_filters",
+   "fieldtype": "Check",
+   "label": "Value lists",
+   "default": "1",
+   "description": "Filtering a text column by a list of its values (in the filter row, the filters panel and the search)"
+  },
+  {
+   "fieldname": "filters_panel",
+   "fieldtype": "Check",
+   "label": "Filters panel",
+   "default": "1",
+   "description": "The Filters tab of the side panel"
+  },
+  {
+   "fieldname": "quick_filters",
+   "fieldtype": "Check",
+   "label": "Quick filters",
+   "default": "1",
+   "description": "The report's quick filters (in the search options and the filters panel)"
+  },
+  {
+   "fieldname": "period_picker",
+   "fieldtype": "Check",
+   "label": "Period field",
+   "default": "1",
+   "description": "The single Period field of the criteria bar (off: the report's own date filters)"
+  },
+  {
+   "fieldname": "column_break_features_views",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "heading_views",
+   "fieldtype": "Heading",
+   "label": "Views and tools"
+  },
+  {
+   "fieldname": "side_panel",
+   "fieldtype": "Check",
+   "label": "Side panel",
+   "default": "1",
+   "description": "The tool panels at the side of the grid (Columns and Filters)"
+  },
+  {
+   "fieldname": "columns_panel",
+   "fieldtype": "Check",
+   "label": "Columns panel",
+   "default": "1",
+   "description": "The Columns tab of the side panel"
+  },
+  {
+   "fieldname": "pivot",
+   "fieldtype": "Check",
+   "label": "Pivot analysis",
+   "default": "1",
+   "description": "The Pivot analysis view: its tab, the pivot mode of the columns panel"
+  },
+  {
+   "fieldname": "charts",
+   "fieldtype": "Check",
+   "label": "Charts",
+   "default": "1",
+   "description": "The Charts view"
+  },
+  {
+   "fieldname": "pages",
+   "fieldtype": "Check",
+   "label": "Pages and print",
+   "default": "1",
+   "description": "The Pages view and the Print button"
+  },
+  {
+   "fieldname": "excel",
+   "fieldtype": "Check",
+   "label": "Excel export",
+   "default": "1",
+   "description": "The Excel button (the server refuses the export too)"
+  },
+  {
+   "fieldname": "section_chart_types",
+   "fieldtype": "Section Break",
+   "label": "Chart types",
+   "depends_on": "eval:doc.charts",
+   "collapsible": 1,
+   "description": "The chart types the chart editor offers. A saved chart of a type turned off is dropped when the dashboard opens."
+  },
+  {
+   "fieldname": "chart_bar",
+   "fieldtype": "Check",
+   "label": "Grouped columns",
+   "default": "1"
+  },
+  {
+   "fieldname": "chart_stacked",
+   "fieldtype": "Check",
+   "label": "Stacked columns",
+   "default": "1"
+  },
+  {
+   "fieldname": "chart_hbar",
+   "fieldtype": "Check",
+   "label": "Horizontal bars",
+   "default": "1"
+  },
+  {
+   "fieldname": "chart_hstacked",
+   "fieldtype": "Check",
+   "label": "Stacked bars",
+   "default": "1"
+  },
+  {
+   "fieldname": "column_break_chart_types",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "chart_line",
+   "fieldtype": "Check",
+   "label": "Line",
+   "default": "1"
+  },
+  {
+   "fieldname": "chart_area",
+   "fieldtype": "Check",
+   "label": "Area",
+   "default": "1"
+  },
+  {
+   "fieldname": "chart_donut",
+   "fieldtype": "Check",
+   "label": "Donut",
+   "default": "1"
+  },
+  {
+   "fieldname": "chart_kpi",
+   "fieldtype": "Check",
+   "label": "Number card",
+   "default": "1"
+  },
+  {
+   "fieldname": "section_default_view",
+   "fieldtype": "Section Break",
+   "label": "Default view",
+   "collapsible": 1,
+   "description": "How the report opens when the link carries no view of its own. Column keys are the report's column fieldnames, one per line."
+  },
+  {
+   "fieldname": "default_mode",
+   "fieldtype": "Select",
+   "label": "Default view",
+   "options": "\nTable\nPivot analysis\nCharts\nPages",
+   "description": "Empty: the table (or what the report's own configuration says)"
+  },
+  {
+   "fieldname": "default_group_by",
+   "fieldtype": "Small Text",
+   "label": "Group rows by",
+   "description": "Column keys, one per line, top level first"
+  },
+  {
+   "fieldname": "column_break_default_view",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "default_hidden",
+   "fieldtype": "Small Text",
+   "label": "Hidden columns",
+   "description": "Column keys, one per line"
+  },
+  {
+   "fieldname": "default_pinned",
+   "fieldtype": "Small Text",
+   "label": "Pinned columns",
+   "description": "Column keys, one per line (needs Pin columns)"
+  },
+  {
+   "fieldname": "section_row_details",
+   "fieldtype": "Section Break",
+   "label": "Row details",
+   "collapsible": 1,
+   "description": "The button in the first column that opens the whole row"
+  },
+  {
+   "fieldname": "row_details_enabled",
+   "fieldtype": "Check",
+   "label": "Row details button",
+   "default": "1"
+  },
+  {
+   "fieldname": "row_details_container",
+   "fieldtype": "Select",
+   "label": "Opens in",
+   "options": "Drawer\nDialog",
+   "default": "Drawer",
+   "depends_on": "eval:doc.row_details_enabled"
+  },
+  {
+   "fieldname": "row_details_width",
+   "fieldtype": "Select",
+   "label": "Width",
+   "options": "Narrow\nMedium\nWide",
+   "default": "Medium",
+   "depends_on": "eval:doc.row_details_enabled"
+  },
+  {
+   "fieldname": "row_details_document",
+   "fieldtype": "Check",
+   "label": "Offer the row's document",
+   "default": "0",
+   "depends_on": "eval:doc.row_details_enabled",
+   "description": "When the row carries a document link: Open document and its standard print"
+  },
+  {
+   "fieldname": "row_details_doc_fields",
+   "fieldtype": "JSON",
+   "label": "Document fields",
+   "depends_on": "eval:doc.row_details_enabled && doc.row_details_document",
+   "description": "{\"doctype_field\": \"voucher_type\", \"name_field\": \"voucher_no\"}: the columns that hold the DocType and the document name"
+  },
+  {
+   "fieldname": "column_break_row_details",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "row_details_content",
+   "fieldtype": "Select",
+   "label": "Content",
+   "options": "Fields\nHTML template\nPrint format",
+   "default": "Fields",
+   "depends_on": "eval:doc.row_details_enabled",
+   "description": "Fields: every column of the row, labelled and formatted"
+  },
+  {
+   "fieldname": "row_details_html",
+   "fieldtype": "Code",
+   "label": "HTML template",
+   "options": "Jinja",
+   "depends_on": "eval:doc.row_details_enabled && doc.row_details_content=='HTML template'",
+   "mandatory_depends_on": "eval:doc.row_details_enabled && doc.row_details_content=='HTML template'",
+   "description": "Jinja, rendered on the server in a sandbox. It reads row (the row's values, escaped), columns, report, filters, _() and format_value(value, fieldtype, options); nothing else"
+  },
+  {
+   "fieldname": "row_details_print_format",
+   "fieldtype": "Link",
+   "label": "Print format",
+   "options": "Print Format",
+   "depends_on": "eval:doc.row_details_enabled && doc.row_details_content=='Print format'",
+   "mandatory_depends_on": "eval:doc.row_details_enabled && doc.row_details_content=='Print format'",
+   "description": "A Custom print format, rendered with data = the row"
+  },
+  {
+   "fieldname": "section_json",
+   "fieldtype": "Section Break",
+   "label": "Advanced: the report's JSON",
+   "collapsible": 1,
+   "description": "The parts of the report's shipped file (report_view/defaults). Empty: the shipped value is used. A list is merged with the shipped one: an entry with the same key replaces it, others are added. A shipped filter definition can never be removed or changed here (ADR-021)."
+  },
+  {
+   "fieldname": "report_settings",
+   "fieldtype": "JSON",
+   "label": "Report settings",
+   "description": "An object: tree, name_field, parent_field, initial_depth, export_hidden_cols (the report script's settings the server needs to export)"
+  },
+  {
+   "fieldname": "enrich_rules",
+   "fieldtype": "JSON",
+   "label": "Enrich rules",
+   "description": "A list of {\"source_column\", \"link_doctype\", \"fields\"}: the extra columns read from a linked DocType (ADR-011)"
+  },
+  {
+   "fieldname": "column_break_json",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "balance_pairs",
+   "fieldtype": "JSON",
+   "label": "Balance pairs",
+   "description": "A list of {\"label\", \"debit_column\", \"credit_column\"}"
+  },
+  {
+   "fieldname": "filter_defs",
+   "fieldtype": "JSON",
+   "label": "Filter definitions",
+   "description": "A list of {\"fieldname\", \"fieldtype\": \"Link\" | \"Dynamic Link\" | \"MultiSelectList\", \"options\"}: the server checks these filters even when the browser drops them (ADR-021)"
+  },
+  {
+   "fieldname": "section_effective",
+   "fieldtype": "Section Break",
+   "label": "Effective settings",
+   "collapsible": 1,
+   "description": "What the report reads: the shipped file with these settings over it"
+  },
+  {
+   "fieldname": "effective_settings",
+   "fieldtype": "HTML",
+   "label": "Effective settings"
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-28 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Report View",
+ "name": "Report View Settings",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 0,
+   "export": 1,
+   "print": 0,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 0,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "report",
+ "track_changes": 1
+}

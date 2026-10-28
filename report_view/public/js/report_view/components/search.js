@@ -128,7 +128,7 @@ export class SearchBox {
 		const col = (title_icon, title, groups) => {
 			const c = document.createElement("div");
 			c.className = "rv-sdrop-col";
-			c.innerHTML = `<div class="rv-sdrop-t">${title_icon}${esc(title)}</div>`;
+			c.innerHTML = title ? `<div class="rv-sdrop-t">${title_icon}${esc(title)}</div>` : "";
 			groups.forEach((g, i) => {
 				if (!g.length) return;
 				if (i && c.querySelector(".rv-mi")) c.insertAdjacentHTML("beforeend", '<div class="rv-msep"></div>');
@@ -140,9 +140,12 @@ export class SearchBox {
 		wrap.className = "rv-sdrop";
 		const filters = [o.quick.map((it) => item(it)), o.facets.map((it) => item(it))];
 		if (filters.some((g) => g.length)) wrap.appendChild(col(icons.funnel(), __("Filters", null, "Report View"), filters));
-		const groups = col(icons.group(), __("Group by"), [o.groups.map((it) => item(it, it.order ? String(it.order) : ""))]);
+		// no "Group by" where the report's settings turned grouping off (ADR-023): the hint stays
+		const groups = o.groups.length
+			? col(icons.group(), __("Group by"), [o.groups.map((it) => item(it, it.order ? String(it.order) : ""))])
+			: wrap.lastElementChild || col("", "", []);
 		groups.insertAdjacentHTML("beforeend", `<div class="rv-msep"></div><div class="rv-zone-empty rv-sdrop-hint">${esc(o.hint)}</div>`);
-		wrap.appendChild(groups);
+		if (groups.parentNode !== wrap) wrap.appendChild(groups);
 		wrap.classList.toggle("one", wrap.children.length === 1);
 		content.replaceChildren(wrap);
 		this.popover?.place();

@@ -54,6 +54,8 @@ export class HeaderCells {
 	 */
 	constructor(host) {
 		this.host = host;
+		// false: the grid draws no filter row (Report View Settings column_filters, ADR-023)
+		this.floating = true;
 		this.leaves = new Map();
 		this.filters = new Map();
 		this.menu_key = null;

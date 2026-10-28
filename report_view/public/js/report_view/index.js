@@ -20,6 +20,7 @@ import { default_state, sanitize, reconcile } from "./state/view_state.js";
 import { decode_state, make_url_updater } from "./state/url.js";
 import { sanitize_groups } from "./state/column_groups.js";
 import { sanitize_dashboard } from "./state/dashboard_state.js";
+import { sanitize_features, server_config, restrict_state, allowed_modes, allowed_cards } from "./state/features.js";
 import { open_column_groups } from "./components/column_groups_dialog.js";
 import { load_report_settings, MissingFiltersError } from "./filters/report_filters.js";
 import { CriteriaBar } from "./filters/criteria.js";
@@ -99,6 +100,8 @@ export class ReportViewPage {
 		this.opened = null;
 		this.visible = false;
 		this.density = read_pref(DENSITY_KEY) === "compact" ? "compact" : "comfortable";
+		// what the report shows (Report View Settings, ADR-023): every tool until get_meta says
+		this.features = sanitize_features(null);
 		this.controls = new ViewControls(this);
 		// the user settings of the pages and of the charts, saved after a burst of changes and
 		// flushed when the page is left (flush_settings)
@@ -176,7 +179,7 @@ export class ReportViewPage {
 			sort_of: (key) => this.controls.sort_of(key),
 			filter_of: (key) => this.controls.filter_of(key),
 			set_label: (key) => this.controls.set_label(key),
-			draggable: (key) => this.controls.groupable(key),
+			draggable: (key) => this.features.grouping && this.controls.groupable(key),
 			on_sort: (key) => this.controls.toggle_sort(key),
 			on_menu: (key, anchor) => this.controls.open_column_menu(key, anchor),
 			on_filter: (key, f) => this.controls.set_filter(key, f),
@@ -220,6 +223,28 @@ export class ReportViewPage {
 		this.side = new SidePanel({ body, host: this.controls.side_host() });
 		this.status = new StatusBar({ parent: wrap });
 		this.apply_density();
+		// the report's Report View Settings, for whoever may change them
+		if (frappe.user?.has_role?.("System Manager") && this.page.add_menu_item) {
+			this.page.add_menu_item(__("Report View settings"), () => this.open_settings());
+		}
+	}
+
+	/** The report's Report View Settings: the record, or a new one filled from the shipped file. */
+	async open_settings() {
+		const name = this.report_name;
+		if (!name) return;
+		if (await frappe.db.exists("Report View Settings", name)) frappe.set_route("Form", "Report View Settings", name);
+		else frappe.new_doc("Report View Settings", { report: name });
+	}
+
+	/** The views the report offers now (its settings, the print permission). */
+	modes() {
+		return allowed_modes(this.features, Boolean(this.meta?.perms?.can_print));
+	}
+
+	/** The view state held to the report's settings (a view or a tool turned off). */
+	restrict() {
+		restrict_state(this.state, this.features, { can_print: Boolean(this.meta?.perms?.can_print), default_mode: this.config?.default_mode });
 	}
 
 	/** The Pages view once its bundle is loaded, else what stands for it until then. */
@@ -243,6 +268,7 @@ export class ReportViewPage {
 	change(fn) {
 		if (!this.state) return;
 		fn(this.state);
+		this.restrict();
 		this.refresh_controls();
 		this.render();
 	}
@@ -310,6 +336,7 @@ export class ReportViewPage {
 				subtotals: false,
 				hierarchical: false,
 				pivot: { cols: pivot.cols, on_column: (key, at) => this.controls.move_pivot_dim(key, "rows", at) },
+				features: this.features,
 			});
 			this.pivot_bar.set({
 				cols: pivot.cols,
@@ -325,6 +352,7 @@ export class ReportViewPage {
 			foldable: Boolean(this.result && this.result.mode !== "flat"),
 			subtotals: this.state.group.subtotals !== false,
 			hierarchical: Boolean(this.result && this.result.mode !== "flat"),
+			features: this.features,
 		});
 	}
 
@@ -340,7 +368,8 @@ export class ReportViewPage {
 
 	set_mode(mode) {
 		if (!this.state || this.state.mode === mode) return;
-		if (mode === "pages" && !this.meta?.perms?.can_print) return;
+		// a view the report does not offer (its settings, the print permission)
+		if (!this.modes().includes(mode)) return;
 		this.change((s) => {
 			s.mode = mode;
 		});
@@ -348,7 +377,7 @@ export class ReportViewPage {
 
 	// The Print action of the page head: the pages, where the print button is (ADR-014).
 	print() {
-		if (!this.state || !this.meta?.perms?.can_print) return;
+		if (!this.state || !this.modes().includes("pages")) return;
 		if (this.state.mode !== "pages") {
 			this.set_mode("pages");
 			return;
@@ -358,7 +387,8 @@ export class ReportViewPage {
 
 	// The user changed the chart (type, dimension, measures): only the chart's view is opened again.
 	set_chart(chart) {
-		if (!this.state) return;
+		if (!this.state || !this.features.charts) return;
+		if (chart) chart = { ...chart, cards: allowed_cards(chart.cards, this.features.chart_types) };
 		this.state.charts = chart;
 		this.save_user_charts(chart);
 		this.update_url(this.last_filters, this.state, default_state(this.config));
@@ -367,7 +397,7 @@ export class ReportViewPage {
 
 	// The user changed the pivot (rows, columns, values): only the pivot's views are opened again.
 	set_pivot(pivot, mode = null) {
-		if (!this.state) return;
+		if (!this.state || !this.features.pivot) return;
 		if (mode && this.state.mode !== mode) {
 			this.change((s) => {
 				s.pivot = pivot;
@@ -513,13 +543,15 @@ export class ReportViewPage {
 	}
 
 	apply_density() {
-		this.root.classList.toggle("compact", this.density === "compact");
-		this.header.set_density(this.density);
-		if (this.state) this.state.ui.density = this.density;
+		// the density switch turned off (Report View Settings): comfortable
+		const density = this.features.density ? this.density : "comfortable";
+		this.root.classList.toggle("compact", density === "compact");
+		this.header.set_density(density);
+		if (this.state) this.state.ui.density = density;
 	}
 
 	set_density(density) {
-		if (density === this.density) return;
+		if (density === this.density || !this.features.density) return;
 		this.density = density;
 		write_pref(DENSITY_KEY, density);
 		this.apply_density();
@@ -678,20 +710,25 @@ export class ReportViewPage {
 			});
 			return;
 		}
-		this.config = get_config(name);
 		const can_print = Boolean(this.meta.perms?.can_print);
-		this.header.set_report({ can_export: Boolean(this.meta.perms?.can_export), can_print });
-		this.toolbar.set_report({ can_print });
+		this.features = sanitize_features(this.meta.settings?.features);
+		this.config = server_config(get_config(name), this.meta.settings, this.features, can_print);
+		const f = this.features;
+		this.header.set_report({ can_export: Boolean(this.meta.perms?.can_export), can_print, features: f });
+		this.toolbar.set_report({ can_print, modes: this.modes(), search: f.quick_search });
+		this.cells.floating = f.column_filters;
+		this.apply_density();
 		if (frappe.breadcrumbs && this.meta.report?.module) frappe.breadcrumbs.add(this.meta.report.module);
 
 		const params = new URLSearchParams(window.location.search);
 		const from_url = decode_state(params.get("rv"));
 		this.state = sanitize(from_url || default_state(this.config), this.config);
-		// The pages need the print permission: a link to them opens the table otherwise.
-		if (this.state.mode === "pages" && !can_print) this.state.mode = "grid";
 		if (!from_url?.columns?.groups) await this.load_user_groups();
 		if (!from_url?.charts) await this.load_user_charts();
 		this.state.ui.density = this.density;
+		// A view or a tool the report does not offer (the pages need the print permission; the
+		// rest its Report View Settings, ADR-023): a link that asks for it opens the default.
+		this.restrict();
 		this.prepared_report_name = route_options.prepared_report_name || null;
 
 		this.criteria = new CriteriaBar({

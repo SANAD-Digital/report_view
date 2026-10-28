@@ -8,7 +8,8 @@
 // voucher type of the general ledger gets a "|" in its name: Perspective's column path separator),
 // pages=<JSON> (saved settings of the Pages view, e.g. {"orientation":"landscape"}),
 // presets=<JSON> (print presets on the "server", ADR-020: [{name, preset_name, public, is_default,
-// target, settings, owner}]), publish=0 (the user may not make presets public).
+// target, settings, owner}]), publish=0 (the user may not make presets public),
+// rvs=<JSON> (the report's server settings, e.g. {"features":{"pivot":false}}, ADR-023).
 
 const params = new URLSearchParams(window.location.search);
 const which = params.get("report") || "tb";
@@ -151,7 +152,9 @@ async function main() {
 				report: { name: conf.name, report_type: conf.report_type, module: conf.module },
 				script: { script: "", filters: settings.filters },
 				perms: { can_export: 1, can_print: 1 },
-				settings: { enabled: 1, enrich_rules: conf.enrich_rules },
+				// rvs=<JSON>: the report's Report View Settings as get_meta merges them
+				// (features, default_mode, default_view; ADR-023)
+				settings: { enabled: 1, enrich_rules: conf.enrich_rules, ...JSON.parse(params.get("rvs") || "{}") },
 				include_js: [],
 			};
 		}

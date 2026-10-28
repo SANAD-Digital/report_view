@@ -26,18 +26,26 @@ function is_path(path, depth) {
 }
 
 // The default view of a report: register.default_hidden hides columns the report shows
-// (a column that repeats the tree, an enrichment field of less interest).
+// (a column that repeats the tree, an enrichment field of less interest); the server's
+// Report View Settings add a default grouping and pins, and may turn subtotals off
+// (state/features.js server_config, ADR-023).
 export function default_state(config = {}) {
 	return {
 		v: VERSION,
 		mode: MODES.includes(config.default_mode) ? config.default_mode : "grid",
 		report_filters: {},
 		// groups: null = the report's own header groups (register bands)
-		columns: { order: [], hidden: str_list(config.default_hidden), widths: {}, pinned: { start: [], end: [] }, groups: null },
+		columns: {
+			order: [],
+			hidden: str_list(config.default_hidden),
+			widths: {},
+			pinned: { start: str_list(config.default_pinned), end: [] },
+			groups: null,
+		},
 		sort: [],
 		filters: [],
 		quick_filters: [],
-		group: { by: [], subtotals: true, expanded: "all" },
+		group: { by: str_list(config.default_group_by, LIMIT_GROUP), subtotals: config.features?.subtotals !== false, expanded: "all" },
 		tree: { depth: null, expanded: null },
 		values: [],
 		// null = the report's default dashboard (engine/chart_config.js default_cards)
@@ -89,7 +97,7 @@ export function sanitize(state, config = {}) {
 			.map((v) => ({ key: v.key, agg: v.agg }));
 	}
 	const group = state.group || {};
-	out.group.by = str_list(group.by, LIMIT_GROUP);
+	if (Array.isArray(group.by)) out.group.by = str_list(group.by, LIMIT_GROUP);
 	if (typeof group.subtotals === "boolean") out.group.subtotals = group.subtotals;
 	if (group.expanded === "all" || group.expanded === "none") out.group.expanded = group.expanded;
 	else if (Array.isArray(group.expanded)) {

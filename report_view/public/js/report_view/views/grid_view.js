@@ -107,7 +107,7 @@ export class GridView extends RtView {
 	}
 
 	header_height_px(host) {
-		return (this.model.levels === 2 ? css_int(host, "--bh", 30) : 0) + css_int(host, "--hh", 34) + css_int(host, "--fh", 38);
+		return (this.model.levels === 2 ? css_int(host, "--bh", 30) : 0) + css_int(host, "--hh", 34) + (this.model.floating ? css_int(host, "--fh", 38) : 0);
 	}
 
 	mounted() {

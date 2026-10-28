@@ -58,10 +58,11 @@ export class Header {
 		return this.$('[data-action="export"]');
 	}
 
-	/** @param {object} r {can_export, can_print} */
-	set_report({ can_export, can_print = false }) {
-		this.export_button.hidden = !can_export;
-		this.$('[data-action="print"]').hidden = !can_print;
+	/** @param {object} r {can_export, can_print, features (Report View Settings, ADR-023)} */
+	set_report({ can_export, can_print = false, features = null }) {
+		this.export_button.hidden = !can_export || features?.excel === false;
+		this.$('[data-action="print"]').hidden = !can_print || features?.pages === false;
+		this.$(".rv-seg").hidden = features?.density === false;
 	}
 
 	/**

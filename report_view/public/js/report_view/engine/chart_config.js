@@ -81,6 +81,36 @@ export function slicer_dimensions(normalized) {
  * @param {string|null} [label_key] the grid's label column
  */
 export function default_cards(normalized, view_state, register = {}, label_key = null) {
+	const types = register?.features?.chart_types;
+	const cards = default_cards_of(normalized, view_state, register, label_key);
+	if (!Array.isArray(types)) return cards;
+	// Report View Settings limit the types (ADR-023): a default card of another type takes the
+	// nearest allowed one (a number card stays a number card or goes)
+	const out = cards.map((c) => (types.includes(c.type) ? c : { ...c, type: nearest_type(c.type, types) })).filter((c) => c.type);
+	const measures = chart_measures(normalized, view_state);
+	if (!out.length && types.includes("kpi") && measures.length) {
+		return resolve_cards([{ type: "kpi", x: null, series: measures.slice(0, 4) }], normalized, view_state);
+	}
+	return out;
+}
+
+// The allowed type closest to a default card's: bars for bars, lines for lines, then any.
+const NEAR = {
+	bar: ["stacked", "hbar", "hstacked", "line", "area", "donut"],
+	stacked: ["bar", "hstacked", "hbar", "area", "line", "donut"],
+	hbar: ["hstacked", "bar", "stacked", "donut", "line", "area"],
+	hstacked: ["hbar", "stacked", "bar", "donut", "area", "line"],
+	line: ["area", "bar", "stacked", "hbar", "hstacked", "donut"],
+	area: ["line", "stacked", "bar", "hbar", "hstacked", "donut"],
+	donut: ["hbar", "bar", "stacked", "hstacked", "line", "area"],
+	kpi: [],
+};
+
+function nearest_type(type, types) {
+	return (NEAR[type] || []).find((t) => types.includes(t)) || null;
+}
+
+function default_cards_of(normalized, view_state, register = {}, label_key = null) {
 	const own = register?.charts?.cards;
 	if (Array.isArray(own) && own.length) {
 		const strict = resolve_cards(own, normalized, view_state, { strict: true });
@@ -152,7 +182,9 @@ export function resolve_dashboard(view_state, normalized, register = {}, label_k
 	const saved = sanitize_dashboard(view_state?.charts);
 	const dims = filterable(normalized);
 	if (!saved) return { cards: default_cards(normalized, view_state, register, label_key), slicers: [], cross: null, own: false };
-	const cards = resolve_cards(saved.cards, normalized, view_state);
+	const types = register?.features?.chart_types;
+	// a saved card of a type the report's settings turned off is dropped (ADR-023)
+	const cards = resolve_cards(Array.isArray(types) ? saved.cards.filter((c) => types.includes(c.type)) : saved.cards, normalized, view_state);
 	const slicers = saved.slicers.filter((s) => {
 		const d = dims.get(s.key);
 		return d && (s.type === "date") === DATE_TYPES.has(d.fieldtype);

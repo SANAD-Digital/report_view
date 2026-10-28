@@ -4,8 +4,8 @@
 // - dist/app.css: the app's CSS files, in the bundle's order;
 // - dist/desk-ltr.css / desk-rtl.css: Frappe's built desk CSS, so Frappe controls look real;
 // - dist/messages-ar.js: Arabic translations of frappe, erpnext and report_view (.po files);
-// - dist/fonts.css + dist/fonts/: IBM Plex Sans Arabic (from the app) after Frappe's Inter in --font-stack,
-//   as a site theme feeds it, for the screenshots;
+// - dist/fonts.css + dist/fonts/: IBM Plex Sans Arabic (from the app), then Frappe's Inter, in --font-stack
+//   as an Arabic site theme feeds it, for the screenshots;
 // - dist/http_methods.js: the verbs every whitelisted method allows (@frappe.whitelist(methods=…)),
 //   checked by the frappe.call stub (a call with a verb its method refuses fails in the harness).
 // Usage: node tests/visual/build.mjs
@@ -105,9 +105,9 @@ const fonts = (font_css.match(/@font-face\{font-family:'IBM Plex Sans Arabic'[^}
 	.join("\n");
 if (!fonts) throw new Error("build: no IBM Plex Sans Arabic in rv_fonts.css");
 // The UI takes Frappe's --font-stack (ADR-022), which a site theme feeds (snd_utilities:
-// --snd-font-family): here Frappe's Inter (served from /assets/frappe) with the app's Arabic face
-// after it, so Arabic text is drawn the same on every machine.
-const stack = `:root{--font-stack:"InterVariable","Inter","IBM Plex Sans Arabic",sans-serif}`;
+// --snd-font-family): here an Arabic site's, the app's Arabic face first and Frappe's Inter after
+// it, so the text is drawn from the same files on every machine (a runner's own fonts aside).
+const stack = `:root{--font-stack:"IBM Plex Sans Arabic","InterVariable","Inter",sans-serif}`;
 fs.writeFileSync(path.join(dist, "fonts.css"), `${fonts}\n${stack}\n`);
 
 // 6. Fixtures used by the harness.

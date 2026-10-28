@@ -85,7 +85,6 @@ class LetterheadBuilderPage {
 		const root = document.createElement("div");
 		root.className = "rv rvlb";
 		root.dir = this.rtl ? "rtl" : "ltr";
-		root.classList.toggle("dark", document.documentElement.getAttribute("data-theme") === "dark");
 		root.innerHTML = `
 			<div class="rvlb-loading" data-view="loading"><span class="rv-xspin"></span><span>${esc(__("Loading the company's data…"))}</span></div>
 			<div class="rvlb-error" data-view="error" hidden></div>
@@ -504,7 +503,6 @@ class LetterheadBuilderPage {
 		const d = new frappe.ui.Dialog({ title: __("Real preview"), size: "extra-large" });
 		const body = d.$body.get(0);
 		body.innerHTML = `<div class="rv rvlb-pvdlg" dir="${this.rtl ? "rtl" : "ltr"}"><div class="rvlb-loading"><span class="rv-xspin"></span><span>${esc(__("The server is rendering the letter head…"))}</span></div></div>`;
-		body.firstElementChild.classList.toggle("dark", this.root.classList.contains("dark"));
 		d.show();
 		let r;
 		try {

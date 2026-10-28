@@ -3,7 +3,7 @@
 // fixture data and stubbed Frappe. The page code itself comes from harness.mjs (sources) or
 // from the bundle `bench build` produced (harness_built.mjs).
 // URL parameters: report=tb|ar|ar_party|ar_jq|gl|gl_account, lang=ar|en, desk=light|dark (Desk theme), density=compact,
-// pref=light|dark (the page's own theme button), group=<column key>[,<column key>],
+// pref=light|dark (Desk's theme as the page's theme button leaves it, ADR-022), group=<column key>[,<column key>],
 // rows=N (repeat the report's rows up to about N, for performance checks), pipe=1 (the first
 // voucher type of the general ledger gets a "|" in its name: Perspective's column path separator),
 // pages=<JSON> (saved settings of the Pages view, e.g. {"orientation":"landscape"}),
@@ -140,7 +140,7 @@ async function main() {
 		frappe.model.user_settings.store[`Report View:${conf.name}`] = { pages: JSON.parse(params.get("pages")) };
 	}
 	if (params.get("density")) window.localStorage.setItem("report_view:density", params.get("density"));
-	if (params.get("pref")) window.localStorage.setItem("report_view:theme", params.get("pref"));
+	if (params.get("pref")) document.documentElement.setAttribute("data-theme", params.get("pref"));
 
 	const settings = { ...input.report_settings, filters: conf.filters(input.filters) };
 	if (conf.formatter) settings.formatter = conf.formatter;

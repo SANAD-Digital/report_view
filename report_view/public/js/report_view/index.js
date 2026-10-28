@@ -45,15 +45,14 @@ import * as dashboard_state from "./state/dashboard_state.js";
 import { ViewControls } from "./view_controls.js";
 import { NoticeBar, describe_notices } from "./components/notices.js";
 import { icons } from "./components/icons.js";
-import { esc, fmt_int, session_lang, settings_saver } from "./util.js";
+import { esc, fmt_int, session_lang, settings_saver, set_desk_theme } from "./util.js";
 import { ERROR_TITLES } from "./host/error_titles.js";
 import { PagesHost } from "./host/pages_host.js";
 import { ExportFlow } from "./host/export_flow.js";
 import { DebugHooks } from "./host/debug_hooks.js";
 
 const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
-// Local preferences of this browser (the theme is not part of the view state, §7.1).
-const THEME_KEY = "report_view:theme";
+// Local preferences of this browser (the density; the theme is Desk's own, ADR-022).
 const DENSITY_KEY = "report_view:density";
 // A change of the report's filters runs it again after this much quiet (ms), as query-report.
 const RUN_DEBOUNCE_MS = 300;
@@ -517,29 +516,25 @@ export class ReportViewPage {
 		return Promise.all([this.pages_saver.flush(), this.charts_saver.flush()]);
 	}
 
-	// Theme: the Desk theme by default (data-theme is the resolved light/dark value, also in
-	// "automatic" mode); the header button stores a local choice in localStorage.
-	// (observed while the page is shown: listen_window)
+	// Theme: Desk's own (ADR-022). Frappe's variables follow <html data-theme> (the resolved
+	// light/dark value, also in "automatic" mode) and the tokens are made of them, so the page
+	// needs no class of its own; the header button switches Desk's theme for the user, as
+	// Frappe's theme switcher does. (observed while the page is shown: listen_window)
 	watch_theme() {
 		this.apply_theme();
 		this.theme_observer = new MutationObserver(() => this.apply_theme());
 	}
 
 	is_dark() {
-		const saved = read_pref(THEME_KEY);
-		if (saved === "dark" || saved === "light") return saved === "dark";
 		return document.documentElement.getAttribute("data-theme") === "dark";
 	}
 
 	apply_theme() {
-		const dark = this.is_dark();
-		this.root.classList.toggle("dark", dark);
-		this.header.set_theme(dark);
+		this.header.set_theme(this.is_dark());
 	}
 
 	toggle_theme() {
-		write_pref(THEME_KEY, this.is_dark() ? "light" : "dark");
-		this.apply_theme();
+		set_desk_theme(this.is_dark() ? "light" : "dark");
 	}
 
 	apply_density() {

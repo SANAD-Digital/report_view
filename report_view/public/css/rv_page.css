@@ -11,12 +11,11 @@
 .rv{letter-spacing:0}
 /* shown, not available yet (PDF, Print, the pivot switch): disabled look, title kept */
 .rv-btn[aria-disabled=true],.rv-seg button[aria-disabled=true]{opacity:.45;cursor:default}
-.rv-btn[aria-disabled=true]:hover{background:var(--surface);border-color:var(--line-2)}
+.rv-btn[aria-disabled=true]:hover{background:var(--btn-bg)}
 .rv-seg button[aria-disabled=true]:hover{color:var(--tx-2)}
 .rv-switch[aria-disabled=true]{opacity:.55;cursor:default}
-/* Desk draws its own checkbox; the design uses the native one in the brand colour */
-.rv input[type=checkbox]{appearance:auto;-webkit-appearance:checkbox;width:15px;height:15px;margin:0;background:none;border:0;box-shadow:none;accent-color:var(--pri);cursor:pointer}
-.rv input[type=checkbox]::before,.rv input[type=checkbox]::after{content:none;display:none}
+/* checkboxes are Desk's own (Frappe draws them); only the cursor is ours */
+.rv input[type=checkbox]{margin:0;cursor:pointer}
 .rv input[type=checkbox]:disabled{cursor:default}
 .rv-message{font-size:var(--fs-sm);color:var(--tx-2)}
 .rv-message:empty{display:none}
@@ -31,7 +30,7 @@
 @keyframes rvxspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.rv-xspin{animation-duration:2.4s}}
 
-/* ---------- report filters: Frappe controls as the design's fields ---------- */
+/* ---------- report filters: Frappe's own controls, in the sizes of the page ---------- */
 /* Field titles show inside the empty field and as a tooltip (as on query-report); the
    label itself is read by screen readers only. */
 .rv-server .rv-field-lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -45,27 +44,25 @@
 
 .rv .rv-field .frappe-control,.rv .rv-field .form-group,
 .rv .rv-filter-check .frappe-control,.rv .rv-filter-check .form-group{margin:0;padding:0}
-.rv .rv-field .form-control{height:var(--ctl);padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:var(--tx);font-family:inherit;font-size:var(--fs-sm);font-weight:400;letter-spacing:0;line-height:calc(var(--ctl) - 2px);box-shadow:none}
-.rv .rv-field .form-control:focus,.rv .rv-field .multiselect-list.show .form-control{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft);outline:0}
+.rv .rv-field .form-control{height:var(--ctl);font-size:var(--fs-sm);letter-spacing:0}
+.rv .rv-field .multiselect-list.show .form-control{box-shadow:var(--focus)}
 .rv .rv-field .rv-input{width:100%}
-.rv .rv-field .form-control::placeholder{color:var(--tx-4)}
 .rv .rv-field select.form-control{padding-inline-end:28px}
 .rv .rv-field .select-icon{top:0;bottom:0;display:flex;align-items:center;color:var(--tx-3)}
 .rv .rv-field .select-icon .icon{stroke:currentColor}
-.rv .rv-field .placeholder{position:absolute;top:0;bottom:0;inset-inline:10px 28px;display:flex;align-items:center;font-size:var(--fs-sm);color:var(--tx-4);pointer-events:none}
-.rv .rv-field .link-btn{top:1px;bottom:1px;height:auto;background:var(--surface)}
-.rv .rv-field .link-btn .icon{stroke:var(--tx-3)}
+.rv .rv-field .placeholder{position:absolute;top:0;bottom:0;inset-inline:8px 28px;display:flex;align-items:center;font-size:var(--fs-sm);color:var(--tx-4);pointer-events:none}
+.rv .rv-field .link-btn{top:1px;bottom:1px;height:auto}
 .rv .rv-field [data-fieldtype=Date] .form-control{font-variant-numeric:tabular-nums}
 .rv .rv-filter-check .checkbox label{display:inline-flex;align-items:center;gap:0;padding:0;font-size:var(--fs-xs);font-weight:500;color:var(--tx-2);white-space:nowrap;cursor:pointer}
 .rv .rv-filter-check .label-area{color:var(--tx-2)}
-.rv .rv-filter-check .checkbox input[type=checkbox]{accent-color:var(--pri);margin-block:0}
+.rv .rv-filter-check .checkbox input[type=checkbox]{margin-block:0}
 .rv .rv-filter-check .help-box,.rv .rv-filter-check .help{display:none}
 /* Frappe MultiSelectList inside our fields: one frame, the menu within the field */
 .rv .rv-field .multiselect-list{position:relative}
 .rv .rv-field .multiselect-list > .form-control{display:flex;align-items:center;height:var(--ctl);min-height:0;padding-block:0;padding-inline-end:28px;cursor:pointer}
 .rv .rv-field .multiselect-list .status-text{position:static;flex:1;min-width:0;margin:0;padding:0;border:0;background:none;box-shadow:none;line-height:normal;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rv .rv-field .multiselect-list .status-text .text-extra-muted{color:var(--tx-4)}
-.rv .rv-field .multiselect-list .dropdown-menu{inset-inline:0;width:100%;min-width:0;max-width:100%;padding:6px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);box-shadow:var(--sh-pop)}
+.rv .rv-field .multiselect-list .dropdown-menu{inset-inline:0;width:100%;min-width:0;max-width:100%;padding:6px}
 .rv .rv-field .multiselect-list .dropdown-menu .form-control{height:var(--ctl-sm)}
 .rv .rv-field .multiselect-list .dropdown-menu li.d-flex{flex-wrap:wrap;gap:6px;padding-top:6px}
 .rv .rv-field .multiselect-list .dropdown-menu .btn{margin:0 !important}
@@ -92,7 +89,7 @@
 /* ---------- column groups dialog (a Frappe dialog: Desk's own variables) ---------- */
 .rv-cg{display:flex;flex-direction:column;gap:12px}
 .rv-cg-hint{margin:0;color:var(--text-muted);font-size:var(--text-sm)}
-.rv-cg-group{border:1px solid var(--border-color);border-radius:var(--border-radius-md);padding:12px}
+.rv-cg-group{border:1px solid var(--border-color);border-radius:var(--radius-md);padding:12px}
 .rv-cg-head{display:flex;gap:8px;align-items:center;margin-bottom:10px}
 .rv-cg-name{flex:1}
 .rv-cg-cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 16px}

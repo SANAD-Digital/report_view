@@ -2,7 +2,7 @@
 // report keeps the screen: the title is Desk's page title. Print opens the Pages view, where
 // the pages are printed from (ADR-014); PDF from the server comes with phase 6.
 // The element carries the .rv class itself: it lives outside the page root, and the design
-// tokens (light / dark / compact) are defined on .rv.
+// tokens (made of Frappe's variables, ADR-022; compact) are defined on .rv.
 
 import { icons } from "./icons.js";
 import { esc } from "../util.js";
@@ -101,8 +101,8 @@ export class Header {
 		}
 	}
 
+	/** The theme button shows Desk's theme (the page has none of its own, ADR-022). */
 	set_theme(dark) {
-		this.el.classList.toggle("dark", dark);
 		const b = this.$('[data-action="theme"]');
 		const label = dark ? __("Switch to light mode") : __("Switch to dark mode");
 		b.innerHTML = dark ? icons.sun() : icons.moon();

@@ -35,7 +35,7 @@
 .rv-print-probe:empty{display:none}
 
 /* ---------- a page (paper) ---------- */
-.rv-page{isolation:isolate;background:var(--pp-bg);color:var(--pp-tx);box-shadow:var(--pp-shadow);display:flex;flex-direction:column;flex:none;position:relative;overflow:hidden;box-sizing:border-box;font-size:var(--pp-fs,12px);line-height:1.35;letter-spacing:0;font-family:var(--pp-font,var(--font));-webkit-font-smoothing:antialiased}
+.rv-page{isolation:isolate;background:var(--pp-bg);color:var(--pp-tx);box-shadow:var(--pp-shadow);display:flex;flex-direction:column;flex:none;position:relative;overflow:hidden;box-sizing:border-box;font-size:var(--pp-fs,12px);line-height:1.35;letter-spacing:0;font-family:var(--pp-font,var(--pp-font-0));-webkit-font-smoothing:antialiased}
 .rv-page *{box-sizing:border-box}
 /* the font of the pages (--pp-font, «الخط») reaches every element: a site-wide «* { font-family }» has the
    same (zero) specificity and loads earlier; a print format's own rules still win */
@@ -269,7 +269,7 @@
 .rv-box4-end{grid-column:3;grid-row:2}
 .rv-box4-bottom{grid-column:2;grid-row:3}
 .rv-rule-ctl{display:grid;grid-template-columns:76px 1fr 34px;gap:6px;align-items:center}
-.rv-rule-ctl input[type=color],.rv-color-wide{width:100%;height:var(--ctl);padding:2px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);cursor:pointer}
+.rv-rule-ctl input[type=color],.rv-color-wide{width:100%;height:var(--ctl);padding:2px;border:1px solid var(--ctl-line);border-radius:var(--r);background:var(--ctl-bg);cursor:pointer}
 .rv-wm-img{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .rv-wm-img img{width:56px;height:40px;object-fit:contain;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2)}
 
@@ -483,8 +483,8 @@
 /* ---------- print presets (ADR-020): the control in the head of the toolbar and its menu ---------- */
 .rv-preset{min-width:0;flex:0 1 auto;margin-inline-start:auto}
 .rv-preset[hidden]{display:none}
-.rv-preset-btn{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:260px;height:28px;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);color:var(--tx);font:inherit;font-size:var(--fs-xs);cursor:pointer}
-.rv-preset-btn:hover{background:var(--hover);border-color:var(--line-3)}
+.rv-preset-btn{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:260px;height:28px;padding:0 8px;border:1px solid transparent;border-radius:var(--r-sm);background:var(--btn-bg);color:var(--tx);font:inherit;font-size:var(--fs-xs);cursor:pointer}
+.rv-preset-btn:hover{background:var(--btn-bg-h)}
 .rv-preset-btn[aria-expanded="true"]{background:var(--pri-soft);border-color:var(--pri);color:var(--pri-tx)}
 .rv-preset-btn:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
 .rv-preset-btn .lbl{flex:none;color:var(--tx-3)}

@@ -113,3 +113,16 @@ export function frame_resize_observer(fn) {
 	};
 	return ro;
 }
+
+/**
+ * Switches Desk's theme for the user ("light" | "dark"), as Frappe's theme switcher does
+ * (frappe/public/js/frappe/ui/theme_switcher.js toggle_theme: <html data-theme-mode> and the
+ * user's saved theme); <html data-theme> follows at once, so the page and Desk change together.
+ */
+export function set_desk_theme(theme) {
+	const toggle = window.frappe?.ui?.ThemeSwitcher?.prototype?.toggle_theme;
+	if (toggle) toggle.call({}, theme);
+	else document.documentElement.setAttribute("data-theme-mode", theme);
+	if (window.frappe?.ui?.set_theme) frappe.ui.set_theme(theme);
+	else document.documentElement.setAttribute("data-theme", theme);
+}

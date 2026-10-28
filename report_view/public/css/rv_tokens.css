@@ -1,78 +1,101 @@
-/* Design tokens of Report View, copied from reference/prototype/rv.css (.rv / .rv.compact / .rv.dark).
+/* Design tokens of Report View (ADR-022): the UI chrome inherits Frappe's own design variables
+   (Espresso, frappe/public/css/espresso/*.css and scss/common/css_variables.scss in Frappe 16).
+   Every token below is var(--frappe-variable); a literal is a fallback only where Frappe has
+   no variable (said on the line). Frappe switches its variables itself on
+   <html data-theme="dark">, so there is no dark palette here: the page follows Desk's theme.
+   Independent of the theme, on purpose:
+   - the printed paper (--pp-*): a print never turns dark;
+   - the letter head builder's design colours: they are data (letterhead/render.js);
+   - --dr/--cr and the chart palette --c1..--c7 keep their meaning, taken from Frappe's colour
+     scales (ink-<hue>-N, which Frappe itself turns for the dark theme). Text is at least 4.5:1
+     on --surface, --hdr and --total in both themes; --c4 (amber) is 3.9:1 in light, for chart
+     marks only (WCAG 1.4.11 asks 3:1).
    Every colour used by the app comes from these variables. */
 
 .rv{
-  --font:'IBM Plex Sans Arabic',var(--font-stack,system-ui),sans-serif;
+  /* type: Frappe's font stack (a site theme such as snd_utilities feeds it) and weights */
+  --font:var(--font-stack);
+  --fw:var(--font-weight-regular,400); --fw-m:var(--font-weight-medium,500); --fw-b:var(--font-weight-semibold,600);
   /* surfaces */
-  --bg:#F3F6F4; --surface:#FFFFFF; --surface-2:#F8FAF9; --surface-3:#EEF2EF; --hdr:#F7F9F8;
-  --line:#E2E8E4; --line-2:#D3DBD6; --line-3:#B9C4BD;
+  --bg:var(--bg-color); --surface:var(--card-bg); --surface-2:var(--subtle-accent); --surface-3:var(--subtle-fg);
+  --hdr:var(--subtle-fg);
+  --line:var(--border-color); --line-2:var(--dark-border-color); --line-3:var(--outline-gray-3);
   /* text */
-  --tx:#17211C; --tx-2:#46534C; --tx-3:#627069; --tx-4:#95A19A;
-  /* brand */
-  --pri:#1E5C45; --pri-h:#164A37; --pri-tx:#1E5C45; --pri-soft:#E6F1EB; --pri-soft-2:#CBE2D6; --on-pri:#FFFFFF;
-  /* accounting semantics */
-  --dr:#2D5C93; --dr-soft:#EAF1F9; --cr:#8A2D3B; --cr-soft:#F8ECEE;
-  /* status */
-  --neu:#56625B; --neu-soft:#ECF0ED; --ok:#1D7550; --ok-soft:#E3F2E9;
-  --err:#B02A21; --err-soft:#FCEBEA; --warn:#7F5500; --warn-soft:#FBF3E0; --warn-line:#EAD7A6;
+  --tx:var(--text-color); --tx-2:var(--ink-gray-7); --tx-3:var(--text-muted); --tx-4:var(--text-light);
+  /* brand: Frappe's primary button, its selected and focused states */
+  --pri:var(--btn-primary); --pri-h:var(--surface-gray-9); --pri-tx:var(--heading-color);
+  --pri-soft:var(--sidebar-select-color); --pri-soft-2:var(--surface-gray-3); --on-pri:var(--neutral);
+  /* controls: Frappe's buttons and fields (.btn, .form-control; a field on a grey band: --control-bg-on-gray) */
+  --btn-bg:var(--btn-default-bg); --btn-bg-h:var(--btn-default-hover-bg); --btn-ghost-h:var(--btn-ghost-hover-bg);
+  --ctl-bg:var(--control-bg); --ctl-bg-g:var(--control-bg-on-gray); --ctl-line:transparent; --ctl-line-f:var(--outline-gray-4); --focus:var(--focus-default);
+  /* accounting semantics: Frappe's blue and red inks */
+  --dr:var(--ink-blue-9); --dr-soft:var(--surface-blue-1); --cr:var(--ink-red-8); --cr-soft:var(--surface-red-1);
+  /* status: Frappe's inks on their own surfaces */
+  --neu:var(--text-muted); --neu-soft:var(--surface-gray-2); --ok:var(--ink-green-9); --ok-soft:var(--surface-green-1);
+  --err:var(--ink-red-8); --err-soft:var(--surface-red-1); --warn:var(--ink-amber-9); --warn-soft:var(--surface-amber-1); --warn-line:var(--outline-amber-2);
   /* grid states */
-  --sel:rgba(45,92,147,.10); --sel-line:#2D5C93; --hover:#F1F5F2;
-  --grp:#F9FBFA; --grp-0:#F1F5F2; --foot:#F4F7F5; --total:#E7F0EA;
-  /* charts (categorical, similar lightness) */
-  --c1:#2D5C93; --c2:#8A2D3B; --c3:#2F7D5F; --c4:#B07A22; --c5:#6A5A9C; --c6:#2A8791; --c7:#A5AFA9;
-  --scrim:rgba(19,27,23,.34);
-  /* paper (the printed page of the Pages view): the same in both themes */
+  --sel:var(--surface-blue-2); --sel-line:var(--ink-blue-7); --hover:var(--fg-hover-color);
+  --grp:var(--subtle-accent); --grp-0:var(--subtle-fg); --foot:var(--subtle-accent); --total:var(--subtle-fg);
+  /* charts (categorical): Frappe's colour scales, one hue each */
+  --c1:var(--ink-blue-8); --c2:var(--ink-red-7); --c3:var(--ink-green-8); --c4:var(--ink-amber-8);
+  --c5:var(--ink-violet-7); --c6:var(--ink-cyan-8); --c7:var(--ink-gray-5);
+  /* the colour of Frappe's modal backdrop (scss/desk/variables.scss), lighter: a sheet over the page */
+  --scrim:color-mix(in srgb,var(--gray-800) 40%,transparent);
+  /* paper (the printed page of the Pages view): the same in both themes, not Frappe's */
   --pp-bg:#FFFFFF; --pp-tx:#1B1F1D; --pp-tx-2:#4A524E; --pp-tx-3:#6B736F; --pp-line:#D9DFDB; --pp-line-2:#9AA39E;
   --pp-soft:#F4F6F5; --pp-head:#EBEFED; --pp-zebra:#FAFBFA; --pp-total:#EBEFED; --pp-neg:#9B2335; --pp-brand:#1E5C45; --pp-brand-2:#2F7D5F; --pp-brand-soft:#E8F2EC; --pp-on-brand:#FFFFFF; --pp-shadow:0 2px 12px rgba(0,0,0,.12);
-  --sh-1:0 1px 2px rgba(17,24,20,.06);
-  --sh-2:0 2px 8px rgba(17,24,20,.06);
-  --sh-pop:0 12px 32px rgba(17,24,20,.14),0 2px 6px rgba(17,24,20,.06);
-  --sh-drawer:0 0 48px rgba(17,24,20,.18);
+  /* the font of a page when none is chosen (--pp-font): an Arabic face of the font library */
+  --pp-font-0:'IBM Plex Sans Arabic',var(--font-stack),sans-serif;
+  /* elevations: Frappe's (Espresso keeps the same values in both themes) */
+  --sh-1:var(--shadow-sm);
+  --sh-2:var(--card-shadow);
+  --sh-pop:var(--shadow-lg);
+  --sh-drawer:var(--shadow-2xl);
   /* the Pages view: an open section, the little page of the margin fields, a tool's menu */
-  --sh-open:0 1px 2px rgba(17,24,20,.04),0 4px 14px rgba(17,24,20,.05);
-  --sh-mini:0 1px 3px rgba(17,24,20,.08);
-  --sh-menu:0 12px 32px rgba(17,24,20,.14);
-  --pin-sh:-6px 0 8px -6px rgba(17,24,20,.16);
+  --sh-open:var(--shadow-sm);
+  --sh-mini:var(--shadow-sm);
+  --sh-menu:var(--shadow-lg);
+  /* the pinned edge shadow: directional, Frappe has none */
+  --pin-sh:-6px 0 8px -6px rgba(0,0,0,.16);
   /* layers over Desk (its modals are at 1050+): the scrim of a sheet, a tool's menu, the list of a field in it */
   --z-scrim:1039; --z-pop:1040; --z-dropdown:1050;
-  --r-xs:3px; --r-sm:5px; --r:7px; --r-lg:10px; --r-xl:14px;
-  /* density — comfortable */
-  --rh:36px; --fs:13px; --fs-sm:12.5px; --fs-xs:11.5px; --cp:12px;
-  --bh:30px; --hh:34px; --fh:38px; --ctl:34px; --gap:8px; --pad:12px; --ind:18px;
-  font-family:var(--font); color:var(--tx); background:var(--bg); font-size:var(--fs); line-height:1.5;
-  -webkit-font-smoothing:antialiased;
+  /* radii: Frappe's scale (--radius is the radius of its buttons and fields) */
+  --r-xs:var(--radius-1); --r-sm:var(--radius-3); --r:var(--radius); --r-lg:var(--radius-md); --r-xl:var(--radius-lg);
+  /* density, comfortable: Frappe's sizes. The rows are those of Frappe's report grid
+     (frappe-datatable: body cells 33px, header rows 35px), which has no variable for them. */
+  --rh:33px; --fs:var(--text-base); --fs-sm:var(--text-sm); --fs-xs:var(--text-xs); --cp:var(--padding-sm);
+  --bh:var(--list-row-height); --hh:35px; --fh:35px; --ctl:var(--input-height); --ctl-sm:calc(var(--input-height) - 4px);
+  --gap:var(--margin-sm); --pad:var(--padding-md); --ind:18px;
+  /* the text of the ECharts plots (axes, labels, tooltips): the size of Frappe Charts' values */
+  --fs-chart:var(--text-2xs);
+  color:var(--tx); font-size:var(--fs); line-height:1.5;
 }
+/* compact: a Report View option, derived from Frappe's sizes (the row tokens --rh --cp --bh --hh
+   --fh are read by views/rt_base.js css_int: one variable or a length each, never a calc()) */
 .rv.compact{
-  --rh:28px; --fs:12.5px; --fs-sm:12px; --fs-xs:11px; --cp:8px;
-  --bh:26px; --hh:28px; --fh:32px; --ctl:30px; --gap:6px; --pad:8px; --ind:14px;
+  --rh:var(--input-height); --fs:var(--text-sm); --fs-sm:var(--text-xs); --fs-xs:var(--text-2xs); --cp:var(--padding-xs);
+  --bh:var(--input-height); --hh:var(--input-height); --fh:var(--list-row-height);
+  --ctl:calc(var(--input-height) - 4px); --ctl-sm:calc(var(--input-height) - 8px);
+  --gap:var(--margin-xs); --pad:var(--padding-sm); --ind:14px;
 }
-.rv.dark{
-  --bg:#0E1411; --surface:#141B17; --surface-2:#18201C; --surface-3:#1E2823; --hdr:#18201C;
-  --line:#25302A; --line-2:#2F3B34; --line-3:#45524A;
-  --tx:#E3EAE6; --tx-2:#B3BFB8; --tx-3:#8E9B94; --tx-4:#67746D;
-  --pri:#2A7C5D; --pri-h:#32906C; --pri-tx:#74C8A3; --pri-soft:#17302A; --pri-soft-2:#21443A; --on-pri:#FFFFFF;
-  --dr:#8EB5E6; --dr-soft:#18263A; --cr:#E7A2AC; --cr-soft:#36202A;
-  --neu:#A9B5AE; --neu-soft:#222C27; --ok:#6CCB9B; --ok-soft:#173327;
-  --err:#F0918A; --err-soft:#3A1D1B; --warn:#E6BE6A; --warn-soft:#2E2715; --warn-line:#4D4122;
-  --sel:rgba(142,181,230,.14); --sel-line:#8EB5E6; --hover:#1B2420;
-  --grp:#171F1B; --grp-0:#1C2621; --foot:#1A231F; --total:#1D3029;
-  --c1:#7EA8DD; --c2:#DE8F9B; --c3:#66BD95; --c4:#D9AE5C; --c5:#A596D6; --c6:#63BCC4; --c7:#5E6B64;
-  --scrim:rgba(0,0,0,.5);
-  --pp-shadow:0 2px 14px rgba(0,0,0,.5);
-  --sh-1:0 1px 2px rgba(0,0,0,.3); --sh-2:0 2px 8px rgba(0,0,0,.3);
-  --sh-pop:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);
-  --sh-drawer:0 0 48px rgba(0,0,0,.5);
-  --sh-open:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.3);
-  --sh-mini:0 1px 3px rgba(0,0,0,.3);
-  --sh-menu:0 12px 32px rgba(0,0,0,.45);
-  --pin-sh:-6px 0 8px -6px rgba(0,0,0,.55);
-  color-scheme:dark;
-}
+/* Frappe's dark theme: only what Frappe has no variable for (the paper's shadow, the pinned edge) */
+[data-theme=dark] .rv{--pp-shadow:0 2px 14px rgba(0,0,0,.5); --pin-sh:-6px 0 8px -6px rgba(0,0,0,.55)}
 
 /* the pinned edge shadow falls toward the scrolling columns: the inline end */
-.rv[dir=ltr]{--pin-sh:6px 0 8px -6px rgba(17,24,20,.16)}
-.rv.dark[dir=ltr]{--pin-sh:6px 0 8px -6px rgba(0,0,0,.55)}
+.rv[dir=ltr]{--pin-sh:6px 0 8px -6px rgba(0,0,0,.16)}
+[data-theme=dark] .rv[dir=ltr]{--pin-sh:6px 0 8px -6px rgba(0,0,0,.55)}
 
 /* Pages view: the colours a page starts from for its rules, its border and its watermark
    (views/pages_view.js COLOR_TOKENS: a colour setting left empty); paper, the same in both themes */
 .rv{--pp-rule:var(--pp-line); --pp-rule-2:var(--pp-line-2); --pp-border:var(--pp-tx); --pp-mark:#8A2D3B}
+
+/* The paper never turns dark: in Desk's dark theme a print format on a page (or a letter head on
+   the builder's sheet) still reads Frappe's variables, so they are given the paper's values there,
+   as Frappe does for its own .print-format (scss/desk/dark.scss). */
+[data-theme=dark] .rv-page,[data-theme=dark] .rvlb-sheet{
+  --text-color:var(--pp-tx); --heading-color:var(--pp-tx); --text-muted:var(--pp-tx-2); --text-light:var(--pp-tx-3);
+  --border-color:var(--pp-line); --dark-border-color:var(--pp-line-2); --table-border-color:var(--pp-line);
+  --bg-color:var(--pp-bg); --fg-color:var(--pp-bg); --card-bg:var(--pp-bg); --modal-bg:var(--pp-bg);
+  --subtle-fg:var(--pp-soft); --subtle-accent:var(--pp-zebra); --control-bg:var(--pp-soft); --highlight-color:var(--pp-soft);
+  color-scheme:light;
+}

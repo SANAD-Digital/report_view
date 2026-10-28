@@ -4,7 +4,8 @@
 // - dist/app.css: the app's CSS files, in the bundle's order;
 // - dist/desk-ltr.css / desk-rtl.css: Frappe's built desk CSS, so Frappe controls look real;
 // - dist/messages-ar.js: Arabic translations of frappe, erpnext and report_view (.po files);
-// - dist/fonts.css + dist/fonts/: IBM Plex Sans Arabic (the design font, from the app) for the screenshots;
+// - dist/fonts.css + dist/fonts/: IBM Plex Sans Arabic (from the app) after Frappe's Inter in --font-stack,
+//   as a site theme feeds it, for the screenshots;
 // - dist/http_methods.js: the verbs every whitelisted method allows (@frappe.whitelist(methods=…)),
 //   checked by the frappe.call stub (a call with a verb its method refuses fails in the harness).
 // Usage: node tests/visual/build.mjs
@@ -87,7 +88,7 @@ const messages = {
 };
 fs.writeFileSync(path.join(dist, "messages-ar.js"), `window.RV_MESSAGES = ${JSON.stringify(messages)};\n`);
 
-// 5. Design font: the app's own IBM Plex Sans Arabic (public/fonts, @font-face in
+// 5. Fonts: the app's own IBM Plex Sans Arabic (public/fonts, @font-face in
 // rv_fonts.css), so every machine draws the same text, with or without the font installed.
 const font_css = fs.readFileSync(path.join(app, "report_view/public/css/rv_fonts.css"), "utf8");
 const font_dir = path.join(app, "report_view/public/fonts");
@@ -103,7 +104,11 @@ const fonts = (font_css.match(/@font-face\{font-family:'IBM Plex Sans Arabic'[^}
 	)
 	.join("\n");
 if (!fonts) throw new Error("build: no IBM Plex Sans Arabic in rv_fonts.css");
-fs.writeFileSync(path.join(dist, "fonts.css"), fonts);
+// The UI takes Frappe's --font-stack (ADR-022), which a site theme feeds (snd_utilities:
+// --snd-font-family): here Frappe's Inter (served from /assets/frappe) with the app's Arabic face
+// after it, so Arabic text is drawn the same on every machine.
+const stack = `:root{--font-stack:"InterVariable","Inter","IBM Plex Sans Arabic",sans-serif}`;
+fs.writeFileSync(path.join(dist, "fonts.css"), `${fonts}\n${stack}\n`);
 
 // 6. Fixtures used by the harness.
 for (const f of [

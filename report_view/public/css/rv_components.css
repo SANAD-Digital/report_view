@@ -13,9 +13,8 @@
    regular-table mapping: rv_table.css. Frappe controls and page layout: rv_page.css.
    Colours from the tokens only (rv_tokens.css). */
 
-.rv{--ctl-sm:calc(var(--ctl) - 6px)}
 .rv *{box-sizing:border-box}
-.rv button,.rv input,.rv select{font-family:inherit;color:inherit}
+.rv button,.rv input,.rv select{color:inherit}
 .rv h1,.rv h2,.rv h3,.rv p{margin:0}
 .rv svg{flex:none;display:block}
 .rv .ltr{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
@@ -28,12 +27,12 @@
 .rv-vsep{width:1px;height:22px;background:var(--line-2);margin:0 4px;flex:none}
 
 /* ---------- buttons ---------- */
-.rv-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:var(--ctl);padding:0 12px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--surface);color:var(--tx);font-size:var(--fs-sm);font-weight:500;cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s,color .12s}
-.rv-btn:hover{background:var(--hover);border-color:var(--line-3)}
+.rv-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:var(--ctl);padding:0 12px;border-radius:var(--r);border:1px solid transparent;background:var(--btn-bg);color:var(--tx);font-size:var(--fs);font-weight:var(--fw);cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s,color .12s}
+.rv-btn:hover{background:var(--btn-bg-h)}
 .rv-btn.primary{background:var(--pri);border-color:var(--pri);color:var(--on-pri)}
 .rv-btn.primary:hover{background:var(--pri-h);border-color:var(--pri-h)}
 .rv-btn.ghost{background:transparent;border-color:transparent;color:var(--tx-2)}
-.rv-btn.ghost:hover{background:var(--hover);color:var(--tx)}
+.rv-btn.ghost:hover{background:var(--btn-ghost-h);color:var(--tx)}
 .rv-btn.icon{width:var(--ctl);padding:0}
 .rv-btn.sm{height:var(--ctl-sm);padding:0 10px;font-size:var(--fs-xs)}
 .rv-btn.icon.sm{width:var(--ctl-sm);padding:0}
@@ -49,13 +48,13 @@
 
 /* ---------- inputs ---------- */
 .rv-field{display:flex;flex-direction:column;gap:4px;font-size:var(--fs-xs);color:var(--tx-2);font-weight:500}
-.rv-input{height:var(--ctl);padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:var(--tx);font-size:var(--fs-sm);outline:none;min-width:0}
+.rv-input{height:var(--ctl);padding:0 10px;border:1px solid var(--ctl-line);border-radius:var(--r);background:var(--ctl-bg);color:var(--tx);font-size:var(--fs-sm);outline:none;min-width:0}
 .rv-input::placeholder{color:var(--tx-4)}
-.rv-input:focus{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft)}
+.rv-input:focus{border-color:var(--ctl-line-f);box-shadow:var(--focus)}
 .rv-input.sm{height:var(--ctl-sm);font-size:var(--fs-xs);padding:0 8px;border-radius:var(--r-sm)}
 .rv-input.num{direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
 .rv-check{display:inline-flex;align-items:center;gap:8px;cursor:pointer;min-width:0;font-size:var(--fs-sm)}
-.rv-check input{width:15px;height:15px;accent-color:var(--pri);margin:0;flex:none;cursor:pointer}
+.rv-check input{margin:0;flex:none;cursor:pointer}
 .rv-check span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rv-check.sm{font-size:var(--fs-xs);color:var(--tx-2)}
 .rv-switch{width:34px;height:20px;border-radius:999px;border:0;background:var(--line-3);position:relative;cursor:pointer;flex:none;padding:0}
@@ -97,9 +96,9 @@
 .rv-pill.warn{background:var(--warn-soft);color:var(--warn)}
 
 /* ---------- search box with facets (Odoo style) ---------- */
-.rv-search{flex:1 1 auto;display:flex;align-items:center;gap:6px;height:var(--ctl);padding:0 6px 0 10px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);cursor:text;overflow:hidden;min-width:0}
+.rv-search{flex:1 1 auto;display:flex;align-items:center;gap:6px;height:var(--ctl);padding:0 6px 0 10px;border:1px solid var(--ctl-line);border-radius:var(--r);background:var(--ctl-bg);cursor:text;overflow:hidden;min-width:0}
 .rv[dir=rtl] .rv-search{padding:0 10px 0 6px}
-.rv-search:focus-within{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft)}
+.rv-search:focus-within{border-color:var(--ctl-line-f);box-shadow:var(--focus)}
 .rv-search > svg{color:var(--tx-3)}
 .rv-search input{flex:1 1 90px;min-width:90px;border:0;outline:0;background:transparent;height:24px;font-size:var(--fs-sm);color:var(--tx)}
 .rv-search input::placeholder{color:var(--tx-4)}
@@ -136,12 +135,12 @@
 .rv-hmenu{width:22px;height:22px;border:0;border-radius:4px;background:transparent;color:var(--tx-3);display:grid;place-items:center;cursor:pointer;opacity:0;padding:0;flex:none}
 .rv-hmenu.on{opacity:1}
 .rv-hmenu:hover,.rv-hmenu.on{background:var(--surface-3);color:var(--tx)}
-.rv-ff-input{height:calc(var(--fh) - 12px);width:100%;min-width:0;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);color:var(--tx);font-size:var(--fs-xs);outline:none}
+.rv-ff-input{height:calc(var(--fh) - 12px);width:100%;min-width:0;padding:0 8px;border:1px solid var(--ctl-line);border-radius:var(--r-sm);background:var(--ctl-bg-g);color:var(--tx);font-size:var(--fs-xs);outline:none}
 .rv-ff-input::placeholder{color:var(--tx-4)}
-.rv-ff-input:focus{border-color:var(--pri);box-shadow:0 0 0 2px var(--pri-soft)}
+.rv-ff-input:focus{border-color:var(--ctl-line-f);box-shadow:var(--focus)}
 .rv-ff-input.on{border-color:var(--pri);background:var(--pri-soft)}
 .rv-ff-input.num{direction:ltr;text-align:left;padding:0 6px}
-.rv-ff-set{height:calc(var(--fh) - 12px);width:100%;min-width:0;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);font-size:var(--fs-xs);display:flex;align-items:center;justify-content:space-between;gap:4px;cursor:pointer;color:var(--tx-2)}
+.rv-ff-set{height:calc(var(--fh) - 12px);width:100%;min-width:0;padding:0 8px;border:1px solid var(--ctl-line);border-radius:var(--r-sm);background:var(--ctl-bg-g);font-size:var(--fs-xs);display:flex;align-items:center;justify-content:space-between;gap:4px;cursor:pointer;color:var(--tx-2)}
 .rv-ff-set:hover{border-color:var(--line-3)}
 .rv-ff-set.on{border-color:var(--pri);background:var(--pri-soft);color:var(--pri-tx);font-weight:500}
 .rv-ff-set span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -249,7 +248,7 @@
 .rv-zone-chips{display:flex;flex-direction:column;gap:4px}
 .rv-zchip{display:flex;align-items:center;gap:6px;height:calc(var(--ctl) - 4px);padding-inline:8px 3px;border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--line-2);font-size:var(--fs-xs);font-weight:500;cursor:grab}
 .rv-zchip .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rv-zchip select{height:22px;border:1px solid var(--line);border-radius:4px;background:var(--surface-2);font-size:11px;padding:0 2px;color:var(--tx)}
+.rv-zchip select{height:22px;border:1px solid var(--ctl-line);border-radius:4px;background:var(--ctl-bg);font-size:11px;padding:0 2px;color:var(--tx)}
 .rv-fsec{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);flex:none}
 .rv-fsec-hd{display:flex;align-items:center;gap:8px;width:100%;height:calc(var(--ctl) + 2px);padding:0 10px;border:0;border-radius:var(--r);background:transparent;font-size:var(--fs-sm);font-weight:500;cursor:pointer;text-align:start}
 .rv-fsec-hd:hover{background:var(--hover)}
@@ -323,9 +322,9 @@
 .rv-ctype.on{border-color:var(--pri);background:var(--pri-soft);color:var(--pri-tx);font-weight:500}
 
 /* ---------- date range picker (the "Period" field) ---------- */
-.rv-datefield{display:inline-flex;align-items:center;gap:8px;height:var(--ctl);min-width:330px;padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:var(--tx);font-size:var(--fs-sm);cursor:pointer;text-align:start}
+.rv-datefield{display:inline-flex;align-items:center;gap:8px;height:var(--ctl);min-width:330px;padding:0 10px;border:1px solid var(--ctl-line);border-radius:var(--r);background:var(--ctl-bg);color:var(--tx);font-size:var(--fs-sm);cursor:pointer;text-align:start}
 .rv-datefield:hover{border-color:var(--line-3)}
-.rv-datefield.on{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft)}
+.rv-datefield.on{border-color:var(--ctl-line-f);box-shadow:var(--focus)}
 .rv-datefield svg{color:var(--tx-3)}
 .rv-datefield .ltr{flex:1;text-align:right;font-weight:500;white-space:nowrap}
 .rv-date-tag{font-size:11px;font-weight:500;padding:0 8px;line-height:20px;border-radius:999px;background:var(--pri-soft);color:var(--pri-tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
@@ -340,8 +339,8 @@
 .dp-main{flex:1;display:flex;flex-direction:column;min-width:0}
 .dp-mode{padding:14px 16px 0;display:flex}
 .dp-inputs{display:flex;align-items:center;gap:10px;padding:14px 16px 4px}
-.dp-in{flex:1;display:flex;align-items:stretch;height:var(--ctl);border:1px solid var(--line-2);border-radius:var(--r);overflow:hidden;background:var(--surface);min-width:0}
-.dp-in.on,.dp-in:focus-within{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft)}
+.dp-in{flex:1;display:flex;align-items:stretch;height:var(--ctl);border:1px solid var(--ctl-line);border-radius:var(--r);overflow:hidden;background:var(--ctl-bg);min-width:0}
+.dp-in.on,.dp-in:focus-within{border-color:var(--ctl-line-f);box-shadow:var(--focus)}
 .dp-in span{padding:0 10px;font-size:var(--fs-xs);color:var(--tx-3);border-inline-end:1px solid var(--line);display:flex;align-items:center;background:var(--surface-2);white-space:nowrap}
 .dp-in input{flex:1;min-width:0;border:0;outline:0;background:transparent;padding:0 10px;direction:ltr;text-align:right;font-variant-numeric:tabular-nums;font-size:var(--fs-sm);color:var(--tx)}
 .dp-arrow{color:var(--tx-3)}
@@ -375,7 +374,7 @@
 .dp-fy-row.top .dp-fy-l{padding-top:4px}
 .dp-fy-l{width:90px;flex:none;font-size:var(--fs-sm);color:var(--tx-2);font-weight:500}
 .dp-fy-hint{font-size:11px;color:var(--tx-3)}
-.dp-step{display:flex;align-items:center;gap:4px;width:220px;height:var(--ctl);padding:0 4px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface)}
+.dp-step{display:flex;align-items:center;gap:4px;width:220px;height:var(--ctl);padding:0 4px;border:1px solid var(--ctl-line);border-radius:var(--r);background:var(--ctl-bg)}
 .dp-step b{flex:1;text-align:center;font-size:13.5px;font-weight:600}
 .dp-fy .rv-seg button{padding:0 14px;min-width:44px;justify-content:center}
 .dp-months{flex:1;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px}
@@ -397,9 +396,9 @@
 
 /* ---------- font picker (components/font_picker.js): the font library, each family in itself ---------- */
 .rv-fontpick{position:relative;min-width:0}
-.rv-fontpick-btn{display:flex;align-items:center;gap:8px;width:100%;min-height:var(--ctl);padding:4px 10px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);color:var(--tx);cursor:pointer;text-align:start}
+.rv-fontpick-btn{display:flex;align-items:center;gap:8px;width:100%;min-height:var(--ctl);padding:4px 10px;border:1px solid var(--ctl-line);border-radius:var(--r-sm);background:var(--ctl-bg);color:var(--tx);cursor:pointer;text-align:start}
 .rv-fontpick-btn:hover{border-color:var(--line-3)}
-.rv-fontpick-btn:focus-visible,.rv-fontpick-opt:focus-visible{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft)}
+.rv-fontpick-btn:focus-visible,.rv-fontpick-opt:focus-visible{outline:none;border-color:var(--ctl-line-f);box-shadow:var(--focus)}
 .rv-fontpick-btn[aria-expanded=true]{border-color:var(--pri)}
 /* each family drawn in itself, whatever font a site puts on every element */
 .rv-fontpick-btn *,.rv-fontpick-opt *{font-family:inherit}

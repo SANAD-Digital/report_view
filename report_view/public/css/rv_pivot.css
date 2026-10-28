@@ -26,7 +26,7 @@
 .rv-pivot regular-table thead th.rv-hd.num{text-align:end}
 
 /* columns panel: "+ Add" list under a zone of the pivot */
-.rv-zone-add{height:26px;width:100%;border:1px solid var(--line);border-radius:5px;background:var(--surface);font-size:var(--fs-xs);color:var(--tx-2);padding:0 4px}
+.rv-zone-add{height:26px;width:100%;border:1px solid var(--ctl-line);border-radius:5px;background:var(--ctl-bg);font-size:var(--fs-xs);color:var(--tx-2);padding:0 4px}
 .rv-zone-add:focus-visible{outline:2px solid var(--pri);outline-offset:-1px}
 
 /* drill-down popover (.rv-pv-list): the rows of the report behind a value */

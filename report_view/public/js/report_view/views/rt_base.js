@@ -30,7 +30,10 @@ export function caret(open) {
 	return `<button type="button" class="rv-caret${open ? " open" : ""}" aria-expanded="${open}" aria-label="${esc(label)}" title="${esc(label)}">${CHEVRON}</button>`;
 }
 
-/** An integer CSS variable of an element (the design tokens). */
+/**
+ * An integer CSS variable of an element (the design tokens). The tokens read here (--rh --cp
+ * --bh --hh --fh) are plain lengths or one Frappe variable, never a calc() (rv_tokens.css).
+ */
 export function css_int(el, name, fallback) {
 	const v = parseInt(getComputedStyle(el).getPropertyValue(name), 10);
 	return Number.isFinite(v) ? v : fallback;
@@ -110,11 +113,12 @@ export class RtView {
 		this.header_height = this.header_height_px(host);
 		// regular-table sizes its scroll range as if a header row were as high as a body row
 		// (panel = rows * h + levels * h; rows that fit = height / h - levels). The design's
-		// header rows are lower, which left an empty strip of up to 10px under the last row at
-		// the end of the scroll. Reporting the difference as a fraction of a row less makes
-		// both formulas exact for the real header height (the data listener answers with one
-		// row more than asked, so the bottom edge is always filled).
-		this.row_trim = Math.max(0, this.header_rows() * this.row_height - this.header_height) / this.row_height;
+		// header rows may be lower or higher (Frappe's report grid: 35px headers over 33px rows,
+		// ADR-022), which left a strip under the last row at the end of the scroll, or cut it.
+		// Reporting the difference as a fraction of a row less (or more, for higher headers)
+		// makes both formulas exact for the real header height (the data listener answers with
+		// one row more than asked and clamps to the data, so the bottom edge is always filled).
+		this.row_trim = (this.header_rows() * this.row_height - this.header_height) / this.row_height;
 		rt.setDataListener(this.listener, { column_classes: true });
 		if (this.rtl) apply_rtl(rt);
 		this.apply_sizes();

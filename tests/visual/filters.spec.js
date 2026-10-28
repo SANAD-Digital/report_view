@@ -426,15 +426,77 @@ test("a report formatter that wraps default_formatter with $(out) gets HTML, as 
 });
 
 
-test("a MultiSelectList filter has one frame (no design input frame on its wrapper)", async ({ page }) => {
+test("a MultiSelectList filter is Frappe's own field (no design input frame on its wrapper)", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, "report=tb&lang=en");
 	await page.locator(".rv-more").click();
-	const framed = await page.evaluate(() =>
-		[...document.querySelectorAll('.rv-more-filters .rv-field[data-fieldtype="MultiSelectList"] *')]
-			.filter((e) => parseFloat(getComputedStyle(e).borderTopWidth) > 0 && !e.closest(".dropdown-menu"))
-			.map((e) => e.className)
-	);
-	expect(framed).toEqual(["form-control cursor-pointer input-xs"]);
+	const out = await page.evaluate(() => {
+		const all = [...document.querySelectorAll('.rv-more-filters .rv-field[data-fieldtype="MultiSelectList"] *')];
+		const ctl = document.querySelector('.rv-more-filters .rv-field[data-fieldtype="MultiSelectList"] .form-control');
+		// what Frappe's --control-bg computes to here (ADR-022: the field is drawn by Frappe)
+		const probe = document.createElement("i");
+		probe.style.background = "var(--control-bg)";
+		ctl.parentElement.appendChild(probe);
+		const control_bg = getComputedStyle(probe).backgroundColor;
+		probe.remove();
+		return {
+			framed: all.filter((e) => parseFloat(getComputedStyle(e).borderTopWidth) > 0 && !e.closest(".dropdown-menu")).map((e) => e.className),
+			bg: getComputedStyle(ctl).backgroundColor,
+			control_bg,
+		};
+	});
+	// Frappe's .form-control has no border: its background is its frame
+	expect(out.framed).toEqual([]);
+	expect(out.bg).toBe(out.control_bg);
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+// ADR-022: the chrome inherits Frappe's design variables; the page follows Desk's theme, and its
+// theme button switches Desk's theme (no palette or class of its own).
+for (const desk of ["light", "dark"]) {
+	test(`the page's tokens are Frappe's variables (${desk})`, async ({ page }) => {
+		const problems = watch_console(page);
+		await open(page, `report=tb&lang=en&desk=${desk}`);
+		const out = await page.evaluate(() => {
+			const root = document.querySelector(".rv-shell").closest(".rv");
+			const color = (value, at = root) => {
+				const probe = document.createElement("i");
+				probe.style.color = value;
+				at.appendChild(probe);
+				const c = getComputedStyle(probe).color;
+				probe.remove();
+				return c;
+			};
+			const pairs = { "--tx": "--text-color", "--surface": "--card-bg", "--line": "--border-color", "--pri": "--btn-primary", "--hdr": "--subtle-fg", "--dr": "--ink-blue-9", "--cr": "--ink-red-8", "--c1": "--ink-blue-8" };
+			const btn = root.querySelector(".rv-btn:not(.ghost):not(.primary)") || document.querySelector(".rv-headbar .rv-btn:not(.ghost)");
+			return {
+				pairs: Object.entries(pairs).map(([rv, f]) => [rv, color(`var(${rv})`) === color(`var(${f})`)]),
+				font: getComputedStyle(root).fontFamily === getComputedStyle(document.body).fontFamily,
+				btn_bg: getComputedStyle(btn).backgroundColor === color("var(--btn-default-bg)", btn.parentElement),
+				radius: getComputedStyle(btn).borderTopLeftRadius === getComputedStyle(document.documentElement).getPropertyValue("--radius").trim(),
+				dark_class: document.querySelectorAll(".rv.dark").length,
+				paper: getComputedStyle(root).getPropertyValue("--pp-bg").trim().toUpperCase(),
+			};
+		});
+		expect(out.pairs).toEqual(out.pairs.map(([rv]) => [rv, true]));
+		expect(out.font).toBe(true);
+		expect(out.btn_bg).toBe(true);
+		expect(out.radius).toBe(true);
+		expect(out.dark_class).toBe(0);
+		// the printed paper stays white in both themes
+		expect(out.paper).toBe("#FFFFFF");
+		expect(problems, "console errors/warnings").toEqual([]);
+	});
+}
+
+test("the theme button switches Desk's theme (data-theme on <html>), not a class of the page", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=tb&lang=en&desk=light");
+	const theme = () => page.evaluate(() => document.documentElement.getAttribute("data-theme"));
+	await page.locator('.rv-headbar [data-action="theme"]').click();
+	expect(await theme()).toBe("dark");
+	expect(await page.locator(".rv.dark").count()).toBe(0);
+	await page.locator('.rv-headbar [data-action="theme"]').click();
+	expect(await theme()).toBe("light");
 	expect(problems, "console errors/warnings").toEqual([]);
 });

@@ -71,7 +71,7 @@ export class ChartsView {
 
 		// Cards are read when they come into view (and a little before).
 		this.visibility = new IntersectionObserver((entries) => this.on_visible(entries), { rootMargin: "240px 0px" });
-		// The theme and the density of the page: drawn again, in place.
+		// Desk's theme and the density of the page: drawn again, in place.
 		// Observed while the dashboard is shown (show), not after close.
 		this.theme_root = root;
 		this.theme_observer = new MutationObserver(() => {
@@ -91,6 +91,8 @@ export class ChartsView {
 		// the theme may have changed while the dashboard was closed
 		this._theme = null;
 		this.theme_observer.observe(this.theme_root, { attributes: true, attributeFilter: ["class"] });
+		// Desk's theme (ADR-022): the tokens are Frappe's variables, which follow <html data-theme>
+		this.theme_observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 		this.refresh_now();
 	}
 
@@ -477,7 +479,7 @@ export class ChartsView {
 			shadow: v("--sh-pop"),
 			radius: v("--r"),
 			font: css.fontFamily,
-			font_size: parseFloat(v("--fs-xs")) || 11.5,
+			font_size: parseFloat(v("--fs-chart")) || parseFloat(v("--fs-xs")) || 11,
 		};
 		return this._theme;
 	}

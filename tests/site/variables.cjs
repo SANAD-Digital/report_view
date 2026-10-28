@@ -127,13 +127,14 @@ const HTML = '<div class="rv-var-out">S={{ variables.show_note }} T={{ variables
 			check("the dialog lists the four variables", (await dialog.locator(".grid-body .rows .grid-row").count()) === 4);
 			if (SHOTS) await apage.screenshot({ path: path.join(SHOTS, "site-variables-dialog.png") });
 			// a reserved name is refused in the dialog, as on the server
-			const vars_dialog = await apage.evaluateHandle(() => cur_dialog);
-			await apage.evaluate(() => {
-				const f = cur_dialog.fields_dict.variables;
+			// the variables dialog itself: another app's modal (site_quota) may have reset cur_dialog
+			const vars_dialog = await apage.evaluateHandle(() => (frappe.ui.open_dialogs || []).find((d) => d.fields_dict && d.fields_dict.variables) || cur_dialog);
+			await apage.evaluate((d) => {
+				const f = d.fields_dict.variables;
 				f.df.data.push({ label: "Doc", fieldname: "doc", fieldtype: "Check" });
 				f.grid.refresh();
-			});
-			await apage.evaluate(() => cur_dialog.get_primary_btn().click());
+			}, vars_dialog);
+			await apage.evaluate((d) => d.get_primary_btn().click(), vars_dialog);
 			const msg = apage.locator(".modal.show .msgprint");
 			await msg.first().waitFor({ timeout: 10000 }).catch(() => {});
 			check("the dialog refuses a reserved name", /doc/.test((await msg.first().textContent().catch(() => "")) || ""));

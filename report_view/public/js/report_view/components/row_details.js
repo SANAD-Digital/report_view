@@ -224,8 +224,16 @@ export class RowDetails {
 			body.innerHTML = this.state_html(__("Row details are not configured for this report"), "");
 			return;
 		}
-		body.innerHTML = `<div class="rv-rd-paper"><iframe class="rv-rd-frame" sandbox="allow-same-origin allow-modals" title="${esc(__("Row details", null, "Report View"))}"></iframe></div>`;
-		const frame = body.querySelector("iframe");
+		// The frame gets its document before it is in the page, and is shown once it is loaded:
+		// a layout of the panel while the frame loaded made Firefox warn of a layout forced
+		// before the frame's page was loaded.
+		const paper_el = document.createElement("div");
+		paper_el.className = "rv-rd-paper";
+		const frame = document.createElement("iframe");
+		frame.className = "rv-rd-frame";
+		frame.setAttribute("sandbox", "allow-same-origin allow-modals");
+		frame.title = __("Row details", null, "Report View");
+		frame.hidden = true;
 		const dir = this.rtl ? "rtl" : "ltr";
 		const lang = esc(document.documentElement.lang || "");
 		// the paper's colours (rv_tokens.css --pp-*: a printed page never turns dark)
@@ -236,11 +244,17 @@ export class RowDetails {
 			if (token !== this.token) return;
 			const doc = frame.contentDocument;
 			if (!doc) return;
-			// the frame as tall as its page; its keys move and close as the panel's do
-			frame.style.height = `${Math.max(240, doc.documentElement.scrollHeight)}px`;
+			// its keys move and close as the panel's do; the frame as tall as its page, read
+			// on the next frame, once it is shown
 			doc.addEventListener("keydown", this.on_key);
+			frame.hidden = false;
+			requestAnimationFrame(() => {
+				if (token === this.token && frame.isConnected) frame.style.height = `${Math.max(240, doc.documentElement.scrollHeight)}px`;
+			});
 			this.actions(this.document, true);
 		});
+		paper_el.append(frame);
+		body.replaceChildren(paper_el);
 	}
 
 	state_html(title, text) {

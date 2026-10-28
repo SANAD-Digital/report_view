@@ -470,6 +470,7 @@
 .rv-rd-body:has(> .rv-rd-paper){background:var(--surface-3);padding:var(--padding-lg,20px)}
 .rv-rd-paper{display:flex;justify-content:center}
 .rv-rd-frame{display:block;width:100%;max-width:720px;min-height:240px;border:0;background:var(--pp-bg);box-shadow:var(--pp-shadow)}
+.rv-rd-frame[hidden]{display:none}
 
 .rv-rd-ft{flex:none;display:flex;align-items:center;gap:var(--gap);padding:var(--pad) var(--padding-lg,20px);border-top:1px solid var(--line)}
 .rv-rd-actions{display:flex;flex-wrap:wrap;gap:var(--gap);min-width:0}

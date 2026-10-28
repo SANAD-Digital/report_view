@@ -129,6 +129,14 @@ test("template: the server renders the row; the frame shows it, ↓ renders the 
 	const problems = watch_console(page);
 	await open(page, `report=tb&lang=en${rvs({ enabled: true, container: "dialog", content: "html" })}`);
 	await button(page, 2).click();
+	// the frame's page loaded and sized (read only then: Firefox warns of a layout forced in a
+	// frame that is still loading, which a locator in it does)
+	const frame_ready = (n) =>
+		page.waitForFunction((count) => {
+			const f = document.querySelector(".rv-rd-frame");
+			return (window.RV_ROW_CALLS || []).length === count && f && f.style.height && f.contentDocument?.readyState === "complete";
+		}, n);
+	await frame_ready(1);
 	const frame = page.frameLocator(".rv-rd-frame");
 	await expect(frame.locator(".rd-t")).not.toHaveText("");
 	const calls = await page.evaluate(() => window.RV_ROW_CALLS);
@@ -139,6 +147,7 @@ test("template: the server renders the row; the frame shows it, ↓ renders the 
 	expect(calls[0].filters.company).toBeTruthy();
 	const shown = await frame.locator(".rd-t").textContent();
 	await page.keyboard.press("ArrowDown");
+	await frame_ready(2);
 	await expect(frame.locator(".rd-t")).not.toHaveText(shown || "");
 	// the printed content has its own Print
 	await expect(page.locator('.rv-rd [data-act="print-frame"]')).toBeVisible();

@@ -61,6 +61,7 @@ export function make_row_details(page) {
 			mark: (y) => grid.mark_details(y),
 			focus_row: (y) => grid.focus_details(y),
 			render: (row) => api.render_row_details(page.report_name, row_payload(row, page.report.columns), filters(), columns_payload(page.report.columns)),
+			extra: (row) => page.drill_actions?.(row) || [],
 		},
 	});
 	grid.on_relayout = () => panel.reset();
@@ -75,5 +76,8 @@ export function make_row_details(page) {
 		open(at) {
 			if (conf.enabled && page.report) panel.open(at);
 		},
+		/** Whether a report row offers its details now. */
+		enabled: () => Boolean(conf.enabled && page.report),
+		conf: () => conf,
 	};
 }

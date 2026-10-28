@@ -60,4 +60,9 @@ export const icons = {
 	alert_xs: () => svg(12, '<circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5v.5"></path>', 'fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"'),
 	x_sm: (size = 12) => svg(size, '<path d="M18 6 6 18M6 6l12 12"></path>', 'fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"'),
 	x_md: (size = 14) => svg(size, '<path d="M18 6 6 18M6 6l12 12"></path>', 'fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"'),
+	// the context menu of a cell range (phase 5c/5d)
+	copy: () => svg(16, '<rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>'),
+	download: () => svg(16, '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path>'),
+	open: () => svg(16, '<path d="M14 4h6v6M20 4l-8 8M10 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-4"></path>'),
+	drill: () => svg(16, '<path d="M4 6h10M4 12h7M4 18h4M17 9v10M14 16l3 3 3-3"></path>'),
 };

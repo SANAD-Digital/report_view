@@ -4377,3 +4377,126 @@ msgstr "دور يُشارك معه عرض محفوظ (ADR-010)"
 
 msgid "The name of a shared saved view of this report, opened for every user who has no default of their own and may see it (ADR-010)"
 msgstr "اسم عرض محفوظ مشترك لهذا التقرير، يُفتح لكل مستخدم ليس له عرض افتراضي خاص ويستطيع رؤيته (ADR-010)"
+
+msgid "A report has at most {0} drill rules"
+msgstr "للتقرير {0} قاعدة تفصيل على الأكثر"
+
+msgid "Average {0}"
+msgstr "المتوسط {0}"
+
+msgid "Cell actions"
+msgstr "إجراءات الخلايا"
+
+msgid "Cells {0}"
+msgstr "الخلايا {0}"
+
+msgid "Chart from range"
+msgstr "رسم من النطاق"
+
+msgid "Click a title to sort · drag it to group · drag over cells to select · right-click for actions"
+msgstr "انقر عنواناً للفرز · اسحبه للتجميع · اسحب فوق الخلايا لتحديدها · انقر بالزر الأيمن للإجراءات"
+
+msgid "Copy with headers"
+msgstr "نسخ مع العناوين"
+
+msgid "Could not copy: {0}"
+msgstr "تعذّر النسخ: {0}"
+
+msgid "Count {0}"
+msgstr "العدد {0}"
+
+msgid "Drill rule {0} must be an object"
+msgstr "قاعدة التفصيل {0} يجب أن تكون كائناً"
+
+msgid "Drill rule {0} needs a label"
+msgstr "قاعدة التفصيل {0} تحتاج إلى عنوان"
+
+msgid "Drill rule {0} needs the report it opens"
+msgstr "قاعدة التفصيل {0} تحتاج إلى التقرير الذي تفتحه"
+
+msgid "Drill rule {0}: filters must be an object"
+msgstr "قاعدة التفصيل {0}: الفلاتر يجب أن تكون كائناً"
+
+msgid "Drill rule {0}: report {1} is disabled"
+msgstr "قاعدة التفصيل {0}: التقرير {1} معطّل"
+
+msgid "Drill rule {0}: report {1} is not enabled in Report View"
+msgstr "قاعدة التفصيل {0}: التقرير {1} غير مفعّل في Report View"
+
+msgid "Drill rule {0}: report {1} not found"
+msgstr "قاعدة التفصيل {0}: التقرير {1} غير موجود"
+
+msgid "Drill rule {0}: the filter {1} must map to row:<column>, filter:<name>, a value or a list of them"
+msgstr "قاعدة التفصيل {0}: الفلتر {1} يجب أن يأخذ row:<column> أو filter:<name> أو قيمة أو قائمة منها"
+
+msgid "Drill rule {0}: the label {1} is used twice"
+msgstr "قاعدة التفصيل {0}: العنوان {1} مستخدم مرتين"
+
+msgid "Drill rule {0}: the source column must be a column fieldname"
+msgstr "قاعدة التفصيل {0}: عمود المصدر يجب أن يكون اسم حقل عمود"
+
+msgid "Drill rules must be a list"
+msgstr "قواعد التفصيل يجب أن تكون قائمة"
+
+msgid "Drill to {0}"
+msgstr "تفصيل إلى {0}"
+
+msgid "Export selection"
+msgstr "تصدير المحدد"
+
+msgid "Select numeric cells to chart them"
+msgstr "حدّد خلايا رقمية لرسمها"
+
+msgid "Sum {0}"
+msgstr "المجموع {0}"
+
+msgid "The browser gives no access to the clipboard"
+msgstr "المتصفح لا يتيح الوصول إلى الحافظة"
+
+msgid "The chart could not be drawn"
+msgstr "تعذّر رسم المخطط"
+
+msgid "The document could not be shown"
+msgstr "تعذّر عرض المستند"
+
+msgid "The drill could not be opened"
+msgstr "تعذّر فتح التفصيل"
+
+msgid "The first {0} rows of the range are drawn"
+msgstr "رُسمت أول {0} صف من النطاق"
+
+msgid "The selection could not be read: {0}"
+msgstr "تعذّرت قراءة التحديد: {0}"
+
+msgid "The table changed: select the range again"
+msgstr "تغيّر الجدول: حدّد النطاق من جديد"
+
+msgid "You do not have permission to access {0}: {1}."
+msgstr "ليس لديك صلاحية الوصول إلى {0}: {1}."
+
+msgid "{0} rows copied"
+msgstr "نُسخ {0} صف"
+
+msgid "Cell range selection"
+msgstr "تحديد نطاق الخلايا"
+
+msgid "Select cells by dragging or Shift and the arrows: their count, sum and average in the status bar, and the context menu (copy, export, chart)"
+msgstr "تحديد الخلايا بالسحب أو بـ Shift والأسهم: عددها ومجموعها ومتوسطها في شريط الحالة، والقائمة السياقية (نسخ، تصدير، رسم)"
+
+msgid "Drill"
+msgstr "التفصيل"
+
+msgid "The «Drill to» rules of the Drill section, in the context menu and the row details"
+msgstr "قواعد «تفصيل إلى» في قسم التفصيل، في القائمة السياقية وتفاصيل السطر"
+
+msgid "«Drill to <label>» on a row opens another report in a drawer, run with the user's own permissions. A rule: {\"label\", \"source_column\", \"report\", \"filters\": {\"<filter of the report opened>\": \"row:<column>\" | \"filter:<filter of this report>\" | a value | a list of them}}. Rules shipped with the app are kept; a rule with the same label replaces one."
+msgstr "«تفصيل إلى <العنوان>» على سطر يفتح تقريراً آخر في درج، يعمل بصلاحيات المستخدم نفسه. القاعدة: {\"label\", \"source_column\", \"report\", \"filters\": {\"<فلتر التقرير المفتوح>\": \"row:<column>\" | \"filter:<فلتر هذا التقرير>\" | قيمة | قائمة منها}}. القواعد المشحونة مع التطبيق تبقى، والقاعدة بالعنوان نفسه تحل محلها."
+
+msgid "Links open"
+msgstr "تفتح الروابط"
+
+msgid "Where the value of a Link column opens its document"
+msgstr "أين تفتح قيمة عمود الرابط مستندها"
+
+msgid "Drill rules"
+msgstr "قواعد التفصيل"

@@ -24,6 +24,7 @@ import { GridRows } from "./grid_rows.js";
 import { build_layout, expanded_from_paths } from "../engine/row_layout.js";
 import { esc } from "../util.js";
 import { details_button_html } from "../components/row_details.js";
+import { GridRange } from "./grid_range.js";
 
 const CELL_CLASSES = ["num", "dr", "cr", "band-end", "shade", "zero", "neg"];
 
@@ -56,6 +57,10 @@ export class GridView extends RtView {
 		this.refocus = null;
 		this.cell_classes = CELL_CLASSES;
 		this.host_class = "rv-rt";
+		// a link of a report row was pressed: true when the page opened its document (5d)
+		this.on_link = () => false;
+		// cell range selection (views/grid_range.js)
+		this.init_range();
 	}
 
 	// ------------------------------------------------------------ show / destroy
@@ -103,6 +108,7 @@ export class GridView extends RtView {
 		this.epoch += 1;
 		this.windows = [];
 		this.on_relayout();
+		this.relayout_range();
 	}
 
 	host_markup() {
@@ -122,6 +128,12 @@ export class GridView extends RtView {
 
 	mounted() {
 		this.top_el.style.top = `${this.header_height}px`;
+		this.listen_range(this.rt, true);
+	}
+
+	unmounting() {
+		if (this.stop_drag) this.stop_drag();
+		this.listen_range(this.rt, false);
 	}
 
 	size_widths() {
@@ -136,6 +148,7 @@ export class GridView extends RtView {
 	cleared() {
 		this.layout = null;
 		this.on_relayout();
+		if (this.range.clear()) this.on_range(null);
 	}
 
 	// ------------------------------------------------------------ data model
@@ -220,6 +233,8 @@ export class GridView extends RtView {
 
 	// A caret is a <button>: Enter and Space arrive here as clicks.
 	click(event) {
+		const link = event.target.closest?.("a");
+		if (link && this.rt?.contains(link) && this.open_link(link, event)) return;
 		const details = event.target.closest?.(".rv-rd-btn");
 		if (details && this.rt?.contains(details)) {
 			event.preventDefault();
@@ -272,6 +287,23 @@ export class GridView extends RtView {
 			th.querySelector(".rv-caret")?.focus();
 			return;
 		}
+	}
+
+	/**
+	 * A link in a cell of a report row (a Link or Dynamic Link column): the page opens its
+	 * document as the report's settings say (link_open). A link the report's formatter gave
+	 * a handler of its own (onclick) is the report's: left alone.
+	 */
+	open_link(a, event) {
+		if (a.hasAttribute("onclick") || event.defaultPrevented) return false;
+		const at = this.cell_of(a);
+		const rec = at && this.rec_at(at.y);
+		if (!rec || rec.type !== "row" || this.rows.is_summary(rec)) return false;
+		const d = this.range_columns()[at.c];
+		if (!d?.column.link) return false;
+		if (!this.on_link({ column: d.column, row: rec.row, event, anchor: a })) return false;
+		event.preventDefault();
+		return true;
 	}
 
 	// ------------------------------------------------------------ row details (ADR-023)
@@ -466,6 +498,7 @@ export class GridView extends RtView {
 			}
 		}
 		this.render_pinned(shown);
+		this.paint_range();
 	}
 
 	// ------------------------------------------------------------ pinned rows
@@ -530,4 +563,9 @@ export class GridView extends RtView {
 			report_rows.bottom.map((row) => this.report_row_html("foot rv-rt-closing", row, xs)).join("") +
 			this.pinned_row_html("total rv-rt-total", total_label, total.cell, xs);
 	}
+}
+
+// Range selection (views/grid_range.js), installed on the prototype: one object, one `this`.
+for (const [name, d] of Object.entries(Object.getOwnPropertyDescriptors(GridRange.prototype))) {
+	if (name !== "constructor") Object.defineProperty(GridView.prototype, name, d);
 }

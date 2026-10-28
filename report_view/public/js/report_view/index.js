@@ -52,6 +52,8 @@ import { ExportFlow } from "./host/export_flow.js";
 import { DebugHooks } from "./host/debug_hooks.js";
 import { make_row_details } from "./host/row_details_host.js";
 import { SavedViewsHost } from "./host/saved_views_host.js";
+import { RangeHost } from "./host/range_host.js";
+import { Drawer } from "./components/drawer.js";
 
 const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
 // Local preferences of this browser (the density; the theme is Desk's own, ADR-022).
@@ -198,6 +200,8 @@ export class ReportViewPage {
 		});
 		// the button in the first column of a row: its details (Report View Settings, ADR-023)
 		this.row_details = make_row_details(this);
+		// a range of cells: status bar, context menu, copy, chart, drill (host/range_host.js)
+		this.setup_range();
 		this.pivot = new PivotView({
 			parent: this.$(".rv-pivotgrid"),
 			rtl: this.rtl,
@@ -641,6 +645,9 @@ export class ReportViewPage {
 		this.render_token += 1;
 		this.grid.destroy();
 		this.notices.show(null);
+		// a drill and a range chart read the views of this result
+		this.drill?.close();
+		this.range_chart?.close();
 		await this.close_charts();
 		// The pivot's views go with the tables of the session.
 		this.pivot_token += 1;
@@ -722,6 +729,8 @@ export class ReportViewPage {
 		this.toolbar.set_report({ can_print, modes: this.modes(), search: f.quick_search });
 		this.cells.floating = f.column_filters;
 		this.row_details.configure(this.meta);
+		this.configure_range(this.meta);
+		this.status.set_hint(f.range_selection);
 		this.apply_density();
 		if (frappe.breadcrumbs && this.meta.report?.module) frappe.breadcrumbs.add(this.meta.report.module);
 
@@ -1175,7 +1184,7 @@ export class ReportViewPage {
 
 // Methods of ReportViewPage kept in host/*.js, one module per concern, installed on its
 // prototype (as views/pages_view.js does): one object and one `this` for every caller.
-for (const part of [PagesHost, ExportFlow, DebugHooks, SavedViewsHost]) {
+for (const part of [PagesHost, ExportFlow, DebugHooks, RangeHost, SavedViewsHost]) {
 	for (const [name, d] of Object.entries(Object.getOwnPropertyDescriptors(part.prototype))) {
 		if (name !== "constructor") Object.defineProperty(ReportViewPage.prototype, name, d);
 	}
@@ -1184,5 +1193,5 @@ for (const part of [PagesHost, ExportFlow, DebugHooks, SavedViewsHost]) {
 frappe.provide("report_view");
 // The modules the Charts bundle shares with the page (views/charts_shared.js): one copy of
 // each, so that close_popover() closes a popover the charts opened too.
-const shared = { popover, set_filter, icons: { icons }, chart_config, dashboard_state };
+const shared = { popover, set_filter, icons: { icons }, chart_config, dashboard_state, drawer: { Drawer } };
 Object.assign(window.report_view, { register, get_config, ReportViewPage, shared });

@@ -22,6 +22,24 @@
 		{"fieldname": "project", "fieldtype": "MultiSelectList", "options": "Project"},
 		{"fieldname": "finance_book", "fieldtype": "Link", "options": "Finance Book"}
 	],
+	"drilldowns": [
+		{
+			"label": "General Ledger",
+			"source_column": "account",
+			"report": "General Ledger",
+			"filters": {
+				"company": "filter:company",
+				"from_date": "filter:from_date",
+				"to_date": "filter:to_date",
+				"account": ["row:account"],
+				"finance_book": "filter:finance_book",
+				"cost_center": "filter:cost_center",
+				"project": "filter:project",
+				"presentation_currency": "filter:presentation_currency",
+				"categorize_by": "Categorize by Voucher (Consolidated)"
+			}
+		}
+	],
 	"balance_pairs": [
 		{"label": "Opening", "debit_column": "opening_debit", "credit_column": "opening_credit"},
 		{"label": "Movement", "debit_column": "debit", "credit_column": "credit"},

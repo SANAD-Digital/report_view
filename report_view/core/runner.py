@@ -48,6 +48,44 @@ def resolve_dynamic_links(defs: list[dict], filters: dict) -> list[dict]:
 	return out
 
 
+def _list_values(value: Any) -> list:
+	"""The values of a MultiSelectList filter: a list, a JSON list, or one value."""
+	if isinstance(value, str):
+		text = value.strip()
+		if text.startswith("["):
+			try:
+				value = frappe.parse_json(text)
+			except ValueError:
+				return [text]
+		else:
+			return [text] if text else []
+	if isinstance(value, list | tuple):
+		return [v for v in value if isinstance(v, str) and v]
+	return []
+
+
+def check_list_filters(server_defs: list[dict], filters: dict) -> None:
+	"""ADR-021 (amended in phase 5d): Frappe checks the value of a Link filter only
+	(``validate_filters_permissions``, Q:1149); every value of a shipped MultiSelectList filter
+	whose options name a DocType is checked the same way, with ``frappe.has_permission``, so a
+	forged list (another company's account in a drill) is refused before the report runs.
+	A value that is no document is left to the report, as Frappe leaves a Link's."""
+	for d in server_defs:
+		doctype = d.get("options")
+		if d.get("fieldtype") != "MultiSelectList" or d.get("fieldname") not in filters:
+			continue
+		if not isinstance(doctype, str) or not frappe.db.exists("DocType", doctype):
+			continue
+		for value in _list_values(filters[d["fieldname"]]):
+			if not frappe.db.exists(doctype, value):
+				continue
+			if not frappe.has_permission(doctype, "read", doc=value):
+				frappe.throw(
+					_("You do not have permission to access {0}: {1}.").format(_(doctype), value),
+					frappe.PermissionError,
+				)
+
+
 def server_filter_defs(report_name: str, settings: dict) -> list[dict]:
 	"""The shipped filter_defs; a report without them keeps Frappe's behaviour (the
 	browser's definitions only), logged once per process at debug level."""
@@ -128,9 +166,9 @@ def run(
 	browser_defs = validate_js_filters(parse_json_arg(js_filters, "js_filters", list, allow_none=True) or [])
 	settings = load_settings(report.name)
 	filters = dict(filters)
-	merged_defs = resolve_dynamic_links(
-		merge_js_filters(browser_defs, server_filter_defs(report.name, settings)), filters
-	)
+	server_defs = server_filter_defs(report.name, settings)
+	merged_defs = resolve_dynamic_links(merge_js_filters(browser_defs, server_defs), filters)
+	check_list_filters(server_defs, filters)
 
 	filters.pop("prepared_report_name", None)
 	if prepared_report_name:

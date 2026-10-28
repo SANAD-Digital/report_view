@@ -217,18 +217,24 @@ export function unique_values(handles, table, key, other_filters = [], opts = {}
 }
 
 /**
- * Count, sum, average, lowest and highest of the numeric cells of a view window (§8أ.5).
- * @param {object} window {start_row, end_row, start_col, end_col} in view coordinates
+ * Count, sum, average, lowest and highest of the numeric cells of a range (§8أ.5): the one
+ * named summary outside the engine, over values the engine returned (view.to_columns of the
+ * range window). Only finite numbers count: text, dates, empty cells and the cells the grid
+ * shows without a number (a mixed-currency group, the header of a group whose numbers stand
+ * in its subtotal row) arrive as null.
+ * @param {Array<ArrayLike>} columns the values of each numeric column of the range, per row
+ * @param {ArrayLike<boolean>|null} [keep] per row, whether it enters the summary (the
+ *   rule of state/range.js countable_rows); all rows when left out
  */
-export async function range_stats(view, window) {
-	const cols = await view.to_columns(window);
+export function range_stats_of(columns, keep = null) {
 	let count = 0;
 	let sum = 0;
 	let min = null;
 	let max = null;
-	for (const [name, values] of Object.entries(cols)) {
-		if (name === ROW_PATH) continue;
-		for (const v of values) {
+	for (const values of columns) {
+		for (let i = 0; i < values.length; i++) {
+			if (keep && !keep[i]) continue;
+			const v = values[i];
 			if (typeof v !== "number" || !Number.isFinite(v)) continue;
 			count += 1;
 			sum += v;
@@ -237,6 +243,15 @@ export async function range_stats(view, window) {
 		}
 	}
 	return { count, sum, avg: count ? sum / count : null, min, max };
+}
+
+/**
+ * range_stats_of() over a window of a view, every column of it (row paths aside).
+ * @param {object} window {start_row, end_row, start_col, end_col} in view coordinates
+ */
+export async function range_stats(view, window) {
+	const cols = await view.to_columns(window);
+	return range_stats_of(Object.entries(cols).filter(([name]) => name !== ROW_PATH).map(([, v]) => v));
 }
 
 /**

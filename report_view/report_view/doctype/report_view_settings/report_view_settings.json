@@ -34,6 +34,8 @@
   "charts",
   "pages",
   "excel",
+  "range_selection",
+  "drill",
   "section_chart_types",
   "chart_bar",
   "chart_stacked",
@@ -61,6 +63,10 @@
   "row_details_content",
   "row_details_html",
   "row_details_print_format",
+  "section_drill",
+  "link_open",
+  "column_break_drill",
+  "drilldowns",
   "section_json",
   "report_settings",
   "enrich_rules",
@@ -255,6 +261,20 @@
    "description": "The Excel button (the server refuses the export too)"
   },
   {
+   "fieldname": "range_selection",
+   "fieldtype": "Check",
+   "label": "Cell range selection",
+   "default": "1",
+   "description": "Select cells by dragging or Shift and the arrows: their count, sum and average in the status bar, and the context menu (copy, export, chart)"
+  },
+  {
+   "fieldname": "drill",
+   "fieldtype": "Check",
+   "label": "Drill",
+   "default": "1",
+   "description": "The «Drill to» rules of the Drill section, in the context menu and the row details"
+  },
+  {
    "fieldname": "section_chart_types",
    "fieldtype": "Section Break",
    "label": "Chart types",
@@ -433,6 +453,31 @@
    "description": "A Custom print format, rendered with data = the row"
   },
   {
+   "fieldname": "section_drill",
+   "fieldtype": "Section Break",
+   "label": "Drill",
+   "collapsible": 1,
+   "description": "«Drill to <label>» on a row opens another report in a drawer, run with the user's own permissions. A rule: {\"label\", \"source_column\", \"report\", \"filters\": {\"<filter of the report opened>\": \"row:<column>\" | \"filter:<filter of this report>\" | a value | a list of them}}. Rules shipped with the app are kept; a rule with the same label replaces one."
+  },
+  {
+   "fieldname": "link_open",
+   "fieldtype": "Select",
+   "label": "Links open",
+   "options": "New tab\nSame tab\nDrawer",
+   "default": "New tab",
+   "description": "Where the value of a Link column opens its document"
+  },
+  {
+   "fieldname": "column_break_drill",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "drilldowns",
+   "fieldtype": "JSON",
+   "label": "Drill rules",
+   "depends_on": "eval:doc.drill"
+  },
+  {
    "fieldname": "section_json",
    "fieldtype": "Section Break",
    "label": "Advanced: the report's JSON",
@@ -481,7 +526,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-28 14:00:00.000000",
+ "modified": "2026-10-28 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "Report View",
  "name": "Report View Settings",

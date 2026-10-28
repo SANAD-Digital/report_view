@@ -35,7 +35,7 @@ export const TYPE_ICONS = {
 	kpi: svg('<rect x="2" y="3" width="26" height="16" rx="3" opacity=".25"></rect><path d="M7 14V8l-2 1.5M11 8h4l-3 6M18 8h4v3h-4v3h4"></path>', 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"'),
 };
 
-const TYPE_LABELS = {
+export const TYPE_LABELS = {
 	bar: () => __("Grouped columns"),
 	stacked: () => __("Stacked columns"),
 	hbar: () => __("Horizontal bars"),

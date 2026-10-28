@@ -9,3 +9,4 @@ if (!shared) throw new Error("report_view: the Charts view needs the page's bund
 
 export const { chart_config, dashboard_state, popover, set_filter } = shared;
 export const icons_module = shared.icons;
+export const drawer_module = shared.drawer;

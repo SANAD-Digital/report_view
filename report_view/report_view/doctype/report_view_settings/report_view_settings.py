@@ -5,6 +5,7 @@ from frappe import _
 from frappe.model.document import Document
 
 from report_view.core.custom_print import CUSTOM
+from report_view.core.drill import validate_drill_rules
 from report_view.core.row_details import check_template
 from report_view.core.saved_views import validate_global_default
 from report_view.core.settings import (
@@ -42,6 +43,8 @@ class ReportViewSettings(Document):
 				if not _FIELDNAME_RE.match(key):
 					frappe.throw(_("{0}: {1} is not a column key").format(_(self.meta.get_label(field)), key))
 		self.validate_row_details(layer["row_details"])
+		# the drill rules (phase 5d): every target report exists and is enabled in Report View
+		validate_drill_rules(layer["drilldowns"] or [], self.report)
 		# the report's default saved view (ADR-010): a shared view of this report
 		validate_global_default(self)
 		if (self.default_group_by or "").strip() and not features["grouping"]:

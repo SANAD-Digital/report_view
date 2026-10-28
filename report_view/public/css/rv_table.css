@@ -193,3 +193,18 @@
 .rv regular-table tbody tr:hover .rv-rd-btn,.rv regular-table tbody tr.rv-open .rv-rd-btn,.rv-rd-btn:focus-visible{opacity:1;color:var(--tx);background:var(--surface);border-color:var(--line-2)}
 .rv-rd-btn:focus-visible{outline:2px solid var(--focus,var(--pri));outline-offset:-1px}
 @media (hover:none){.rv-rd-btn{opacity:.8}}
+
+/* a range of cells (phase 5c, views/grid_range.js): tinted, outlined on its edges, the focus
+   cell of a range of several cells left light; drawn by classes the style listener sets */
+.rv regular-table tbody tr > td.rv-sel,.rv regular-table tbody tr > th.rv-sel{background:var(--sel) !important}
+.rv regular-table tbody tr > td.rv-sel.rv-cur,.rv regular-table tbody tr > th.rv-sel.rv-cur{background:var(--surface) !important}
+.rv regular-table tbody td.rv-sel{position:relative}
+.rv regular-table tbody .rv-sel::after{content:'';position:absolute;inset:0;pointer-events:none;border:0 solid var(--sel-line)}
+.rv regular-table tbody .rv-sel.rv-sel-t::after{border-top-width:1px}
+.rv regular-table tbody .rv-sel.rv-sel-b::after{border-bottom-width:1px}
+.rv regular-table tbody .rv-sel.rv-sel-s::after{border-inline-start-width:1px}
+.rv regular-table tbody .rv-sel.rv-sel-e::after{border-inline-end-width:1px}
+.rv regular-table tbody .rv-sel.rv-cur::after{box-shadow:inset 0 0 0 1px var(--sel-line)}
+.rv regular-table:focus{outline:0}
+/* a long press selects, it does not call the system's text menu */
+.rv regular-table tbody{-webkit-touch-callout:none}

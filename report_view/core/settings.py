@@ -17,6 +17,8 @@ import re
 import frappe
 from frappe import _
 
+from report_view.core.drill import parse_drill_rules
+
 DEFAULT_MAX_ROWS = 100000
 HARD_MAX_ROWS = 200000
 DEFAULT_PRINT_MAX_PAGES = 600
@@ -54,6 +56,9 @@ FEATURES = (
 	"pages",
 	"excel",
 	"density",
+	# a range of cells: status bar numbers, context menu, copy; and the configured drill, 5c and 5d
+	"range_selection",
+	"drill",
 )
 # The card types of the charts view (state/dashboard_state.js CARD_TYPES, same order).
 CHART_TYPES = ("bar", "stacked", "hbar", "hstacked", "line", "area", "donut", "kpi")
@@ -64,8 +69,10 @@ _MODES = frozenset(DEFAULT_MODES.values())
 ROW_CONTAINERS = {"Drawer": "drawer", "Dialog": "dialog"}
 ROW_WIDTHS = {"Narrow": "narrow", "Medium": "medium", "Wide": "wide"}
 ROW_CONTENTS = {"Fields": "fields", "HTML template": "html", "Print format": "print_format"}
+# How the value of a Link column opens its document (phase 5d): Select labels -> keys.
+LINK_OPEN = {"New tab": "new_tab", "Same tab": "same_tab", "Drawer": "drawer"}
 # The JSON fields of the record, parsed with the loader's own functions.
-JSON_PARTS = ("report_settings", "enrich_rules", "balance_pairs", "filter_defs")
+JSON_PARTS = ("report_settings", "enrich_rules", "balance_pairs", "filter_defs", "drilldowns")
 
 
 def default_features() -> dict:
@@ -105,6 +112,7 @@ def empty_settings(report_name: str) -> dict:
 		"features": default_features(),
 		"default_view": {"group_by": [], "hidden": [], "pinned": []},
 		"row_details": default_row_details(),
+		"link_open": "new_tab",
 	}
 
 
@@ -237,6 +245,7 @@ def record_layer(doc, strict: bool = False) -> dict:
 	features["chart_types"] = [t for t in CHART_TYPES if doc.get("chart_" + t)]
 	layer["features"] = features
 	layer["row_details"] = row_details_layer(doc, strict)
+	layer["link_open"] = LINK_OPEN.get(doc.get("link_open") or "", "new_tab")
 	layer["default_mode"] = DEFAULT_MODES.get(doc.get("default_mode") or "")
 	layer["default_view"] = {
 		"group_by": _key_list(doc.get("default_group_by")),
@@ -333,6 +342,9 @@ def merge_settings(shipped: dict, record: dict | None) -> dict:
 		out["default_mode"] = record["default_mode"]
 	out["default_view"] = record["default_view"]
 	out["row_details"] = record["row_details"]
+	if record.get("drilldowns") is not None:
+		out["drilldowns"] = _merge_by(shipped["drilldowns"], record["drilldowns"], lambda r: r["label"])
+	out["link_open"] = record.get("link_open") or out.get("link_open") or "new_tab"
 	return out
 
 
@@ -348,7 +360,9 @@ def _read_settings(report_name: str, path: str) -> dict:
 	settings["report_settings"] = dict(data.get("report_settings") or {})
 	settings["column_rules"] = list(data.get("column_rules") or [])
 	settings["enrich_rules"] = parse_enrich_rules(data.get("enrich_rules") or [])
-	settings["drilldowns"] = list(data.get("drilldowns") or [])
+	settings["drilldowns"] = parse_drill_rules(data.get("drilldowns") or [])
+	if data.get("link_open") in LINK_OPEN.values():
+		settings["link_open"] = data["link_open"]
 	settings["balance_pairs"] = parse_balance_pairs(data.get("balance_pairs") or [])
 	settings["signatures"] = list(data.get("signatures") or [])
 	settings["filter_defs"] = parse_filter_defs(data.get("filter_defs") or [])
@@ -441,6 +455,7 @@ def parse_filter_defs(items: list, strict: bool = False) -> list[dict]:
 
 
 PARSERS = {
+	"drilldowns": parse_drill_rules,
 	"enrich_rules": parse_enrich_rules,
 	"balance_pairs": parse_balance_pairs,
 	"filter_defs": parse_filter_defs,

@@ -37,6 +37,8 @@ const in_field = (el) => Boolean(el?.closest?.("input,textarea,select,[contented
  * @property {(y: number|null) => void} mark the row the panel shows, marked in the table
  * @property {(y: number) => boolean} focus_row the focus to the button of a row, when it is on screen
  * @property {(row: object) => Promise<{html: string, css: string}>} render the server's template of a row
+ * @property {(row: object) => Array<{label: string, act: () => void}>} [extra] more verbs of a row
+ *   (the configured drill, phase 5d), after the document's
  */
 
 export class RowDetails {
@@ -107,6 +109,7 @@ export class RowDetails {
 			else if (e.target.closest?.(".rv-rd-close")) this.close();
 			else if (e.target.closest?.("[data-act=print-doc]")) this.print_document();
 			else if (e.target.closest?.("[data-act=print-frame]")) this.print_frame();
+			else if (e.target.closest?.("[data-extra]")) this.extra[Number(e.target.closest("[data-extra]").dataset.extra)]?.act();
 		});
 		el.addEventListener("keydown", this.on_key);
 		this.root.append(scrim, el);
@@ -192,6 +195,8 @@ export class RowDetails {
 			if (frappe.model?.can_print?.(doc.doctype)) out.push(`<button type="button" class="rv-rd-act" data-act="print-doc">${esc(__("Print"))}</button>`);
 		}
 		if (printable) out.push(`<button type="button" class="rv-rd-act" data-act="print-frame">${esc(__("Print"))}</button>`);
+		this.extra = (this.row && this.source.extra?.(this.row)) || [];
+		this.extra.forEach((x, i) => out.push(`<button type="button" class="rv-rd-act" data-extra="${i}">${esc(x.label)}</button>`));
 		this.el.querySelector(".rv-rd-actions").innerHTML = out.join("");
 	}
 

@@ -149,7 +149,35 @@ async function main() {
 	if (conf.formatter) settings.formatter = conf.formatter;
 	frappe.query_reports[conf.name] = settings;
 
+	// phase 5d: a drill opens another report of the harness (General Ledger) by its name: its
+	// meta and its run from its own fixture; a company named "Forbidden Co" is refused as the
+	// server refuses a company outside the user's permissions
+	const drill_target = (name) => {
+		const target = Object.values(REPORTS).find((r) => r.name === name && r.fixture !== conf.fixture);
+		if (!target) return null;
+		return async (method, args) => {
+			window.RV_DRILL_CALLS = [...(window.RV_DRILL_CALLS || []), { method, args: JSON.parse(JSON.stringify(args)) }];
+			const data = await (await fetch(`dist/${target.fixture}`)).json();
+			if (method === "report_view.api.get_meta") {
+				return {
+					report: { name: target.name, report_type: target.report_type, module: target.module },
+					script: { script: "", filters: target.filters(data.input.filters) },
+					perms: { can_export: 1, can_print: 1 },
+					settings: { enabled: 1, enrich_rules: [] },
+					include_js: [],
+				};
+			}
+			if (method === "report_view.api.run") {
+				const filters = typeof args.filters === "string" ? JSON.parse(args.filters) : args.filters;
+				if (filters?.company === "Forbidden Co") throw { exc_type: "PermissionError", message: "You are not permitted to access Company Forbidden Co" };
+				return { status: "ok", raw: data.input.raw };
+			}
+			throw new Error(`harness: no drill stub for ${method}`);
+		};
+	};
 	window.RV_SERVER = (method, args) => {
+		const other = args?.report_name && args.report_name !== conf.name ? drill_target(args.report_name) : null;
+		if (other) return other(method, args);
 		if (method === "report_view.api.get_meta") {
 			return {
 				report: { name: conf.name, report_type: conf.report_type, module: conf.module },

@@ -25,6 +25,9 @@ export const FEATURES = [
 	"pages",
 	"excel",
 	"density",
+	// a range of cells (status bar numbers, context menu, copy) and the configured drill (5c, 5d)
+	"range_selection",
+	"drill",
 ];
 
 const MODES = ["grid", "pivot", "charts", "pages"];

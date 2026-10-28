@@ -48,6 +48,9 @@ span.rv-slicer-btn{cursor:default}
 .rv-chart-body{display:flex;align-items:center;gap:22px;min-width:0}
 .rv-chart-plotwrap{position:relative;flex:1;min-width:0}
 .rv-chart-plot{width:100%;height:280px}
+/* ECharts measures a label at the weight it writes (400 when none); Desk's body text is Espresso's
+   regular, 420, which drawn wider would push a long label past the plot */
+.rv-chart-plot svg text{font-weight:400}
 .rv-dcard.can-cross .rv-chart-plot{cursor:pointer}
 .rv-chart-state{flex:1;display:grid;place-items:center;padding:16px;min-height:200px}
 .rv-dcard[data-state="loading"] .rv-chart-state .rv-state{width:100%;max-width:none}

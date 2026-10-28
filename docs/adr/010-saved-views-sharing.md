@@ -1,6 +1,6 @@
 # ADR-010: نموذج مشاركة العروض المحفوظة
 
-- الحالة: مقبول، لم يُبنَ (2026-10-22): لا DocType `Report View Saved View` ولا `report_view.api.views`؛ `get_meta` يعيد `defaults: {saved_view: null}` دائماً. الإعدادات المحفوظة للطباعة (ADR-020) شيء آخر. مخطط له وسيُبنى بعد هذا (قرار صاحب المشروع 2026-10-27)؛ `RVViewNotFound` و `RVNotOwner` في `core/errors.py` محجوزان له (`architecture.md` §2.7)
+- الحالة: مقبول، **بُني** (2026-10-28، قرار صاحب المشروع 2026-10-27): DocType `Report View Saved View` وجدوله `Report View Saved View Role`، `core/saved_views.py` (الرؤية، الـ hooks، التحقق، الافتراضيات)، `report_view.api.views` (§2.7)، قائمة «العروض» في رأس التقرير (`components/views_menu.js`، `host/saved_views_host.js`)، `Report View Settings.default_saved_view` والدور `Report View Manager`. التفاصيل وما يختلف عن الخطة في `docs/architecture.md` §6 «كما بُني». الإعدادات المحفوظة للطباعة (ADR-020) شيء آخر
 - التاريخ: 2026-09-30
 
 ## السياق
@@ -23,3 +23,9 @@
 - Administrator يستطيع فتح عرض خاص بالاسم عبر REST: قيد معروف (حساب صيانة). القوائم تُصفّى له بالـ pqc، وواجهاتنا تطبّق `is_visible` عليه.
 - DocShare يتغلب على كل الطبقات (`permissions.py:208-209`)، ولا ينشئه إلا Administrator لغياب `share`. يُختبر في المرحلة 4.
 - دور جديد `Report View Manager` يُشحن مع التطبيق لتعديل الإعدادات والافتراضي العام.
+
+## التنفيذ (2026-10-28)
+- **الاختبار:** `report_view/tests/test_saved_views.py` (مصفوفة الخصوصية: خاص، عام، أدوار؛ System Manager بلا استثناء؛ Administrator؛ استيلاء REST بـ `PUT {"owner": ...}` و `DELETE` و `POST` باسم مالك آخر؛ تحقق الحالة؛ الافتراضيات وأولويتها وتقادمها)، `tests/js/saved_views.test.mjs`، `tests/visual/saved_views.spec.js`، والفحص الحي `tests/site/saved_views.cjs` (rv_accountant و rv_restricted).
+- **أشد من الخطة:** الكتابة والحذف للمالك المخزّن حتى لـ Administrator (`check_owner` في `validate` و `on_trash`)؛ يبقى له قراءة الخاص بالاسم عبر REST (قيد Frappe).
+- **الواجهة:** زر «العروض» في رأس الصفحة يسمّي العرض المطبَّق ويُظهر نقطة حين تختلف الصفحة عنه؛ القائمة: «القياسي»، «عروضي»، «مشتركة معي»، نجمة «افتراضيّ أنا»، حفظ، حفظ كجديد (من يراه: أنا فقط / مستخدمو بعض أدواري / كل من يفتح التقرير، ومع فلاتر التقرير أو بدونها)، تعديل، حذف. على الهاتف لوح من الأسفل كقوائم الطباعة.
+- **الرابط:** `view=<name>`، و `rv` معه بعد التغيير (§7.4). العرض يمر عند التطبيق بـ `sanitize` ثم `restrict_state` (مزايا Report View Settings)، وتُعاد ربط أعمدته بـ `columns_ref` (§7.3).

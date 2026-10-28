@@ -9,7 +9,10 @@
 // pages=<JSON> (saved settings of the Pages view, e.g. {"orientation":"landscape"}),
 // presets=<JSON> (print presets on the "server", ADR-020: [{name, preset_name, public, is_default,
 // target, settings, owner}]), publish=0 (the user may not make presets public),
-// rvs=<JSON> (the report's server settings, e.g. {"features":{"pivot":false}}, ADR-023).
+// rvs=<JSON> (the report's server settings, e.g. {"features":{"pivot":false}}, ADR-023),
+// views=<JSON>, vdefault=, gdefault= (saved views, ADR-010: views_stub.mjs).
+
+import { views_server, views_defaults } from "./views_stub.mjs";
 
 const params = new URLSearchParams(window.location.search);
 const which = params.get("report") || "tb";
@@ -156,6 +159,7 @@ async function main() {
 				// (features, default_mode, default_view; ADR-023)
 				settings: { enabled: 1, enrich_rules: conf.enrich_rules, ...JSON.parse(params.get("rvs") || "{}") },
 				include_js: [],
+				defaults: views_defaults(),
 			};
 		}
 		if (method === "report_view.api.run") return { status: "ok", raw: input.raw };
@@ -215,6 +219,7 @@ async function main() {
 			return { html: `<h1 class="rd-t">${text(row.account_name || row.account)}</h1><p class="rd-v">${text(row.closing_debit)}</p>`, css: ".rd-t{font-size:18px}" };
 		}
 		if (method.startsWith("report_view.api.print_presets.")) return preset_server(method.split(".").pop(), args);
+		if (method.startsWith("report_view.api.views.")) return views_server(method.split(".").pop(), args);
 		throw new Error(`harness: no stub for ${method}`);
 	};
 

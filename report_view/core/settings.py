@@ -23,6 +23,9 @@ DEFAULT_PRINT_MAX_PAGES = 600
 HARD_PRINT_MAX_PAGES = 2000
 GLOBAL_SETTINGS = "Report View Global Settings"
 REPORT_SETTINGS = "Report View Settings"
+# who may change the Report View Settings of a report (DocPerm of the DocType) and its default
+# saved view (ADR-010): the role shipped with the app, besides System Manager
+MANAGER_ROLES = ("System Manager", "Report View Manager")
 _DEFAULTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "defaults")
 _FIELDNAME_RE = re.compile(r"^[A-Za-z0-9_]+$")
 _SCRUBBED_RE = re.compile(r"^[a-z0-9_]+$")

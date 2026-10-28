@@ -9,4 +9,6 @@ export const ERROR_TITLES = {
 	ValidationError: () => __("The report could not run"),
 	RVNoExport: () => __("You are not allowed to export this report"),
 	RVExportMismatch: () => __("The exported totals do not match the screen"),
+	RVViewNotFound: () => __("This saved view does not exist or is not shared with you"),
+	RVNotOwner: () => __("Only the owner of a saved view can change or delete it"),
 };

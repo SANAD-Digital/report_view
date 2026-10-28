@@ -18,6 +18,7 @@ export class Header {
 		el.dir = dir;
 		el.innerHTML = `
 			<div class="rv-actions">
+				<div class="rv-views-slot"></div>
 				<button type="button" class="rv-btn icon ghost" data-action="refresh" title="${refresh}" aria-label="${refresh}">${icons.refresh()}</button>
 				<div class="rv-seg" role="group" aria-label="${esc(__("Density"))}">
 					<button type="button" data-density="comfortable">${esc(__("Comfortable"))}</button>
@@ -52,6 +53,11 @@ export class Header {
 		this.on_export_stop = job?.on_stop || null;
 		const txt = el.querySelector(".txt");
 		if (txt.textContent !== (job?.text || "")) txt.textContent = job?.text || "";
+	}
+
+	/** Where the «Views» menu goes (components/views_menu.js, ADR-010). */
+	get views_slot() {
+		return this.$(".rv-views-slot");
 	}
 
 	get export_button() {

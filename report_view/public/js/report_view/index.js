@@ -51,6 +51,7 @@ import { PagesHost } from "./host/pages_host.js";
 import { ExportFlow } from "./host/export_flow.js";
 import { DebugHooks } from "./host/debug_hooks.js";
 import { make_row_details } from "./host/row_details_host.js";
+import { SavedViewsHost } from "./host/saved_views_host.js";
 
 const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
 // Local preferences of this browser (the density; the theme is Desk's own, ADR-022).
@@ -93,7 +94,8 @@ export class ReportViewPage {
 		this.facade = make_facade(this);
 		// frappe.query_report.raw_data, rebuilt from the normalised rows on first read
 		this.raw_cache = raw_data_cache();
-		this.update_url = make_url_updater(window);
+		// the saved view applied goes into the link too (ADR-010, host/saved_views_host.js)
+		this.update_url = make_url_updater(window, 300, () => this.url_view());
 		this.run_token = 0;
 		this.render_token = 0;
 		this.session = null;
@@ -225,9 +227,11 @@ export class ReportViewPage {
 		this.toolbar.el.addEventListener("focusin", warm);
 		this.side = new SidePanel({ body, host: this.controls.side_host() });
 		this.status = new StatusBar({ parent: wrap });
+		// the «Views» menu of the head (ADR-010)
+		this.make_views_menu();
 		this.apply_density();
 		// the report's Report View Settings, for whoever may change them
-		if (frappe.user?.has_role?.("System Manager") && this.page.add_menu_item) {
+		if ((frappe.user?.has_role?.("System Manager") || frappe.user?.has_role?.("Report View Manager")) && this.page.add_menu_item) {
 			this.page.add_menu_item(__("Report View settings"), () => this.open_settings());
 		}
 	}
@@ -688,6 +692,7 @@ export class ReportViewPage {
 		await this.close_session();
 		this.page.set_title(__(name));
 		this.header.set_report({ can_export: false, can_print: false });
+		this.reset_views();
 		this.toolbar.set_report({ can_print: false });
 		this.show_loading();
 		const route_options = frappe.route_options || {};
@@ -722,9 +727,12 @@ export class ReportViewPage {
 
 		const params = new URLSearchParams(window.location.search);
 		const from_url = decode_state(params.get("rv"));
-		this.state = sanitize(from_url || default_state(this.config), this.config);
-		if (!from_url?.columns?.groups) await this.load_user_groups();
-		if (!from_url?.charts) await this.load_user_charts();
+		// the saved view of the link (?view=) or the default one (ADR-010); a link's rv wins
+		const from_view = await this.open_linked_view(params, from_url);
+		this.state = sanitize(from_url || from_view || default_state(this.config), this.config);
+		// a saved view holds its own column groups and dashboard
+		if (!from_url?.columns?.groups && !from_view) await this.load_user_groups();
+		if (!from_url?.charts && !from_view) await this.load_user_charts();
 		this.state.ui.density = this.density;
 		// A view or a tool the report does not offer (the pages need the print permission; the
 		// rest its Report View Settings, ADR-023): a link that asks for it opens the default.
@@ -741,9 +749,11 @@ export class ReportViewPage {
 		});
 		this.filters = this.criteria.filters;
 		this.cells.clear();
-		const filter_options = Object.fromEntries(
-			Object.entries(route_options).filter(([k]) => !RESERVED_PARAMS.has(k))
-		);
+		// the link's filters over the saved view's (a view that keeps its filters)
+		const filter_options = {
+			...(from_view ? this.view_filter_values() : {}),
+			...Object.fromEntries(Object.entries(route_options).filter(([k]) => !RESERVED_PARAMS.has(k))),
+		};
 		await this.filters.set_route_values(filter_options);
 		this.criteria.refresh();
 		this.refresh_controls();
@@ -882,6 +892,8 @@ export class ReportViewPage {
 		await this.close_session();
 		if (token !== this.run_token) return;
 		this.report = report;
+		// the columns of a saved view found again in this result (§7.3), then the rest dropped
+		this.rebind_view(report);
 		reconcile(this.state, report.columns);
 		this.formatter = make_formatter({ report_settings: this.report_settings, columns: report.columns });
 		await this.open_session(token);
@@ -1163,7 +1175,7 @@ export class ReportViewPage {
 
 // Methods of ReportViewPage kept in host/*.js, one module per concern, installed on its
 // prototype (as views/pages_view.js does): one object and one `this` for every caller.
-for (const part of [PagesHost, ExportFlow, DebugHooks]) {
+for (const part of [PagesHost, ExportFlow, DebugHooks, SavedViewsHost]) {
 	for (const [name, d] of Object.entries(Object.getOwnPropertyDescriptors(part.prototype))) {
 		if (name !== "constructor") Object.defineProperty(ReportViewPage.prototype, name, d);
 	}

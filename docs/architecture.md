@@ -28,7 +28,7 @@ apps/report_view/
     ├── api/
     │   ├── __init__.py        # run, get_meta, enrich, export_xlsx(+status/cancel/download), get_entry_state، وضع «صفحات» (§2.10)
     │   ├── document.py  pdf.py  letterhead.py  custom_print.py  print_presets.py  chromium.py   # ADR-016..020 (§2.10)
-    │   └── views.py           # «لم يُبنَ» (ADR-010)
+    │   └── views.py           # العروض المحفوظة (ADR-010، §2.7)
     ├── core/
     │   ├── errors.py          # أصناف الأخطاء ورموزها (§2.0)
     │   ├── guard.py           # guard_report / guard_export / guard_print (§2.0)
@@ -62,8 +62,8 @@ apps/report_view/
     │       ├── report_view_drilldown/         # جدول فرعي — «لم يُبنَ»
     │       ├── report_view_balance_pair/      # جدول فرعي — «لم يُبنَ»
     │       ├── report_view_signature/         # جدول فرعي — «لم يُبنَ»
-    │       ├── report_view_saved_view/        # «لم يُبنَ» (§6)
-    │       ├── report_view_saved_view_role/   # جدول فرعي (Table MultiSelect) — «لم يُبنَ»
+    │       ├── report_view_saved_view/        # العروض المحفوظة (§6، ADR-010)
+    │       ├── report_view_saved_view_role/   # جدول فرعي (Table MultiSelect): أدوار العرض المشترك
     │       ├── report_view_filter_def/        # جدول فرعي: تعريفات فلاتر خادمية (§2.1) — «لم يُبنَ»: filter_defs في defaults/*.json
     │       ├── print_signature/ print_signature_item/   # ADR-015
     │       ├── letter_head_layout/            # ADR-018
@@ -71,7 +71,7 @@ apps/report_view/
     ├── tests/                 # اختبارات بايثون (bench run-tests --app report_view)
     │   ├── fixtures/normalize/*.json   # حالات مشتركة مع tests/js
     │   ├── test_guard.py  test_api_run.py  test_get_meta.py  test_enrich.py
-    │   ├── test_normalize.py  test_engine.py  test_export.py  (test_saved_views.py «لم يُبنَ»)
+    │   ├── test_normalize.py  test_engine.py  test_export.py  test_saved_views.py
     │   ├── test_api_pages.py  test_api_document.py  test_pdf.py  test_letterhead.py  test_custom_print.py  test_print_presets.py  test_chromium.py  test_hooks.py
     └── public/
         ├── fonts/<slug>/              # مكتبة خطوط ورق الشركة بتراخيصها (ADR-018)؛ NotoNaskhArabic لـ ADR-004 «لم يُبنَ»
@@ -177,7 +177,7 @@ guard_report_quiet(report_name) -> Report | None
 |---|---|
 | الطريقة | GET |
 | الفحوص بالترتيب | (1) `guard_report`؛ (2) الإعدادات: `report_view/defaults/<scrub(report)>.json` وفوقه سجل `Report View Settings` (`core/settings.load_settings`، ADR-023)، ومنها `features` و `default_view` و `row_details` (الإعداد بلا القالب)؛ (3) حساب `perms` بـ `can_export` و `has_permission(..., "print", ignore_share_permissions=True)` دون رمي |
-| المخرجات | ```{"report": {"name", "report_type", "ref_doctype", "module", "is_standard", "prepared_report", "add_total_row", "reference_report"}, "script": <مخرج frappe.desk.query_report.get_script(report_name) كما هو: script, html_format, filters, custom_report_name, execution_time>, "perms": {"can_export": bool, "can_print": bool}, "settings": <الإعدادات الخادمية المدمجة §5.3>, "include_js": [bundle...] (من hook report_view_include_js), "limits": {"max_rows": int}, "defaults": {"saved_view": name \| null, "source": "user" \| "global" \| null}}``` — الافتراضي يُعاد فقط إن كان العرض مرئياً للمستخدم الآن (§6)، وإلا `null`. اليوم `defaults` دائماً `{saved_view: null, source: null}` لأن العروض المحفوظة «لم يُبنَ» |
+| المخرجات | ```{"report": {"name", "report_type", "ref_doctype", "module", "is_standard", "prepared_report", "add_total_row", "reference_report"}, "script": <مخرج frappe.desk.query_report.get_script(report_name) كما هو: script, html_format, filters, custom_report_name, execution_time>, "perms": {"can_export": bool, "can_print": bool}, "settings": <الإعدادات الخادمية المدمجة §5.3>, "include_js": [bundle...] (من hook report_view_include_js), "limits": {"max_rows": int}, "defaults": {"saved_view": name \| null, "source": "user" \| "global" \| null, "title": str \| null}}``` — الافتراضي يُعاد فقط إن كان العرض مرئياً للمستخدم الآن (§6)، وإلا `null` (`core/saved_views.default_view`، ADR-010) |
 | الأخطاء | كما `guard_report` |
 | ملاحظات | `perms` للعرض فقط (إخفاء الأزرار). الفحص الحقيقي يتكرر في `export_xlsx` و `export_pdf`. `script` يُنفَّذ في المتصفح بـ `frappe.dom.eval` كما في الأصل (`QJ:425-427`). |
 
@@ -210,19 +210,19 @@ guard_report_quiet(report_name) -> Report | None
 
 للزر في query-report (ADR-007). GET. الفحوص: `guard_report_quiet` (رفض التقرير — لا صلاحية، غير موجود، غير صالح — ⇒ `{"show": false}` بلا رسائل في `_server_messages`؛ أي خطأ آخر يُرمى لأنه خلل). لا يكشف أكثر من الأصل: من يرى الزر فتح query-report للتقرير نفسه. المخرجات: `{"show": true, "route": ["report-view", <name>]}` أو `{"show": false}`. `Report View Settings.enabled = 0` (ADR-023) يعيد `{"show": false}`؛ `entry_button_scope` «لم يُبنَ»، فبغير ذلك يظهر الزر لكل من يملك صلاحية التقرير.
 
-### 2.7 العروض المحفوظة: `report_view.api.views.*` — «لم يُبنَ»
+### 2.7 العروض المحفوظة: `report_view.api.views.*` (ADR-010)
 
-> لم يُبنَ (ADR-010 مقبول ولم يُنفَّذ). المواصفة أدناه الخطة.
+> بُني في 2026-10-28 (`api/views.py`، القواعد في `core/saved_views.py`، الاختبار `tests/test_saved_views.py`).
 
-كل الدوال تأخذ `report_name` أولاً وتبدأ بـ `guard_report(report_name)`، لأن رؤية العرض مشروطة برؤية التقرير (ADR-010).
+كل الدوال تأخذ `report_name` أولاً وتبدأ بـ `guard_report(report_name)`، لأن رؤية العرض مشروطة برؤية التقرير (ADR-010). العرض الذي لا يوجد، أو لتقرير آخر، أو غير مرئي للمستخدم ⇒ `RVViewNotFound` (HTTP 404) دون أن يُقال إنه موجود، وتُحذف رسالة Frappe الأصلية («not found» / «no permission») من `_server_messages`. العرض المرئي الذي لا يملكه المستخدم ⇒ `RVNotOwner` (403) عند الكتابة أو الحذف.
 
-| الدالة | الطريقة | المدخلات | الفحوص بعد `guard_report` | المخرجات | الأخطاء |
-|---|---|---|---|---|---|
-| `list_views(report_name)` | GET | — | `frappe.get_list("Report View Saved View", filters={"report": report_name}, fields=[...])`؛ الـ pqc (§6) يحصر النتائج، ثم يُطبَّق `is_visible` صراحة على النتيجة (Administrator يتجاوز hook القراءة) | `[{name, title, visibility, owner, is_owner, is_global_default, is_user_default, modified}]`؛ `is_global_default` محسوب من `Report View Settings.default_saved_view`، و `is_user_default` من `frappe.defaults` | — |
-| `get_view(report_name, name)` | GET | `name` | `frappe.get_doc` ثم `check_permission("read")` (hook `has_permission`)، ثم `is_visible` صراحة، ثم `doc.report == report_name`. `PermissionError` و `DoesNotExistError` ⇒ `RVViewNotFound` | `{name, title, visibility, roles, state (بعد الترحيل §7.3), is_owner}` | `RVViewNotFound` |
-| `save_view(report_name, title, state, visibility="Private", roles=None, name=None)` | POST | `state: dict` | التحقق كله في `validate` المتحكم (§6) ليشمل REST؛ الدالة تبني المستند فقط؛ جديد: `insert()` بصلاحيات افتراضية؛ تعديل: `get_doc` + `check_permission("write")` (المالك فقط) ثم `save()` | `{name, modified}` | `RVInvalidViewState`، `RVInvalidInput`، `RVViewNotFound`، `RVNotOwner` |
-| `delete_view(report_name, name)` | POST | `name` | `get_doc` + `check_permission("delete")` (المالك فقط) ثم `delete()`. لا حقول Link تشير إليه (افتراضي المستخدم في `frappe.defaults`، والعام حقل Data)، فلا `LinkExistsError` (§5.2، §6) | `{"ok": true}` | `RVViewNotFound`، `RVNotOwner` |
-| `set_default(report_name, name=None)` | POST | `name` أو `None` للإلغاء | العرض مرئي للمستخدم (`get_view`)، ثم `frappe.defaults.set_user_default("report_view_default::" + report_name, name)` للمستخدم الحالي فقط (أو `clear_user_default` عند `None`). لا مسار لضبط افتراضي مستخدم آخر. الافتراضي العام في `Report View Settings.default_saved_view` بصلاحيات ذلك النوع (§5.2) | `{"ok": true}` | `RVViewNotFound` |
+| الدالة | الطريقة | الحد | المدخلات | الفحوص بعد `guard_report` | المخرجات | الأخطاء |
+|---|---|---|---|---|---|---|
+| `list_views(report_name)` | GET | 120 | — | `frappe.get_list("Report View Saved View", filters={"report": report_name}, ...)` (حتى 500، بالعنوان)؛ الـ pqc (§6) يحصر النتائج، ثم يُطبَّق الشرط صراحة على كل صف (Administrator يتجاوز hook القراءة): خاص لغير مالكه يُسقط، و `Roles` لغير مالكه يُفحص بـ `is_visible` | `[{name, title, visibility, owner, owner_name, is_owner, is_global_default, is_user_default, description, modified}]`؛ `is_global_default` من `Report View Settings.default_saved_view` (ولا يكون خاصاً)، و `is_user_default` من `frappe.defaults` للمستخدم | — |
+| `get_view(report_name, name)` | GET | 120 | `name` | `frappe.get_doc` ثم `check_permission("read")` (hook `has_permission`)، ثم `is_visible` صراحة، ثم `doc.report == report_name`. `PermissionError` و `DoesNotExistError` ⇒ `RVViewNotFound` | `{name, title, visibility, roles, description, state (بعد الترحيل §7.3؛ حالة أحدث تُعاد كما هي ويقرر المتصفح), columns_ref, owner, is_owner, modified}` | `RVViewNotFound` |
+| `save_view(report_name, title=None, state=None, visibility=None, roles=None, name=None, description=None, columns=None)` | POST | 60 | `state: dict \| JSON`، `roles: list \| JSON`، `columns: [{key, label, fieldtype, source_index}]` | بلا `name`: `has_permission(create)` و `title` و `state` إلزاميان، والعرض الجديد `Private` ما لم تُرسل `visibility`؛ مع `name`: العرض كما في `get_view` ثم `check_permission("write")` و `check_owner` (المالك المخزّن فقط) — ويتغير فقط ما أُرسل (`visibility=None` يبقيها). `columns` تُعطى للمتحكم (`doc.flags.rv_columns`) ليبني منها `columns_ref`. التحقق كله في `validate` المتحكم (§6) ليشمل REST | `{name, title, modified}` | `RVInvalidViewState`، `RVInvalidInput`، `RVViewNotFound`، `RVNotOwner` |
+| `delete_view(report_name, name)` | POST | 60 | `name` | العرض كما في `get_view` ثم `check_permission("delete")` و `check_owner`، ثم `delete()`. لا حقول Link تشير إليه (افتراضي المستخدم في `frappe.defaults`، والعام حقل Data)، فلا `LinkExistsError`. إن كان افتراضيَّ المستخدم نفسه يُمسح | `{"ok": true}` | `RVViewNotFound`، `RVNotOwner` |
+| `set_default(report_name, name=None)` | POST | 60 | `name` أو لا شيء للإلغاء | العرض مرئي للمستخدم (كما في `get_view`)، ثم `frappe.defaults.set_user_default(default_key(report_name), name)` للمستخدم الحالي فقط (أو `clear_user_default`). لا مسار لضبط افتراضي مستخدم آخر. المفتاح `report_view_default::<report_name>` (يُختصر بـ sha1 إن تجاوز 140 حرفاً، طول `DefaultValue.defkey`). الافتراضي العام في `Report View Settings.default_saved_view` بصلاحيات ذلك النوع (§5.2) | `{"ok": true}` | `RVViewNotFound` |
 
 **واجهات Frappe القياسية.** `/api/resource/Report View Saved View` و `frappe.client.get_list/get` و `frappe.desk.reportview.get` لا تمر بـ `guard_report`. لذلك قاعدة «رؤية العرض مشروطة برؤية التقرير» تُنفَّذ أيضاً في الـ pqc و hook القراءة (§6)، لا في الـ API وحده.
 
@@ -243,7 +243,7 @@ POST. `guard_report` أولاً. `lang` من `frappe.translate.get_all_languages
 
 ### 2.10 كل الدوال المتاحة (الموجودة فعلاً، 2026-10-22)
 
-50 دالة `@frappe.whitelist()` (+4 في 2026-10-28، ADR-023). «الحد» = طلبات لكل مستخدم في الدقيقة (`core/limits.rate_limit`، داخل طلب ويب فقط؛ الرفض `RateLimitExceededError` من Frappe). كل دالة تبدأ بالحارس المذكور. القسمان §2.5 و §2.7 خطة لم تُبنَ.
+55 دالة `@frappe.whitelist()` (+4 في 2026-10-28، ADR-023؛ +5 للعروض المحفوظة، ADR-010). «الحد» = طلبات لكل مستخدم في الدقيقة (`core/limits.rate_limit`، داخل طلب ويب فقط؛ الرفض `RateLimitExceededError` من Frappe). كل دالة تبدأ بالحارس المذكور. القسم §2.5 خطة لم تُبنَ.
 
 | الدالة | الطريقة | الحارس الأول | الحد | المرجع |
 |---|---|---|---|---|
@@ -251,9 +251,9 @@ POST. `guard_report` أولاً. `lang` من `frappe.translate.get_all_languages
 | `report_view.api.get_meta` | GET | `guard_report` | — | §2.2 |
 | `report_view.api.get_entry_state` | GET | `guard_report_quiet` | — | §2.6 |
 | `report_view.api.render_row_details` | POST | `guard_report` | 60 | ADR-023 |
-| `report_view.api.settings.shipped_values` | GET | `guard_report` ثم `only_for("System Manager")` | — | ADR-023 |
-| `report_view.api.settings.reset_values` | GET | `guard_report` ثم `only_for("System Manager")` | — | ADR-023 |
-| `report_view.api.settings.preview` | POST | `guard_report` ثم `only_for("System Manager")` | — | ADR-023 |
+| `report_view.api.settings.shipped_values` | GET | `guard_report` ثم `only_for(System Manager, Report View Manager)` | — | ADR-023 |
+| `report_view.api.settings.reset_values` | GET | `guard_report` ثم `only_for(System Manager, Report View Manager)` | — | ADR-023 |
+| `report_view.api.settings.preview` | POST | `guard_report` ثم `only_for(System Manager, Report View Manager)` | — | ADR-023 |
 | `report_view.api.enrich` | POST | `guard_report` | 60 | §2.3 |
 | `report_view.api.export_xlsx` | POST | `guard_report`، `guard_export` | 10 | §2.4 |
 | `report_view.api.export_xlsx_status` | GET | وظيفة المستخدم نفسه، ثم `guard_report` و `guard_export` | — | §2.4 |
@@ -295,6 +295,11 @@ POST. `guard_report` أولاً. `lang` من `frappe.translate.get_all_languages
 | `report_view.api.print_presets.save` | POST | `guard_target` ثم صلاحية الإعداد | 60 | ADR-020 |
 | `report_view.api.print_presets.delete` | POST | صلاحية الإعداد (`has_permission` لـ Print Preset) | — | ADR-020 |
 | `report_view.api.print_presets.set_default` | POST | صلاحية الإعداد | — | ADR-020 |
+| `report_view.api.views.list_views` | GET | `guard_report` | 120 | §2.7 |
+| `report_view.api.views.get_view` | GET | `guard_report` | 120 | §2.7 |
+| `report_view.api.views.save_view` | POST | `guard_report` ثم صلاحية العرض | 60 | §2.7 |
+| `report_view.api.views.delete_view` | POST | `guard_report` ثم صلاحية العرض | 60 | §2.7 |
+| `report_view.api.views.set_default` | POST | `guard_report` ثم رؤية العرض | 60 | §2.7 |
 | `report_view.api.chromium.engine_status` | GET | `frappe.only_for("System Manager")` | — | ADR-016 |
 | `report_view.api.chromium.engine_install` | POST | `frappe.only_for("System Manager")` | — | ADR-016 |
 
@@ -640,7 +645,7 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 | `export_background_threshold` | Int | 20,000 |
 | `default_pdf_generator` | Select: `wkhtmltopdf` / `chrome` | `wkhtmltopdf` — «لم يُبنَ» (ADR-016: محرك Chromium خاص دائماً) |
 
-**`Report View Settings`** (اسم السجل = اسم التقرير) — **بُني** (ADR-023): القراءة والكتابة لـ System Manager وحده (المتصفح يستلم النتيجة المدمجة عبر `get_meta.settings`). الحقول المبنية: `report`، `enabled`، `description`؛ مزايا «ما يظهر في التقرير» (Check لكل مفتاح من `features`: `grouping`, `subtotals`, `column_groups`, `pinning`, `density`, `quick_search`, `column_filters`, `set_filters`, `filters_panel`, `quick_filters`, `period_picker`, `side_panel`, `columns_panel`, `pivot`, `charts`, `pages`, `excel`) و `chart_<type>` لكل نوع رسم؛ العرض الافتراضي (`default_mode`, `default_group_by`, `default_hidden`, `default_pinned`)؛ تفاصيل الصف (`row_details_*`)؛ وأجزاء JSON (`report_settings`, `enrich_rules`, `balance_pairs`, `filter_defs`) بلا جداول فرعية، مع «Load from shipped defaults» و «Reset to shipped» و «Effective settings». `column_rules` و `drilldowns` و `signatures` و `pdf_generator` و `default_saved_view` و `show_entry_button` في الجدول أدناه «لم يُبنَ».
+**`Report View Settings`** (اسم السجل = اسم التقرير) — **بُني** (ADR-023): القراءة والكتابة لـ System Manager و `Report View Manager` (ADR-010) (المتصفح يستلم النتيجة المدمجة عبر `get_meta.settings`). الحقول المبنية: `report`، `enabled`، `description`؛ مزايا «ما يظهر في التقرير» (Check لكل مفتاح من `features`: `grouping`, `subtotals`, `column_groups`, `pinning`, `density`, `quick_search`, `column_filters`, `set_filters`, `filters_panel`, `quick_filters`, `period_picker`, `side_panel`, `columns_panel`, `pivot`, `charts`, `pages`, `excel`) و `chart_<type>` لكل نوع رسم؛ العرض الافتراضي (`default_mode`, `default_group_by`, `default_hidden`, `default_pinned`)؛ تفاصيل الصف (`row_details_*`)؛ وأجزاء JSON (`report_settings`, `enrich_rules`, `balance_pairs`, `filter_defs`) بلا جداول فرعية، مع «Load from shipped defaults» و «Reset to shipped» و «Effective settings». `default_saved_view` بُني (ADR-010، §6). `column_rules` و `drilldowns` و `signatures` و `pdf_generator` و `show_entry_button` في الجدول أدناه «لم يُبنَ».
 
 الخطة الأصلية:
 
@@ -684,9 +689,9 @@ Row = { __rid: int, __kind: "data" | "frappe_total" | "internal_total" | "openin
 
 ---
 
-## 6. DocType `Report View Saved View` — «لم يُبنَ»
+## 6. DocType `Report View Saved View` (ADR-010)
 
-> لم يُبنَ (ADR-010)، ولا اختباره الإلزامي. لا hooks مسجّلة له (ADR-007). المواصفة أدناه الخطة.
+> بُني في 2026-10-28: `report_view/doctype/report_view_saved_view` وجدوله `report_view_saved_view_role`، القواعد كلها في `core/saved_views.py` (`is_visible`، `has_permission`، `permission_query_conditions`، `validate_view`، `check_owner`، الافتراضيات)، مسجّلة في `hooks.py` (`permission_query_conditions`، `has_permission`، ADR-007). الاختبار الإلزامي `tests/test_saved_views.py` (مصفوفة الخصوصية، استيلاء REST، الأدوار، System Manager بلا استثناء، Administrator، الافتراضيات)، والفحص الحي `tests/site/saved_views.cjs`. ما يختلف عن الخطة أدناه مذكور في «كما بُني» آخر القسم.
 
 | الحقل | النوع | ملاحظة |
 |---|---|---|
@@ -757,6 +762,15 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 
 **النصوص المشتركة.** `title` و `description` يكتبهما مستخدم ويراهما غيره، فتُعرض دائماً عبر `frappe.utils.escape_html` في JS ولا تُحقن كـ HTML.
 
+**كما بُني (2026-10-28).**
+- DocPerm صفّان للدور `Desk User`: (`read`, `create`) و (`read`, `write`, `delete`, `if_owner`). مستخدم موقع (Website User، بلا دور Desk) لا يقرأ النوع إطلاقاً.
+- الكتابة والحذف للمالك المخزّن **لكل أحد**: `validate` و `on_trash` يستدعيان `check_owner`، فلا يعدّل Administrator أو يحذف عرض غيره عبر REST أيضاً (الـ hook لا يُستدعى له). يبقى القيد المعروف: Administrator **يقرأ** عرضاً خاصاً بالاسم عبر REST. كود يحذف عن قصد يمرّر `ignore_permissions`.
+- `validate` يرفض تغيير `owner` (`PermissionError`) و `report` (`RVInvalidInput`، ومعه `set_only_once`)، ويفرض: العنوان (≤140، فريد لكل مالك وتقرير عبر `frappe.get_list`)، `guard_report(doc.report)` للمستخدم الحالي، `visibility` من القائمة، `Roles` ⇒ أدوار موجودة (≤50، لا `Guest`/`All`/`Administrator`)، وغيرها ⇒ تُفرَّغ الأدوار.
+- `state` يمر بـ `core/saved_views.clean_state`: JSON ≤ 256KB، المخطط v1 (`core/view_state.validate`) مع ما يضيفه المتصفح: `mode: "pages"`، `charts` (لوحة الرسوم: شكلها فقط، والمتصفح يفحص كل بطاقة عند التطبيق)، `columns.groups`، و `report_filters` (≤100 مفتاح باسم حقل، قيم بسيطة أو قوائم). `ui` (الكثافة، اللوحة الجانبية) تفضيل الصفحة لا جزء من العرض: يُحذف.
+- `columns_ref` يبنيه المتحكم من أعمدة التقرير التي يرسلها `save_view` (`columns`)، للمفاتيح التي تشير إليها الحالة فقط؛ ما يكتبه طلب REST في الحقل نفسه يُهمل. تعديل لا يغيّر الحالة يبقيه.
+- `Report View Settings.default_saved_view` (Data) **بُني**: `validate` يقبل عرضاً يراه حافظ الإعدادات (`frappe.get_list`) لنفس التقرير وغير خاص. يكتبه System Manager أو الدور الجديد **`Report View Manager`** (DocPerm على `Report View Settings`؛ يُنشأ الدور من DocPerm عند التثبيت)، ولا يحتاج ملكية العرض ولا يغيّره.
+- `get_meta.defaults` = `core/saved_views.default_view` (قراءة فقط: الافتراضي الذي لم يعد مرئياً يُتجاهل ولا يُمسح في GET).
+
 ---
 
 ## 7. حالة العرض
@@ -825,6 +839,7 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 - إن تجاوز الرابط 2,000 حرف: لا يُكتب `rv`، ويظهر في القائمة «احفظ العرض لمشاركته».
 - التحديث بـ `history.replaceState` كما في الأصل، مع تأخير 300 ms.
 - الأولوية عند الفتح: `rv` ← `view` ← الافتراضي (ADR-010) ← `register.default_mode`.
+- (بُني، ADR-010) العرض المطبَّق يُكتب `view=<name>` في الرابط. ما دامت الصفحة تعرضه كما حُفظ لا يُكتب `rv`؛ بعد أي تغيير يُكتب `rv` دائماً (حتى لو عادت الحالة للافتراضية) فيفتح الرابط الحالة المعدّلة والعرض معلَّم بنقطة «تغيّر». رابط بـ `view` لعرض غير متاح للمستخدم (محذوف، خاص بغيره، لم يُشارك معه، لتقرير آخر) ⇒ تنبيه «غير متاح لك» ثم الافتراضي. عرض يطلب ما عطّلته إعدادات التقرير (`state/features.js restrict_state`) يُقيَّد عند التطبيق مع تنبيه. فلاتر التقرير المحفوظة مع العرض تُطبَّق على كل فلتر (القيمة أو الفراغ)، وفلاتر الرابط تغلبها مفتاحاً بمفتاح.
 
 ---
 
@@ -968,7 +983,7 @@ OR ( `tabReport View Saved View`.report IN ({allowed_reports})
 | 23، 24 | بطاقات الملخص (افتتاحي/حركة/ختامي) وشارة الحالة | `components/summary.js` | بناء؛ من `register.summary` (أزواج التوازن) أو `report_summary` | 5أ (عرض)، 6 (معادلة التوازن) |
 | 25، 26 | شريط الأدوات ومبدّل العرض (جدول/Pivot/رسوم) | `components/toolbar.js` | بناء | 3 (جدول فقط)، 5ب، 5د |
 | 27، 28، 29 | البحث بالشرائح، الاقتراحات، القائمة المنسدلة (فلاتر سريعة وأبعاد تجميع) | `components/search.js` | بناء؛ الشرائح تكتب في `view_state.filters` | 5هـ |
-| 30، 31 | زر المفضلة وقائمة العروض (جاهزة ومحفوظة، حفظ) | `components/saved_views.js` ⇒ `api.views.*` | بناء؛ نضيف المشاركة (خاص/أدوار/عام) والافتراضي بعناصر التصميم نفسها، لأن النموذج بلا مشاركة | 5هـ |
+| 30، 31 | زر المفضلة وقائمة العروض (جاهزة ومحفوظة، حفظ) | `components/views_menu.js` + `host/saved_views_host.js` ⇒ `api.views.*` (بُني، ADR-010؛ «الجاهزة» `ready_views` «لم يُبنَ») | بناء؛ نضيف المشاركة (خاص/أدوار/عام) والافتراضي بعناصر التصميم نفسها، لأن النموذج بلا مشاركة | 5هـ |
 | 32 | إطار الجدول | `views/grid_view.js` | regular-table: `<regular-table>` بنموذج بيانات افتراضي (`setDataListener`) يقرأ نوافذ من `view` | 3 |
 | 33 | لوحة مجموعات الصفوف (سحب، ترتيب، حذف، مجاميع فرعية، فتح/طي الكل) | `components/group_panel.js` | بناء (لوحة وسحب HTML5 من رؤوس الجدول)؛ الناتج `group_by` في `view config` | 5أ |
 | 34 | لوحة أعمدة التحليل | `components/group_panel.js` | بناء؛ الناتج `split_by` | 5ب |

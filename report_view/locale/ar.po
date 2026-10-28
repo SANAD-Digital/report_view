@@ -4127,3 +4127,253 @@ msgstr "↑ ↓ للتنقل بين الأسطر"
 msgctxt "Report View"
 msgid "Row details"
 msgstr "تفاصيل السطر"
+
+msgctxt "Saved view"
+msgid "Public"
+msgstr "عام"
+
+msgctxt "Saved view"
+msgid "Roles"
+msgstr "أدوار"
+
+msgctxt "Saved view"
+msgid "Private"
+msgstr "خاص"
+
+msgctxt "Saved views"
+msgid "Views"
+msgstr "العروض"
+
+msgid "Saved views"
+msgstr "العروض المحفوظة"
+
+msgid "View: {0} (changed since it was applied)"
+msgstr "العرض: {0} (تغيّر منذ تطبيقه)"
+
+msgid "View: {0}"
+msgstr "العرض: {0}"
+
+msgid "Shared with roles"
+msgstr "مشترك مع أدوار"
+
+msgid "Shared with everyone"
+msgstr "مشترك مع الجميع"
+
+msgid "Only you"
+msgstr "أنت فقط"
+
+msgid "By {0}"
+msgstr "من {0}"
+
+msgid "The report's default"
+msgstr "العرض الافتراضي للتقرير"
+
+msgid "Your default: opened with the report. Press to stop"
+msgstr "عرضك الافتراضي: يُفتح مع التقرير. اضغط لإلغائه"
+
+msgid "Open the report with this view"
+msgstr "افتح التقرير بهذا العرض"
+
+msgid "My views"
+msgstr "عروضي"
+
+msgid "None yet: «Save as new» keeps what the report shows now under a name."
+msgstr "لا شيء بعد: «حفظ كجديد» يحفظ ما يعرضه التقرير الآن باسم."
+
+msgid "Shared with me"
+msgstr "مشتركة معي"
+
+msgid "No views are shared with you for this report."
+msgstr "لا عروض مشتركة معك لهذا التقرير."
+
+msgid "Layouts of this report saved under a name, applied in one click"
+msgstr "تخطيطات لهذا التقرير محفوظة باسم، تُطبَّق بنقرة واحدة"
+
+msgctxt "Saved view"
+msgid "Standard"
+msgstr "القياسي"
+
+msgid "The report as it opens without a saved view"
+msgstr "التقرير كما يُفتح بلا عرض محفوظ"
+
+msgid "Apply a view of your own first, or save what the report shows as a new one"
+msgstr "طبّق عرضاً من عروضك أولاً، أو احفظ ما يعرضه التقرير كعرض جديد"
+
+msgid "Only its owner can change this view: «Save as new» keeps a copy of your own"
+msgstr "لا يغيّر هذا العرض إلا مالكه: «حفظ كجديد» يحفظ نسخة لك"
+
+msgid "Save what the report shows now into «{0}»"
+msgstr "احفظ ما يعرضه التقرير الآن في «{0}»"
+
+msgctxt "Saved view"
+msgid "Save"
+msgstr "حفظ"
+
+msgctxt "Saved view"
+msgid "Edit…"
+msgstr "تعديل…"
+
+msgid "The saved view of this link is not available to you: the report opens without it"
+msgstr "العرض المحفوظ في هذا الرابط غير متاح لك: يُفتح التقرير بدونه"
+
+msgid "The view «{0}» was saved by a newer version of Report View: the report opens without it"
+msgstr "حُفظ العرض «{0}» بإصدار أحدث من Report View: يُفتح التقرير بدونه"
+
+msgid "Parts of the view «{0}» are turned off for this report and were left out"
+msgstr "أجزاء من العرض «{0}» معطّلة في هذا التقرير فتُركت"
+
+msgid "The view «{0}» refers to columns the report no longer has: {1}"
+msgstr "يشير العرض «{0}» إلى أعمدة لم تعد في التقرير: {1}"
+
+msgid "The saved views could not be loaded: {0}"
+msgstr "تعذّر تحميل العروض المحفوظة: {0}"
+
+msgid "View «{0}» applied"
+msgstr "طُبّق العرض «{0}»"
+
+msgid "View «{0}» saved"
+msgstr "حُفظ العرض «{0}»"
+
+msgid "Only me"
+msgstr "أنا فقط"
+
+msgid "Users of some of my roles"
+msgstr "مستخدمو بعض أدواري"
+
+msgid "Everyone who can open the report"
+msgstr "كل من يستطيع فتح التقرير"
+
+msgid "A user who has one of them and may open the report sees the view"
+msgstr "يرى العرض كل مستخدم لديه أحدها ويستطيع فتح التقرير"
+
+msgid "Keep the report's filters (company, dates…) with the view"
+msgstr "احفظ فلاتر التقرير (الشركة، التواريخ…) مع العرض"
+
+msgid "Choose the roles the view is shared with"
+msgstr "اختر الأدوار التي يُشارك معها العرض"
+
+msgid "The view was not saved"
+msgstr "لم يُحفظ العرض"
+
+msgid "Save the view as a new one"
+msgstr "احفظ العرض كعرض جديد"
+
+msgid "Edit the view «{0}»"
+msgstr "تعديل العرض «{0}»"
+
+msgid "Delete the view «{0}»?"
+msgstr "حذف العرض «{0}»؟"
+
+msgid "Delete the view «{0}»? The users it is shared with lose it too."
+msgstr "حذف العرض «{0}»؟ سيفقده أيضاً المستخدمون المشترك معهم."
+
+msgid "View «{0}» deleted"
+msgstr "حُذف العرض «{0}»"
+
+msgid "The report opens without a default view of yours"
+msgstr "يُفتح التقرير بلا عرض افتراضي لك"
+
+msgid "The report opens with «{0}» from now on"
+msgstr "يُفتح التقرير بالعرض «{0}» من الآن"
+
+msgid "This saved view does not exist or is not shared with you"
+msgstr "هذا العرض المحفوظ غير موجود أو غير مشترك معك"
+
+msgid "Only the owner of a saved view can change or delete it"
+msgstr "لا يغيّر العرض المحفوظ أو يحذفه إلا مالكه"
+
+msgid "View state: invalid report_filters"
+msgstr "حالة العرض: report_filters غير صالحة"
+
+msgid "View state: invalid charts"
+msgstr "حالة العرض: charts غير صالحة"
+
+msgid "View state: invalid columns.groups"
+msgstr "حالة العرض: columns.groups غير صالحة"
+
+msgid "The view is too large"
+msgstr "العرض كبير جداً"
+
+msgid "The view is not valid JSON"
+msgstr "العرض ليس JSON صالحاً"
+
+msgid "The owner of a saved view cannot be changed"
+msgstr "لا يمكن تغيير مالك العرض المحفوظ"
+
+msgid "The report of a saved view cannot be changed"
+msgstr "لا يمكن تغيير تقرير العرض المحفوظ"
+
+msgid "Name the view"
+msgstr "سمِّ العرض"
+
+msgid "The name of the view is too long"
+msgstr "اسم العرض طويل جداً"
+
+msgid "The report of the view is required"
+msgstr "تقرير العرض مطلوب"
+
+msgid "Invalid visibility of the view"
+msgstr "ظهور العرض غير صالح"
+
+msgid "A view can be shared with at most {0} roles"
+msgstr "يمكن مشاركة العرض مع {0} دوراً على الأكثر"
+
+msgid "Role {0} not found"
+msgstr "الدور {0} غير موجود"
+
+msgid "A view named {0} already exists for this report"
+msgstr "يوجد عرض باسم {0} لهذا التقرير"
+
+msgid "Saved view {0} of report {1} not found"
+msgstr "العرض المحفوظ {0} للتقرير {1} غير موجود"
+
+msgid "A private view cannot be the default of the report: share it first"
+msgstr "لا يكون العرض الخاص افتراضياً للتقرير: شاركه أولاً"
+
+msgid "Invalid roles"
+msgstr "أدوار غير صالحة"
+
+msgid "Name the view and send its state"
+msgstr "سمِّ العرض وأرسل حالته"
+
+msgid "Report View Saved View"
+msgstr "عرض محفوظ في Report View"
+
+msgid "Report View Saved View Role"
+msgstr "دور عرض محفوظ في Report View"
+
+msgid "Report View Manager"
+msgstr "مدير Report View"
+
+msgid "Visibility"
+msgstr "الظهور"
+
+msgid "State"
+msgstr "الحالة"
+
+msgid "State Version"
+msgstr "إصدار الحالة"
+
+msgid "Columns Reference"
+msgstr "مرجع الأعمدة"
+
+msgid "Default saved view"
+msgstr "العرض المحفوظ الافتراضي"
+
+msgid "Private: its owner only. Roles: the users of the roles below who may open the report. Public: every user who may open the report"
+msgstr "خاص: مالكه فقط. أدوار: مستخدمو الأدوار أدناه ممن يستطيعون فتح التقرير. عام: كل مستخدم يستطيع فتح التقرير"
+
+msgid "The view state (docs/architecture.md §7), as the page saves it"
+msgstr "حالة العرض (docs/architecture.md §7) كما تحفظها الصفحة"
+
+msgid "The columns the state refers to, as they were when it was saved: the page finds a renamed or moved column again by them"
+msgstr "الأعمدة التي تشير إليها الحالة كما كانت عند الحفظ: تجد بها الصفحة عموداً أُعيدت تسميته أو نُقل"
+
+msgid "A view of a report in Report View saved under a name: private to its owner, shared with roles or public (ADR-010)"
+msgstr "عرض لتقرير في Report View محفوظ باسم: خاص بمالكه، أو مشترك مع أدوار، أو عام (ADR-010)"
+
+msgid "A role a saved view is shared with (ADR-010)"
+msgstr "دور يُشارك معه عرض محفوظ (ADR-010)"
+
+msgid "The name of a shared saved view of this report, opened for every user who has no default of their own and may see it (ADR-010)"
+msgstr "اسم عرض محفوظ مشترك لهذا التقرير، يُفتح لكل مستخدم ليس له عرض افتراضي خاص ويستطيع رؤيته (ADR-010)"

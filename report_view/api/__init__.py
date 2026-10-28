@@ -10,7 +10,7 @@ import frappe
 from frappe import _
 from frappe.desk import query_report
 
-from report_view.core import normalize, print_variables, printing, row_details, runner
+from report_view.core import normalize, print_variables, printing, row_details, runner, saved_views
 from report_view.core.errors import RVEnrichNotAllowed, RVInvalidInput, RVLimitExceeded, RVNoExport
 from report_view.core.export import jobs as export_jobs
 from report_view.core.export import model as export_model_mod
@@ -62,7 +62,7 @@ def get_meta(report_name: str) -> dict:
 
 	Settings are the shipped ``report_view/defaults/<scrub(report)>.json`` with the report's
 	``Report View Settings`` record over it (``core/settings``, ADR-023), its ``features``
-	included; ``defaults`` is empty until the saved views exist (§2.7).
+	included; ``defaults`` names the saved view to open with (§2.7, ADR-010).
 	"""
 	report = _guard(report_name)
 	settings = load_settings(report.name)
@@ -82,8 +82,8 @@ def get_meta(report_name: str) -> dict:
 		"settings": settings,
 		"include_js": list(frappe.get_hooks("report_view_include_js") or []),
 		"limits": {"max_rows": get_row_limit()},
-		# the saved views (ADR-010, planned) fill these; until then there is no default view
-		"defaults": {"saved_view": None, "source": None},
+		# the saved view to open with (ADR-010): the user's default, else the report's, while visible
+		"defaults": saved_views.default_view(report_name, report),
 	}
 
 

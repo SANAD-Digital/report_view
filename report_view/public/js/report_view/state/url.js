@@ -1,6 +1,8 @@
 // URL representation of the view (docs/architecture.md §7.4):
 //   /desk/report-view/<report>?<report filters as plain params>&rv=<base64url(JSON)>
 // `rv` carries the view state without report_filters and ui.
+//   …&view=<saved view name> (ADR-010): the saved view applied; with `rv` too once the page no
+//   longer shows it as saved (the link then reopens the changed state, the view marked changed).
 
 export const MAX_URL = 2000;
 
@@ -67,12 +69,16 @@ function is_default_view(state, base) {
 
 /**
  * @param {object} [base] the default view state of the report (default_state(config))
+ * @param {{name: string, modified: boolean}|null} [view] the saved view applied
  * @returns {{search: string, rv_dropped: boolean}}
  */
-export function build_search(filters, state, pathname, base = null) {
+export function build_search(filters, state, pathname, base = null, view = null) {
 	const params = filters_to_params(filters);
 	let rv_dropped = false;
-	if (!is_default_view(state, base)) {
+	if (view?.name) params.set("view", view.name);
+	// a saved view as it was saved needs no state in the link; a changed one always does
+	const with_rv = view?.name ? Boolean(view.modified) : !is_default_view(state, base);
+	if (with_rv) {
 		params.set("rv", encode_state(state));
 		if ((pathname + "?" + params.toString()).length > MAX_URL) {
 			params.delete("rv");
@@ -83,14 +89,15 @@ export function build_search(filters, state, pathname, base = null) {
 	return { search: q ? `?${q}` : "", rv_dropped };
 }
 
-// Debounced history.replaceState, as the original page does (300 ms).
-export function make_url_updater(win, delay = 300) {
+// Debounced history.replaceState, as the original page does (300 ms). `view()`, read when the
+// URL is written: the saved view applied ({name, modified}) or null.
+export function make_url_updater(win, delay = 300, view = null) {
 	let timer = null;
 	return (filters, state, base = null) => {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			const { pathname, hash } = win.location;
-			const { search } = build_search(filters, state, pathname, base);
+			const { search } = build_search(filters, state, pathname, base, view ? view() : null);
 			win.history.replaceState(win.history.state, "", pathname + search + hash);
 		}, delay);
 	};

@@ -1,0 +1,121 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-10-28 12:00:00.000000",
+ "description": "A view of a report in Report View saved under a name: private to its owner, shared with roles or public (ADR-010)",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "report",
+  "column_break_main",
+  "visibility",
+  "roles",
+  "section_state",
+  "state",
+  "state_version",
+  "columns_ref",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "length": 140,
+   "reqd": 1
+  },
+  {
+   "fieldname": "report",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Report",
+   "options": "Report",
+   "reqd": 1,
+   "search_index": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Private",
+   "description": "Private: its owner only. Roles: the users of the roles below who may open the report. Public: every user who may open the report",
+   "fieldname": "visibility",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Visibility",
+   "options": "Private\nRoles\nPublic",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.visibility==='Roles'",
+   "fieldname": "roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Roles",
+   "mandatory_depends_on": "eval:doc.visibility==='Roles'",
+   "options": "Report View Saved View Role"
+  },
+  {
+   "fieldname": "section_state",
+   "fieldtype": "Section Break",
+   "label": "View"
+  },
+  {
+   "description": "The view state (docs/architecture.md §7), as the page saves it",
+   "fieldname": "state",
+   "fieldtype": "JSON",
+   "label": "State",
+   "reqd": 1
+  },
+  {
+   "fieldname": "state_version",
+   "fieldtype": "Int",
+   "label": "State Version",
+   "read_only": 1
+  },
+  {
+   "description": "The columns the state refers to, as they were when it was saved: the page finds a renamed or moved column again by them",
+   "fieldname": "columns_ref",
+   "fieldtype": "JSON",
+   "label": "Columns Reference",
+   "read_only": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-28 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Report View",
+ "name": "Report View Saved View",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Desk User"
+  },
+  {
+   "delete": 1,
+   "if_owner": 1,
+   "read": 1,
+   "role": "Desk User",
+   "write": 1
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

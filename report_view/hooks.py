@@ -84,9 +84,17 @@ fixtures = [
 after_install = "report_view.install.after_install"
 after_migrate = "report_view.install.after_migrate"
 
-# print presets (ADR-020): a private preset is its user's only; a public one is written by a publisher
-permission_query_conditions = {"Print Preset": "report_view.core.print_presets.permission_query_conditions"}
-has_permission = {"Print Preset": "report_view.core.print_presets.has_permission"}
+# print presets (ADR-020): a private preset is its user's only; a public one is written by a publisher;
+# saved views (ADR-010): seen by its owner, or shared with users who may open the report;
+# written by its stored owner only
+permission_query_conditions = {
+	"Print Preset": "report_view.core.print_presets.permission_query_conditions",
+	"Report View Saved View": "report_view.core.saved_views.permission_query_conditions",
+}
+has_permission = {
+	"Print Preset": "report_view.core.print_presets.has_permission",
+	"Report View Saved View": "report_view.core.saved_views.has_permission",
+}
 
 # where a Custom print opens by default, known before any request (ADR-019)
 extend_bootinfo = "report_view.core.settings.boot_session"

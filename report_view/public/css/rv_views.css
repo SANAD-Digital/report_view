@@ -1,0 +1,28 @@
+/* Saved views (ADR-010): the «Views» control in the page head (components/views_menu.js).
+   Its menu is the print presets' (.rv-print-pop / .rv-preset-*, rv_pages.css): the same rows,
+   badges, star and actions, and a sheet from the bottom on a narrow screen.
+   Logical properties only; colours from the tokens only (rv_tokens.css). */
+
+.rv-views-slot{display:contents}
+.rv-views{position:relative;display:inline-flex;min-width:0}
+.rv-views[hidden]{display:none}
+.rv-views-btn{gap:6px;max-width:240px;padding:0 8px}
+.rv-views-btn svg{flex:none}
+.rv-views-btn .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-views-btn.on{color:var(--tx)}
+.rv-views-btn.on .nm{font-weight:600}
+.rv-views-btn .dot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--warn)}
+.rv-views-btn .dot[hidden]{display:none}
+.rv-views-btn .chev{display:inline-flex;color:var(--tx-3)}
+.rv-views-btn[aria-expanded="true"]{background:var(--pri-soft);color:var(--pri-tx)}
+.rv-views-pop .rv-preset-acts .rv-btn{height:28px}
+.rv-views-pop .rv-views-loading{margin:12px 6px}
+
+/* a phone: the head keeps one line, the control is its icon (and the dot of a change) */
+@media (max-width:600px){
+  .rv.rv-headbar .rv-views-btn{position:relative}
+  /* the head's icon-only rule is for its own buttons, not for the menu's */
+  .rv.rv-headbar .rv-views-pop .rv-btn:not(.icon){width:auto;padding:0 10px}
+  .rv.rv-headbar .rv-views-pop .rv-btn:not(.icon) > span{display:inline}
+  .rv.rv-headbar .rv-views-btn .dot{position:absolute;top:5px;inset-inline-end:5px}
+}

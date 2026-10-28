@@ -30,7 +30,8 @@ class TestGetMeta(RVTestCase):
 			["company", "fiscal_year", "cost_center", "project", "finance_book"],
 		)
 		self.assertEqual(meta["limits"], {"max_rows": 100000})
-		self.assertEqual(meta["defaults"], {"saved_view": None, "source": None})
+		# no saved view of the user nor of the report (ADR-010)
+		self.assertEqual(meta["defaults"], {"saved_view": None, "source": None, "title": None})
 
 	def test_report_without_settings(self):
 		with self.as_user("accountant"):

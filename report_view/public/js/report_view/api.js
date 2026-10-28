@@ -178,6 +178,15 @@ export const api = {
 	render_row_details: (report_name, row, filters, columns) =>
 		message(call("report_view.api.render_row_details", { report_name, row, filters, columns }, { type: "POST" })),
 
+	// Saved views (ADR-010, §2.7): every call names the report first (the server checks it).
+	views: {
+		list: (report_name) => message(call("report_view.api.views.list_views", { report_name })),
+		get: (report_name, name) => message(call("report_view.api.views.get_view", { report_name, name })),
+		save: (report_name, args) => message(call("report_view.api.views.save_view", { report_name, ...args }, { type: "POST" })),
+		remove: (report_name, name) => message(call("report_view.api.views.delete_view", { report_name, name }, { type: "POST" })),
+		set_default: (report_name, name) => message(call("report_view.api.views.set_default", { report_name, name: name || null }, { type: "POST" })),
+	},
+
 	enrich: (report_name, source_column, doctype, names, fields) =>
 		message(
 			call(

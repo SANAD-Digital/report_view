@@ -50,6 +50,7 @@
   "column_break_default_view",
   "default_hidden",
   "default_pinned",
+  "default_saved_view",
   "section_row_details",
   "row_details_enabled",
   "row_details_container",
@@ -350,6 +351,13 @@
    "description": "Column keys, one per line (needs Pin columns)"
   },
   {
+   "description": "The name of a shared saved view of this report, opened for every user who has no default of their own and may see it (ADR-010)",
+   "fieldname": "default_saved_view",
+   "fieldtype": "Data",
+   "label": "Default saved view",
+   "length": 140
+  },
+  {
    "fieldname": "section_row_details",
    "fieldtype": "Section Break",
    "label": "Row details",
@@ -473,7 +481,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-28 12:00:00.000000",
+ "modified": "2026-10-28 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Report View",
  "name": "Report View Settings",
@@ -490,6 +498,13 @@
    "report": 1,
    "role": "System Manager",
    "share": 0,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "Report View Manager",
    "write": 1
   }
  ],

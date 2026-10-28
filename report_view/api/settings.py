@@ -1,5 +1,5 @@
 """The ``Report View Settings`` form (ADR-023): the shipped values it loads and the merged
-settings it previews. System Manager only, after the report's own check (as every
+settings it previews. System Manager or Report View Manager, after the report's own check (as every
 function of the API); the browser of any other user receives the merged settings through
 ``get_meta`` alone."""
 
@@ -19,7 +19,7 @@ def shipped_values(report_name: str) -> dict:
 	"""The values of the form that stand for the shipped file of the report (``Load from
 	shipped defaults``); the JSON parts are empty when it ships none."""
 	report = _guard(report_name)
-	frappe.only_for("System Manager")
+	frappe.only_for(rs.MANAGER_ROLES)
 	data = rs.shipped_data(report.name) or {}
 	shipped = rs.shipped_settings(report.name)
 	values = {"enabled": 1 if shipped["enabled"] else 0}
@@ -37,7 +37,7 @@ def reset_values(report_name: str) -> dict:
 	"""The values of the form that leave the shipped file as it is (``Reset to shipped``):
 	no JSON part of its own, every feature as shipped, no default view."""
 	report = _guard(report_name)
-	frappe.only_for("System Manager")
+	frappe.only_for(rs.MANAGER_ROLES)
 	shipped = rs.shipped_settings(report.name)
 	values = {"enabled": 1 if shipped["enabled"] else 0, "description": None}
 	values.update(dict.fromkeys(rs.JSON_PARTS))
@@ -55,7 +55,7 @@ def preview(report_name: str, doc: dict | str) -> dict:
 	shipped file with them over it, as ``load_settings`` merges them. A value the loader
 	would drop is dropped here as well; saving says why."""
 	report = _guard(report_name)
-	frappe.only_for("System Manager")
+	frappe.only_for(rs.MANAGER_ROLES)
 	values = parse_json_arg(doc, "doc", dict)
 	draft = frappe.new_doc(rs.REPORT_SETTINGS)
 	for field in draft.meta.get_valid_columns():

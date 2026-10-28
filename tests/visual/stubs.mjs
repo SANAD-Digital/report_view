@@ -96,6 +96,8 @@ class Dialog {
 	}
 	show() {
 		document.body.appendChild(this.$wrapper.get(0));
+		// the dialog shown last: a test sets a field Frappe's control would (a MultiSelectList)
+		window.rv_dialog = this;
 	}
 	hide() {
 		this.$wrapper.get(0).remove();

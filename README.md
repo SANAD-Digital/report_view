@@ -50,7 +50,7 @@ again after moving the bench or the Chromium (`--remove` deletes the profile).
 
 ### Per-report settings
 
-**Report View Settings** (one record per report, System Manager; ⋯ menu of a Report View
+**Report View Settings** (one record per report, System Manager or Report View Manager; ⋯ menu of a Report View
 page → *Report View settings*) controls what a report shows: grouping, subtotals, column
 groups, pins, density, the search box, the column filters and value lists, the filters
 panel, quick filters, the period field, the side panel and its tabs, the pivot, charts (and
@@ -58,6 +58,18 @@ which chart types), Pages and Excel; its default view; the row details; and the 
 its shipped file (`report_view/defaults/<report>.json`). The record wins over the shipped
 file key by key; the shipped filter definitions can never be removed or changed (ADR-021,
 ADR-023). Every tool is on by default, so a report without a record looks as before.
+Its *Default saved view* names a shared saved view that opens for users without a default of
+their own.
+
+### Saved views
+
+The **Views** menu in the head of a report saves what the report shows (layout, sorting,
+filters, grouping, pivot, charts and, if chosen, the report's filters) under a name, and
+applies it again in one click. A view is *private* (its owner only), shared with *roles*, or
+*public* (everyone who may open the report); only its owner changes or deletes it, System
+Manager included. The star makes a view the user's own default; the link of the page names
+the view applied (`?view=`). Records: DocType *Report View Saved View*, through
+`report_view.api.views` (ADR-010; rules in `docs/architecture.md` §2.7 and §6).
 
 ### Tests
 

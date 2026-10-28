@@ -35,13 +35,14 @@ export class PagesHost {
 		return api.render_letterhead(name, { ...ctx.filters, company: ctx.filters.company || ctx.company });
 	}
 
-	/** A report print format: a JS template as it is, a Jinja one rendered by the server. */
-	async pages_format(name, lang = null, type = null, view_columns = null) {
+	/** A report print format: a JS template as it is, a Jinja one rendered by the server (with
+	 * the values of its variables, ADR-024). */
+	async pages_format(name, lang = null, type = null, view_columns = null, variables = null) {
 		// a Jinja format known from the options is rendered at once (one request, not two)
 		const format = type === "Jinja" ? { type } : await api.get_print_format(this.report_name, name);
 		if (format.type !== "Jinja") return format;
 		const meta = (this.report_settings?.filters || []).map((df) => ({ fieldname: df.fieldname, label: __(df.label || ""), fieldtype: df.fieldtype }));
-		return api.render_print_format(this.report_name, name, this.last_filters, this.filters.js_filters(), meta, this.prepared_report_name, lang, view_columns);
+		return api.render_print_format(this.report_name, name, this.last_filters, this.filters.js_filters(), meta, this.prepared_report_name, lang, view_columns, variables);
 	}
 
 	/** A print heading or signature (ADR-015), rendered by the server with the filters on screen. */

@@ -99,6 +99,7 @@ function help_html(frm) {
 		["company", __("The data's company, else the user's default company")],
 		["printed_by / printed_on", __("Who prints and when")],
 		["lang", __("The language of the pages")],
+		["variables", __("The values chosen on the print page («Add variables»): {0}", ["variables.show_details"])],
 		["_(), frappe.format(), frappe.utils", __("Frappe's Jinja, as in every print format")],
 	];
 	const rows = vars.map(([v, d]) => `<tr><td><code>${frappe.utils.escape_html(v)}</code></td><td>${frappe.utils.escape_html(d)}</td></tr>`).join("");
@@ -167,6 +168,87 @@ function preview(frm) {
 	dialog.show();
 }
 
+// ---------------------------------------------------------------- variables (ADR-024)
+// Choices the person makes on the print page (a switch, a list, a record, a number), kept in
+// the hidden field rv_variables as JSON; the template reads them as {{ variables.<name> }}.
+// Checked here as the server checks them again on save (report_view.print_variables).
+const VARS_FIELD = "rv_variables";
+const VAR_TYPES = ["Select", "Check", "Link", "Float", "Int"];
+
+function variables_help() {
+	const code = (t) => `<code>${frappe.utils.escape_html(t)}</code>`;
+	return `<div class="rv-vars-help">
+		<p>${rv_cp_esc(__("Each variable shows as a control in «Variables» on the print page; changing it renders the format again with the new value."))}</p>
+		<p>${rv_cp_esc(__("In the template: {0} or {1}. Select: its options one per line; Link: the DocType in Options; Check: 1 or 0.", [RV_CP_SLOT, "\u0001"]))
+			.replace(RV_CP_SLOT, code("{{ variables.show_details }}"))
+			.replace("\u0001", code("{% if variables.show_details %}…{% endif %}"))}</p>
+	</div>`;
+}
+
+function variables_dialog(frm) {
+	const pv = window.report_view?.print_variables;
+	if (!pv) return;
+	const rows = pv.parse_definitions(frm.doc[VARS_FIELD]).map((d) => ({
+		label: d.label,
+		fieldname: d.fieldname,
+		fieldtype: d.fieldtype,
+		options: d.options || "",
+		default: d.default === undefined || d.default === null ? "" : String(d.default),
+		description: d.description || "",
+	}));
+	const dialog = new frappe.ui.Dialog({
+		title: __("Variables of the print format"),
+		size: "extra-large",
+		fields: [
+			{ fieldname: "help", fieldtype: "HTML", options: variables_help() },
+			{
+				fieldname: "variables",
+				fieldtype: "Table",
+				label: __("Variables"),
+				cannot_add_rows: false,
+				in_place_edit: true,
+				data: rows,
+				get_data: () => rows,
+				fields: [
+					{ fieldname: "label", fieldtype: "Data", label: __("Label"), in_list_view: 1, reqd: 1, columns: 2 },
+					{ fieldname: "fieldname", fieldtype: "Data", label: __("Variable name"), in_list_view: 1, columns: 2 },
+					{ fieldname: "fieldtype", fieldtype: "Select", label: __("Type"), options: VAR_TYPES.join("\n"), default: "Check", in_list_view: 1, reqd: 1, columns: 1 },
+					{ fieldname: "options", fieldtype: "Small Text", label: __("Options"), in_list_view: 1, columns: 2, description: __("Select: one option per line. Link: the DocType.") },
+					{ fieldname: "default", fieldtype: "Data", label: __("Default value"), in_list_view: 1, columns: 2 },
+					{ fieldname: "description", fieldtype: "Data", label: __("Description") },
+				],
+			},
+		],
+		primary_action_label: __("Apply"),
+		primary_action(values) {
+			// a row with a label and no name takes its label as a name (a-z, 0-9 and _)
+			const list = (values.variables || []).map((r) => ({
+				...r,
+				fieldname: (r.fieldname || "").trim() || frappe.scrub(r.label || "").replace(/[^a-z0-9_]/g, "").replace(/^[^a-z]+/, "").slice(0, 40),
+			}));
+			const { defs, errors } = pv.validate_definitions(list);
+			if (errors.length) {
+				frappe.msgprint({ title: __("Check the variables"), indicator: "red", message: `<ul>${errors.map((e) => `<li>${frappe.utils.escape_html(e)}</li>`).join("")}</ul>` });
+				return;
+			}
+			frm.set_value(VARS_FIELD, defs.length ? JSON.stringify(defs, null, 1) : "");
+			frm.dirty();
+			dialog.hide();
+			frappe.show_alert({ message: __("Save the print format to keep its variables"), indicator: "blue" });
+		},
+	});
+	dialog.show();
+}
+
+function variables_button(frm) {
+	frm.remove_custom_button(__("Add variables"));
+	if (!frm.fields_dict[VARS_FIELD] || !window.report_view?.print_variables) return;
+	// the field is kept by the dialog only
+	frm.set_df_property(VARS_FIELD, "hidden", 1);
+	frm.set_df_property(VARS_FIELD, "read_only", 1);
+	frm.add_custom_button(__("Add variables"), () => variables_dialog(frm));
+}
+
 // The fields' own visibility, as the doctype defines it (a Custom format hides them on its form only)
 function meta_hidden(fieldname) {
 	return frappe.get_meta("Print Format")?.fields.find((df) => df.fieldname === fieldname)?.hidden ? 1 : 0;
@@ -178,6 +260,7 @@ function apply(frm) {
 	frm.remove_custom_button(__("Preview with sample data"));
 	if (custom && !frm.is_new() && window.report_view?.print) frm.add_custom_button(__("Preview with sample data"), () => preview(frm));
 	render_help(frm);
+	variables_button(frm);
 }
 
 frappe.ui.form.on("Print Format", {

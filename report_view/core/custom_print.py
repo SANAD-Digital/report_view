@@ -35,7 +35,7 @@ import frappe
 from frappe import _
 from frappe.utils import get_fullname, now_datetime
 
-from report_view.core import printing
+from report_view.core import print_variables, printing
 from report_view.core.errors import RVInvalidInput
 
 CUSTOM = "Custom"
@@ -542,11 +542,13 @@ def scoped_css(css: str | None) -> str:
 	return "".join(top) + (f"{FLOW_SCOPE}{{{rest}}}" if rest else "")
 
 
-def render_format(pf, data, title: str | None = None) -> dict:
+def render_format(pf, data, title: str | None = None, variables: dict | None = None) -> dict:
 	"""The format's HTML (Jinja) and its CSS, scoped to the rendered content, for the data:
 	``{name, type, html, css, title}``. The pages print that CSS with the sheets, so the
-	server's PDF gets it as well."""
+	server's PDF gets it as well. ``variables``: the format's, checked
+	(``print_variables.resolve``; its defaults when not given)."""
 	ctx = context(pf, data, title)
+	ctx["variables"] = variables if variables is not None else print_variables.resolve(pf)
 	html = render_jinja(pf.html or "", ctx, pf.name)
 	return {
 		"name": pf.name,

@@ -10,7 +10,7 @@ import frappe
 from frappe import _
 from frappe.desk import query_report
 
-from report_view.core import normalize, printing, runner
+from report_view.core import normalize, print_variables, printing, runner
 from report_view.core.errors import RVEnrichNotAllowed, RVInvalidInput, RVLimitExceeded
 from report_view.core.export import jobs as export_jobs
 from report_view.core.export import model as export_model_mod
@@ -259,6 +259,8 @@ def get_print_options(report_name: str, company: str | None = None) -> dict:
 		"default_letter_head": default_letter_head,
 		"print_formats": [pf.name for pf in print_formats],
 		"print_format_types": {pf.name: pf.print_format_type for pf in print_formats},
+		# the variables of each format that has some (ADR-024)
+		"print_format_variables": print_variables.definitions_of([pf.name for pf in print_formats]),
 		"reports": list(dict.fromkeys([report_name, report.name])),
 		"print_headings": [h.name for h in headings],
 		"print_signatures": signatures,
@@ -325,6 +327,7 @@ def render_print_format(
 	filter_meta: list | str | None = None,
 	prepared_report_name: str | None = None,
 	view_columns: list | str | None = None,
+	variables: dict | str | None = None,
 ) -> dict:
 	"""A Jinja report print format rendered on the server (§2.8, ADR-014).
 
@@ -335,7 +338,8 @@ def render_print_format(
 	(the report's rows as dicts, Frappe's total row included). The language is the
 	request's (``_lang``). ``view_columns`` (the columns as the view shows them, sent by the
 	Pages view) orders ``columns`` and hides those the view hides; ``visible_columns`` are
-	the ones shown, in that order.
+	the ones shown, in that order. ``variables`` (ADR-024): the values chosen on the print
+	page, checked against the format's own; the template reads them as ``variables``.
 
 	Every string of the filters, the view and the rows prints HTML-escaped
 	(``printing.Text``). At most ``print_max_pages`` times ``PRINT_ROWS_PER_PAGE`` rows print.
@@ -345,6 +349,7 @@ def render_print_format(
 	doc = _print_format_doc(report, report_name, name)
 	if doc.print_format_type != "Jinja":
 		frappe.throw(_("Print Format {0} is not a Jinja template").format(doc.name), RVInvalidInput)
+	resolved = print_variables.resolve(doc, variables)
 	filter_objs, values = printing.filter_objects(filters, filter_meta)
 	view = printing.parse_view_columns(view_columns)
 	response = runner.run(report, report_name, filters, js_filters, prepared_report_name)
@@ -394,6 +399,7 @@ def render_print_format(
 			"visible_columns": [c for c in columns if not c.hidden],
 			"data": data,
 			"doc": frappe._dict(values),
+			"variables": resolved,
 		},
 	)
 	return {"name": doc.name, "type": "Jinja", "html": html, "css": doc.css or ""}

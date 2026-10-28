@@ -12,7 +12,7 @@ from frappe import _
 
 from report_view.api import _rate_limit
 from report_view.core import custom_print as cp
-from report_view.core import printing
+from report_view.core import print_variables, printing
 from report_view.core.settings import get_print_max_pages, print_defaults
 
 
@@ -107,6 +107,8 @@ def get_options(
 		"inline": bool(not pf and cp.is_inline(payload)),
 		"print_formats": names,
 		"print_format_types": {n: "Jinja" for n in names},
+		# the variables of each format that has some (ADR-024)
+		"print_format_variables": print_variables.definitions_of(names),
 		"letter_heads": [{"name": lh.name, "is_default": bool(lh.is_default)} for lh in letter_heads],
 		"default_letter_head": default_letter_head,
 		"print_headings": [h.name for h in headings],
@@ -127,18 +129,21 @@ def render(
 	token: str | None = None,
 	title: str | None = None,
 	lang: str | None = None,
+	variables: dict | str | None = None,
 ) -> dict:
 	"""The template rendered with the data (``data``, or the staged print's ``token``):
 	``{name, type, html, css, title}``, in ``lang`` (or the session's). The template is
 	``print_format`` (a saved Custom format, Frappe's Jinja), else the staged print's: its
-	saved format, or its inline template (in the sandbox of ``render_inline``)."""
+	saved format, or its inline template (in the sandbox of ``render_inline``). A saved
+	format reads ``variables`` (ADR-024): the values sent, checked against its own, with its
+	defaults; an inline template has none."""
 	pf, payload = cp.resolve(print_format, token)
 	content = _content(payload, data)
 	title = title or (payload or {}).get("title")
 	with cp.in_lang(lang):
 		if pf is None:
 			return cp.render_inline(payload, content, title)
-		return cp.render_format(pf, content, title)
+		return cp.render_format(pf, content, title, print_variables.resolve(pf, variables))
 
 
 @frappe.whitelist(methods=["GET"])

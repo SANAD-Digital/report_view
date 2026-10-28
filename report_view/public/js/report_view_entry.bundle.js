@@ -8,6 +8,11 @@
 import { SERVER_WASM, CLIENT_WASM, WORKER_JS } from "./report_view/engine/assets.js";
 // report_view.print / print_table (ADR-019): a few lines, so any Desk page can print its data
 import "./report_view/custom_print.js";
+// the checks of a print format's variables (ADR-024), for the «Add variables» dialog of its form
+import * as print_variables from "./report_view/print_variables.js";
+
+frappe.provide("report_view");
+window.report_view.print_variables = print_variables;
 
 const entry_states = {};
 const WAIT_STEP = 200;

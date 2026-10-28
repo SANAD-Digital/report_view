@@ -229,6 +229,8 @@ export class PagesLayouts {
 				report,
 				print_settings: { letter_head: this.letterhead, orientation: this.settings.orientation, include_filters: this.settings.include_filters },
 				can_use_smaller_font: 1,
+				// the values of the format's variables (ADR-024): {%= variables.show_details %}
+				variables: this.variable_values(this.settings.template) || {},
 				});
 			}
 		} catch (e) {

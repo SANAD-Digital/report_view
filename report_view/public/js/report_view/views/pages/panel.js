@@ -7,6 +7,7 @@ import { icons } from "../../components/icons.js";
 import { POP_MARGIN, place_near } from "../../components/popover.js";
 import { PAGE_SIZES, preset_margins } from "../../engine/page_layout.js";
 import { esc, fmt_int, session_lang } from "../../util.js";
+import { to_number, values_for } from "../../print_variables.js";
 import { BOX_MM, DROPDOWN_FLIP_UNDER, DROPDOWN_MAX_H, DROPDOWN_MIN_H, FOOT_SCOPES, MENU_GAP, MENU_GAP_BELOW, MENU_MIN_H, MENU_W, MOBILE_QUERY, NUMS, PAGE_SCOPES, PAGE_STYLES, RIBBON, SIDES, clamp } from "./settings.js";
 import { can_write_letter_head } from "./support.js";
 
@@ -93,6 +94,7 @@ export class PagesPanel {
 			border: ic('<rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10" rx="1" stroke-dasharray="2 2"/>'),
 			content: ic('<path d="M4 6h16M4 12h16M4 18h10"/>'),
 			cols: ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/>'),
+			vars: ic('<path d="M4 7h9M18 7h2M4 17h3M12 17h8"/><circle cx="15.5" cy="7" r="2.5"/><circle cx="9.5" cy="17" r="2.5"/>'),
 		};
 		const paper_sum = `${s.size} · ${s.orientation === "landscape" ? __("Landscape", null, "Report View") : __("Portrait", null, "Report View")} · ${[pm.top, pm.end, pm.bottom, pm.start].join("/")} ${mm}`;
 		const tpl_sum = [s.template || PAGE_STYLES.find((x) => x.id === s.style)?.label(), s.font, s.lang ? o.languages.find((l) => l.name === s.lang)?.label : ""].filter(Boolean).join(" · ");
@@ -139,6 +141,7 @@ export class PagesPanel {
 				${link("heading", __("Print Heading", null, "Report View"))}
 				${link("lang", __("Language", null, "Report View"))}`
 			),
+			this.variables_section(section, I.vars),
 			section(
 				"head",
 				I.head,
@@ -427,6 +430,117 @@ export class PagesPanel {
 		this.bd.querySelector(`details[data-sec="${id}"] > summary`)?.focus({ preventScroll: true });
 	}
 
+	// ------------------------------------------------------------ variables (ADR-024)
+
+	/** The print format whose variables the pages show: the one chosen, else the document's (or the Custom caller's) own. */
+	variable_format() {
+		return this.settings.template || (this.doc_mode ? this.options?.default_print_format || "" : "");
+	}
+
+	/** The variables of that format, as the server listed them ([] when it has none). */
+	variable_defs(name = this.variable_format()) {
+		const defs = name ? this.options?.print_format_variables?.[name] : null;
+		return Array.isArray(defs) ? defs : [];
+	}
+
+	/** The values the format renders with: the user's saved ones still valid, else the defaults; null without variables. */
+	variable_values(name = this.variable_format()) {
+		const defs = this.variable_defs(name);
+		return defs.length ? values_for(defs, this.settings.variables?.[name]) : null;
+	}
+
+	/** One value changed: saved under its format, the format rendered again after a moment of quiet. */
+	set_variable(key, value, wait = 250) {
+		const name = this.variable_format();
+		const all = this.settings.variables || {};
+		this.update({ variables: { ...all, [name]: { ...(all[name] || {}), [key]: value } } }, { panel: false, wait });
+	}
+
+	/** The section «Variables»: one control per variable of the format, or nothing when it has none. */
+	variables_section(section, icon) {
+		const defs = this.variable_defs();
+		if (!defs.length) return "";
+		const values = this.variable_values();
+		const hint = (d) => (d.description ? `<small class="rv-var-desc">${esc(__(d.description))}</small>` : "");
+		const body = defs
+			.map((d) => {
+				const v = values[d.fieldname];
+				const label = __(d.label);
+				const key = esc(d.fieldname);
+				if (d.fieldtype === "Check") {
+					return `<div class="rv-var"><label class="rv-print-sw"><span>${esc(label)}</span><button type="button" class="rv-switch${v ? " on" : ""}" role="switch" aria-checked="${Boolean(v)}" data-var-sw="${key}" aria-label="${esc(label)}"></button></label>${hint(d)}</div>`;
+				}
+				if (d.fieldtype === "Select") {
+					const opts = String(d.options || "")
+						.split("\n")
+						.filter(Boolean)
+						.map((o) => `<option value="${esc(o)}" ${o === v ? "selected" : ""}>${esc(__(o))}</option>`)
+						.join("");
+					return `<label class="rv-field rv-var"><span>${esc(label)}</span><select class="rv-input" data-var="${key}">${opts}</select>${hint(d)}</label>`;
+				}
+				if (d.fieldtype === "Link") {
+					return `<div class="rv-field rv-var"><span>${esc(label)}</span><div class="rv-linkf" data-var-link="${key}" data-doctype="${esc(d.options)}" data-label="${esc(label)}"></div>${hint(d)}</div>`;
+				}
+				const step = d.fieldtype === "Int" ? "1" : "any";
+				return `<label class="rv-field rv-num-field rv-var"><span>${esc(label)}</span><span class="rv-num"><input type="number" class="rv-input" data-var-num="${key}" data-type="${d.fieldtype}" step="${step}" value="${esc(String(v))}"></span>${hint(d)}</label>`;
+			})
+			.join("");
+		const sum = defs.length === 1 ? __(defs[0].label) : __("{0} variables", [fmt_int(defs.length)]);
+		return section("vars", icon, __("Variables", null, "Print Format"), sum, `<div class="rv-vars">${body}</div>`);
+	}
+
+	/** The record fields of «Variables»: Frappe's Link control (its search, with the user's permissions). */
+	mount_variable_links() {
+		if (!frappe.ui?.form?.make_control) return;
+		const values = this.variable_values() || {};
+		for (const el of this.bd.querySelectorAll("[data-var-link]")) {
+			const key = el.dataset.varLink;
+			const f = frappe.ui.form.make_control({
+				df: {
+					fieldtype: "Link",
+					fieldname: `rv_var_${key}`,
+					options: el.dataset.doctype,
+					placeholder: __(el.dataset.doctype),
+					onchange: () => {
+						const v = f.get_value() || "";
+						if (v !== (this.variable_values()?.[key] ?? "")) this.set_variable(key, v, 0);
+					},
+				},
+				parent: el,
+				only_input: true,
+			});
+			f.refresh();
+			if (!f.$input) f.make_input();
+			f.$input.attr("aria-label", el.dataset.label);
+			f.$input.on("awesomplete-open input focus", () => requestAnimationFrame(() => this.place_dropdown(f.$input.get(0))));
+			f.set_input(values[key] || "");
+		}
+	}
+
+	/** The controls of «Variables»: a value changed renders the format again (debounced), the panel stays. */
+	bind_variables() {
+		const bd = this.bd;
+		this.mount_variable_links();
+		for (const b of bd.querySelectorAll("[data-var-sw]")) {
+			b.addEventListener("click", () => {
+				const on = !b.classList.contains("on");
+				b.classList.toggle("on", on);
+				b.setAttribute("aria-checked", String(on));
+				this.set_variable(b.dataset.varSw, on ? 1 : 0);
+			});
+		}
+		for (const sel of bd.querySelectorAll("select[data-var]")) sel.addEventListener("change", () => this.set_variable(sel.dataset.var, sel.value));
+		for (const i of bd.querySelectorAll("input[data-var-num]")) {
+			i.addEventListener("input", () => {
+				const n = to_number(i.dataset.type, i.value);
+				if (n !== null) this.set_variable(i.dataset.varNum, n, 400);
+			});
+			i.addEventListener("change", () => {
+				if (to_number(i.dataset.type, i.value) === null) i.value = String(this.variable_values()?.[i.dataset.varNum] ?? 0);
+			});
+		}
+	}
+
 	/** The thumbnails of the pages (numbers on little sheets): one each, the current marked. */
 	render_thumbs() {
 		if (!this.thumbs) return;
@@ -604,6 +718,7 @@ export class PagesPanel {
 			c.addEventListener("change", () => this.update({ [key]: c.value }));
 		}
 		bd.querySelector('[data-action="wm-upload"]')?.addEventListener("click", () => this.guard(() => this.pick_watermark()));
+		this.bind_variables();
 	}
 
 	// An image for the watermark: Frappe's file uploader (an image of the site's files).

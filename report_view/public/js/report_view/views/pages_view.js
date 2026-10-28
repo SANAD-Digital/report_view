@@ -38,7 +38,7 @@ export class PagesView {
 	 * @param {HTMLElement} o.root the .rv element
 	 * @param {boolean} o.rtl direction of the page (the session's)
 	 * @param {object} o.host the page: pages_options(company), pages_letterhead(name),
-	 *   pages_format(name), pages_part(kind, name, lang), pages_translations(lang, messages), pages_run_lang(lang),
+	 *   pages_format(name, lang, type, view_columns, variables), pages_part(kind, name, lang), pages_translations(lang, messages), pages_run_lang(lang),
 	 *   pages_settings_load(), pages_settings_save(settings), pages_context(),
 	 *   pages_preset_target() → {context, target} of the print presets (optional, ADR-020)
 	 */
@@ -579,12 +579,14 @@ export class PagesView {
 	async load_format(name) {
 		// a document always has a format: "" is its doctype's default
 		if (!name && !this.doc_mode) return null;
-		// a Jinja format is rendered with the criteria and the language: one per both
+		// a Jinja format is rendered with the criteria, the language and the values of its
+		// variables (ADR-024): one per all of them
 		const cols = this.view_columns();
-		const key = `${name}|${this.settings.lang || ""}|${JSON.stringify(this.ctx.filters || {})}|${JSON.stringify(cols)}`;
+		const vars = this.variable_values(name || (this.doc_mode ? this.options?.default_print_format || "" : ""));
+		const key = `${name}|${this.settings.lang || ""}|${JSON.stringify(this.ctx.filters || {})}|${JSON.stringify(cols)}|${JSON.stringify(vars)}`;
 		if (!this.formats.has(key)) {
 			try {
-				this.formats.set(key, await this.host.pages_format(name, this.settings.lang || null, this.options?.print_format_types?.[name], cols));
+				this.formats.set(key, await this.host.pages_format(name, this.settings.lang || null, this.options?.print_format_types?.[name], cols, vars));
 			} catch (e) {
 				this.note(__("The print format could not be loaded: {0}", [error_text(e)]), true);
 				return null;

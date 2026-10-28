@@ -23,6 +23,7 @@ import frappe
 from frappe import _
 
 from report_view.core import fonts as font_lib
+from report_view.core import print_variables
 from report_view.core.contract import CONTRACT
 from report_view.core.errors import RVInvalidInput
 
@@ -889,7 +890,10 @@ def pdf_body_html(jenv, template, print_format, args):
 	margins a builder letter head needs. wkhtmltopdf does not measure the header; it reads
 	the margins from a `.print-format` rule of the page (frappe/utils/pdf.py,
 	read_options_from_html). A format that sets its own margin keeps it; a letter head not
-	made by the builder is left alone, and every other print is the previous hook's, as it is."""
+	made by the builder is left alone, and every other print is the previous hook's, as it is.
+	A format's template also reads its ``variables`` (ADR-024): the print page's values, else
+	the format's defaults."""
+	args.setdefault("variables", print_variables.for_print(print_format))
 	html = frappe.get_attr(previous_pdf_body_html())(
 		jenv=jenv, template=template, print_format=print_format, args=args
 	)

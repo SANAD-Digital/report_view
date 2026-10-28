@@ -545,3 +545,8 @@ button.rv-preset-star:focus-visible{outline:2px solid var(--pri);outline-offset:
   .rv-print-root .rv-page *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .rv-print-root .rv-page:last-child{break-after:auto;page-break-after:auto}
 }
+
+/* the variables of a print format (ADR-024): one control per variable, its description under it */
+.rv-vars{display:flex;flex-direction:column;gap:8px}
+.rv-var{display:flex;flex-direction:column;gap:3px}
+.rv-var-desc{font-size:var(--fs-xs);color:var(--tx-3);line-height:1.4}

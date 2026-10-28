@@ -4,6 +4,7 @@
 
 import { MARGINS, PAGE_SIZES, preset_margins } from "../../engine/page_layout.js";
 import { font_info } from "../../fonts.js";
+import { sanitize_variables } from "../../print_variables.js";
 
 export const PRINT_MAX_PAGES = 600;
 
@@ -181,6 +182,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	wm_angle: -30,
 	wm_pages: "all",
 	hidden: [],
+	// the values of a print format's variables (ADR-024): {format: {fieldname: value}}
+	variables: {},
 	zoom: "fit",
 });
 
@@ -209,7 +212,7 @@ const NUMBER_FORMATS = ["full", "short", "number", "dash"];
 // in four groups; a tool opens its settings in one menu under it.
 export const RIBBON = [
 	{ id: "page", label: () => __("Page", null, "Report View"), secs: ["paper"] },
-	{ id: "content", label: () => __("Content", null, "Report View"), secs: ["tpl", "content", "cols"] },
+	{ id: "content", label: () => __("Content", null, "Report View"), secs: ["tpl", "vars", "content", "cols"] },
 	{ id: "identity", label: () => __("Identity", null, "Report View"), secs: ["head", "heading", "foot", "sign"] },
 	{ id: "marks", label: () => __("Marks", null, "Report View"), secs: ["num", "border", "wm"] },
 ];
@@ -323,7 +326,7 @@ function sanitize_box(raw, fallback) {
  * missing or wrong takes `base`'s (the site's standard settings, else DEFAULT_SETTINGS).
  */
 export function sanitize_settings(raw, base = DEFAULT_SETTINGS) {
-	const out = { ...base, hidden: [...(base.hidden || [])] };
+	const out = { ...base, hidden: [...(base.hidden || [])], variables: sanitize_variables(base.variables) };
 	for (const k of BOXES) out[k] = { ...base[k] };
 	if (!raw || typeof raw !== "object") return out;
 	if (PAGE_SIZES[raw.size]) out.size = raw.size;
@@ -372,6 +375,7 @@ export function sanitize_settings(raw, base = DEFAULT_SETTINGS) {
 	if (typeof raw.wm_image === "string" && /^(\/|https?:\/\/)/.test(raw.wm_image)) out.wm_image = raw.wm_image.slice(0, 500);
 	if (typeof raw.wm_color === "string" && COLOR.test(raw.wm_color)) out.wm_color = raw.wm_color;
 	if (PAGE_SCOPES.includes(raw.wm_pages)) out.wm_pages = raw.wm_pages;
+	if (raw.variables && typeof raw.variables === "object") out.variables = sanitize_variables(raw.variables);
 	if (Array.isArray(raw.hidden)) out.hidden = raw.hidden.filter((k) => typeof k === "string").slice(0, 500);
 	if (raw.zoom === "fit" || (Number.isFinite(raw.zoom) && raw.zoom >= 0.3 && raw.zoom <= 2)) out.zoom = raw.zoom;
 	return out;

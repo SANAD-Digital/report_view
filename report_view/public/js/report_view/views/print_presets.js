@@ -12,8 +12,9 @@ import { esc } from "../util.js";
 
 const API = "report_view.api.print_presets";
 // Settings of one print target (the columns of a report, a print format of one doctype or
-// Custom format): a preset for every target neither saves nor applies them.
-export const TARGET_KEYS = ["hidden", "template"];
+// Custom format, the values of its variables): a preset for every target neither saves nor
+// applies them.
+export const TARGET_KEYS = ["hidden", "template", "variables"];
 // Settings of the view, not of the print.
 const VIEW_KEYS = new Set(["zoom", "preset"]);
 

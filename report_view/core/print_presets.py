@@ -106,6 +106,7 @@ SETTINGS_KEYS = frozenset(
 		"wm_pages",
 		"font",
 		"hidden",
+		"variables",
 	}
 )
 
@@ -161,7 +162,26 @@ def _bad(message: str):
 	frappe.throw(message, RVInvalidInput)
 
 
+def _check_variables(value) -> None:
+	"""``variables`` (ADR-024): ``{format: {fieldname: value}}``, plain values only; the print
+	format checks them again when it renders."""
+	ok = isinstance(value, dict) and len(value) <= 50
+	for fmt, vals in value.items() if ok else ():
+		ok = ok and isinstance(fmt, str) and len(fmt) <= 140 and isinstance(vals, dict) and len(vals) <= 30
+		for k, v in vals.items() if ok else ():
+			ok = ok and isinstance(k, str) and len(k) <= 40
+			ok = ok and (
+				isinstance(v, bool | int | float | str) and not (isinstance(v, str) and len(v) > 140)
+			)
+			ok = ok and not (isinstance(v, float) and not math.isfinite(v))
+	if not ok:
+		_bad(_("The print setting {0} has an invalid value").format("variables"))
+
+
 def _check_value(key: str, value) -> None:
+	if key == "variables":
+		_check_variables(value)
+		return
 	if isinstance(value, bool) or value is None:
 		return
 	if isinstance(value, int | float):

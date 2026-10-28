@@ -1,0 +1,21 @@
+[
+ {
+  "doctype": "Custom Field",
+  "name": "Print Format-rv_variables",
+  "dt": "Print Format",
+  "fieldname": "rv_variables",
+  "fieldtype": "Code",
+  "options": "JSON",
+  "label": "Variables",
+  "insert_after": "css",
+  "hidden": 1,
+  "read_only": 1,
+  "no_copy": 0,
+  "print_hide": 1,
+  "description": "The variables of the print page (ADR-024), edited with «Add variables»",
+  "is_system_generated": 0,
+  "module": "Report View",
+  "modified": "2026-10-28 10:00:00.000000",
+  "docstatus": 0
+ }
+]

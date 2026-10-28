@@ -11,7 +11,7 @@ import frappe
 from frappe import _
 from frappe.www.printview import get_html_and_style
 
-from report_view.core import printing
+from report_view.core import print_variables, printing
 from report_view.core.errors import RVInvalidInput
 from report_view.core.guard import guard_doc_print
 from report_view.core.settings import get_print_max_pages, print_defaults
@@ -66,6 +66,10 @@ def get_doc_print_options(doctype: str, name: str) -> dict:
 		"default_letter_head": default_letter_head,
 		"print_formats": [f.name for f in formats],
 		"print_format_types": {f.name: "Jinja" for f in formats},
+		# the variables of each format that has some (ADR-024)
+		"print_format_variables": print_variables.definitions_of(
+			[f.name for f in formats] + ([meta.default_print_format] if meta.default_print_format else [])
+		),
 		"print_headings": [h.name for h in headings],
 		"print_signatures": signatures,
 		"languages": [{"name": lg.name, "label": lg.language_name or lg.name} for lg in languages],
@@ -78,9 +82,13 @@ def get_doc_print_options(doctype: str, name: str) -> dict:
 
 
 @frappe.whitelist(methods=["GET"])
-def render_doc_print(doctype: str, name: str, print_format: str | None = None) -> dict:
+def render_doc_print(
+	doctype: str, name: str, print_format: str | None = None, variables: dict | str | None = None
+) -> dict:
 	"""The document's print format as Frappe renders it (without Frappe's letter head: the
-	pages carry their own), in the request's language (``_lang``)."""
+	pages carry their own), in the request's language (``_lang``). ``variables`` (ADR-024):
+	the values chosen on the print page, checked against the format's own; its template
+	reads them, defaults filled in, as ``variables``."""
 	guard_doc_print(doctype, name)
 	if print_format:
 		found = frappe.get_list(
@@ -94,9 +102,17 @@ def render_doc_print(doctype: str, name: str, print_format: str | None = None) -
 				_("Print Format {0} is not available for {1}").format(print_format, _(doctype)),
 				frappe.DoesNotExistError,
 			)
-	out = get_html_and_style(
-		doctype, name, print_format=print_format or None, no_letterhead=1, trigger_print=False
+	# the format Frappe renders: the one named, else the doctype's default
+	pf_name = print_format or frappe.get_meta(doctype).default_print_format
+	pf = (
+		frappe.get_cached_doc("Print Format", pf_name)
+		if pf_name and frappe.db.exists("Print Format", pf_name)
+		else None
 	)
+	with print_variables.for_render(pf, variables):
+		out = get_html_and_style(
+			doctype, name, print_format=print_format or None, no_letterhead=1, trigger_print=False
+		)
 	if out.get("html") is None:
 		frappe.throw(_("The print format could not be rendered"), RVInvalidInput)
 	return {"name": print_format or "", "type": "Jinja", "html": out["html"], "css": out.get("style") or ""}

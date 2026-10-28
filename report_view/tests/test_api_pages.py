@@ -23,6 +23,7 @@ class TestApiPages(RVTestCase):
 				"default_letter_head",
 				"print_formats",
 				"print_format_types",
+				"print_format_variables",
 				"reports",
 				"print_headings",
 				"print_signatures",

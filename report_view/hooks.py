@@ -75,6 +75,8 @@ fixtures = [
 	# the Custom print source (ADR-019): the option of print_format_for and its table format
 	{"dt": "Property Setter", "filters": [["name", "in", ["Print Format-print_format_for-options"]]]},
 	{"dt": "Print Format", "filters": [["name", "in", ["Report View Table"]]]},
+	# the variables of a print format (ADR-024): a hidden JSON field
+	{"dt": "Custom Field", "filters": [["name", "in", ["Print Format-rv_variables"]]]},
 ]
 
 # Report View's own Chromium for PDFs (ADR-016): downloaded outside the app when missing;
@@ -92,7 +94,13 @@ extend_bootinfo = "report_view.core.settings.boot_session"
 # a Custom print format is HTML and CSS only (ADR-019); a builder letter head keeps its
 # source on insert and takes its layout with it when deleted (ADR-018)
 doc_events = {
-	"Print Format": {"before_validate": "report_view.core.custom_print.before_validate_print_format"},
+	# … and the variables of any print format are checked (ADR-024)
+	"Print Format": {
+		"before_validate": [
+			"report_view.core.custom_print.before_validate_print_format",
+			"report_view.core.print_variables.validate_print_format",
+		]
+	},
 	"Letter Head": {
 		"before_insert": "report_view.core.letterhead.keep_builder_source",
 		"on_trash": "report_view.core.letterhead.delete_layout",

@@ -28,7 +28,7 @@ class TestFixtureFilters(UnitTestCase):
 	def test_every_shipped_record_goes_with_the_app(self):
 		"""``bench remove-app`` deletes the records of the app's module (ADR-019): the
 		Property Setter and the shipped Custom format must be of module Report View."""
-		for doctype in ("Property Setter", "Print Format"):
+		for doctype in ("Property Setter", "Print Format", "Custom Field"):
 			path = os.path.join(FIXTURES, doctype.lower().replace(" ", "_") + ".json")
 			with open(path, encoding="utf-8") as f:
 				for row in json.load(f):

@@ -170,9 +170,11 @@ class DocPrintPage {
 		return call("report_view.api.document.render_doc_letterhead", { doctype: this.doctype, name: this.name, letterhead: name });
 	}
 
-	/** The document's print format ("" = the doctype's default), in the language of the pages. */
-	pages_format(name, lang = null) {
-		return call("report_view.api.document.render_doc_print", { doctype: this.doctype, name: this.name, print_format: name || null, ...(lang ? { _lang: lang } : {}) });
+	/** The document's print format ("" = the doctype's default), in the language of the pages,
+	 * with the values of its variables (ADR-024). */
+	pages_format(name, lang = null, type = null, view_columns = null, variables = null) {
+		const vars = variables ? { variables: JSON.stringify(variables) } : {};
+		return call("report_view.api.document.render_doc_print", { doctype: this.doctype, name: this.name, print_format: name || null, ...vars, ...(lang ? { _lang: lang } : {}) });
 	}
 
 	pages_part(kind, name, lang = null) {
@@ -328,9 +330,11 @@ class CustomPrintHost {
 		return call("report_view.api.custom_print.render_letterhead", { ...this.source(this.format), letterhead: name, ...(company ? { company } : {}) });
 	}
 
-	/** The format ("" = the caller's, or the sent template) rendered with the data, in the language of the pages. */
-	pages_format(name, lang = null) {
-		return call("report_view.api.custom_print.render", { ...this.source(name || this.format), title: this.title, ...(lang ? { lang } : {}) }, "POST");
+	/** The format ("" = the caller's, or the sent template) rendered with the data, in the
+	 * language of the pages, with the values of its variables (ADR-024). */
+	pages_format(name, lang = null, type = null, view_columns = null, variables = null) {
+		const vars = variables ? { variables: JSON.stringify(variables) } : {};
+		return call("report_view.api.custom_print.render", { ...this.source(name || this.format), title: this.title, ...vars, ...(lang ? { lang } : {}) }, "POST");
 	}
 
 	pages_part(kind, name, lang = null) {

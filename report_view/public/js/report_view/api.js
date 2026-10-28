@@ -148,11 +148,12 @@ export const api = {
 
 	// A Jinja print format, rendered on the server with the report run again (`lang`: the
 	// language of the pages, read by Frappe from `_lang`).
-	render_print_format: (report_name, name, filters, js_filters, filter_meta, prepared_report_name = null, lang = null, view_columns = null) =>
+	// `variables`: the values of the format's variables (ADR-024), or null
+	render_print_format: (report_name, name, filters, js_filters, filter_meta, prepared_report_name = null, lang = null, view_columns = null, variables = null) =>
 		message(
 			call(
 				"report_view.api.render_print_format",
-				{ report_name, name, filters, js_filters, filter_meta, prepared_report_name, view_columns, ...(lang ? { _lang: lang } : {}) },
+				{ report_name, name, filters, js_filters, filter_meta, prepared_report_name, view_columns, ...(variables ? { variables } : {}), ...(lang ? { _lang: lang } : {}) },
 				{ type: "POST" }
 			)
 		),
@@ -171,6 +172,11 @@ export const api = {
 	// query-report page prints it.
 	render_letterhead: (letterhead, doc) =>
 		message(call("frappe.utils.print_format.render_letterhead_for_print", { letterhead, doc }, { type: "POST" })),
+
+	// A row's details as the report's settings render them on the server (ADR-023): its HTML
+	// template or Custom print format with the row, {html, css}.
+	render_row_details: (report_name, row, filters, columns) =>
+		message(call("report_view.api.render_row_details", { report_name, row, filters, columns }, { type: "POST" })),
 
 	enrich: (report_name, source_column, doctype, names, fields) =>
 		message(

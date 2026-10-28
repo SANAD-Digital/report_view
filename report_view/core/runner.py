@@ -67,14 +67,17 @@ def _list_values(value: Any) -> list:
 def check_list_filters(server_defs: list[dict], filters: dict) -> None:
 	"""ADR-021 (amended in phase 5d): Frappe checks the value of a Link filter only
 	(``validate_filters_permissions``, Q:1149); every value of a shipped MultiSelectList filter
-	whose options name a DocType is checked the same way, with ``frappe.has_permission``, so a
-	forged list (another company's account in a drill) is refused before the report runs.
-	A value that is no document is left to the report, as Frappe leaves a Link's."""
+	whose options name a DocType, or a filter holding one (party ← party_type), is checked the
+	same way, with ``frappe.has_permission``, so a forged list (another company's account in a
+	drill) is refused before the report runs. A value that is no document is left to the
+	report, as Frappe leaves a Link's."""
 	for d in server_defs:
 		doctype = d.get("options")
 		if d.get("fieldtype") != "MultiSelectList" or d.get("fieldname") not in filters:
 			continue
-		if not isinstance(doctype, str) or not frappe.db.exists("DocType", doctype):
+		if isinstance(doctype, str) and doctype in filters and not frappe.db.exists("DocType", doctype):
+			doctype = filters.get(doctype)
+		if not isinstance(doctype, str) or not doctype or not frappe.db.exists("DocType", doctype):
 			continue
 		for value in _list_values(filters[d["fieldname"]]):
 			if not frappe.db.exists(doctype, value):

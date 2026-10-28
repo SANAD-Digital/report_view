@@ -448,7 +448,14 @@ def parse_filter_defs(items: list, strict: bool = False) -> list[dict]:
 				).format(i),
 			)
 			continue
-		if strict and d["fieldtype"] != "Dynamic Link" and not frappe.db.exists("DocType", d["options"]):
+		if (
+			strict
+			and d["fieldtype"] != "Dynamic Link"
+			and not frappe.db.exists("DocType", d["options"])
+			# a MultiSelectList may take its DocType from another filter, as a Dynamic Link
+			# does (General Ledger: party ← party_type)
+			and not (d["fieldtype"] == "MultiSelectList" and _FIELDNAME_RE.match(d["options"]))
+		):
 			_bad(strict, _("Filter definition {0}: {1} is not a DocType").format(i, d["options"]))
 		out.append({"fieldname": d["fieldname"], "fieldtype": d["fieldtype"], "options": d["options"]})
 	return out

@@ -242,6 +242,34 @@ class TestReportViewSettings(RVTestCase):
 		doc.insert()
 		self.assertEqual(load_settings(TB)["filter_defs"], shipped_settings(TB)["filter_defs"])
 
+	def test_every_shipped_file_saves_as_a_new_record(self):
+		# General Ledger: party is a MultiSelectList whose DocType is the party_type filter
+		from report_view.core.settings import parse_filter_defs
+
+		for report in frappe.get_all(
+			"Report", filters={"name": ("in", ["General Ledger", TB])}, pluck="name"
+		):
+			defs = shipped_settings(report)["filter_defs"]
+			self.assertEqual(parse_filter_defs(defs, strict=True), defs)
+		party = {"fieldname": "party", "fieldtype": "MultiSelectList", "options": "party_type"}
+		self.assertEqual(parse_filter_defs([party], strict=True), [party])
+		with self.assertRaises(frappe.ValidationError):
+			parse_filter_defs([{**party, "options": "Not A Doctype"}], strict=True)
+
+	def test_a_party_list_is_checked_against_the_party_type_filter(self):
+		from report_view.core.runner import check_list_filters
+
+		defs = [{"fieldname": "party", "fieldtype": "MultiSelectList", "options": "party_type"}]
+		customer = frappe.get_all("Customer", limit=1, pluck="name")
+		if not customer:
+			self.skipTest("no Customer on this site")
+		with patch("frappe.has_permission", return_value=False) as perm:
+			with self.assertRaises(frappe.PermissionError):
+				check_list_filters(defs, {"party_type": "Customer", "party": customer})
+			perm.assert_called_with("Customer", "read", doc=customer[0])
+		# no party type: nothing to check against, the report decides
+		check_list_filters(defs, {"party": customer})
+
 	def test_excel_turned_off_is_refused_by_the_server(self):
 		self.make(excel=0)
 		with self.as_user("accountant"), self.assertRaises(RVNoExport):

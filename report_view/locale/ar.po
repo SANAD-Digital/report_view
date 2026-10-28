@@ -3615,3 +3615,157 @@ msgstr "ما قاله Chromium:"
 
 msgid "Install its system libraries once, as root:"
 msgstr "ثبّت مكتبات النظام مرة واحدة بصلاحية root:"
+
+msgid "Add variables"
+msgstr "إضافة متغيرات"
+
+msgid "Variables"
+msgstr "المتغيرات"
+
+msgid "Variables of the print format"
+msgstr "متغيرات قالب الطباعة"
+
+msgid "Variable name"
+msgstr "اسم المتغير"
+
+msgid "Default value"
+msgstr "القيمة الافتراضية"
+
+msgid "Select: one option per line. Link: the DocType."
+msgstr "Select: خيار في كل سطر. Link: اسم الـ DocType."
+
+msgid "Check the variables"
+msgstr "راجع المتغيرات"
+
+msgid "Save the print format to keep its variables"
+msgstr "احفظ قالب الطباعة لتُحفظ متغيراته"
+
+msgid "{0} variables"
+msgstr "{0} متغيرات"
+
+msgid "The values chosen on the print page («Add variables»): {0}"
+msgstr "القيم المختارة في صفحة الطباعة («إضافة متغيرات»): {0}"
+
+msgid "Each variable shows as a control in «Variables» on the print page; changing it renders the format again with the new value."
+msgstr "يظهر كل متغير عنصرَ تحكم في «المتغيرات» بصفحة الطباعة؛ وتغييره يعيد رندرة القالب بالقيمة الجديدة."
+
+msgid "In the template: {0} or {1}. Select: its options one per line; Link: the DocType in Options; Check: 1 or 0."
+msgstr "في القالب: {0} أو {1}. Select: خياراته سطراً سطراً؛ Link: اسم الـ DocType في الخيارات؛ Check: ‏1 أو 0."
+
+msgid "A print format has at most {0} variables"
+msgstr "لقالب الطباعة {0} متغيراً على الأكثر"
+
+msgid "write its label (at most {0} characters)"
+msgstr "اكتب تسميته (حتى {0} حرفاً)"
+
+msgid "its name starts with a small letter and has small letters, digits and _ only (at most 40)"
+msgstr "اسمه يبدأ بحرف لاتيني صغير وفيه حروف لاتينية صغيرة وأرقام و _ فقط (حتى 40)"
+
+msgid "the name {0} is taken by the template's context"
+msgstr "الاسم {0} محجوز في سياق القالب"
+
+msgid "the name {0} is used twice"
+msgstr "الاسم {0} مستخدم مرتين"
+
+msgid "the type must be Select, Check, Link, Float or Int"
+msgstr "النوع يجب أن يكون Select أو Check أو Link أو Float أو Int"
+
+msgid "write its options, one per line"
+msgstr "اكتب خياراته، خياراً في كل سطر"
+
+msgid "too many or too long options"
+msgstr "خيارات كثيرة جداً أو طويلة جداً"
+
+msgid "an option is written twice"
+msgstr "خيار مكتوب مرتين"
+
+msgid "its options must name a DocType"
+msgstr "يجب أن تسمّي خياراتُه DocType"
+
+msgid "the default must be a whole number"
+msgstr "القيمة الافتراضية يجب أن تكون عدداً صحيحاً"
+
+msgid "the default must be a number"
+msgstr "القيمة الافتراضية يجب أن تكون رقماً"
+
+msgid "the default must be one of its options"
+msgstr "القيمة الافتراضية يجب أن تكون أحد خياراته"
+
+msgid "Variable {0}: write its options, one per line"
+msgstr "المتغير {0}: اكتب خياراته، خياراً في كل سطر"
+
+msgid "Variable {0}: too many or too long options"
+msgstr "المتغير {0}: خيارات كثيرة جداً أو طويلة جداً"
+
+msgid "Variable {0}: an option is written twice"
+msgstr "المتغير {0}: خيار مكتوب مرتين"
+
+msgid "Variable {0}: its options must name a DocType"
+msgstr "المتغير {0}: يجب أن تسمّي خياراتُه DocType"
+
+msgid "Variable {0}: {1} is a child table"
+msgstr "المتغير {0}: {1} جدول فرعي"
+
+msgid "Variable {0}: {1} is not a number"
+msgstr "المتغير {0}: {1} ليس رقماً"
+
+msgid "Variable {0}: the number is out of range"
+msgstr "المتغير {0}: الرقم خارج الحدود"
+
+msgid "Variable {0}: {1} is not a whole number"
+msgstr "المتغير {0}: {1} ليس عدداً صحيحاً"
+
+msgid "Variable {0}: invalid default value"
+msgstr "المتغير {0}: قيمة افتراضية غير صالحة"
+
+msgid "Variable {0}: the default must be one of its options"
+msgstr "المتغير {0}: القيمة الافتراضية يجب أن تكون أحد خياراته"
+
+msgid "Variable {0}: the default value is too long"
+msgstr "المتغير {0}: القيمة الافتراضية طويلة جداً"
+
+msgid "The variables are too large"
+msgstr "المتغيرات كبيرة جداً"
+
+msgid "The variables are not valid JSON"
+msgstr "المتغيرات ليست JSON صالحاً"
+
+msgid "The variables must be a list"
+msgstr "المتغيرات يجب أن تكون قائمة"
+
+msgid "The variables must be an object"
+msgstr "قيم المتغيرات يجب أن تكون كائناً"
+
+msgid "Variable {0} is not an object"
+msgstr "المتغير {0} ليس كائناً"
+
+msgid "Variable {0}: write its label (at most {1} characters)"
+msgstr "المتغير {0}: اكتب تسميته (حتى {1} حرفاً)"
+
+msgid "Variable {0}: its name starts with a small letter and has small letters, digits and _ only (at most 40)"
+msgstr "المتغير {0}: اسمه يبدأ بحرف لاتيني صغير وفيه حروف لاتينية صغيرة وأرقام و _ فقط (حتى 40)"
+
+msgid "Variable {0}: the name {1} is taken by the template's context"
+msgstr "المتغير {0}: الاسم {1} محجوز في سياق القالب"
+
+msgid "The variable name {0} is used twice"
+msgstr "اسم المتغير {0} مستخدم مرتين"
+
+msgid "Variable {0}: the type must be Select, Check, Link, Float or Int"
+msgstr "المتغير {0}: النوع يجب أن يكون Select أو Check أو Link أو Float أو Int"
+
+msgid "Variable {0}: invalid value"
+msgstr "المتغير {0}: قيمة غير صالحة"
+
+msgid "Variable {0}: {1} is not one of its options"
+msgstr "المتغير {0}: {1} ليس من خياراته"
+
+msgid "Variable {0}: you may not read {1} {2}"
+msgstr "المتغير {0}: لا يحق لك قراءة {1} {2}"
+
+msgid "The variables of the print page (ADR-024), edited with «Add variables»"
+msgstr "متغيرات صفحة الطباعة (ADR-024)، تُحرَّر بزر «إضافة متغيرات»"
+
+msgctxt "Print Format"
+msgid "Variables"
+msgstr "المتغيرات"

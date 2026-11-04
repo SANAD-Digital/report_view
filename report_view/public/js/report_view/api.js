@@ -133,10 +133,12 @@ export const api = {
 
 	// `lang`: the report runs in that language (frappe reads `_lang` from the request),
 	// for the pages printed in a language other than the session's (ADR-014).
-	run: (report_name, filters, js_filters, prepared_report_name = null, lang = null) =>
+	// `prepare`: a prepared report without a result for these filters is queued (Frappe's
+	// «Generate New Report»); the page then waits for the realtime `report_processed`.
+	run: (report_name, filters, js_filters, prepared_report_name = null, lang = null, prepare = false) =>
 		call(
 			"report_view.api.run",
-			{ report_name, filters, js_filters, prepared_report_name, ...(lang ? { _lang: lang } : {}) },
+			{ report_name, filters, js_filters, prepared_report_name, ...(prepare ? { prepare: 1 } : {}), ...(lang ? { _lang: lang } : {}) },
 			{ type: "POST" }
 		),
 

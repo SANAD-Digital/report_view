@@ -56,6 +56,7 @@ import { RangeHost } from "./host/range_host.js";
 import { Drawer } from "./components/drawer.js";
 import { HeaderA } from "./components/header_a.js";
 import { HeaderC } from "./components/header_c.js";
+import { make_layout_switch } from "./components/layout_switch.js";
 import { TrialLayout, LAYOUTS } from "./layouts/layout.js";
 
 const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
@@ -172,6 +173,10 @@ export class ReportViewPage {
 				on_print: () => this.print(),
 			});
 		}
+		// «Design ▾»: the same report on the standard page or a trial layout (ADR-025)
+		if (this.layout === "classic") this.header.el.querySelector(".rv-actions")?.prepend(make_layout_switch(this, "rv-btn"));
+		else if (this.layout === "a") this.header.el.querySelector(".rv-ha-acts")?.prepend(make_layout_switch(this, "btn btn-default btn-sm"));
+		else this.header.el.querySelector('[data-action="more"]')?.before(make_layout_switch(this, "rv-tb"));
 		this.summary = new Summary({ parent: this.$(".rv-summary-slot") });
 		this.$(".rv-summary-slot").replaceWith(this.summary.el);
 		this.toolbar = new Toolbar({
@@ -869,7 +874,7 @@ export class ReportViewPage {
 		this.show_loading();
 		this.status.clear();
 		try {
-			const res = await api.run(this.report_name, values, this.filters.js_filters(), this.prepared_report_name);
+			const res = await api.run(this.report_name, values, this.filters.js_filters(), this.prepared_report_name, null, true);
 			if (token !== this.run_token) return;
 			await this.handle_response(res.message, res.server_messages, values, token);
 		} catch (e) {
@@ -881,11 +886,46 @@ export class ReportViewPage {
 		}
 	}
 
+	/**
+	 * A prepared report queued for these filters: Frappe says when it is done (realtime
+	 * `report_processed`, to its owner), and the report runs again; no polling. A new run, or
+	 * leaving the page's report, drops the wait.
+	 */
+	wait_prepared(name, token) {
+		if (this.prepared_wait) {
+			frappe.realtime?.off?.("report_processed", this.prepared_wait);
+			this.prepared_wait = null;
+		}
+		if (!name || !frappe.realtime?.on) return;
+		this.prepared_wait = (data) => {
+			if (data?.name !== name) return;
+			frappe.realtime.off("report_processed", this.prepared_wait);
+			this.prepared_wait = null;
+			if (token === this.run_token) this.run();
+		};
+		frappe.realtime.on("report_processed", this.prepared_wait);
+	}
+
 	async handle_response(res, server_messages, values, token) {
 		const status = res?.status;
-		if (status === "too_large" || status === "prepared_pending" || status === "prepared_missing") {
+		if (status === "too_large" || status === "prepared_pending" || status === "prepared_missing" || status === "prepared_error") {
 			this.report = null;
 			await this.close_session();
+		}
+		this.wait_prepared(status === "prepared_pending" ? res.prepared_report_name : null, token);
+		if (status === "prepared_error") {
+			this.overlay.show({
+				kind: status,
+				icon: "!",
+				tone: "error",
+				title: __("The prepared report failed"),
+				text: res.message || "",
+				actions: [
+					{ label: __("Try again"), primary: true, action: () => this.run() },
+					{ label: __("Open standard report"), href: query_report_url(this.report_name, values) },
+				],
+			});
+			return;
 		}
 		if (status === "too_large") {
 			this.overlay.show({
@@ -911,7 +951,7 @@ export class ReportViewPage {
 					? __("The report is being prepared in the background")
 					: __("No prepared result for these filters"),
 				text: pending
-					? __("Try again in a moment.")
+					? __("It opens here by itself when it is ready; you can leave this page meanwhile.")
 					: __("Generate it from the standard report page, then come back."),
 				actions: [
 					{ label: __("Try again"), primary: true, action: () => this.run() },

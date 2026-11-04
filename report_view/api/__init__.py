@@ -50,10 +50,14 @@ def run(
 	filters: dict | str,
 	js_filters: list | str | None = None,
 	prepared_report_name: str | None = None,
+	prepare: bool | int | str = False,
 ) -> dict:
-	"""Run a report through ``frappe.desk.query_report.run`` (§2.1)."""
+	"""Run a report through ``frappe.desk.query_report.run`` (§2.1); ``prepare``: queue the
+	prepared report of these filters when it has no result yet."""
 	report = _guard(report_name)
-	return runner.run(report, report_name, filters, js_filters, prepared_report_name)
+	return runner.run(
+		report, report_name, filters, js_filters, prepared_report_name, frappe.utils.cint(prepare) == 1
+	)
 
 
 @frappe.whitelist(methods=["GET"])

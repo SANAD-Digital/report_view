@@ -191,6 +191,23 @@ class TestApiRun(RVTestCase):
 		self.assertIn(response["status"], ("prepared_missing", "prepared_pending"))
 		self.assertNotIn("raw", response)
 
+	def test_prepare_queues_the_prepared_report_of_these_filters_once(self):
+		# prepare=1: the run queues it (Frappe's make_prepared_report) and a second run waits
+		# for the same one instead of queueing another
+		filters = {"company": COMPANY, "warehouse": "rv-prepare-xyz"}
+		with (
+			self.set_user("Administrator"),
+			patch("frappe.core.doctype.prepared_report.prepared_report.enqueue"),
+		):
+			first = api.run("Stock Balance", filters, None, None, 1)
+			second = api.run("Stock Balance", filters, None, None, 1)
+		self.assertEqual(first["status"], "prepared_pending")
+		self.assertTrue(first["prepared_report_name"])
+		self.assertEqual(second["prepared_report_name"], first["prepared_report_name"])
+		doc = frappe.get_doc("Prepared Report", first["prepared_report_name"])
+		self.assertEqual(doc.report_name, "Stock Balance")
+		self.assertEqual(frappe.parse_json(doc.filters)["warehouse"], "rv-prepare-xyz")
+
 	def test_too_large(self):
 		with self.as_user("accountant"), patch("report_view.core.runner.get_row_limit", return_value=5):
 			response = api.run("Trial Balance", TB_FILTERS, TB_JS_FILTERS)

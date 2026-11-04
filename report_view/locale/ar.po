@@ -4584,5 +4584,24 @@ msgstr "المجموعات"
 msgid "All accounts"
 msgstr "كل الحسابات"
 
-msgid "Statement:Report View mode"
+msgctxt "Report View mode"
+msgid "Statement"
 msgstr "كشف"
+
+msgid "Design"
+msgstr "التصميم"
+
+msgid "Standard design"
+msgstr "التصميم الحالي"
+
+msgid "Design A"
+msgstr "التصميم «أ»"
+
+msgid "Design C"
+msgstr "التصميم «ج»"
+
+msgid "The prepared report failed"
+msgstr "فشل تحضير التقرير"
+
+msgid "It opens here by itself when it is ready; you can leave this page meanwhile."
+msgstr "يفتح هنا وحده حين يجهز، ويمكنك ترك الصفحة في الأثناء."

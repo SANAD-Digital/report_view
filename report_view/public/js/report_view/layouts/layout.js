@@ -92,7 +92,10 @@ export class TrialLayout {
 				if (rt.getMeta(th)?.y === y) th.querySelector(".rv-rd-btn")?.click();
 			}
 		});
-		page.grid.after_style = () => this.paint_rail();
+		page.grid.after_style = () => {
+			this.paint_rail();
+			this.fit_statement();
+		};
 		this.more_items = this.kind === "c";
 		// the row of filters under the column titles (not in the mockup): off until asked for
 		this.filter_row = false;
@@ -273,6 +276,28 @@ export class TrialLayout {
 		if (depth == null || !page.state) return;
 		page.state.tree = { depth, expanded: null };
 		page.render();
+	}
+
+	/**
+	 * The Statement is a sheet, not the frame of the table: as wide as its columns and, for a
+	 * short report, as tall as its rows (the frame's height stays the most it may take).
+	 */
+	fit_statement() {
+		const page = this.page;
+		const root = page.root;
+		if (page.state?.mode !== "statement") return;
+		const grid = page.grid;
+		const widths = grid.model ? grid.size_widths() : [];
+		if (!widths.length) return;
+		// the widths of the model, or what the table drew when its cells made a column wider
+		const drawn = grid.rt ? grid.rt.scrollWidth : 0;
+		const width = Math.max(widths.reduce((a, w) => a + (Number(w) || 0), 0), drawn);
+		const was = parseFloat(root.style.getPropertyValue("--rv-stmt-w")) || 0;
+		if (Math.abs(was - width) > 1) root.style.setProperty("--rv-stmt-w", `${Math.ceil(width) + 2}px`);
+		const rows = grid.body_rows || 0;
+		const foot = grid.rt?.querySelectorAll?.(".rv-rt-bottom .rv-row").length || 0;
+		const needed = (grid.header_height || 0) + (rows + foot + 1) * (grid.row_height || 28) + 32;
+		root.style.setProperty("--rv-stmt-h", `${Math.ceil(needed)}px`);
 	}
 
 	refresh_statement() {

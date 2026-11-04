@@ -139,15 +139,22 @@ def count_rows(raw: dict) -> int:
 	return n
 
 
-def _pending_prepared_report(report: Report) -> str | None:
+def _pending_prepared_report(report: Report, filters: dict | None = None) -> str | None:
+	"""The user's Prepared Report of this report still queued or running; with ``filters``,
+	the one for these filters (Frappe stores them as ``process_filters_for_prepared_report``)."""
+	from frappe.core.doctype.prepared_report.prepared_report import process_filters_for_prepared_report
+
+	where = {
+		"report_name": report_name_for_prepared(report),
+		"owner": frappe.session.user,
+		"status": ["in", ["Queued", "Started"]],
+	}
+	if filters is not None:
+		where["filters"] = process_filters_for_prepared_report(filters)
 	try:
 		pending = frappe.get_list(
 			"Prepared Report",
-			filters={
-				"report_name": report_name_for_prepared(report),
-				"owner": frappe.session.user,
-				"status": ["in", ["Queued", "Started"]],
-			},
+			filters=where,
 			pluck="name",
 			order_by="creation desc",
 			limit=1,
@@ -163,8 +170,14 @@ def run(
 	filters: Any,
 	js_filters: Any = None,
 	prepared_report_name: str | None = None,
+	prepare: bool = False,
 ) -> dict:
-	"""Run the report through ``query_report.run`` and apply the row limit (§2.1)."""
+	"""Run the report through ``query_report.run`` and apply the row limit (§2.1).
+
+	A prepared report without a result for these filters: with ``prepare`` one is queued for
+	the user, as Frappe's «Generate New Report» does (``make_prepared_report``), unless one for
+	the same filters is already queued or running; the page waits for Frappe's realtime
+	``report_processed`` and runs again."""
 	filters = validate_report_filters(parse_json_arg(filters, "filters", dict))
 	browser_defs = validate_js_filters(parse_json_arg(js_filters, "js_filters", list, allow_none=True) or [])
 	settings = load_settings(report.name)
@@ -207,7 +220,14 @@ def run(
 
 	limit = get_row_limit()
 	if raw.get("prepared_report") and "result" not in raw:
-		pending = _pending_prepared_report(report)
+		if raw.get("error"):
+			# the last preparation for these filters failed: Frappe's own user-facing text
+			return {"status": "prepared_error", "message": str(raw["error"]), "doc": None}
+		pending = _pending_prepared_report(report, filters)
+		if not pending and prepare:
+			from frappe.core.doctype.prepared_report.prepared_report import make_prepared_report
+
+			pending = make_prepared_report(report_name, filters)["name"]
 		return {
 			"status": "prepared_pending" if pending else "prepared_missing",
 			"prepared_report_name": pending,

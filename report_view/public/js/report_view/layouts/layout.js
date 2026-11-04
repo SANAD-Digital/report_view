@@ -94,6 +94,23 @@ export class TrialLayout {
 				if (rt.getMeta(th)?.y === y) th.querySelector(".rv-rd-btn")?.click();
 			}
 		});
+		// on the Statement the table stands at its full height in the page: the wheel scrolls the
+		// page (Desk's .main-section), not the table, which would keep it for itself
+		page.$(".rv-grid").addEventListener(
+			"wheel",
+			(e) => {
+				if (page.state?.mode !== "statement" || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+				if ((page.grid.body_rows || 0) > STATEMENT_MAX_ROWS) return;
+				// the table's scroll does not chain to the page (overscroll-behavior): the page's
+				// scroller is moved here
+				const scroller = page.root.closest(".main-section") || document.scrollingElement;
+				e.stopPropagation();
+				e.preventDefault();
+				const unit = e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? scroller.clientHeight : 1;
+				scroller.scrollBy({ top: e.deltaY * unit, left: 0 });
+			},
+			{ capture: true, passive: false }
+		);
 		// on the Statement, a click on a report row opens its details (the drawer or dialog)
 		page.$(".rv-grid").addEventListener("click", (e) => {
 			if (page.state?.mode !== "statement") return;
@@ -340,7 +357,8 @@ export class TrialLayout {
 		const rh = grid.row_height || 28;
 		const shown = Math.min(rows, STATEMENT_MAX_ROWS);
 		const head = Math.max(grid.header_height || 0, 2 * rh);
-		const needed = head + (Math.max(shown, 3) + foot + (page.grid.top_el?.childElementCount || 0)) * rh + 8;
+		// two rows of room: the table's own measure of a row is a pixel or two above --rh
+		const needed = head + (Math.max(shown, 3) + foot + (page.grid.top_el?.childElementCount || 0) + 2) * rh + 8;
 		root.style.setProperty("--rv-stmt-h", `${Math.ceil(needed)}px`);
 	}
 

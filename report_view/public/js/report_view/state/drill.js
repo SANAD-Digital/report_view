@@ -96,10 +96,13 @@ export function link_open_of(settings) {
 	return LINK_OPEN[String(settings?.link_open || "").trim().toLowerCase()] || "new_tab";
 }
 
-/** The link of the target report in Report View, with its filters (the drawer's "open" verb). */
-export function drill_href(report, filters) {
+/**
+ * The link of the target report in Report View, with its filters (the drawer's "open" verb).
+ * `page`: the Report View page it opens on (a trial layout keeps its own, ADR-025).
+ */
+export function drill_href(report, filters, page = "report-view") {
 	const params = new URLSearchParams();
 	for (const [k, v] of Object.entries(filters || {})) params.set(k, Array.isArray(v) ? JSON.stringify(v) : String(v));
 	const q = params.toString();
-	return `/desk/report-view/${encodeURIComponent(report)}${q ? `?${q}` : ""}`;
+	return `/desk/${page}/${encodeURIComponent(report)}${q ? `?${q}` : ""}`;
 }

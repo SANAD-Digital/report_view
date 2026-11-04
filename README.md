@@ -71,6 +71,18 @@ Manager included. The star makes a view the user's own default; the link of the 
 the view applied (`?view=`). Records: DocType *Report View Saved View*, through
 `report_view.api.views` (ADR-010; rules in `docs/architecture.md` §2.7 and §6).
 
+### Trial layouts
+
+Two more pages open the same reports with another shell, so the owner can compare them with
+the standard page (ADR-025): `/desk/report-view-a/<report>` (a head of two rows with the
+filters as chips, the table in a card with its own toolbar) and `/desk/report-view-c/<report>`
+(the filters as one sentence, one dense toolbar, the saved views as tabs at the bottom). Same
+data, engine, permissions and features; in Pages mode both put the print settings in a side
+column, as Frappe's print view. `/desk/report-view/<report>` is unchanged.
+Both also offer a **Statement** view (ADR-026): the table drawn as a dense financial statement
+(the label and the numbers, the column groups as bordered bands, faint zeros, a level of detail
+for a report tree), turned off per report in Report View Settings.
+
 ### Tests
 
 ```bash

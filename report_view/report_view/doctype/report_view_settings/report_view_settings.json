@@ -36,6 +36,7 @@
   "excel",
   "range_selection",
   "drill",
+  "statement",
   "section_chart_types",
   "chart_bar",
   "chart_stacked",
@@ -273,6 +274,13 @@
    "label": "Drill",
    "default": "1",
    "description": "The «Drill to» rules of the Drill section, in the context menu and the row details"
+  },
+  {
+   "fieldname": "statement",
+   "fieldtype": "Check",
+   "label": "Statement",
+   "default": "1",
+   "description": "The «Statement» view of the trial pages (report-view-a, report-view-c): the table drawn as a financial statement"
   },
   {
    "fieldname": "section_chart_types",
@@ -526,7 +534,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-28 15:00:00.000000",
+ "modified": "2026-10-29 01:33:12.868820",
  "modified_by": "Administrator",
  "module": "Report View",
  "name": "Report View Settings",

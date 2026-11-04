@@ -28,7 +28,8 @@ export class ViewsMenu {
 	 * @param {object} o
 	 * @param {HTMLElement} o.parent where the control goes (the head's slot)
 	 * @param {boolean} o.rtl
-	 * @param {object} o.on {open(), apply(name|null), save(), save_new(), edit(), remove(), star(name)}
+	 * @param {object} o.on {open(), apply(name|null), save(), save_new(), edit(), remove(), star(name),
+	 *   changed() (optional: the list, the view applied or its change were set; the tabs of layout C, ADR-025)}
 	 */
 	constructor({ parent, rtl, on }) {
 		this.rtl = rtl;
@@ -71,6 +72,7 @@ export class ViewsMenu {
 		this.list = list;
 		// the rows only: the actions stay the same elements (a press on them is never lost)
 		if (this.is_open) this.render_body();
+		this.on.changed?.();
 	}
 
 	/** @param {object|null} applied the view applied ({name, title, visibility, is_owner}) */
@@ -82,6 +84,7 @@ export class ViewsMenu {
 			this.render_body();
 			this.render_acts();
 		}
+		this.on.changed?.();
 	}
 
 	set_modified(modified) {
@@ -90,6 +93,7 @@ export class ViewsMenu {
 		this.modified = m;
 		this.paint();
 		if (this.is_open) this.render_acts();
+		this.on.changed?.();
 	}
 
 	/** The button: the view applied (or «Views»), and the dot of a change. */

@@ -49,6 +49,8 @@ export class SavedViewsHost {
 				edit: () => this.edit_view(),
 				remove: () => this.delete_view(),
 				star: (name) => this.toggle_default_view(name),
+				// the tabs of layout C follow the list and the view applied (ADR-025)
+				changed: () => this.shell?.views_changed(),
 			},
 		});
 	}

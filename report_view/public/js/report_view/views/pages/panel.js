@@ -1,6 +1,10 @@
 // The settings panel of the Pages view (views/pages_view.js): its sections as the tools of a
 // toolbar, one tool's menu at a time (a sheet on a phone), the record fields (Frappe's
 // Autocomplete), the thumbnails, and the binding of every control to update(). Methods of PagesView.
+// The trial layouts (ADR-025: report-view-a / report-view-c) give the same sections a side
+// column at the inline start instead, as Frappe's print view (printing/page/print/print.js
+// setup_sidebar): four groups under plain headings, each section folding in place, a sheet on
+// a phone (`this.side_layout`).
 
 import { bind_font_picker, font_picker_html } from "../../components/font_picker.js";
 import { icons } from "../../components/icons.js";
@@ -8,7 +12,7 @@ import { POP_MARGIN, place_near } from "../../components/popover.js";
 import { PAGE_SIZES, preset_margins } from "../../engine/page_layout.js";
 import { esc, fmt_int, session_lang } from "../../util.js";
 import { to_number, values_for } from "../../print_variables.js";
-import { BOX_MM, DROPDOWN_FLIP_UNDER, DROPDOWN_MAX_H, DROPDOWN_MIN_H, FOOT_SCOPES, MENU_GAP, MENU_GAP_BELOW, MENU_MIN_H, MENU_W, MOBILE_QUERY, NUMS, PAGE_SCOPES, PAGE_STYLES, RIBBON, SIDES, clamp } from "./settings.js";
+import { BOX_MM, DEFAULT_OPEN_SECS, DROPDOWN_FLIP_UNDER, DROPDOWN_MAX_H, DROPDOWN_MIN_H, FOOT_SCOPES, MENU_GAP, MENU_GAP_BELOW, MENU_MIN_H, MENU_W, MOBILE_QUERY, NUMS, PAGE_SCOPES, PAGE_STYLES, RIBBON, SIDE_GROUPS, SIDES, clamp } from "./settings.js";
 import { can_write_letter_head } from "./support.js";
 
 export class PagesPanel {
@@ -21,7 +25,7 @@ export class PagesPanel {
 		const s = this.settings;
 		const o = this.options || { letter_heads: [], print_formats: [], languages: [] };
 		const model = this.rows.model;
-		if (!this.open_secs) this.open_secs = new Set();
+		if (!this.open_secs) this.open_secs = new Set(this.side_layout ? DEFAULT_OPEN_SECS : []);
 		const mm = __("mm");
 		const option = (value, label, on) => `<option value="${esc(value)}" ${on ? "selected" : ""}>${esc(label)}</option>`;
 		const check = (key, label) =>
@@ -60,8 +64,12 @@ export class PagesPanel {
 					.map(([v, l]) => option(v, l, s[`${key}_s`] === v))
 					.join("")}</select>
 				<input type="color" data-color="${key}_c" value="${this.color_of(s, `${key}_c`)}" aria-label="${esc(__("Colour"))}" title="${esc(__("Colour"))}"></div></div>`;
-		const section = (id, icon, title, summary, body, extra = "") =>
-			`<details class="rv-psec" data-sec="${id}" ${this.open_secs.has(id) ? "open" : ""}><summary><span class="ic">${icon}</span><span class="tx"><span class="tt">${esc(title)}</span>${summary ? `<span class="sm">${esc(summary)}</span>` : ""}</span>${extra}</summary><div class="rv-psec-bd">${body}</div></details>`;
+		const section = this.side_layout
+			? // the side column: a part of a group (side_panel folds the groups): its small title, its controls
+			  (id, icon, title, summary, body) =>
+					`<div class="rv-psub" data-sec="${id}" data-title="${esc(title)}" data-sm="${esc(summary || "")}"><div class="rv-psub-t">${esc(title)}</div><div class="rv-psec-bd">${body}</div></div>`
+			: (id, icon, title, summary, body, extra = "") =>
+					`<details class="rv-psec" data-sec="${id}" ${this.open_secs.has(id) ? "open" : ""}><summary><span class="ic">${icon}</span><span class="tx"><span class="tt">${esc(title)}</span>${summary ? `<span class="sm">${esc(summary)}</span>` : ""}</span>${extra}</summary><div class="rv-psec-bd">${body}</div></details>`;
 		const align3 = [["start", __("Start", null, "Report View")], ["center", __("Centre")], ["end", __("End", null, "Report View")]];
 		const pm = s.page_m;
 		const columns = model ? [...model.pinned, ...model.data] : [];
@@ -115,7 +123,7 @@ export class PagesPanel {
 		const pb_sum = s.pb_on ? `${s.pb_w} px · ${{ solid: __("Solid"), dashed: __("Dashed"), dotted: __("Dotted"), double: __("Double") }[s.pb_s]}` : __("None", null, "Report View");
 		const wm_sum = s.wm_type === "text" ? s.wm_text || __("Text", null, "Report View") : s.wm_type === "image" ? __("Image", null, "Report View") : __("None", null, "Report View");
 
-		this.bd.innerHTML = [
+		const secs = [
 			section(
 				"paper",
 				I.paper,
@@ -298,13 +306,86 @@ export class PagesPanel {
 							)
 							.join("")}</div>`
 				  ),
-			`<p class="rv-zone-empty">${esc(__("The pages show the table as it is: the same filters, grouping and folded groups."))}</p>`,
-		].join("");
+		];
+		const note = __("The pages show the table as it is: the same filters, grouping and folded groups.");
+		if (this.side_layout) {
+			this.side_panel(secs, note);
+			return;
+		}
+		this.bd.innerHTML = [...secs, `<p class="rv-zone-empty">${esc(note)}</p>`].join("");
 		this.ribbon_layout();
 		this.bd.scrollLeft = this.ribbon_scroll || 0;
 		const menu = this.bd.querySelector(".rv-print-pop");
 		if (menu && this.menu_scroll && this.menu_scroll.id === [...this.open_secs].join()) menu.scrollTop = this.menu_scroll.top;
 		this.bind_panel();
+	}
+
+	/**
+	 * The side column (ADR-025): the sections in SIDE_GROUPS, each group one folding section
+	 * with one heading (its parts under small titles), a rule between two groups.
+	 * @param {string[]} secs the sections' markup, each a <details data-sec> (or "")
+	 */
+	side_panel(secs, note) {
+		const by_id = new Map();
+		for (const html of secs) {
+			const id = /data-sec="([^"]+)"/.exec(html)?.[1];
+			if (id) by_id.set(id, html);
+		}
+		const named = new Set(SIDE_GROUPS.flatMap((g) => g.secs));
+		const tmp = document.createElement("div");
+		const groups = SIDE_GROUPS.map((g, i) => {
+			// a section no group names (a later one) joins the last group
+			const ids = [...g.secs, ...(i === SIDE_GROUPS.length - 1 ? [...by_id.keys()].filter((id) => !named.has(id)) : [])].filter((id) => by_id.has(id));
+			if (!ids.length) return "";
+			tmp.innerHTML = ids.map((id) => by_id.get(id)).join("");
+			const parts = [...tmp.querySelectorAll(":scope > .rv-psub")];
+			// one heading per group: a group of one part has no title of its own for it
+			if (parts.length === 1) parts[0].querySelector(".rv-psub-t").remove();
+			const sum = parts.length === 1 ? parts[0].dataset.sm : parts.map((x) => x.dataset.title).join(" · ");
+			const open = this.open_secs.has(g.id) ? "open" : "";
+			return `<details class="rv-pgrp" data-group="${g.id}" ${open}><summary><span class="tx"><span class="tt">${esc(g.label())}</span><span class="sm">${esc(sum)}</span></span><span class="chev">${icons.chevron_down(12)}</span></summary>${tmp.innerHTML}</details>`;
+		});
+		const top = this.bd.scrollTop;
+		this.bd.innerHTML = `${groups.join("")}<p class="rv-zone-empty rv-print-side-note">${esc(note)}</p>`;
+		this.bind_panel();
+		// the column stays where the person was in it
+		this.bd.scrollTop = top;
+		// the sheet of a phone keeps the focus when the control that had it was drawn again (Escape closes it)
+		if (this.sheet_open() && !this.side.contains(document.activeElement)) this.side.focus({ preventScroll: true });
+	}
+
+	/** Whether the side column is the sheet of a phone, open over the pages. */
+	sheet_open() {
+		return Boolean(this.side_layout) && this.el.classList.contains("rv-sheet-open");
+	}
+
+	/**
+	 * On a phone the side column is a sheet from the bottom (rv_pages.css): the button of the
+	 * head opens it over a scrim; the scrim, its close button and Escape close it. The sheet
+	 * itself takes the focus, so that no field opens the keyboard and its list over it.
+	 */
+	open_sheet() {
+		if (this.sheet_open()) return;
+		const scrim = document.createElement("div");
+		scrim.className = "rv-print-scrim";
+		scrim.setAttribute("aria-hidden", "true");
+		scrim.addEventListener("click", () => this.close_sheet());
+		this.side.before(scrim);
+		this.el.classList.add("rv-sheet-open");
+		this.side.setAttribute("role", "dialog");
+		this.side.setAttribute("aria-modal", "true");
+		this.opts_btn.setAttribute("aria-expanded", "true");
+		this.side.focus({ preventScroll: true });
+	}
+
+	close_sheet(focus = true) {
+		if (!this.sheet_open()) return;
+		this.el.classList.remove("rv-sheet-open");
+		for (const n of this.el.querySelectorAll(":scope > .rv-print-body > .rv-print-scrim")) n.remove();
+		this.side.removeAttribute("role");
+		this.side.removeAttribute("aria-modal");
+		this.opts_btn.setAttribute("aria-expanded", "false");
+		if (focus) this.opts_btn.focus({ preventScroll: true });
 	}
 
 	/**
@@ -422,7 +503,8 @@ export class PagesPanel {
 	}
 
 	close_menu() {
-		if (!this.open_secs?.size) return;
+		// the side column has no menu: its sections fold in place
+		if (this.side_layout || !this.open_secs?.size) return;
 		const id = this.menu_anchor;
 		this.ribbon_scroll = this.bd.scrollLeft;
 		this.open_secs = new Set();
@@ -640,7 +722,16 @@ export class PagesPanel {
 		// once per panel element (the picker keeps its own binding): its unbind for release()
 		this.unbind_fonts = bind_font_picker(bd, (key, family) => this.update({ [key]: family }));
 		this.mount_links();
-		for (const summary of bd.querySelectorAll("details[data-sec] > summary")) {
+		// the side column: a section folds in place, remembered for the next panel, nothing drawn again
+		if (this.side_layout) {
+			for (const d of bd.querySelectorAll("details[data-group]")) {
+				d.addEventListener("toggle", () => {
+					if (d.open) this.open_secs.add(d.dataset.group);
+					else this.open_secs.delete(d.dataset.group);
+				});
+			}
+		}
+		for (const summary of this.side_layout ? [] : bd.querySelectorAll("details[data-sec] > summary")) {
 			summary.addEventListener("click", (e) => {
 				if (e.target !== summary && e.target.closest("button, input, select, a")) return;
 				e.preventDefault();

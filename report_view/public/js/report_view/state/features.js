@@ -28,11 +28,13 @@ export const FEATURES = [
 	// a range of cells (status bar numbers, context menu, copy) and the configured drill (5c, 5d)
 	"range_selection",
 	"drill",
+	// the Statement view of the trial layouts (ADR-026)
+	"statement",
 ];
 
-const MODES = ["grid", "pivot", "charts", "pages"];
+const MODES = ["grid", "statement", "pivot", "charts", "pages"];
 // the feature each view needs (the table is always there)
-const MODE_FEATURE = { pivot: "pivot", charts: "charts", pages: "pages" };
+const MODE_FEATURE = { statement: "statement", pivot: "pivot", charts: "charts", pages: "pages" };
 
 /** A complete features object: unknown keys dropped, a missing or non-boolean flag on. */
 export function sanitize_features(raw) {

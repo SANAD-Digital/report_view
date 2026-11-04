@@ -54,6 +54,9 @@ import { make_row_details } from "./host/row_details_host.js";
 import { SavedViewsHost } from "./host/saved_views_host.js";
 import { RangeHost } from "./host/range_host.js";
 import { Drawer } from "./components/drawer.js";
+import { HeaderA } from "./components/header_a.js";
+import { HeaderC } from "./components/header_c.js";
+import { TrialLayout, LAYOUTS } from "./layouts/layout.js";
 
 const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
 // Local preferences of this browser (the density; the theme is Desk's own, ADR-022).
@@ -89,8 +92,16 @@ function query_report_url(name, filters) {
 }
 
 export class ReportViewPage {
-	constructor(wrapper) {
+	/**
+	 * @param {HTMLElement} wrapper the Desk page
+	 * @param {object} [options] {layout: "a" | "c"}: one of the trial layouts (ADR-025) on its
+	 *   own page (report-view-a, report-view-c); none: the standard page, as it always was
+	 */
+	constructor(wrapper, options = {}) {
 		this.wrapper = wrapper;
+		this.layout = LAYOUTS.includes(options?.layout) ? options.layout : "classic";
+		// the page the links of this page lead back to (a drill's «Open in Report View»)
+		this.page_route = this.layout === "classic" ? "report-view" : `report-view-${this.layout}`;
 		this.page = wrapper.page;
 		this.rtl = frappe.utils.is_rtl();
 		this.facade = make_facade(this);
@@ -124,7 +135,7 @@ export class ReportViewPage {
 
 	make_dom() {
 		const root = document.createElement("div");
-		root.className = "rv";
+		root.className = this.layout === "classic" ? "rv" : `rv rv-layout-${this.layout}`;
 		root.dir = this.rtl ? "rtl" : "ltr";
 		root.innerHTML = `
 			<div class="rv-shell">
@@ -140,15 +151,27 @@ export class ReportViewPage {
 		this.page.main.get(0).replaceChildren(root);
 		this.root = root;
 		this.$ = (sel) => root.querySelector(sel);
-		this.header = new Header({
-			parent: this.page.page_actions.get(0),
-			dir: root.dir,
-			on_refresh: () => this.run(),
-			on_density: (d) => this.set_density(d),
-			on_theme: () => this.toggle_theme(),
-			on_export: () => this.export_xlsx(),
-			on_print: () => this.print(),
-		});
+		if (this.layout === "classic") {
+			this.header = new Header({
+				parent: this.page.page_actions.get(0),
+				dir: root.dir,
+				on_refresh: () => this.run(),
+				on_density: (d) => this.set_density(d),
+				on_theme: () => this.toggle_theme(),
+				on_export: () => this.export_xlsx(),
+				on_print: () => this.print(),
+			});
+		} else {
+			// the trial layouts' head stands inside the page (ADR-025)
+			const Head = this.layout === "a" ? HeaderA : HeaderC;
+			this.header = new Head({
+				page: this,
+				parent: this.$(".rv-shell"),
+				on_refresh: () => this.run(),
+				on_mode: (mode) => this.set_mode(mode),
+				on_print: () => this.print(),
+			});
+		}
 		this.summary = new Summary({ parent: this.$(".rv-summary-slot") });
 		this.$(".rv-summary-slot").replaceWith(this.summary.el);
 		this.toolbar = new Toolbar({
@@ -233,9 +256,11 @@ export class ReportViewPage {
 		this.status = new StatusBar({ parent: wrap });
 		// the «Views» menu of the head (ADR-010)
 		this.make_views_menu();
+		// the trial layouts place the parts they keep and add their own (layouts/layout.js)
+		if (this.layout !== "classic") this.shell = new TrialLayout(this);
 		this.apply_density();
-		// the report's Report View Settings, for whoever may change them
-		if ((frappe.user?.has_role?.("System Manager") || frappe.user?.has_role?.("Report View Manager")) && this.page.add_menu_item) {
+		// the report's Report View Settings, for whoever may change them (the trial layouts: in their ⋯)
+		if (this.layout === "classic" && (frappe.user?.has_role?.("System Manager") || frappe.user?.has_role?.("Report View Manager")) && this.page.add_menu_item) {
 			this.page.add_menu_item(__("Report View settings"), () => this.open_settings());
 		}
 	}
@@ -248,9 +273,17 @@ export class ReportViewPage {
 		else frappe.new_doc("Report View Settings", { report: name });
 	}
 
+	/** The report on Frappe's own page (query-report), with the filters of the last run. */
+	open_standard_report() {
+		if (!this.report_name) return;
+		window.location.assign(query_report_url(this.report_name, this.last_filters || {}));
+	}
+
 	/** The views the report offers now (its settings, the print permission). */
 	modes() {
-		return allowed_modes(this.features, Boolean(this.meta?.perms?.can_print));
+		const modes = allowed_modes(this.features, Boolean(this.meta?.perms?.can_print));
+		// the Statement is a view of the trial layouts only (ADR-026)
+		return this.layout === "classic" ? modes.filter((m) => m !== "statement") : modes;
 	}
 
 	/** The view state held to the report's settings (a view or a tool turned off). */
@@ -266,7 +299,7 @@ export class ReportViewPage {
 	async load_pages() {
 		if (!this.pages_view) {
 			if (!window.report_view?.PagesView) await frappe.require("report_view_pages.bundle.js");
-			this.pages_view ||= new report_view.PagesView({ parent: this.$(".rv-pages"), root: this.root, rtl: this.rtl, host: this });
+			this.pages_view ||= new report_view.PagesView({ parent: this.$(".rv-pages"), root: this.root, rtl: this.rtl, host: this, side: this.layout !== "classic" });
 		}
 		return this.pages_view;
 	}
@@ -333,6 +366,7 @@ export class ReportViewPage {
 	refresh_controls() {
 		if (!this.state) return;
 		this.apply_mode();
+		this.shell?.refresh();
 		this.toolbar.search.refresh();
 		this.cells.refresh();
 		this.side.refresh();
@@ -373,6 +407,7 @@ export class ReportViewPage {
 		this.root.classList.toggle("rv-mode-charts", mode === "charts");
 		this.root.classList.toggle("rv-mode-pivot", mode === "pivot");
 		this.root.classList.toggle("rv-mode-pages", mode === "pages");
+		this.root.classList.toggle("rv-mode-statement", mode === "statement");
 		this.toolbar.set_mode(mode);
 		this.header.set_mode(mode);
 	}
@@ -587,12 +622,13 @@ export class ReportViewPage {
 			const pos = getComputedStyle(el).position;
 			if (pos === "sticky" || pos === "fixed") sticky = Math.max(sticky, el.getBoundingClientRect().bottom);
 		}
-		const h = Math.max(420, Math.round(window.innerHeight - Math.max(0, sticky) - 16));
+		const h = Math.max(420, Math.round(window.innerHeight - Math.max(0, sticky) - 16 - (this.shell ? this.shell.below_grid() : 0)));
 		wrap.style.height = `${h}px`;
 	}
 
 	// Filters changed: the report runs again by itself, as on query-report (debounced).
 	on_filters_changed() {
+		this.shell?.refresh_filters();
 		this.schedule_run();
 	}
 
@@ -724,10 +760,15 @@ export class ReportViewPage {
 		const can_print = Boolean(this.meta.perms?.can_print);
 		this.features = sanitize_features(this.meta.settings?.features);
 		this.config = server_config(get_config(name), this.meta.settings, this.features, can_print);
+		// the trial layouts open with a group's sums on its own row (Grid.dc.html, ADR-025)
+		if (this.layout !== "classic") this.config.subtotals_default = false;
 		const f = this.features;
 		this.header.set_report({ can_export: Boolean(this.meta.perms?.can_export), can_print, features: f });
 		this.toolbar.set_report({ can_print, modes: this.modes(), search: f.quick_search });
+		this.shell?.set_report();
 		this.cells.floating = f.column_filters;
+		// the trial layouts keep the row of column filters behind a toggle of their toolbar
+		if (this.shell) this.cells.floating = f.column_filters && this.shell.filter_row;
 		this.row_details.configure(this.meta);
 		this.configure_range(this.meta);
 		this.status.set_hint(f.range_selection);
@@ -757,6 +798,7 @@ export class ReportViewPage {
 			on_change: () => this.on_filters_changed(),
 		});
 		this.filters = this.criteria.filters;
+		this.shell?.set_criteria(this.criteria);
 		this.cells.clear();
 		// the link's filters over the saved view's (a view that keeps its filters)
 		const filter_options = {
@@ -804,6 +846,7 @@ export class ReportViewPage {
 	async run() {
 		clearTimeout(this._run_timer);
 		if (!this.filters) return;
+		this.shell?.refresh_filters();
 		const token = ++this.run_token;
 		let values;
 		try {
@@ -901,6 +944,7 @@ export class ReportViewPage {
 		await this.close_session();
 		if (token !== this.run_token) return;
 		this.report = report;
+		this.shell?.ran();
 		// the columns of a saved view found again in this result (§7.3), then the rest dropped
 		this.rebind_view(report);
 		reconcile(this.state, report.columns);
@@ -1044,6 +1088,7 @@ export class ReportViewPage {
 	// badge of the grand total: those that pass the browser filters, of all of them. Groups
 	// and tree parents are counted apart; folding changes neither number.
 	update_status(counts) {
+		this.shell?.set_counts(counts);
 		this.status.update({
 			row_count: counts.shown,
 			fact_count: counts.total,

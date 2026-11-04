@@ -52,6 +52,8 @@ export class GridView extends RtView {
 		this.details = false;
 		// the display row the details panel shows, marked in the table
 		this.detail_y = null;
+		// called after each draw of the rows (layouts/layout.js), or null
+		this.after_style = null;
 		this.layout = null;
 		this.rows = new GridRows({ cells });
 		this.refocus = null;
@@ -75,7 +77,7 @@ export class GridView extends RtView {
 			this.destroy();
 			return;
 		}
-		const model = this.rows.set({ report, state, config, post: opened.post, fmt, session, width: this.parent.clientWidth });
+		const model = this.rows.set({ report, state, config, post: opened.post, fmt, session, width: this.parent.clientWidth, label_max: css_int(this.parent, "--lw", 320), num_min: css_int(this.parent, "--nw", 138), numbers_only: Boolean(this.parent.closest(".rv-mode-statement")) });
 		const density = state.ui?.density;
 		// What needs a new table: the columns and the density. Widths and rows do not.
 		const signature = JSON.stringify({
@@ -499,6 +501,8 @@ export class GridView extends RtView {
 		}
 		this.render_pinned(shown);
 		this.paint_range();
+		// what a trial layout draws over the rows (the «›» at their end, ADR-025); none here
+		if (this.after_style) this.after_style();
 	}
 
 	// ------------------------------------------------------------ pinned rows

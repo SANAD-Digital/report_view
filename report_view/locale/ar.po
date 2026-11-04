@@ -4500,3 +4500,89 @@ msgstr "أين تفتح قيمة عمود الرابط مستندها"
 
 msgid "Drill rules"
 msgstr "قواعد التفصيل"
+
+msgid "Not set"
+msgstr "غير محدد"
+
+msgid "{0} selected"
+msgstr "{0} محددة"
+
+msgctxt "Report View sentence"
+msgid "for {0}"
+msgstr "لشركة {0}"
+
+msgctxt "Report View sentence"
+msgid "from {0} to {1}"
+msgstr "من {0} إلى {1}"
+
+msgid "+ condition"
+msgstr "+ شرط"
+
+msgid "Print or PDF…"
+msgstr "طباعة أو PDF…"
+
+msgid "Nothing to export"
+msgstr "لا شيء للتصدير"
+
+msgid "No column to group by"
+msgstr "لا يوجد عمود للتجميع"
+
+msgid "No grouping"
+msgstr "بلا تجميع"
+
+msgid "Report tools"
+msgstr "أدوات التقرير"
+
+msgid "Table tools"
+msgstr "أدوات الجدول"
+
+msgid "Subtotals"
+msgstr "مجاميع فرعية"
+
+msgid "Last updated {0}"
+msgstr "آخر تحديث {0}"
+
+msgid "Group by…"
+msgstr "تجميع حسب…"
+
+msgid "Density…"
+msgstr "الكثافة…"
+
+msgid "Export…"
+msgstr "تصدير…"
+
+msgid "More…"
+msgstr "المزيد…"
+
+msgid "Report View A"
+msgstr "عرض التقرير (أ)"
+
+msgid "Report View C"
+msgstr "عرض التقرير (ج)"
+
+msgid "The row of filters under the column titles"
+msgstr "صف الفلاتر تحت عناوين الأعمدة"
+
+msgid "More options…"
+msgstr "خيارات أخرى…"
+
+msgid "Add a filter"
+msgstr "إضافة فلتر"
+
+msgid "Statement"
+msgstr "كشف"
+
+msgid "Level of detail"
+msgstr "مستوى التفصيل"
+
+msgid "Roots"
+msgstr "الجذور"
+
+msgid "Groups"
+msgstr "المجموعات"
+
+msgid "All accounts"
+msgstr "كل الحسابات"
+
+msgid "Statement:Report View mode"
+msgstr "كشف"

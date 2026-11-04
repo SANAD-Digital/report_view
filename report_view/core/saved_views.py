@@ -57,8 +57,8 @@ _FIELDNAME_RE = re.compile(r"^[A-Za-z0-9_]+$")
 _PRIMITIVES = (str, int, float, bool, type(None))
 
 # what the browser's view state holds beyond the server's export schema (core/view_state):
-# the charts dashboard, the column groups and the Pages mode (state/view_state.js)
-BROWSER_MODES = (*view_state.MODES, "pages")
+# the charts dashboard, the column groups, the Pages and Statement modes (state/view_state.js)
+BROWSER_MODES = (*view_state.MODES, "pages", "statement")
 CHART_KEYS = frozenset(("cards", "slicers", "cross"))
 MAX_CARDS = 50
 MAX_GROUPS = 50
@@ -253,7 +253,7 @@ def clean_state(raw) -> dict:
 	mode = state.get("mode", "grid")
 	if mode not in BROWSER_MODES:
 		_bad_state(_("View state: invalid mode"))
-	if mode == "pages":
+	if mode in ("pages", "statement"):
 		state["mode"] = "grid"
 	state = view_state.validate(state)
 	state["mode"] = mode

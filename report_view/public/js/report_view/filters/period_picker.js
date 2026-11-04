@@ -128,7 +128,8 @@ export class PeriodPicker {
 
 	// ------------------------------------------------------------ popover
 
-	open() {
+	/** @param {HTMLElement} [anchor] what the popover stands under (a chip of the trial layouts, ADR-025); the field by default */
+	open(anchor = null) {
 		const { from, to, fiscal_year } = this.get();
 		const today = this.today();
 		const start = from || today;
@@ -169,7 +170,7 @@ export class PeriodPicker {
 		this.render();
 		this.popover = open_popover({
 			root: this.root,
-			anchor: this.button,
+			anchor: anchor || this.button,
 			content,
 			cls: "dp",
 			width: 880,

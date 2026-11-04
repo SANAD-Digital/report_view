@@ -45,9 +45,9 @@ test("the side panel and its tabs go together", () => {
 });
 
 test("views: the table always, Pages needs the flag and the print permission", () => {
-	assert.deepEqual(allowed_modes(sanitize_features({})), ["grid", "pivot", "charts", "pages"]);
-	assert.deepEqual(allowed_modes(sanitize_features({}), false), ["grid", "pivot", "charts"]);
-	assert.deepEqual(allowed_modes(off("pivot", "charts", "pages")), ["grid"]);
+	assert.deepEqual(allowed_modes(sanitize_features({})), ["grid", "statement", "pivot", "charts", "pages"]);
+	assert.deepEqual(allowed_modes(sanitize_features({}), false), ["grid", "statement", "pivot", "charts"]);
+	assert.deepEqual(allowed_modes(off("statement", "pivot", "charts", "pages")), ["grid"]);
 });
 
 test("server defaults win over register; a default that is off is no default", () => {

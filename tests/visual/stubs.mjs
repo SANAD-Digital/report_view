@@ -242,6 +242,7 @@ window.frappe = {
 	dom: { eval() {}, remove_script_and_style: (s) => s },
 	datetime: {
 		now_datetime: () => "2026-10-01 10:42:00",
+		now_time: () => "10:42:00",
 		get_today: () => "2026-10-01",
 		get_user_date_fmt: () => "dd-mm-yyyy",
 		get_first_day_of_the_week_index: () => 0,
@@ -263,7 +264,7 @@ window.frappe = {
 	after_ajax: (fn) => fn(),
 	query_reports: {},
 	route_options: null,
-	get_route: () => ["report-view", window.RV_REPORT],
+	get_route: () => [window.RV_ROUTE || "report-view", window.RV_REPORT],
 	// ?built=1: a bundle the page asks for is loaded from what `bench build` wrote; from the
 	// sources every bundle is already part of the harness.
 	require(name) {

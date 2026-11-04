@@ -64,14 +64,14 @@ export class GridRows {
 	 * @param {object} p {report, state, config, post, fmt, session, width}
 	 * @returns {object} the model
 	 */
-	set({ report, state, config, post, fmt, session, width }) {
+	set({ report, state, config, post, fmt, session, width, label_max = 320, num_min = 138, numbers_only = false }) {
 		if (this.cache_owner !== report || this.fmt !== fmt) {
 			this.html_cache.clear();
 			this.cache_owner = report;
 		}
 		this.fmt = fmt;
 		this.session = session;
-		this.model = this.build_model(report, state, config, post, width);
+		this.model = this.build_model(report, state, config, post, width, { label_max, num_min, numbers_only });
 		// Captions depend on the columns shown, not only on the report.
 		this.captions.clear();
 		return this.model;
@@ -79,7 +79,7 @@ export class GridRows {
 
 	// ------------------------------------------------------------ model
 
-	build_model(report, state, config, post, width) {
+	build_model(report, state, config, post, width, { label_max = 320, num_min = 138, numbers_only = false } = {}) {
 		const by_key = new Map(report.columns.map((c) => [c.key, c]));
 		const col_conf = config.columns || {};
 		const { bands, band_of } = header_bands(state, config);
@@ -92,8 +92,10 @@ export class GridRows {
 		const totalled = new Set(post.measures);
 		const widths = state.columns.widths;
 		const label = by_key.get(post.label_key);
-		// Label column: design width 320px, narrower on phones so numbers stay visible.
-		const label_width = widths[label.key] || Math.round(Math.min(320, Math.max(170, width * 0.5)));
+		// Label column: design width 320px (--lw of a layout), narrower on phones so numbers stay visible.
+		// a layout that caps the label (label_max) gives a date label the width of a date
+		const fit = label_max < 320 && ["Date", "Datetime"].includes(label.fieldtype) ? 120 : 170;
+		const label_width = widths[label.key] || Math.round(Math.min(label_max, Math.max(fit, fit === 120 ? 0 : width * 0.5)));
 
 		const describe = (key) => {
 			const column = by_key.get(key);
@@ -109,13 +111,15 @@ export class GridRows {
 				totalled: totalled.has(key),
 				currency_key: column.currency?.kind === "row" ? column.currency.key : null,
 				index: post.index[key],
-				width: widths[key] || conf.width || (numeric ? Math.max(column.width || 0, 138) : column.width || 140),
+				width: widths[key] || conf.width || (numeric ? Math.max(num_min < 138 ? 0 : column.width || 0, num_min) : column.width || 140),
 			};
 		};
 		// columns.pinned.start: row headers of regular-table next to the label column.
 		const roomy = width >= MIN_WIDTH_FOR_PINS;
-		const pinned = roomy ? post.pinned_keys.map(describe) : [];
-		const data = (roomy ? post.data_keys : [...post.pinned_keys, ...post.data_keys]).map(describe);
+		// the Statement (ADR-026) shows the label and the numbers only
+		const keep = (d) => !numbers_only || d.numeric;
+		const pinned = roomy ? post.pinned_keys.map(describe).filter(keep) : [];
+		const data = (roomy ? post.data_keys : [...post.pinned_keys, ...post.data_keys]).map(describe).filter(keep);
 		for (const p of pinned) p.band = null;
 		data.forEach((d, i) => {
 			d.band_end = Boolean(d.band) && data[i + 1]?.band !== d.band;

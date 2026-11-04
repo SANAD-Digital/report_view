@@ -10,7 +10,8 @@
 // presets=<JSON> (print presets on the "server", ADR-020: [{name, preset_name, public, is_default,
 // target, settings, owner}]), publish=0 (the user may not make presets public),
 // rvs=<JSON> (the report's server settings, e.g. {"features":{"pivot":false}}, ADR-023),
-// views=<JSON>, vdefault=, gdefault= (saved views, ADR-010: views_stub.mjs).
+// views=<JSON>, vdefault=, gdefault= (saved views, ADR-010: views_stub.mjs),
+// layout=a|c (the trial layouts of report-view-a / report-view-c, ADR-025).
 
 import { views_server, views_defaults } from "./views_stub.mjs";
 
@@ -330,7 +331,13 @@ async function main() {
 	};
 	// The page starts here (tests/perf/measure.cjs measures the load from this mark).
 	performance.mark("rv:page:start");
-	const page = new report_view.ReportViewPage(wrapper);
+	// layout=a|c: the trial layouts of their own pages (ADR-025); none: the standard page
+	const layout = params.get("layout");
+	if (layout) {
+		window.RV_ROUTE = `report-view-${layout}`;
+		wrapper.dataset.pageRoute = window.RV_ROUTE;
+	}
+	const page = new report_view.ReportViewPage(wrapper, layout ? { layout } : undefined);
 	window.rv_page = page;
 	page.show();
 	// The table of the view state's mode: the grid, the pivot (rv with mode "pivot") or the pages.

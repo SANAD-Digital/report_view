@@ -7,7 +7,7 @@ import { sanitize_groups } from "./column_groups.js";
 import { sanitize_dashboard } from "./dashboard_state.js";
 
 export const VERSION = 1;
-const MODES = ["grid", "pivot", "charts", "pages"];
+const MODES = ["grid", "statement", "pivot", "charts", "pages"];
 const LIMIT_GROUP = 50;
 const DENSITIES = ["comfortable", "compact"];
 const LIMIT_EXPANDED = 5000;
@@ -45,7 +45,8 @@ export function default_state(config = {}) {
 		sort: [],
 		filters: [],
 		quick_filters: [],
-		group: { by: str_list(config.default_group_by, LIMIT_GROUP), subtotals: config.features?.subtotals !== false, expanded: "all" },
+		// subtotals_default false: a group's sums on its own row, as Odoo's (the trial layouts, ADR-025)
+		group: { by: str_list(config.default_group_by, LIMIT_GROUP), subtotals: config.features?.subtotals !== false && config.subtotals_default !== false, expanded: "all" },
 		tree: { depth: null, expanded: null },
 		values: [],
 		// null = the report's default dashboard (engine/chart_config.js default_cards)

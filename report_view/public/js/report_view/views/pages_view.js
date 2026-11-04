@@ -41,9 +41,12 @@ export class PagesView {
 	 *   pages_format(name, lang, type, view_columns, variables), pages_part(kind, name, lang), pages_translations(lang, messages), pages_run_lang(lang),
 	 *   pages_settings_load(), pages_settings_save(settings), pages_context(),
 	 *   pages_preset_target() → {context, target} of the print presets (optional, ADR-020)
+	 * @param {boolean} [o.side] the settings in a side column at the inline start, as Frappe's
+	 *   print view (the trial layouts, ADR-025); else the toolbar above the pages
 	 */
-	constructor({ parent, root, rtl, host }) {
+	constructor({ parent, root, rtl, host, side = false }) {
 		this.root = root;
+		this.side_layout = Boolean(side);
 		this.rtl = rtl;
 		this.host = host;
 		this.rows = new GridRows();
@@ -77,6 +80,10 @@ export class PagesView {
 	}
 
 	make_dom() {
+		if (this.side_layout) {
+			this.make_side_dom();
+			return;
+		}
 		const el = this.el;
 		el.innerHTML = `
 			<aside class="rv-print-side" aria-label="${esc(__("Print settings"))}">
@@ -113,6 +120,67 @@ export class PagesView {
 				<div class="rv-print-probe" aria-hidden="true"></div>
 			</div>
 			</div>`;
+		this.bind_dom();
+	}
+
+	/**
+	 * The trial layouts (ADR-025): a head row as Frappe's page head (the title, the page count,
+	 * the preset and Reset; the note, PDF and Print at its end), then the side column at the
+	 * inline start (a sheet on a phone, opened by «Print settings») beside the stage.
+	 */
+	make_side_dom() {
+		const el = this.el;
+		el.classList.add("rv-print-sidecol");
+		el.innerHTML = `
+			<div class="rv-print-bar">
+				<div class="rv-print-hd">
+					<div class="rv-print-hd-t"><strong>${esc(__("Print setup"))}</strong><span class="rv-print-count"></span></div>
+					<button type="button" class="rv-btn sm ghost" data-action="reset" title="${esc(__("Back to the default settings"))}">${icons.reset()}<span>${esc(__("Reset", null, "Report View"))}</span></button>
+				</div>
+				<div class="rv-print-ft">
+					<span class="rv-print-note"></span>
+					<div class="rv-print-acts">
+						<button type="button" class="rv-btn rv-print-opts" data-action="print-settings" aria-expanded="false" aria-haspopup="dialog">${icons.sliders()}<span>${esc(__("Print settings"))}</span></button>
+						<button type="button" class="rv-btn rv-print-pdf" data-action="pdf" title="${esc(__("The same pages as a PDF file, made by the server"))}">${icons.download()}<span>${esc(__("PDF"))}</span></button>
+						<button type="button" class="rv-btn primary rv-print-go" data-action="print" title="${esc(__("To keep a PDF file, choose «Save as PDF» in the print dialog."))}">${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
+					</div>
+				</div>
+			</div>
+			<div class="rv-print-body">
+			<aside class="rv-print-side" aria-label="${esc(__("Print settings"))}" tabindex="-1">
+				<div class="rv-print-side-hd"><strong>${esc(__("Print settings"))}</strong><button type="button" class="rv-pop-x" data-action="close-options" aria-label="${esc(__("Close"))}">${icons.close()}</button></div>
+				<div class="bd"></div>
+			</aside>
+			<div class="rv-print-main">
+			<nav class="rv-print-thumbs" aria-label="${esc(__("Pages", null, "Report View"))}"></nav>
+			<div class="rv-print-stage" tabindex="0">
+				<div class="rv-print-tools">
+					<div class="rv-seg rv-zoom" role="group" aria-label="${esc(__("Zoom"))}">
+						<button type="button" data-zoom="out" aria-label="${esc(__("Zoom out"))}" title="${esc(__("Zoom out"))}">−</button>
+						<button type="button" data-zoom="fit">${esc(__("Fit", null, "Report View"))}</button>
+						<button type="button" data-zoom="in" aria-label="${esc(__("Zoom in"))}" title="${esc(__("Zoom in"))}">+</button>
+					</div>
+					<span class="rv-print-zoom-lbl"></span>
+					<span class="sp"></span>
+					<span class="rv-print-pos"></span>
+				</div>
+				<div class="rv-print-busy" role="status" aria-live="polite" hidden><span class="rv-spin" aria-hidden="true"></span><span class="txt"></span><button type="button" class="rv-btn sm ghost" data-action="pdf-cancel" hidden>${esc(__("Cancel"))}</button></div>
+				<div class="rv-print-fmt-css" hidden></div>
+				<div class="rv-print-sheets" dir="${this.rtl ? "rtl" : "ltr"}"></div>
+				<div class="rv-print-probe" aria-hidden="true"></div>
+			</div>
+			</div>
+			</div>`;
+		this.bind_dom();
+		// a phone: the side column is a sheet, opened by the button of the head (panel.js open_sheet)
+		this.opts_btn = el.querySelector('[data-action="print-settings"]');
+		this.opts_btn.addEventListener("click", () => (this.sheet_open() ? this.close_sheet() : this.open_sheet()));
+		el.querySelector('[data-action="close-options"]').addEventListener("click", () => this.close_sheet());
+	}
+
+	/** The elements of the view and their listeners (either layout). */
+	bind_dom() {
+		const el = this.el;
 		this.side = el.querySelector(".rv-print-side");
 		this.bd = el.querySelector(".rv-print-side .bd");
 		this.stage = el.querySelector(".rv-print-stage");
@@ -131,7 +199,10 @@ export class PagesView {
 		else pdf.remove();
 		el.querySelector('[data-action="reset"]').addEventListener("click", () => this.guard(() => this.reset()));
 		el.addEventListener("keydown", (e) => {
-			if (e.key === "Escape" && this.open_secs?.size) this.close_menu();
+			if (e.key !== "Escape") return;
+			if (this.side_layout) {
+				if (this.sheet_open()) this.close_sheet();
+			} else if (this.open_secs?.size) this.close_menu();
 		});
 		// a tool's menu closes on a click elsewhere (lists of its own fields excepted) and
 		// follows the window's size: listened to only while a menu is open (menu_listeners)
@@ -327,8 +398,13 @@ export class PagesView {
 		this.clear_pages();
 		this.bd.replaceChildren();
 		// nothing of the pages listens while they are not shown (show observes the stage again)
-		this.open_secs = new Set();
-		this.menu_listeners(false);
+		if (this.side_layout) {
+			// the side column keeps its folds for the next time
+			this.close_sheet(false);
+		} else {
+			this.open_secs = new Set();
+			this.menu_listeners(false);
+		}
 		this.presets.destroy();
 		this.resize_observer.disconnect();
 	}

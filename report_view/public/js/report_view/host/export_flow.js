@@ -24,6 +24,8 @@ export class ExportFlow {
 			prepared_report_name: this.prepared_report_name,
 			view_state: {
 				...this.state,
+				// the Statement is the table drawn as a statement: the server exports the table
+				mode: this.state.mode === "statement" ? "grid" : this.state.mode,
 				quick_filters: (this.state.quick_filters || []).filter((id) => known.has(id)),
 				report_filters: this.last_filters,
 			},
@@ -47,7 +49,7 @@ export class ExportFlow {
 
 	async export_xlsx() {
 		// The file is the table's: the server exports the grid view only.
-		if (!this.opened || this.state.mode !== "grid" || this.export_job || !this.features.excel) return;
+		if (!this.opened || !["grid", "statement"].includes(this.state.mode) || this.export_job || !this.features.excel) return;
 		this.header.set_exporting(true);
 		try {
 			let out = await api.export_xlsx(this.report_name, this.export_model());

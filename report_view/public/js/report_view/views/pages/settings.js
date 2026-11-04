@@ -217,6 +217,14 @@ export const RIBBON = [
 	{ id: "marks", label: () => __("Marks", null, "Report View"), secs: ["num", "border", "wm"] },
 ];
 
+// The side column of the pages in the trial layouts (ADR-025, owner's choice 2026-10-28:
+// Frappe's print view): the same four groups, each under a plain heading, a rule between two.
+export const SIDE_GROUPS = RIBBON;
+
+// The groups of the side column open when the pages are first shown; the others fold to
+// their title and summary.
+export const DEFAULT_OPEN_SECS = ["page", "content"];
+
 // the least share of a page left to the content before a repeated signature moves to the last page
 export const MIN_ROOM = 0.25;
 

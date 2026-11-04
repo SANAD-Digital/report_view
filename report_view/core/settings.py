@@ -59,6 +59,8 @@ FEATURES = (
 	# a range of cells: status bar numbers, context menu, copy; and the configured drill, 5c and 5d
 	"range_selection",
 	"drill",
+	# the Statement view of the trial pages, ADR-026
+	"statement",
 )
 # The card types of the charts view (state/dashboard_state.js CARD_TYPES, same order).
 CHART_TYPES = ("bar", "stacked", "hbar", "hstacked", "line", "area", "donut", "kpi")

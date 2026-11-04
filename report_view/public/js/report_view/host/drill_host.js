@@ -52,7 +52,7 @@ export class DrillPanel {
 			cls: "rv-drill",
 			on_close: () => this.close(),
 		});
-		this.drawer.set_actions([{ label: __("Open in Report View"), href: drill_href(rule.report, this.filters), target: "_blank", primary: true, key: "open-report" }]);
+		this.drawer.set_actions([{ label: __("Open in Report View"), href: drill_href(rule.report, this.filters, page.page_route), target: "_blank", primary: true, key: "open-report" }]);
 		this.drawer.state(__("Loading…"));
 		this.drawer.el.dataset.report = rule.report;
 		this.ready = this.load().catch((e) => this.fail(e));

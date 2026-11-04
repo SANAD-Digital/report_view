@@ -192,7 +192,8 @@
 .rv-mixed{color:var(--tx-4);cursor:help}
 
 /* ---------- states: loading / empty / error, over the whole grid frame ---------- */
-.rv-stateov{position:absolute;inset:0;display:grid;place-items:center;background:var(--surface);z-index:12;padding:24px}
+/* the state box at one place from the top, whatever the frame's height (no jump when it is set) */
+.rv-stateov{position:absolute;inset:0;display:grid;justify-items:center;align-content:start;background:var(--surface);z-index:12;padding:min(18vh,160px) 24px 24px}
 .rv-stateov[hidden]{display:none}
 .rv-state{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;max-width:460px}
 .rv-state-ico{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;background:var(--surface-3);color:var(--tx-3);font-size:22px;font-weight:600}

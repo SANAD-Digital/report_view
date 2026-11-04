@@ -118,8 +118,12 @@ export class GridRows {
 		const roomy = width >= MIN_WIDTH_FOR_PINS;
 		// the Statement (ADR-026) shows the label and the numbers only
 		const keep = (d) => !numbers_only || d.numeric;
-		const pinned = roomy ? post.pinned_keys.map(describe).filter(keep) : [];
-		const data = (roomy ? post.data_keys : [...post.pinned_keys, ...post.data_keys]).map(describe).filter(keep);
+		const all_pinned = roomy ? post.pinned_keys.map(describe) : [];
+		const all_data = (roomy ? post.data_keys : [...post.pinned_keys, ...post.data_keys]).map(describe);
+		const pinned = all_pinned.filter(keep);
+		const data = all_data.filter(keep);
+		// where a summary row's caption may come from: the text columns, shown or not
+		const caption_columns = [...all_pinned, ...all_data].filter((d) => !d.numeric);
 		for (const p of pinned) p.band = null;
 		data.forEach((d, i) => {
 			d.band_end = Boolean(d.band) && data[i + 1]?.band !== d.band;
@@ -147,6 +151,7 @@ export class GridRows {
 			// "number + name" label (register tree.number_key / tree.name_key) of the tree column.
 			parts: config.tree?.name_key && (config.tree.label_key || report.tree?.label_key) === label.key ? config.tree : null,
 			pinned,
+			caption_columns,
 			heads: 1 + pinned.length,
 			data,
 			levels,
@@ -421,7 +426,7 @@ export class GridRows {
 		const fmt = this.fmt;
 		out = { key: m.label.key, html: fmt.caption_html(m.label, row) };
 		if (is_empty(row[m.label.key])) {
-			const from = [...m.pinned, ...m.data].find((d) => !d.numeric && typeof row[d.column.key] === "string" && row[d.column.key]);
+			const from = (m.caption_columns || [...m.pinned, ...m.data]).find((d) => !d.numeric && typeof row[d.column.key] === "string" && row[d.column.key]);
 			if (from) out = { key: from.column.key, html: fmt.caption_html(from.column, row) };
 		}
 		this.captions.set(row.__rid, out);

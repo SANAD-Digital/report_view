@@ -24,6 +24,8 @@ import { esc, fmt_int } from "../util.js";
 import { tree_index } from "../engine/tree_nodes.js";
 
 export const LAYOUTS = ["a", "c"];
+// the rows a Statement draws at their full height; beyond them its body scrolls
+const STATEMENT_MAX_ROWS = 1500;
 
 export class TrialLayout {
 	/** @param {object} page the ReportViewPage, its parts built (make_dom) */
@@ -92,9 +94,17 @@ export class TrialLayout {
 				if (rt.getMeta(th)?.y === y) th.querySelector(".rv-rd-btn")?.click();
 			}
 		});
+		// on the Statement, a click on a report row opens its details (the drawer or dialog)
+		page.$(".rv-grid").addEventListener("click", (e) => {
+			if (page.state?.mode !== "statement") return;
+			if (e.target.closest("button, a, input, .rv-caret")) return;
+			const tr = e.target.closest("regular-table tbody tr");
+			tr?.querySelector("th .rv-rd-btn")?.click();
+		});
 		page.grid.after_style = () => {
 			this.paint_rail();
 			this.fit_statement();
+			this.fit_rows();
 		};
 		this.more_items = this.kind === "c";
 		// the row of filters under the column titles (not in the mockup): off until asked for
@@ -279,13 +289,35 @@ export class TrialLayout {
 	}
 
 	/**
+	 * The totals follow the last row (Grid.dc.html), not the bottom of the frame: the body of a
+	 * short table is as tall as its rows; a long one keeps the frame's height and scrolls.
+	 */
+	fit_rows() {
+		const grid = this.page.grid;
+		const scroll = grid.rt?.parentElement;
+		if (!scroll?.classList.contains("rv-rt-scroll")) return;
+		if (this.page.state?.mode === "statement") {
+			scroll.style.maxHeight = "";
+			return;
+		}
+		const rh = grid.row_height || 30;
+		// the body holds a spacer row for each pinned opening row: body_rows counts them already
+		const needed = (grid.header_height || 0) + (grid.body_rows || 0) * rh + 2;
+		const px = `${Math.ceil(needed)}px`;
+		if (scroll.style.maxHeight !== px) scroll.style.maxHeight = px;
+	}
+
+	/**
 	 * The Statement is a sheet, not the frame of the table: as wide as its columns and, for a
 	 * short report, as tall as its rows (the frame's height stays the most it may take).
 	 */
 	fit_statement() {
 		const page = this.page;
 		const root = page.root;
-		if (page.state?.mode !== "statement") return;
+		if (page.state?.mode !== "statement") {
+			root.classList.remove("rv-stmt-sized");
+			return;
+		}
 		const grid = page.grid;
 		const widths = grid.model ? grid.size_widths() : [];
 		if (!widths.length) return;
@@ -293,10 +325,22 @@ export class TrialLayout {
 		const drawn = grid.rt ? grid.rt.scrollWidth : 0;
 		const width = Math.max(widths.reduce((a, w) => a + (Number(w) || 0), 0), drawn);
 		const was = parseFloat(root.style.getPropertyValue("--rv-stmt-w")) || 0;
-		if (Math.abs(was - width) > 1) root.style.setProperty("--rv-stmt-w", `${Math.ceil(width) + 2}px`);
+		if (Math.abs(was - width) > 1) {
+			root.style.setProperty("--rv-stmt-w", `${Math.ceil(width) + 2}px`);
+			// shown when the width holds (the next draw), or soon whatever happens
+			clearTimeout(this.stmt_timer);
+			this.stmt_timer = setTimeout(() => root.classList.add("rv-stmt-sized"), 400);
+		} else {
+			root.classList.add("rv-stmt-sized");
+		}
 		const rows = grid.body_rows || 0;
 		const foot = grid.rt?.querySelectorAll?.(".rv-rt-bottom .rv-row").length || 0;
-		const needed = (grid.header_height || 0) + (rows + foot + 1) * (grid.row_height || 28) + 32;
+		// every row on the sheet, the totals after them, no scroll bar of its own; a very long
+		// report keeps its own scroll (the table draws only the rows on screen)
+		const rh = grid.row_height || 28;
+		const shown = Math.min(rows, STATEMENT_MAX_ROWS);
+		const head = Math.max(grid.header_height || 0, 2 * rh);
+		const needed = head + (Math.max(shown, 3) + foot + (page.grid.top_el?.childElementCount || 0)) * rh + 8;
 		root.style.setProperty("--rv-stmt-h", `${Math.ceil(needed)}px`);
 	}
 
@@ -305,6 +349,7 @@ export class TrialLayout {
 		const s = page.state;
 		const el = this.stmt;
 		if (!s || !el) return;
+		if (s.mode !== "statement") page.root.classList.remove("rv-stmt-sized");
 		el.querySelector(".t").textContent = __(page.report_name || "");
 		const f = page.last_filters || {};
 		const date = (v) => (v ? frappe.datetime.str_to_user(v) : "");
@@ -333,8 +378,24 @@ export class TrialLayout {
 		if (counts.groups) parts.push(__("Groups {0}", [fmt_int(counts.groups)]));
 		const n = page.controls.active_count();
 		if (n) parts.push(__("Filtered ({0})", [n]));
-		if (this.ran_at) parts.push(__("Last updated {0}", [this.ran_at]));
+		// A: «Last updated» stands at the end of the card's bottom bar (Main.dc.html)
+		if (this.ran_at && this.kind !== "a") parts.push(__("Last updated {0}", [this.ran_at]));
 		this.tools.count.textContent = parts.join(" · ");
+		if (this.kind === "a") this.paint_updated();
+	}
+
+	/** A: the bottom bar of the card, always there: the selection's numbers, then «Last updated». */
+	paint_updated() {
+		const bar = this.page.status?.el;
+		if (!bar) return;
+		let el = bar.querySelector(".rv-status-upd");
+		if (!el) {
+			el = document.createElement("span");
+			el.className = "rv-status-upd";
+			bar.append(el);
+		}
+		el.textContent = this.ran_at ? __("Last updated {0}", [this.ran_at]) : "";
+		bar.hidden = false;
 	}
 
 	/** A new result of the report arrived (handle_response): «Last updated» says when. */
@@ -347,6 +408,7 @@ export class TrialLayout {
 			t = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 		}
 		this.ran_at = t;
+		if (this.kind === "a") this.paint_updated();
 	}
 
 	/** The room the layout keeps under the table's frame (the bottom bar of C), for fit_height. */

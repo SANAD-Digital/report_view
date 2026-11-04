@@ -176,7 +176,7 @@ export class ReportViewPage {
 		// «Design ▾»: the same report on the standard page or a trial layout (ADR-025)
 		if (this.layout === "classic") this.header.el.querySelector(".rv-actions")?.prepend(make_layout_switch(this, "rv-btn"));
 		else if (this.layout === "a") this.header.el.querySelector(".rv-ha-acts")?.prepend(make_layout_switch(this, "btn btn-default btn-sm"));
-		else this.header.el.querySelector('[data-action="more"]')?.before(make_layout_switch(this, "rv-tb"));
+		else (this.header.bar || this.header.el).querySelector('[data-action="more"]')?.before(make_layout_switch(this, "rv-tb"));
 		this.summary = new Summary({ parent: this.$(".rv-summary-slot") });
 		this.$(".rv-summary-slot").replaceWith(this.summary.el);
 		this.toolbar = new Toolbar({
@@ -413,6 +413,9 @@ export class ReportViewPage {
 		this.root.classList.toggle("rv-mode-pivot", mode === "pivot");
 		this.root.classList.toggle("rv-mode-pages", mode === "pages");
 		this.root.classList.toggle("rv-mode-statement", mode === "statement");
+		// what stands over the frame changes with the view (a trial layout hides the summary in
+		// some): its height is measured again
+		if (this.shell) this.fit_height();
 		this.toolbar.set_mode(mode);
 		this.header.set_mode(mode);
 	}
@@ -627,7 +630,9 @@ export class ReportViewPage {
 			const pos = getComputedStyle(el).position;
 			if (pos === "sticky" || pos === "fixed") sticky = Math.max(sticky, el.getBoundingClientRect().bottom);
 		}
-		const h = Math.max(420, Math.round(window.innerHeight - Math.max(0, sticky) - 16 - (this.shell ? this.shell.below_grid() : 0)));
+		// a trial layout's head stands in the page: the frame starts under it, its bottom bar on screen
+		const top = this.shell ? Math.max(sticky, wrap.getBoundingClientRect().top + window.scrollY) : sticky;
+		const h = Math.max(420, Math.round(window.innerHeight - Math.max(0, top) - 16 - (this.shell ? this.shell.below_grid() : 0)));
 		wrap.style.height = `${h}px`;
 	}
 

@@ -179,7 +179,7 @@
 :is(.rv-layout-a,.rv-layout-c) regular-table thead th{background:var(--surface-2)}
 :is(.rv-layout-a,.rv-layout-c) regular-table thead th.rv-hd,:is(.rv-layout-a,.rv-layout-c) regular-table thead th.rv-hb{font-size:var(--t12);font-weight:var(--fw-m);color:var(--tx-3)}
 :is(.rv-layout-a,.rv-layout-c) regular-table thead tr:last-child th{border-bottom-color:var(--line)}
-:is(.rv-layout-a,.rv-layout-c) regular-table tbody th,:is(.rv-layout-a,.rv-layout-c) regular-table tbody td{font-size:var(--t13);border-bottom-color:var(--line)}
+:is(.rv-layout-a,.rv-layout-c) regular-table tbody th,:is(.rv-layout-a,.rv-layout-c) regular-table tbody td{font-size:var(--fs);border-bottom-color:var(--line)}
 :is(.rv-layout-a,.rv-layout-c) regular-table tbody tr.group > *{background:var(--surface-2);font-weight:var(--fw-b)}
 :is(.rv-layout-a,.rv-layout-c) regular-table tbody tr.group .rv-gcount{margin-inline-start:6px;padding:0;border:0;background:none;font-size:inherit;font-weight:var(--fw);color:var(--tx-3)}
 :is(.rv-layout-a,.rv-layout-c) regular-table tbody tr.group .rv-gcount::before{content:"("}
@@ -280,7 +280,7 @@
    fit_statement), centred; the report's name and period centred at its head; the column
    groups as bordered bands, no vertical rules in the body, group rows bold, zeros faint */
 .rv-stmt-head{display:none}
-:is(.rv-layout-a,.rv-layout-c).rv-mode-statement{--rh:25px; --hh:26px; --bh:24px; --cp:8px; --nw:112px; --lw:300px; --fs:var(--text-xs); --sheet-x:var(--s8)}
+:is(.rv-layout-a,.rv-layout-c).rv-mode-statement{--rh:25px; --hh:26px; --bh:24px; --cp:8px; --nw:112px; --lw:300px; --fs:var(--text-sm); --sheet-x:var(--s8)}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-gridwrap{margin:var(--s2) 0 0;border:0;border-radius:0;background:var(--surface-3);padding:var(--s6) var(--s4) var(--s8);align-items:center;overflow:visible;height:auto!important;min-height:calc(100vh - 160px)}
 /* the sheet shows once it has its width (fit_statement), never growing in sight */
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement:not(.rv-stmt-sized) :is(.rv-stmt-head,.rv-body){visibility:hidden}
@@ -392,3 +392,12 @@
    numbers off their totals */
 :is(.rv-layout-a,.rv-layout-c) regular-table tbody :is(td,th),
 :is(.rv-layout-a,.rv-layout-c) regular-table thead th{padding:0 var(--cp) !important}
+/* the filter a statement waits for */
+.rv-fchip.wanted{border-color:var(--pri,var(--tx-2));border-style:dashed}
+.rv-fchip.wanted b{color:var(--tx)}
+/* the Statement's titles while they stay on screen */
+:is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table thead.rv-stuck{position:relative;z-index:6;box-shadow:0 2px 4px #00000014}
+/* A: a state of the report stands under the table's tools, which stay */
+.rv-layout-a .rv-stateov{inset-block-start:37px}
+/* the printed numbers: the weight comes from the row, not from the report's own markup */
+:is(.rv-layout-a,.rv-layout-c) .rv-pt td .rv-n,:is(.rv-layout-a,.rv-layout-c) .rv-pt td .rv-n *{font-weight:inherit !important}

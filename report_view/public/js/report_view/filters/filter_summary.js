@@ -9,6 +9,14 @@ import { open_popover, close_popover, menu_content } from "../components/popover
 import { icons } from "../components/icons.js";
 import { esc, fmt_int } from "../util.js";
 
+// the filter a party's statement is about: always in the head, after the company, even empty,
+// where the report has fixed the party's type (a customer's ledger; not the General Ledger)
+const primary_controls = (criteria) => {
+	const { filters: f, plan } = criteria;
+	const type = f.controls.find((c) => c.df.fieldname === "party_type")?.get_value();
+	if (!type) return [];
+	return f.controls.filter((c) => c.df.fieldname === "party" && plan.place.get(c.df.fieldname) === "more" && !c.df.hidden_due_to_dependency);
+};
 const is_empty = (v) => v === null || v === undefined || v === "" || (Array.isArray(v) && !v.length);
 
 function user_date(d) {
@@ -61,6 +69,10 @@ export function filter_items(criteria) {
 	const main = f.controls.filter((c) => plan.place.get(c.df.fieldname) === "main" && visible(c));
 	const company = main.find((c) => c.df.fieldname === plan.keys.company_key);
 	if (company) out.push(control_item(company));
+	const primary = primary_controls(criteria);
+	// the party is named by its type: Customer, Supplier
+	const party_type = f.controls.find((c) => c.df.fieldname === "party_type")?.get_value();
+	for (const c of primary) out.push({ ...control_item(c), label: __(party_type), primary: true });
 	if (plan.has_period) {
 		const p = criteria.period_values();
 		out.push({
@@ -74,7 +86,7 @@ export function filter_items(criteria) {
 	}
 	for (const c of main) if (c !== company) out.push(control_item(c));
 	for (const c of f.controls) {
-		if (plan.place.get(c.df.fieldname) !== "more" || !visible(c)) continue;
+		if (plan.place.get(c.df.fieldname) !== "more" || !visible(c) || primary.includes(c)) continue;
 		const v = c.get_value();
 		if (is_empty(v) || v === 0) continue;
 		if (c.df.fieldtype === "Check" && String(v) === String(c.df.default ?? "")) continue;
@@ -102,7 +114,8 @@ const is_more = (criteria, c) => criteria.plan.place.get(c.df.fieldname) === "mo
 /** The filters behind «More options» that hold no value yet: what «+ Filter» offers to add. */
 export function addable_controls(criteria) {
 	if (!criteria) return [];
-	return criteria.filters.controls.filter((c) => is_more(criteria, c) && c.df.fieldtype !== "Check" && is_empty(c.get_value()));
+	const primary = primary_controls(criteria);
+	return criteria.filters.controls.filter((c) => is_more(criteria, c) && !primary.includes(c) && c.df.fieldtype !== "Check" && is_empty(c.get_value()));
 }
 
 /** The report's options (its Check filters behind «More options»): one column of boxes. */
@@ -195,5 +208,6 @@ export function open_filter_editor({ root, criteria, item, anchor }) {
 
 /** The markup of an item's value, for a chip or the sentence (escaped). */
 export function item_value_html(item) {
-	return item.text ? `<bdi>${esc(item.text)}</bdi>` : `<span class="rv-unset">${esc(__("Not set"))}</span>`;
+	if (item.text) return `<bdi>${esc(item.text)}</bdi>`;
+	return `<span class="rv-unset">${esc(item.primary ? __("Choose…") : __("Not set"))}</span>`;
 }

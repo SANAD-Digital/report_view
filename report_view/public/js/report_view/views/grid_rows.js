@@ -43,6 +43,9 @@ function row_runs(rows) {
 	return runs;
 }
 
+// the Statement of a ledger keeps what tells the rows apart, with these widths (ADR-026)
+const STATEMENT_TEXT = { voucher_type: 110, voucher_no: 160, remarks: 240, remark: 240 };
+
 // a date in the first column of a trial layout, with the details button and the row number;
 // the captions of the report's summary rows take this width alone
 const DATE_LABEL_WIDTH = 200;
@@ -121,11 +124,15 @@ export class GridRows {
 		// columns.pinned.start: row headers of regular-table next to the label column.
 		const roomy = width >= MIN_WIDTH_FOR_PINS;
 		// the Statement (ADR-026) shows the label and the numbers only
-		const keep = (d) => !numbers_only || d.numeric;
+		const keep = (d) => !numbers_only || d.numeric || (date_label && d.column.fieldname in STATEMENT_TEXT);
+		const statement_width = (d) => {
+			if (numbers_only && !d.numeric && !widths[d.column.key]) d.width = STATEMENT_TEXT[d.column.fieldname] || d.width;
+			return d;
+		};
 		const all_pinned = roomy ? post.pinned_keys.map(describe) : [];
 		const all_data = (roomy ? post.data_keys : [...post.pinned_keys, ...post.data_keys]).map(describe);
-		const pinned = all_pinned.filter(keep);
-		const data = all_data.filter(keep);
+		const pinned = all_pinned.filter(keep).map(statement_width);
+		const data = all_data.filter(keep).map(statement_width);
 		// where a summary row's caption may come from: the text columns, shown or not
 		const caption_columns = [...all_pinned, ...all_data].filter((d) => !d.numeric);
 		for (const p of pinned) p.band = null;

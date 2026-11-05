@@ -7,6 +7,9 @@ import { esc, fmt_int } from "../../util.js";
 import { COLOR, COLOR_TOKENS, MIN_ROOM, PERIOD_KEYS, on_page } from "./settings.js";
 import { page_spans } from "./support.js";
 
+// filters of the report that mean nothing on paper (the trial layouts, chrome.js filters_html)
+const PRINT_NOISE = new Set(["timespan", "from_fiscal_year", "to_fiscal_year", "fiscal_year", "party_type", "party_name", "tax_id", "group_by", "group_by_voucher", "categorize_by"]);
+
 export class PagesChrome {
 	/** The sizes, places and rules of the letter head, footer and number, as CSS variables of the pages. */
 	apply_vars(s) {
@@ -165,12 +168,15 @@ export class PagesChrome {
 			if (value === null || value === undefined || value === "" || (Array.isArray(value) && !value.length)) continue;
 			const df = defs.get(key);
 			if (df?.fieldtype === "Check" && !Number(value)) continue;
+			// the trial layouts print what the reader needs: not the report's options and fields
+			// that only serve the screen (the year behind the dates, the party's type)
+			if (this.side_layout && (df?.fieldtype === "Check" || df?.hidden || df?.read_only || PRINT_NOISE.has(key))) continue;
 			const label = df?.label ? this.in_lang(df.label) : frappe.unscrub(key);
 			let text;
 			if (df?.fieldtype === "Check") text = this.t("Yes");
 			else if (Array.isArray(value)) text = value.map(String).join(", ");
 			else if (df?.fieldtype === "Date") text = frappe.datetime.str_to_user(value);
-			else text = String(value);
+			else text = this.side_layout && df?.fieldtype === "Select" ? this.in_lang(String(value)) : String(value);
 			parts.push(`<span class="rv-page-filter"><span>${esc(label)}:</span> <b>${esc(text)}</b></span>`);
 		}
 		return parts.join(" · ");

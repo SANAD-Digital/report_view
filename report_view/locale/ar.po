@@ -4608,3 +4608,9 @@ msgstr "يفتح هنا وحده حين يجهز، ويمكنك ترك الصف�
 
 msgid "Search the rows: voucher, party, remarks…"
 msgstr "ابحث في الأسطر: رقم السند، الطرف، الملاحظات…"
+
+msgid "Change the period"
+msgstr "تغيير الفترة"
+
+msgid "Choose…"
+msgstr "اختر…"

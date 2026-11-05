@@ -36,7 +36,7 @@ export function default_state(config = {}) {
 		report_filters: {},
 		// groups: null = the report's own header groups (register bands)
 		columns: {
-			order: [],
+			order: str_list(config.default_order),
 			hidden: str_list(config.default_hidden),
 			widths: {},
 			pinned: { start: str_list(config.default_pinned), end: [] },

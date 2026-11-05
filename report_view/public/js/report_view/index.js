@@ -993,6 +993,7 @@ export class ReportViewPage {
 		// the columns of a saved view found again in this result (§7.3), then the rest dropped
 		this.rebind_view(report);
 		reconcile(this.state, report.columns);
+		this.shell?.default_columns(report);
 		this.formatter = make_formatter({ report_settings: this.report_settings, columns: report.columns });
 		await this.open_session(token);
 		if (token !== this.run_token) return;
@@ -1038,7 +1039,9 @@ export class ReportViewPage {
 		if (!this.report) return;
 		const report = this.report;
 		const session = this.session;
-		if (!report.rows.length) {
+		// a trial layout: a report of summary rows only (Opening, Total) has no rows to show either
+		const nothing = this.shell ? !report.rows.some((r) => r.__kind === "data") : !report.rows.length;
+		if (nothing) {
 			await this.close_charts();
 			await this.close_pivot();
 			this.pages.destroy();
@@ -1050,6 +1053,7 @@ export class ReportViewPage {
 				icon: "∅",
 				title: __("No results"),
 				text: notes.length ? frappe.utils.html2text(notes.join("\n")) : __("Nothing matches these filters."),
+				actions: this.shell ? [{ label: __("Change the period"), action: () => this.$('[data-filter="__period"],[data-q="__period"]')?.click() }] : undefined,
 			});
 			this.status.clear();
 			this.show_summary("empty");

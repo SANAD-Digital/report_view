@@ -72,6 +72,7 @@ export class FilterChips {
 				b.dataset.html = html;
 			}
 			b.classList.toggle("unset", !it.text);
+			b.classList.toggle("wanted", Boolean(it.primary) && !it.text);
 			b.title = it.text ? `${it.label}: ${it.text}` : it.label;
 			if (b !== before) this.el.insertBefore(b, before);
 			before = b.nextSibling;

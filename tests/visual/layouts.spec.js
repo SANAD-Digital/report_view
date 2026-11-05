@@ -416,3 +416,23 @@ for (const layout of ["a", "c"]) {
 		expect(problems, "console errors/warnings").toEqual([]);
 	});
 }
+
+test("a ledger on a trial layout opens on its reader's columns, the numbers last; its Statement keeps what tells the rows apart", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=gl&lang=en&layout=a");
+	await settle(page);
+	const titles = () => page.evaluate(() => window.rv_page.grid.model.data.map((d) => d.column.fieldname));
+	const table = await titles();
+	expect(table.slice(-3)).toEqual(["debit", "credit", "balance"]);
+	expect(table).toContain("voucher_no");
+	expect(table).not.toContain("voucher_subtype");
+	// the others come back from Columns: they are hidden, not gone
+	expect(await page.evaluate(() => window.rv_page.state.columns.hidden)).toContain("voucher_subtype");
+	await page.locator('.rv-modes [data-mode="statement"]').click();
+	await settle(page);
+	const statement = await titles();
+	expect(statement).toContain("voucher_no");
+	expect(statement).toContain("balance");
+	expect(statement).not.toContain("account");
+	expect(problems, "console errors/warnings").toEqual([]);
+});

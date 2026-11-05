@@ -25,6 +25,9 @@ import { tree_index } from "../engine/tree_nodes.js";
 export const LAYOUTS = ["a", "c"];
 // the rows a Statement draws at their full height; beyond them its body scrolls
 const STATEMENT_MAX_ROWS = 1500;
+// a ledger's default columns: what tells a row apart, then the numbers
+const LEDGER_TEXT = ["account", "voucher_type", "voucher_no", "party", "party_name", "remarks", "remark"];
+const LEDGER_NUMBERS = ["debit", "credit", "balance", "running_balance", "actual_qty", "qty_after_transaction", "stock_value"];
 
 export class TrialLayout {
 	/** @param {object} page the ReportViewPage, its parts built (make_dom) */
@@ -110,7 +113,10 @@ export class TrialLayout {
 			this.fit_statement();
 			this.fit_rows();
 			this.mark_search();
+			this.stick_titles();
 		};
+		// the sheet scrolls with the page: its column titles stay on screen
+		page.root.closest(".main-section")?.addEventListener("scroll", () => this.stick_titles(), { passive: true });
 		this.more_items = this.kind === "c";
 		// the row of filters under the column titles (not in the mockup): off until asked for
 		this.filter_row = false;
@@ -292,6 +298,49 @@ export class TrialLayout {
 		page.render();
 	}
 
+	/** On the Statement the column titles stay at the top of the page's scroller. */
+	stick_titles() {
+		const page = this.page;
+		const thead = page.grid.rt?.querySelector("thead");
+		if (!thead) return;
+		const scroller = page.root.closest(".main-section");
+		const under = page.state?.mode === "statement" && scroller ? scroller.getBoundingClientRect().top - page.grid.rt.getBoundingClientRect().top : 0;
+		thead.style.transform = under > 0 ? `translateY(${Math.round(under)}px)` : "";
+		thead.classList.toggle("rv-stuck", under > 0);
+	}
+
+	/**
+	 * A ledger opens on what a reader needs, the numbers last: the report's other columns start
+	 * hidden, with those that say the same on every row, and come back from «Columns». Not over
+	 * a saved view, the link's columns or the user's own choice.
+	 * @param {object} report the normalized report
+	 */
+	default_columns(report) {
+		const page = this.page;
+		const s = page.state;
+		if (this.auto_report !== page.report_name) {
+			this.auto_report = page.report_name;
+			this.auto_hidden = [];
+			this.auto_order = [];
+		}
+		if (!report.columns.some((c) => c.running) || page.applied_view) return;
+		const same = (a, b) => a.length === b.length && a.every((k) => b.includes(k));
+		if (!same(s.columns.hidden, this.auto_hidden || []) || (s.columns.order.length && !same(s.columns.order, this.auto_order || []))) return;
+		const label = report.columns.find((c) => !c.hidden)?.key;
+		const facts = report.rows.filter((r) => r.__kind === "data");
+		const by_name = new Map(report.columns.map((c) => [c.fieldname, c]));
+		const repeated = (c) => new Set(facts.map((r) => r[c.key] ?? "")).size <= 1 && facts.length > 1;
+		const text = LEDGER_TEXT.map((f) => by_name.get(f)).filter((c) => c && !c.hidden && c.key !== label && !repeated(c));
+		const numbers = report.columns.filter((c) => !c.hidden && c.role === "measure" && LEDGER_NUMBERS.includes(c.fieldname));
+		const shown = new Set([label, ...text.map((c) => c.key), ...numbers.map((c) => c.key)]);
+		this.auto_hidden = report.columns.filter((c) => !c.hidden && !shown.has(c.key)).map((c) => c.key);
+		this.auto_order = [...shown];
+		s.columns.hidden = [...this.auto_hidden];
+		s.columns.order = [...this.auto_order];
+		page.config.default_hidden = this.auto_hidden;
+		page.config.default_order = this.auto_order;
+	}
+
 	/** The text of the free-text search marked in the rows drawn (CSS Custom Highlight). */
 	mark_search() {
 		const highlights = window.CSS?.highlights;
@@ -389,7 +438,8 @@ export class TrialLayout {
 		const date = (v) => (v ? frappe.datetime.str_to_user(v) : "");
 		const from = f.from_date || f.period_start_date;
 		const to = f.to_date || f.period_end_date;
-		const parts = [f.company, from && to ? __("From {0} to {1}", [date(from), date(to)]) : "", f.presentation_currency || ""].filter(Boolean);
+		const party = [].concat(f.party_name || f.party || f.customer || f.supplier || []).join(__(", "));
+		const parts = [party, f.company, from && to ? __("From {0} to {1}", [date(from), date(to)]) : "", f.presentation_currency || ""].filter(Boolean);
 		el.querySelector(".s").textContent = parts.join(" · ");
 		const levels = el.querySelector(".rv-stmt-levels");
 		const tree = Boolean(page.report?.tree?.enabled);

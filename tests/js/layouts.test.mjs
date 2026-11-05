@@ -12,7 +12,7 @@ frappe.format ??= (v) => String(v);
 
 const { drill_href } = await import("../../report_view/public/js/report_view/state/drill.js");
 const { default_state } = await import("../../report_view/public/js/report_view/state/view_state.js");
-const { value_text, filter_items, has_more } = await import("../../report_view/public/js/report_view/filters/filter_summary.js");
+const { value_text, filter_items, has_more, addable_controls } = await import("../../report_view/public/js/report_view/filters/filter_summary.js");
 const { LAYOUTS } = await import("../../report_view/public/js/report_view/layouts/layout.js");
 
 test("the trial layouts are A and C; the standard page is none of them", () => {
@@ -75,4 +75,20 @@ test("the items of the head: the company, the period, the bar's filters, then th
 	assert.equal(items[1].from, "28-09-2026");
 	assert.equal(has_more(criteria), true);
 	assert.deepEqual(filter_items(null), []);
+});
+
+test("a party's statement: the party always in the head, named by its type, even empty", () => {
+	const control = (df, value) => ({ df, get_value: () => value });
+	const controls = [
+		control({ fieldname: "company", label: "Company", fieldtype: "Link" }, "SND"),
+		control({ fieldname: "party_type", label: "Party Type", fieldtype: "Link", hidden: 1 }, "Customer"),
+		control({ fieldname: "party", label: "Party", fieldtype: "MultiSelectList" }, []),
+	];
+	const place = new Map([["company", "main"], ["party_type", "hidden"], ["party", "more"]]);
+	const criteria = { plan: { keys: { company_key: "company" }, has_period: false, place }, filters: { controls }, period_values: () => ({}) };
+	assert.deepEqual(
+		filter_items(criteria).map((it) => [it.key, it.label, Boolean(it.primary)]),
+		[["company", "Company", false], ["party", "Customer", true]]
+	);
+	assert.deepEqual(addable_controls(criteria), []);
 });

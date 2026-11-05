@@ -109,6 +109,7 @@ export class TrialLayout {
 		page.grid.after_style = () => {
 			this.fit_statement();
 			this.fit_rows();
+			this.mark_search();
 		};
 		this.more_items = this.kind === "c";
 		// the row of filters under the column titles (not in the mockup): off until asked for
@@ -291,6 +292,33 @@ export class TrialLayout {
 		page.render();
 	}
 
+	/** The text of the free-text search marked in the rows drawn (CSS Custom Highlight). */
+	mark_search() {
+		const highlights = window.CSS?.highlights;
+		const Marks = window.Highlight;
+		if (!highlights || !Marks) return;
+		const page = this.page;
+		const query = (page.state?.filters || []).find((f) => f.key === "*")?.value;
+		const body = page.grid.rt?.querySelector("tbody");
+		if (!query || !body) {
+			highlights.delete("rv-search");
+			return;
+		}
+		const needle = String(query).toLowerCase();
+		const ranges = [];
+		const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
+		for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+			const text = node.nodeValue.toLowerCase();
+			for (let at = text.indexOf(needle); at >= 0; at = text.indexOf(needle, at + needle.length)) {
+				const range = new Range();
+				range.setStart(node, at);
+				range.setEnd(node, at + needle.length);
+				ranges.push(range);
+			}
+		}
+		highlights.set("rv-search", new Marks(...ranges));
+	}
+
 	/**
 	 * The totals follow the last row (Grid.dc.html), not the bottom of the frame: the body of a
 	 * short table is as tall as its rows; a long one keeps the frame's height and scrolls.
@@ -337,14 +365,16 @@ export class TrialLayout {
 			root.classList.add("rv-stmt-sized");
 		}
 		const rows = grid.body_rows || 0;
-		const foot = grid.rt?.querySelectorAll?.(".rv-rt-bottom .rv-row").length || 0;
+		const foot = 2;
 		// every row on the sheet, the totals after them, no scroll bar of its own; a very long
 		// report keeps its own scroll (the table draws only the rows on screen)
-		const rh = grid.row_height || 28;
+		// a row as drawn: the browser's height of a row is not always a whole number of pixels,
+		// and over hundreds of rows the difference would hide the last ones
+		const drawn_rows = [...(grid.rt?.querySelectorAll("tbody tr") || [])].slice(2, 6);
+		const rh = Math.max(grid.row_height || 28, ...drawn_rows.map((tr) => tr.getBoundingClientRect().height));
 		const shown = Math.min(rows, STATEMENT_MAX_ROWS);
 		const head = Math.max(grid.header_height || 0, 2 * rh);
-		// two rows of room: the table's own measure of a row is a pixel or two above --rh
-		const needed = head + (Math.max(shown, 3) + foot + (page.grid.top_el?.childElementCount || 0) + 2) * rh + 8;
+		const needed = head + (Math.max(shown, 3) + 1) * rh + (grid.bottom_el?.offsetHeight || foot * rh) + 8;
 		root.style.setProperty("--rv-stmt-h", `${Math.ceil(needed)}px`);
 	}
 

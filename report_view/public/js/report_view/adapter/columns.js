@@ -67,6 +67,9 @@ const FIELDTYPE_BY_LOWER = new Map(FIELDTYPES.map((ft) => [ft.toLowerCase(), ft]
 const FILTER_OPTION_RE = /^[a-z_][a-z0-9_]*$/;
 const COMPANY_CURRENCY_RE = /^Company:([^:]+):default_currency$/;
 
+// the columns of a ledger that carry a balance from row to row (twin of core/normalize.py)
+const RUNNING_FIELDS = new Set(["balance", "running_balance", "qty_after_transaction", "stock_value"]);
+
 export function scrub(txt) {
 	return String(txt ?? "")
 		.replace(/ /g, "_")
@@ -199,6 +202,7 @@ export function normalize_columns(raw_columns, ctx = {}) {
 			.map(([k]) => k)
 	);
 	const overrides = ctx.register?.columns || {};
+	const has_date = columns.some((c) => c.date);
 	for (const c of columns) {
 		const ft = c.fieldtype;
 		let role;
@@ -207,6 +211,12 @@ export function normalize_columns(raw_columns, ctx = {}) {
 		else if (DIMENSION_TYPES.has(ft)) role = "dimension";
 		else role = "attribute";
 		let agg = role === "measure" ? (ft === "Percent" ? "avg" : "sum") : null;
+		// A balance carried from row to row (a ledger): each row already holds the sum of the
+		// rows before it, so a group or a filtered total of it means nothing.
+		if (agg && has_date && RUNNING_FIELDS.has(c.fieldname)) {
+			agg = null;
+			c.running = true;
+		}
 		const ov = overrides[c.fieldname] || {};
 		if (ROLES.has(ov.role)) {
 			role = ov.role;

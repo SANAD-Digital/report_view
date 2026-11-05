@@ -7,7 +7,6 @@ import { icons } from "./icons.js";
 import { esc } from "../util.js";
 
 const FILTER_TEXTS = {
-	FILTER_SEARCH_UNSUPPORTED: () => __("The free-text search is not applied on screen."),
 	FILTER_OP_UNSUPPORTED: (label) => __("The filter on {0} uses an operator that is not applied on screen.", [label]),
 	FILTER_TYPE_MISMATCH: (label) => __("The filter on {0} does not fit the type of the column and is not applied.", [label]),
 	FILTER_EMPTY_WITH_VALUES: (label) =>

@@ -570,9 +570,22 @@ export class GridView extends RtView {
 
 		const total = this.rows.total_row(cur, this.counts);
 		const total_label = `<span class="rv-glabel">${esc(__("Grand Total"))}</span>${fmt.count_html(total.count)}`;
-		this.bottom_el.innerHTML =
-			report_rows.bottom.map((row) => this.report_row_html("foot rv-rt-closing", row, xs)).join("") +
-			this.pinned_row_html("total rv-rt-total", total_label, total.cell, xs);
+		const total_html = this.pinned_row_html("total rv-rt-total", total_label, total.cell, xs);
+		if (!this.row_numbers) {
+			this.bottom_el.innerHTML = report_rows.bottom.map((row) => this.report_row_html("foot rv-rt-closing", row, xs)).join("") + total_html;
+			return;
+		}
+		// a trial layout, in the order of a ledger: the period's total, then the closing balance
+		// last; a report's row repeated or its own total replaces the grand total
+		const seen = new Set();
+		const bottom = report_rows.bottom.filter((row) => {
+			const key = JSON.stringify([row.__kind, ...m.data.map((d) => row[d.column.key])]);
+			return !seen.has(key) && seen.add(key);
+		});
+		const rows_html = bottom.map((row) => this.report_row_html(`foot rv-rt-closing kind-${row.__kind}`, row, xs)).join("");
+		const closes = bottom.some((row) => row.__kind === "closing");
+		const totalled = bottom.some((row) => row.__kind === "internal_total");
+		this.bottom_el.innerHTML = closes ? (totalled ? "" : total_html) + rows_html : rows_html + total_html;
 	}
 }
 

@@ -183,14 +183,14 @@ class TestEngine(UnitTestCase):
 			result = engine.apply(nr, {"v": 1})
 			with self.subTest(case=name):
 				self.assertEqual(result["total_source"], "reference")
-				self.assertEqual(result["totals"]["balance"], reference["balance"])
-				self.assertNotAlmostEqual(sum(_num(r["balance"]) for r in nr["facts"]), reference["balance"])
+				# a running balance has no total: the report's closing row says it
+				self.assertIsNone(result["totals"].get("balance"))
 				self.assertEqual(result["totals"]["debit"], reference["debit"])
 				self.assertNotIn(reference["__rid"], [r["rid"] for r in result["rows"]])
 
 	def test_flat_total_with_filter_or_group_is_the_engine_sum(self):
 		nr = _nr("general_ledger_consolidated")
-		balances = sum(_num(r["balance"]) for r in nr["facts"])
+		debits = sum(_num(r["debit"]) for r in nr["facts"])
 		for state in (
 			{"v": 1, "filters": [{"key": "debit", "type": "range", "min": -1e15, "max": None}]},
 			{"v": 1, "group": {"by": ["voucher_type"]}},
@@ -199,8 +199,21 @@ class TestEngine(UnitTestCase):
 			with self.subTest(state=state):
 				self.assertEqual(result["total_source"], "engine")
 				self.assertEqual(result["row_count"], len(nr["facts"]))
-				self.assertAlmostEqual(result["totals"]["balance"], balances, places=2)
-				self.assertFalse({"opening", "closing", "internal_total"} & set(_kinds(result)))
+				self.assertAlmostEqual(result["totals"]["debit"], debits, places=2)
+				# the running balance is never summed, in a group or under a filter
+				self.assertIsNone(result["totals"].get("balance"))
+				kinds = set(_kinds(result))
+				self.assertNotIn("opening", kinds)
+				self.assertEqual("closing" in kinds, "group" in state)
+
+	def test_the_free_text_search_reads_every_text_column(self):
+		nr = _nr("general_ledger_consolidated")
+		voucher = next(r["voucher_no"] for r in nr["facts"] if r.get("voucher_no"))
+		wanted = [r["__rid"] for r in nr["facts"] if r.get("voucher_no") == voucher]
+		result = engine.apply(
+			nr, {"v": 1, "filters": [{"key": "*", "type": "text", "op": "contains", "value": voucher}]}
+		)
+		self.assertEqual([r["rid"] for r in result["rows"]], wanted)
 
 	def test_sort_alone_keeps_opening_first_and_closing_last(self):
 		nr = _nr("general_ledger_consolidated")
@@ -210,7 +223,7 @@ class TestEngine(UnitTestCase):
 			kinds = _kinds(result)
 			with self.subTest(sort=sort):
 				self.assertEqual(kinds, ["opening", *["data"] * len(nr["facts"]), "closing"])
-				self.assertEqual(result["totals"]["balance"], reference["balance"])
+				self.assertEqual(result["totals"]["debit"], reference["debit"])
 		debits = [_num(r["values"]["debit"]) for r in result["rows"] if r["kind"] == "data"]
 		self.assertEqual(debits, sorted(debits, reverse=True))
 

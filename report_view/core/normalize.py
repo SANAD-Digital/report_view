@@ -69,6 +69,8 @@ _FIELDTYPE_BY_LOWER = {ft.lower(): ft for ft in FIELDTYPES}
 MEASURE_TYPES = frozenset(("Currency", "Float", "Int", "Percent", "Duration"))
 DIMENSION_TYPES = frozenset(("Link", "Dynamic Link", "Data", "Select", "Date", "Datetime", "Check"))
 DATE_TYPES = frozenset(("Date", "Datetime"))
+# the columns of a ledger that carry a balance from row to row (twin of adapter/columns.js)
+RUNNING_FIELDS = frozenset(("balance", "running_balance", "qty_after_transaction", "stock_value"))
 ROLES = frozenset(("dimension", "measure", "attribute"))
 AGGS = frozenset(("sum", "avg", "count", "min", "max"))
 
@@ -286,6 +288,7 @@ def _build_columns(
 
 	list_valued = {k for k, v in (first_row or {}).items() if isinstance(v, list)}
 	overrides = register.get("columns") or {}
+	has_date = any(col["date"] for col in columns)
 	for col in columns:
 		ft = col["fieldtype"]
 		if col["hidden"] or col["fieldname"] in currency_refs or col["fieldname"] in list_valued:
@@ -297,6 +300,10 @@ def _build_columns(
 		else:
 			role = "attribute"
 		agg = ("avg" if ft == "Percent" else "sum") if role == "measure" else None
+		# a balance carried from row to row (a ledger): a group or a filtered total of it means nothing
+		if agg and has_date and col["fieldname"] in RUNNING_FIELDS:
+			agg = None
+			col["running"] = True
 		override = overrides.get(col["fieldname"]) or {}
 		if override.get("role") in ROLES:
 			role = override["role"]

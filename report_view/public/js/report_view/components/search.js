@@ -2,12 +2,17 @@
 // reference/design/screens/search.png): the active filters as facets, a text input, and a
 // dropdown with the quick filters, values of a dimension, and "Group by". Text + Enter is a
 // "contains" filter on the label column (a Perspective filter, through the view state);
-// with text, the dropdown offers the same search in the other text columns. Display and
-// events only: the page owns the view state.
+// with text, the dropdown offers the same search in the other text columns. On a trial layout
+// (host.live) the text searches every text column while it is typed, and the dropdown, for
+// the other choices, opens from its button only. Display and events only: the page owns the
+// view state.
 
 import { icons } from "./icons.js";
 import { open_popover, close_popover } from "./popover.js";
 import { esc } from "../util.js";
+
+// the pause in typing before the search runs
+const LIVE_MS = 250;
 
 export class SearchBox {
 	/**
@@ -34,16 +39,30 @@ export class SearchBox {
 				this.input.focus();
 			}
 		});
-		this.input.addEventListener("focus", () => this.open());
-		this.input.addEventListener("input", () => (this.popover ? this.fill() : this.open()));
+		this.live = Boolean(host.live?.());
+		this.input.addEventListener("focus", () => !this.live && this.open());
+		this.input.addEventListener("input", () => (this.live ? this.typed() : this.popover ? this.fill() : this.open()));
 		this.input.addEventListener("keydown", (e) => this.key(e));
 		el.querySelector('[data-action="options"]').addEventListener("click", () => (this.popover ? close_popover() : this.open()));
 		this.refresh();
 	}
 
+	/** A trial layout: the text searches after a pause in typing; an open dropdown follows it. */
+	typed() {
+		if (this.popover) this.fill();
+		clearTimeout(this.live_timer);
+		this.live_timer = setTimeout(() => this.host.search_all(this.input.value.trim()), LIVE_MS);
+	}
+
 	key(e) {
 		const text = this.input.value.trim();
-		if (e.key === "Enter" && text) {
+		if (this.live && (e.key === "Enter" || (e.key === "Escape" && !this.popover))) {
+			e.preventDefault();
+			clearTimeout(this.live_timer);
+			if (e.key === "Escape") this.input.value = "";
+			close_popover();
+			this.host.search_all(this.input.value.trim());
+		} else if (e.key === "Enter" && text) {
 			e.preventDefault();
 			this.input.value = "";
 			close_popover();
@@ -72,6 +91,8 @@ export class SearchBox {
 			b.addEventListener("click", () => chips[Number(b.dataset.chip)].remove());
 		}
 		this.input.placeholder = chips.length ? __("Add a filter…") : this.host.placeholder();
+		// the search of the view state (a saved view, the link) unless it is being typed
+		if (this.live && document.activeElement !== this.input) this.input.value = this.host.query();
 		if (this.popover) this.fill();
 	}
 
@@ -106,6 +127,10 @@ export class SearchBox {
 				b.addEventListener("click", () => {
 					this.input.value = "";
 					close_popover();
+					if (this.live) {
+						clearTimeout(this.live_timer);
+						this.host.search_all("");
+					}
 					s.act(text);
 				});
 				content.appendChild(b);

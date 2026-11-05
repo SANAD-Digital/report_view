@@ -245,14 +245,14 @@ test("general ledger: the report's opening row under the headers, its closing ro
 	expect(at_top.gap_first).toBe(0);
 	expect(at_top.first_y).toBe(1);
 	expect(at_top.top_width).toBe(at_top.table_width);
-	// the grand total is the report's own 'Total' row: balance 0, not the sum of running balances
-	expect(at_top.total.slice(0, 3)).toEqual(["2,521,940.00", "2,521,940.00", "—"]);
+	// the grand total is the report's own 'Total' row; a running balance has no total
+	expect(at_top.total.slice(0, 3)).toEqual(["2,521,940.00", "2,521,940.00", ""]);
 	expect(at_top.closing.slice(0, 3)).toEqual(["2,521,940.00", "2,521,940.00", "—"]);
 	expect(at_top.counts).toEqual({ shown: 47, total: 47, facts: 47, groups: null });
 	// the export is compared with the 47 facts and the grand total as shown
 	expect(at_top.expected.row_count).toBe(47);
 	expect(at_top.expected.totals.debit).toBe(2521940);
-	expect(at_top.expected.totals.balance).toBe(0);
+	expect(at_top.expected.totals.balance ?? null).toBe(null);
 
 	// scrolled to the end: the opening row stays, the last fact ends above the closing row
 	await wheel_to_end(page, 0, 100000);
@@ -283,10 +283,10 @@ test("general ledger: the report's opening row under the headers, its closing ro
 	expect(filtered.counts.shown).toBeLessThan(47);
 	expect(filtered.counts.total).toBe(47);
 	await shot(page, "gl-filtered-no-pinned-rows-light-rtl");
-	// grouping reads the facts only
+	// grouping reads the facts: no opening row, but all the rows are there, so the closing stays
 	await open(page, "report=gl&lang=ar&group=account", { width: 1440, height: 800 });
 	expect(await page.locator(".rv-rt-top .rv-row").count()).toBe(0);
-	expect(await page.locator(".rv-rt-bottom .rv-row").count()).toBe(1);
+	expect(await page.locator(".rv-rt-bottom .rv-row").count()).toBe(2);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
@@ -433,7 +433,8 @@ test("rows as reported: a filter, a grouping or a sort reads the facts, and says
 	// a grouping: groups of the entries, computed by the engine
 	await set({ by: ["account"] });
 	const grouped = await look();
-	expect(grouped).toMatchObject({ shape: "group", table: "facts", top: 0, closing: 0 });
+	// all the rows are there, grouped: the report's closing row still says the balance
+	expect(grouped).toMatchObject({ shape: "group", table: "facts", top: 0, closing: 1 });
 	await expect(bar).toBeHidden();
 
 	// back to the default view: the rows as reported again, and no bar
@@ -459,16 +460,14 @@ test("filters the engine cannot express are told to the user, once", async ({ pa
 	const problems = watch_console(page);
 	const filters = [
 		{ key: "voucher_type", type: "text", op: "not_contains", value: "Journal" },
-		{ key: "*", type: "text", op: "contains", value: "SND", source: "search" },
 		{ key: "paid", type: "range", min: 1, max: null },
 	];
 	await open(page, `report=ar&lang=ar&rv=${rv({ filters })}`);
 	const bar = page.locator(".rv-notice");
 	await expect(bar).toBeVisible();
 	await expect(bar).toHaveClass(/warn/);
-	expect(await bar.locator("p").count()).toBe(3);
+	expect(await bar.locator("p").count()).toBe(2);
 	await expect(bar).toContainText("نوع السند");
-	await expect(bar).toContainText("البحث الحر");
 	// the filter that can be expressed is applied
 	const counts = await page.evaluate(() => window.rv_page.opened.counts);
 	expect(counts.shown).toBeLessThan(counts.total);
@@ -477,7 +476,7 @@ test("filters the engine cannot express are told to the user, once", async ({ pa
 	await page.evaluate(() => window.rv_page.render());
 	await shown(page);
 	expect(await page.locator(".rv-notice").count()).toBe(1);
-	expect(await bar.locator("p").count()).toBe(3);
+	expect(await bar.locator("p").count()).toBe(2);
 	// no such filter: no bar
 	await open(page, "report=ar&lang=ar");
 	await expect(page.locator(".rv-notice")).toBeHidden();

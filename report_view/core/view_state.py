@@ -290,7 +290,7 @@ def check_exportable(state: dict, columns: list[dict]) -> None:
 	The browser engine does not apply these and only shows a notice; applying them on the
 	server would make the file differ from the screen. They are refused, with the reason,
 	until both sides support them:
-	- the free-text search (``key: "*"``) and the text operator ``not_contains``;
+	- the text operator ``not_contains``;
 	- a filter whose type does not fit the column (text or set on a non-text column, range
 	  on a non-number column, date on a non-date column);
 	- a set filter that asks for empty cells together with other values;
@@ -316,7 +316,7 @@ def check_exportable(state: dict, columns: list[dict]) -> None:
 	again = _("Remove it and export again.")
 	for flt in state.get("filters") or []:
 		if flt["key"] == "*":
-			_fail(_("Cannot export: the free-text search is not applied on screen.") + " " + again)
+			continue
 		column = by_key[flt["key"]]
 		label = _(column.get("label") or flt["key"])
 		ftype = flt["type"]

@@ -203,6 +203,10 @@ def effective_filters(filters: list[dict] | None, by_key: dict[str, dict]) -> li
 	"""
 	out = []
 	for flt in filters or []:
+		if flt["key"] == "*":
+			if not _empty(flt.get("value")):
+				out.append(flt)
+			continue
 		column = by_key.get(flt["key"])
 		if column is None:
 			continue
@@ -252,12 +256,25 @@ def _row_matches(row: dict, flt: dict, column: dict) -> bool:
 	return True
 
 
+def _row_searched(row: dict, needle: str, text_columns: list[dict]) -> bool:
+	"""The free-text search: the text columns of the row (twin of schema.js ``search_text``)."""
+	texts = (typed_value(row, c) for c in text_columns)
+	return needle in _ascii_lower("\x1f".join(t for t in texts if t is not None))
+
+
 def filter_facts(facts: list[dict], filters: list[dict], by_key: dict[str, dict]) -> list[dict]:
 	"""Facts that pass every (effective) browser filter."""
 	if not filters:
 		return list(facts)
-	pairs = [(f, by_key[f["key"]]) for f in filters]
-	return [r for r in facts if all(_row_matches(r, f, c) for f, c in pairs)]
+	text_columns = [c for c in by_key.values() if value_type(c["fieldtype"]) == "string"]
+	searches = [_ascii_lower(f["value"]) for f in filters if f["key"] == "*"]
+	pairs = [(f, by_key[f["key"]]) for f in filters if f["key"] != "*"]
+	return [
+		r
+		for r in facts
+		if all(_row_matches(r, f, c) for f, c in pairs)
+		and all(_row_searched(r, needle, text_columns) for needle in searches)
+	]
 
 
 def quick_filter_expressions(state: dict, definitions: list[dict] | None) -> list[Expression]:
@@ -378,6 +395,8 @@ class _Sorter:
 def aggregate_name(column: dict, aggs: dict[str, str] | None = None) -> str | None:
 	"""Aggregate of a column in this view (``values[].agg`` over the column's own), or None
 	for a column that carries no total (twin of ``view_config.aggregate_of``)."""
+	if column.get("running"):
+		return None
 	agg = (aggs or {}).get(column["key"]) or column.get("agg")
 	if column.get("role") != "measure" or not agg or (column.get("original") or {}).get("disable_total"):
 		return None
@@ -904,6 +923,9 @@ def apply(
 	if group_keys:
 		layout_mode = "group"
 		view.group(facts, group_keys, sort)
+		# The report's closing rows still stand for what is shown: all its rows, only grouped.
+		if not narrowed:
+			view.rows.extend(_data_row(by_rid[rid]) for rid in edge_rows(nr)["bottom"])
 	elif nr.get("tree"):
 		info = tree_index(nr)
 		if narrowed:

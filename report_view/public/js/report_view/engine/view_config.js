@@ -3,7 +3,7 @@
 // group_by / columns / aggregates / filter / sort / expressions. `post` holds what the
 // config cannot say and the data model applies without computing anything.
 
-import { RID, KIND, SORT_PREFIX, perspective_type } from "./schema.js";
+import { RID, KIND, SORT_PREFIX, SEARCH, perspective_type } from "./schema.js";
 import { DEPTH, HAS_CHILDREN, LEAVES, PATH, TOP, LEVELS, ANC_PREFIX, LEVEL_PREFIX, tree_index } from "./tree_nodes.js";
 import { edge_rows } from "./report_rows.js";
 import { row_currency_key, is_empty } from "./columns_util.js";
@@ -78,6 +78,8 @@ export function quick_filter_terms(view_state, definitions = []) {
 }
 
 export function aggregate_of(column, view_state) {
+	// a running balance is never summed, whatever a saved view asks (adapter/columns.js)
+	if (column.running) return null;
 	const chosen = (view_state?.values || []).find((v) => v.key === column.key)?.agg;
 	const agg = chosen || column.agg;
 	if (column.role !== "measure" || !agg || column.original?.disable_total) return null;
@@ -102,9 +104,14 @@ export function to_filter(filters, columns) {
 	const skip = (f, code) => notices.push({ code, detail: f.key });
 	for (const f of filters || []) {
 		if (!f || typeof f !== "object") continue;
+		// the free-text search: every text column of the row at once
+		if (f.key === "*") {
+			if (!is_empty(f.value)) filter.push([SEARCH, "contains", String(f.value)]);
+			continue;
+		}
 		const column = by_key.get(f.key);
 		if (!column) {
-			skip(f, f.key === "*" ? "FILTER_SEARCH_UNSUPPORTED" : "FILTER_UNKNOWN_COLUMN");
+			skip(f, "FILTER_UNKNOWN_COLUMN");
 			continue;
 		}
 		const type = perspective_type(column.fieldtype);
@@ -402,6 +409,8 @@ export function to_view_config(view_state, normalized, mode = "grid", opts = {})
 		post.row_offset = 1;
 		post.leaf_depth = group_keys.length + 1;
 		post.total = { source: "row0", view: totals_view("facts", browser_filter) };
+		// The report's closing rows still stand for what is shown: all its rows, only grouped.
+		if (!browser_filter.length) post.pinned_rows = { top: [], bottom: edges.bottom };
 		const dir = new Map((state.sort || []).map((s) => [s.key, s.dir === "desc" ? "desc" : "asc"]));
 		// Groups in the order of their key; inside a group the user's sort, then report order.
 		const group_sort = group_keys.map((k) => [sort_column(k, by_key), dir.get(k) || "asc"]);

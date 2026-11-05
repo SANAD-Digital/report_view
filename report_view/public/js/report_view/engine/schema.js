@@ -5,6 +5,8 @@
 export const RID = "__rid";
 export const KIND = "__kind";
 export const SORT_PREFIX = "__sort__";
+// the free-text search: the row's text columns as one string (twin of core/engine.py)
+export const SEARCH = "__search";
 // Rows per table.update: the client encodes a batch on the main thread (about 12 ms per
 // 1,000 rows of a 40-column report), so a batch stays well under a frame's worth of work;
 // the worker ingests one batch while the next is encoded (docs/architecture.md §8).
@@ -184,6 +186,11 @@ function new_input(rows) {
 	return { schema, data, size: rows.length, add };
 }
 
+function search_text(columns, rows) {
+	const text = columns.filter((c) => perspective_type(c.fieldtype) === "string").map((c) => c.key);
+	return rows.map((r) => text.map((k) => to_string(r[k])).filter((v) => v !== null && v !== undefined).join("\x1f"));
+}
+
 function add_technical(input, columns, rows, extras) {
 	for (const key of aux_currency_keys(columns)) {
 		input.add(key, "string", rows.map((r) => to_string(r[key])));
@@ -215,6 +222,7 @@ export function build_table_input(columns, rows, opts = {}) {
 		input.add(c.key, type, values);
 		if (type === "string") input.add(SORT_PREFIX + c.key, "float", sort_keys(values, collator));
 	}
+	input.add(SEARCH, "string", search_text(columns, rows));
 	return add_technical(input, columns, rows, opts.extras);
 }
 
@@ -237,6 +245,7 @@ export async function build_table_input_async(columns, rows, opts = {}) {
 			await tick();
 		}
 	}
+	input.add(SEARCH, "string", search_text(columns, rows));
 	return add_technical(input, columns, rows, opts.extras);
 }
 

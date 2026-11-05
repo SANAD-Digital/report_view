@@ -97,6 +97,7 @@ test("table input: explicit schema, converted columns, sort keys, technical and 
 	assert.deepEqual(schema, {
 		party: "string",
 		[SORT_PREFIX + "party"]: "float",
+		__search: "string",
 		amount: "float",
 		qty: "float",
 		posted: "date",

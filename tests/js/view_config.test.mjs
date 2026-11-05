@@ -228,12 +228,12 @@ test("filters: no 'between', no 'or'; what cannot be said is reported", () => {
 		["posted", ">=", "2026-01-01"],
 		["posted", "<=", "2026-01-31"],
 		["stamp", "<=", "2026-01-31 23:59:59.999"],
+		["__search", "contains", "z"],
 	]);
 	assert.equal(JSON.stringify(filter).includes("between"), false);
 	assert.deepEqual(notices.map((n) => n.code), [
 		"FILTER_OP_UNSUPPORTED",
 		"FILTER_TYPE_MISMATCH",
-		"FILTER_SEARCH_UNSUPPORTED",
 		"FILTER_UNKNOWN_COLUMN",
 	]);
 });
@@ -294,7 +294,8 @@ test("report summary rows: pinned and the reference total without a browser filt
 
 	// grouping reads the facts only: nothing pinned, the total is the view's row 0
 	const grouped = to_view_config(state({ group: { by: ["account"], subtotals: true, expanded: "all" } }), report).post;
-	assert.deepEqual(grouped.pinned_rows, { top: [], bottom: [] });
+	// grouped, all the rows are there: the report's closing rows still stand for them
+	assert.deepEqual(grouped.pinned_rows, { top: [], bottom: plain.pinned_rows.bottom });
 	assert.equal(grouped.total.source, "row0");
 	assert.deepEqual(grouped.notices, []);
 });
@@ -353,7 +354,7 @@ test("rows as reported: a filter, a grouping or a sort of the user reads the fac
 	const grouped = to_view_config(state({ group: { by: ["account"], subtotals: true, expanded: "all" } }), report);
 	assert.equal(grouped.table, "facts");
 	assert.equal(grouped.post.shape, "group");
-	assert.deepEqual(grouped.post.pinned_rows, { top: [], bottom: [] });
+	assert.deepEqual(grouped.post.pinned_rows, { top: [], bottom: edges.bottom });
 	assert.equal(grouped.post.total.source, "row0");
 	assert.deepEqual(grouped.post.notices, hidden);
 

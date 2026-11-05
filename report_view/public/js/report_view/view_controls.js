@@ -204,6 +204,8 @@ export class ViewControls {
 		const num = (n) => fmt_float(n);
 		const out = [];
 		for (const f of s.filters) {
+			// the free-text search stands in the search box itself
+			if (f.key === "*") continue;
 			let v = "";
 			if (f.type === "text") v = __("contains «{0}»", [f.value]);
 			else if (f.type === "set") {
@@ -232,9 +234,17 @@ export class ViewControls {
 	// ------------------------------------------------------------ search box host
 
 	search_host() {
+		const live = () => this.page.layout !== "classic";
 		return {
+			live,
+			query: () => this.filter_of("*")?.value || "",
+			search_all: (text) => {
+				if (text === (this.filter_of("*")?.value || "")) return;
+				this.set_filter("*", text ? { key: "*", type: "text", op: "contains", value: text } : null);
+			},
 			chips: () => this.chips(),
 			placeholder: () => {
+				if (live()) return __("Search the rows: voucher, party, remarks…");
 				if (!this.report) return __("Search or filter…");
 				const keys = [this.label_key(), ...this.group_keys()].filter(Boolean).slice(0, 3);
 				return __("Search or filter: {0}…", [keys.map((k) => this.title(k)).join(__(", "))]);
@@ -243,7 +253,9 @@ export class ViewControls {
 			suggestions: () => {
 				if (!this.report) return [];
 				const label = this.label_key();
-				const out = [{ column: this.title(label), hint: "Enter", act: (t) => this.search_label(t) }];
+				// on a trial layout Enter searches everywhere: a column is a choice, a text one
+				const text_label = perspective_type(this.column(label)?.fieldtype) === "string";
+				const out = live() && !text_label ? [] : [{ column: this.title(label), hint: live() ? "" : "Enter", act: (t) => this.search_label(t) }];
 				for (const key of this.group_keys()) {
 					if (this.kind(key) !== "set") continue;
 					out.push({ column: this.title(key), act: (t) => this.search_values(key, t) });

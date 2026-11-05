@@ -4605,3 +4605,6 @@ msgstr "فشل تحضير التقرير"
 
 msgid "It opens here by itself when it is ready; you can leave this page meanwhile."
 msgstr "يفتح هنا وحده حين يجهز، ويمكنك ترك الصفحة في الأثناء."
+
+msgid "Search the rows: voucher, party, remarks…"
+msgstr "ابحث في الأسطر: رقم السند، الطرف، الملاحظات…"

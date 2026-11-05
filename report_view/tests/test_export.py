@@ -231,7 +231,6 @@ class TestExportXlsx(RVTestCase):
 		"""§4.2 (4): refused with a reason instead of a file that differs from the screen."""
 		filters = (
 			{"key": "account", "type": "text", "op": "not_contains", "value": "x"},
-			{"key": "*", "type": "text", "op": "contains", "value": "x", "source": "search"},
 			{"key": "debit", "type": "text", "op": "contains", "value": "1"},
 			{"key": "debit", "type": "set", "values": [1], "exclude": False},
 			{"key": "account", "type": "range", "min": 1, "max": None},
@@ -287,7 +286,8 @@ class TestExportXlsx(RVTestCase):
 					self.assertEqual(len(rows), len(nr["facts"]) + 3)
 					self.assertEqual(rows[0][1][account], "Opening")
 					self.assertEqual(rows[-2][1][account], "Closing (Opening + Total)")
-					self.assertEqual(rows[-1][1][balance], reference["balance"])
+					# a running balance has no total: the closing row above says it
+					self.assertIsNone(rows[-1][1][balance])
 					self.assertEqual(rows[-1][1][debit], reference["debit"])
 			debits = [values[debit] or 0 for _r, values in rows[1:-2]]
 			self.assertEqual(debits, sorted(debits, reverse=True))

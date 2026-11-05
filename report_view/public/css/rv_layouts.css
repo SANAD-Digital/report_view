@@ -287,7 +287,6 @@
 /* the sheet scrolls with the page: no scroll bar of the table's own, the totals after the rows */
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table{scrollbar-width:none;overflow-x:hidden}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table::-webkit-scrollbar{display:none}
-:is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-rt-bottom:has(.rv-rt-closing) .rv-rt-total{display:none}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table tbody tr{cursor:pointer}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-stmt-head,
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-body{flex:none;box-sizing:border-box;width:min(100%, calc(var(--rv-stmt-w, 900px) + 2 * var(--sheet-x)));background:var(--surface);padding-inline:var(--sheet-x)}
@@ -369,3 +368,27 @@
 @media (min-width:768px){
   .rv-layout-c .rv-tc-search{flex:0 1 170px;min-width:120px}
 }
+/* numbers (ح2): at the right edge of their column in both languages, digits under digits, in
+   the title, the rows, the opening and the totals alike (Frappe's reports do the same); the
+   weight of a number comes from its row, not from the report's own markup */
+:is(.rv-layout-a,.rv-layout-c) regular-table td.num{direction:ltr;text-align:end}
+:is(.rv-layout-a,.rv-layout-c) .rv-c.num{direction:ltr;justify-content:flex-start;text-align:end}
+:is(.rv-layout-a,.rv-layout-c) regular-table td.num .rv-n,
+:is(.rv-layout-a,.rv-layout-c) regular-table td.num .rv-n *,
+:is(.rv-layout-a,.rv-layout-c) .rv-c.num .rv-n *{display:inline !important;text-align:inherit !important;font-weight:inherit !important}
+:is(.rv-layout-a,.rv-layout-c) .rv-c.num > *{margin-inline-start:auto}
+:is(.rv-layout-a,.rv-layout-c) .rv-hcell.num{direction:ltr;flex-direction:row-reverse;justify-content:flex-start;position:relative}
+:is(.rv-layout-a,.rv-layout-c) .rv-hcell.num .rv-hlabel{margin:0;unicode-bidi:plaintext}
+:is(.rv-layout-a,.rv-layout-c) .rv-hcell.num .rv-hmenu{position:absolute;inset-inline-start:0;margin:0}
+/* the rows under the table, in the order of a ledger: quiet, the last one the number to read */
+:is(.rv-layout-a,.rv-layout-c) .rv-rt-bottom .rv-row{font-weight:var(--fw)}
+:is(.rv-layout-a,.rv-layout-c) .rv-rt-bottom .rv-row .rv-c{font-weight:inherit}
+:is(.rv-layout-a,.rv-layout-c) .rv-rt-bottom .rv-row:last-child{font-weight:var(--fw-b);border-top:1.5px solid var(--tx);background:var(--surface)}
+/* the text of the search, marked in the rows */
+::highlight(rv-search){background-color:color-mix(in srgb,var(--warn,#d97706) 32%,transparent);color:inherit}
+/* one inner margin for the titles, the rows and the totals: their edges are the same line. A
+   print style of the site sets `td, th {padding:3px !important}` for the whole Desk: it made the
+   rows 26.5px tall (hiding the Statement's last rows), kept Compact at 27px and moved the
+   numbers off their totals */
+:is(.rv-layout-a,.rv-layout-c) regular-table tbody :is(td,th),
+:is(.rv-layout-a,.rv-layout-c) regular-table thead th{padding:0 var(--cp) !important}

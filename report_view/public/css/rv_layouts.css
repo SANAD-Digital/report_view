@@ -364,3 +364,14 @@
 /* C: the Statement draws no table tools; the dense bar wraps instead of running off the page */
 .rv-layout-c.rv-mode-statement :is(.rv-tc-tools,.rv-tc [data-sep="tools"]){display:none}
 .rv-layout-c .rv-tc{flex-wrap:wrap;row-gap:var(--s1)}
+/* the charts on the head's gutter, a step under the summary cards */
+:is(.rv-layout-a,.rv-layout-c) .rv-dash{margin:var(--s3) var(--gut) var(--gut)}
+/* the phone: A's tools in two rows (the search, then Group by and Columns; the density and the
+   column filters stay out of the way); C's search on its own row, the buttons together */
+@media (max-width:767px){
+  .rv-ta [data-action="filter-row"],.rv-ta .rv-ta-density,.rv-ta .rv-ta-count,.rv-ta .rv-ta-sp{display:none !important}
+  .rv-ta .rv-search{flex:1 1 100%}
+  .rv-tc-search{flex:1 1 100% !important;order:1}
+  .rv-tc [data-action="refresh"],.rv-tc [data-action="layout"],.rv-tc [data-action="more"]{order:2}
+  .rv-tc-sp{display:none}
+}

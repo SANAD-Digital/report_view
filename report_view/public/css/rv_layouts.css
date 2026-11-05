@@ -13,16 +13,17 @@
   --s1:var(--spacing,4px); --s2:calc(var(--spacing,4px) * 2); --s3:calc(var(--spacing,4px) * 3);
   --s4:calc(var(--spacing,4px) * 4); --s5:calc(var(--spacing,4px) * 5); --s6:calc(var(--spacing,4px) * 6);
   --s8:calc(var(--spacing,4px) * 8);
-  --gut:var(--s5);
+  --gut:var(--s3);
   --h28:var(--btn-height,28px);
   --rad:var(--border-radius,8px);
   --t12:var(--text-xs); --t13:var(--text-sm); --t14:var(--text-base); --t18:var(--text-2xl);
-  /* dense, as the owner asked: 13px text, 30px rows (26px compact), 30px headers */
+  /* dense, as the owner asked: 13px text, 28px rows (24px compact), 28px headers */
   --fs:var(--text-sm); --fs-sm:var(--text-xs);
-  --rh:29px; --hh:30px; --fh:30px; --cp:8px; --ctl:var(--h28);
-  --lw:260px;
+  --rh:27px; --hh:28px; --fh:28px; --cp:8px; --ctl:var(--h28);
+  --rd-btn:20px; --rn-w:30px;
+  --lw:310px;
 }
-:is(.rv-layout-a,.rv-layout-c).compact{--rh:25px; --hh:26px; --fh:26px; --cp:6px; --fs:var(--text-xs); --fs-sm:var(--text-xs)}
+:is(.rv-layout-a,.rv-layout-c).compact{--rh:23px; --hh:24px; --fh:24px; --cp:6px; --fs:var(--text-xs); --fs-sm:var(--text-xs)}
 
 /* Desk's page head gives way to the layout's own head; a narrow screen keeps it for Desk's sidebar button */
 @media (min-width:992px){
@@ -57,7 +58,7 @@
 
 /* ---------- head of A: two rows (Main.dc.html) ---------- */
 .rv-ha{background:var(--surface);border-bottom:1px solid var(--line)}
-.rv-ha-r1{display:flex;align-items:center;gap:var(--s3);padding:var(--s3) var(--gut) var(--s2);flex-wrap:wrap}
+.rv-ha-r1{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--gut) var(--s1);flex-wrap:wrap}
 /* the head keeps its height while the title and the chips arrive (no jump of the table) */
 .rv-ha-title{flex:1;min-width:240px;min-height:42px}
 .rv-crumb{font-size:var(--t12);line-height:16px;color:var(--tx-3)}
@@ -69,7 +70,7 @@
 .rv-modes button:focus-visible{outline:2px solid var(--focus,var(--pri));outline-offset:-1px}
 .rv-ha-acts{display:flex;align-items:center;gap:6px}
 .rv-ha .rv-off-pages{display:none !important}
-.rv-ha-r2{display:flex;align-items:center;gap:var(--s2);padding:0 var(--gut) var(--s3);min-width:0;min-height:var(--h28)}
+.rv-ha-r2{display:flex;align-items:center;gap:var(--s2);padding:0 var(--gut) var(--s2);min-width:0;min-height:var(--h28)}
 .rv-chips{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;min-width:0;flex:1}
 .rv-fchip{flex:none;display:inline-flex;align-items:center;gap:6px;height:var(--h28);box-sizing:border-box;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--tx);font-size:var(--t13);line-height:1;white-space:nowrap;cursor:pointer;max-width:360px}
 .rv-fchip .k{color:var(--tx-2)}
@@ -95,7 +96,7 @@
 .rv-fedit-ft{display:flex;justify-content:flex-end;gap:var(--s2)}
 
 /* the summary cards of a balance report: one slim line */
-:is(.rv-layout-a,.rv-layout-c) .rv-sumline{gap:var(--s2);margin:var(--s4) var(--gut) 0}
+:is(.rv-layout-a,.rv-layout-c) .rv-sumline{gap:var(--s2);margin:var(--s2) var(--gut) 0}
 :is(.rv-layout-a,.rv-layout-c) .rv-sumline .rv-sum{flex-wrap:wrap;padding:var(--s1) var(--s3);gap:0 var(--s3);border-radius:var(--rad)}
 :is(.rv-layout-a,.rv-layout-c) .rv-sumline .rv-sum-hd{flex:1 0 auto;min-width:0;justify-content:flex-start}
 :is(.rv-layout-a,.rv-layout-c) .rv-sumline .rv-sum-t{overflow:visible;font-size:var(--t12)}
@@ -105,9 +106,9 @@
 .rv-layout-c .rv-sumline{margin:var(--s2) var(--gut)}
 
 /* ---------- the table's card of A, with its own toolbar and status bar ---------- */
-.rv-layout-a .rv-gridwrap{margin:var(--s4) var(--gut) var(--gut);border:1px solid var(--line);border-radius:var(--radius-lg,12px)}
+.rv-layout-a .rv-gridwrap{margin:var(--s2) var(--gut) var(--s2);border:1px solid var(--line);border-radius:var(--rad)}
 .rv-layout-a .rv-charts-slot{margin:var(--s4) var(--gut) 0}
-.rv-ta{flex:none;display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);border-bottom:1px solid var(--line);flex-wrap:wrap;min-width:0}
+.rv-ta{flex:none;display:flex;align-items:center;gap:var(--s1);padding:var(--s1) var(--s2);border-bottom:1px solid var(--line);flex-wrap:wrap;min-width:0}
 .rv-ta .rv-search,.rv-tc-search .rv-search{height:var(--h28);border:1px solid var(--line);border-radius:var(--rad);background:var(--ctl-bg)}
 .rv-ta .rv-search{flex:0 1 280px;width:280px}
 :is(.rv-ta,.rv-tc-search) .rv-search input{font-size:var(--t13);height:24px}
@@ -121,13 +122,13 @@
 .rv-layout-a:is(.rv-mode-charts,.rv-mode-pages) .rv-ta{display:none}
 .rv-layout-a.rv-mode-pivot .rv-ta-count{display:none}
 /* the Pages view takes the frame under the head, flush, as Frappe's print view */
-.rv-layout-a.rv-mode-pages .rv-gridwrap{margin:var(--s4) 0 0;border:0;border-radius:0;background:transparent}
-.rv-layout-a .rv-status{justify-content:flex-start;gap:var(--s1) var(--s4);min-height:var(--s8);padding:0 var(--s3);border-top:1px solid var(--line);background:var(--surface-2);font-size:var(--t12);color:var(--tx-2)}
+.rv-layout-a.rv-mode-pages .rv-gridwrap{margin:var(--s2) 0 0;border:0;border-radius:0;background:transparent}
+.rv-layout-a .rv-status{justify-content:flex-start;gap:var(--s1) var(--s4);min-height:var(--s6);padding:0 var(--s2);border-top:1px solid var(--line);background:var(--surface-2);font-size:var(--t12);color:var(--tx-2)}
 .rv-layout-a .rv-status > .rv-status-grp:first-child{display:none}
 .rv-layout-a .rv-status > .rv-status-grp:has(> .rv-status-hint){display:none}
 
 /* ---------- head of C: the title and the sentence (Sheet.dc.html) ---------- */
-.rv-hc{background:var(--surface);border-bottom:1px solid var(--line);padding:var(--s3) var(--gut)}
+.rv-hc{background:var(--surface);border-bottom:1px solid var(--line);padding:var(--s1) var(--gut)}
 .rv-hc-line{display:flex;align-items:baseline;gap:var(--s3);flex-wrap:wrap;min-height:28px}
 .rv-hc .rv-h1{margin:0}
 .rv-sentence{margin:0;font-size:var(--t13);line-height:28px;color:var(--tx-2)}
@@ -187,19 +188,6 @@
 :is(.rv-layout-a,.rv-layout-c) regular-table tbody tr.rv-open > *{background:var(--dr-soft)}
 :is(.rv-layout-a,.rv-layout-c) .rv-row.rv-rt-total{border-top:1.5px solid var(--tx);background:var(--surface);font-weight:var(--fw-b)}
 :is(.rv-layout-a,.rv-layout-c) .rv-rt-bottom .rv-c,:is(.rv-layout-a,.rv-layout-c) .rv-rt-top .rv-c{font-size:var(--t13)}
-/* the row details: a «›» at the row's end; the button of the label column stays for the keyboard */
-:is(.rv-layout-a,.rv-layout-c) regular-table .rv-lc > .rv-rd-btn:not(:focus-visible){position:absolute;width:1px;height:1px;margin:0;padding:0;overflow:hidden;clip-path:inset(50%);border:0}
-:is(.rv-layout-a,.rv-layout-c) regular-table .rv-lc > .rv-rd-sp{display:none}
-.rv-rd-rail{position:absolute;top:0;bottom:0;inset-inline-end:0;width:28px;z-index:5;background:var(--surface);border-inline-start:1px solid var(--line);overflow:hidden}
-.rv-rd-rail::before{content:"";position:absolute;top:0;inset-inline:0;height:var(--rv-hh,30px);box-sizing:border-box;background:var(--surface-2);border-bottom:1px solid var(--line)}
-.rv-rd-rail:empty{display:none}
-.rv-rd-cell{position:absolute;inset-inline:0;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--line);overflow:hidden}
-.rv-rd-cell.group,.rv-rd-cell.foot{background:var(--surface-2)}
-.rv-rd-cell.on{background:var(--dr-soft)}
-.rv-rd-end{flex:none;display:flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0;border:0;border-radius:var(--r-sm);background:transparent;color:var(--tx-3);font-size:var(--t13);line-height:1;cursor:pointer}
-.rv-rd-end:hover{color:var(--tx);border-color:var(--line-3);background:var(--hover)}
-:is(.rv-layout-a,.rv-layout-c).compact .rv-rd-end{width:18px;height:18px}
-:is(.rv-layout-a,.rv-layout-c).rv-has-rail .rv-rt-scroll > regular-table{inset-inline-end:28px}
 
 /* ---------- the Pages view's side column (rvdesign Main.dc.html; Frappe's print view) ---------- */
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-print-bar{min-height:0;padding:var(--s2) var(--gut);gap:var(--s2)}
@@ -293,7 +281,7 @@
    groups as bordered bands, no vertical rules in the body, group rows bold, zeros faint */
 .rv-stmt-head{display:none}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement{--rh:25px; --hh:26px; --bh:24px; --cp:8px; --nw:112px; --lw:300px; --fs:var(--text-xs); --sheet-x:var(--s8)}
-:is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-gridwrap{margin:var(--s4) 0 0;border:0;border-radius:0;background:var(--surface-3);padding:var(--s6) var(--s4) var(--s8);align-items:center;overflow:visible;height:auto!important;min-height:calc(100vh - 160px)}
+:is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-gridwrap{margin:var(--s2) 0 0;border:0;border-radius:0;background:var(--surface-3);padding:var(--s6) var(--s4) var(--s8);align-items:center;overflow:visible;height:auto!important;min-height:calc(100vh - 160px)}
 /* the sheet shows once it has its width (fit_statement), never growing in sight */
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement:not(.rv-stmt-sized) :is(.rv-stmt-head,.rv-body){visibility:hidden}
 /* the sheet scrolls with the page: no scroll bar of the table's own, the totals after the rows */
@@ -312,12 +300,10 @@
 .rv-stmt-levels[hidden]{display:none}
 .rv-stmt-levels button{height:18px;padding:0 var(--s2);border:0;border-radius:calc(var(--rad) - 2px);background:transparent;color:var(--tx-2);font-size:11px;line-height:18px;cursor:pointer;white-space:nowrap}
 .rv-stmt-levels button.on{background:var(--surface);color:var(--tx);font-weight:var(--fw-b);box-shadow:0 1px 2px #00000014}
-/* only the sheet: the table's tools, the summary cards, the row details rail stay out */
+/* only the sheet: the table's tools and the summary cards stay out */
 .rv-layout-a.rv-mode-statement .rv-ta,
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-sumline,
-:is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-rd-rail,
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-gp{display:none}
-:is(.rv-layout-a,.rv-layout-c).rv-mode-statement.rv-has-rail .rv-rt-scroll > regular-table{inset-inline-end:0}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table tbody td,
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table tbody th{border-inline-end:0;border-bottom:1px solid var(--line-1,var(--line));background:var(--surface)}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table tbody tr.group > *,
@@ -352,13 +338,6 @@
 :is(.rv-layout-a,.rv-layout-c):not(.rv-mode-statement) regular-table thead th{background:var(--surface-2)}
 :is(.rv-layout-a,.rv-layout-c) regular-table thead th.rv-hd::after{opacity:0;transition:opacity .12s}
 :is(.rv-layout-a,.rv-layout-c) regular-table thead th.rv-hd:hover::after{opacity:1}
-/* the «›» of a row: a small framed button in the row, no rule down the frame */
-:is(.rv-layout-a,.rv-layout-c) .rv-rd-rail{background:transparent;border-inline-start:0}
-:is(.rv-layout-a,.rv-layout-c) .rv-rd-end{width:22px;height:22px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--tx-2)}
-:is(.rv-layout-a,.rv-layout-c) .rv-rd-end:hover{border-color:var(--line-3);color:var(--tx)}
-/* a summary row's caption (Opening, Closing (Opening + Total)) runs over the empty cells after it */
-:is(.rv-layout-a,.rv-layout-c) :is(.rv-rt-top,.rv-rt-bottom) .rv-pin-label{overflow:visible;position:relative;z-index:2}
-:is(.rv-layout-a,.rv-layout-c) :is(.rv-rt-top,.rv-rt-bottom) .rv-pin-label .rv-glabel{overflow:visible;text-overflow:clip;white-space:nowrap}
 /* the print setup stands directly under the head (rvdesign Main.dc.html): no summary cards */
 :is(.rv-layout-a,.rv-layout-c).rv-mode-pages .rv-sumline{display:none}
 /* C: the Statement draws no table tools; the dense bar wraps instead of running off the page */
@@ -374,4 +353,19 @@
   .rv-tc-search{flex:1 1 100% !important;order:1}
   .rv-tc [data-action="refresh"],.rv-tc [data-action="layout"],.rv-tc [data-action="more"]{order:2}
   .rv-tc-sp{display:none}
+}
+/* the first column (the owner, 2026-11-05): the row's details, then its number, then the label */
+:is(.rv-layout-a,.rv-layout-c) regular-table .rv-lc > :is(.rv-rd-btn,.rv-rd-sp){margin-inline-end:0}
+:is(.rv-layout-a,.rv-layout-c) regular-table .rv-lc > .rv-rd-btn{opacity:1;color:var(--tx-3);border-color:var(--line-2);background:var(--surface)}
+:is(.rv-layout-a,.rv-layout-c) .rv-rown{flex:none;width:var(--rn-w);box-sizing:border-box;padding-inline:2px;margin-inline-end:calc(var(--lv,0) * var(--ind) + 6px);text-align:end;font-size:11px;font-weight:400;color:var(--tx-3);font-variant-numeric:tabular-nums}
+:is(.rv-layout-a,.rv-layout-c) regular-table thead tr:last-child th:first-child .rv-hcell{padding-inline-start:calc(var(--rd-btn) + var(--rn-w) + 6px)}
+:is(.rv-layout-a,.rv-layout-c) regular-table thead tr:last-child th:first-child::before{content:"#";position:absolute;inset-inline-start:calc(var(--cp) + var(--rd-btn));width:var(--rn-w);box-sizing:border-box;padding-inline:2px;text-align:end;font-size:11px;color:var(--tx-3)}
+/* the Statement: a click on the row opens its details; no button, no numbers */
+:is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table .rv-lc > :is(.rv-rd-btn,.rv-rd-sp,.rv-rown){display:none}
+:is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table thead tr:last-child th:first-child .rv-hcell{padding-inline-start:0}
+:is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table thead tr:last-child th:first-child::before{content:none}
+/* C's dense bar stays one row: refresh and print as icons, a narrower search */
+.rv-layout-c .rv-tc [data-action="refresh"] > span,.rv-layout-c .rv-tc [data-action="print"] > span{display:none}
+@media (min-width:768px){
+  .rv-layout-c .rv-tc-search{flex:0 1 170px;min-width:120px}
 }

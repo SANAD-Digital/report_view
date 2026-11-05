@@ -77,7 +77,7 @@ test("layout A: a head of two rows inside the page, the table in a card with its
 		filter_row: document.querySelectorAll("regular-table thead th.rv-hf").length,
 		groups_bar: getComputedStyle(document.querySelector(".rv-gp:not(.rv-pivotbar)")).display,
 	}));
-	expect(sizes).toEqual({ btn: 28, chip: 28, mode: 28, search: 28, title: "18px", row: 30, cell: "13px", head: "12px", filter_row: 0, groups_bar: "none" });
+	expect(sizes).toEqual({ btn: 28, chip: 28, mode: 28, search: 28, title: "18px", row: 28, cell: "13px", head: "12px", filter_row: 0, groups_bar: "none" });
 	await page.click('[data-action="filter-row"]');
 	await settle(page);
 	expect(await page.evaluate(() => document.querySelectorAll("regular-table thead th.rv-hf").length)).toBeGreaterThan(0);
@@ -240,18 +240,19 @@ test("layout C: the filters as one sentence whose values open their editors; one
 });
 
 
-test("trial layouts: the «›» at the end of a report row opens its details; the link of a drill keeps the page", async ({ page }) => {
+test("trial layouts: the first column holds a report row's details button and its number; the link of a drill keeps the page", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, "report=gl&lang=ar&layout=a");
 	await settle(page);
-	const rail = await page.evaluate(() => {
-		const r = document.querySelector(".rv-rd-rail").getBoundingClientRect();
-		const t = document.querySelector("regular-table").getBoundingClientRect();
-		return { buttons: document.querySelectorAll(".rv-rd-rail .rv-rd-end").length, beside: Math.round(t.left - r.right) >= -1 };
+	const first = await page.evaluate(() => {
+		const rows = [...document.querySelectorAll("regular-table tbody tr")].filter((tr) => tr.querySelector("th .rv-rd-btn"));
+		const lc = rows[0].querySelector("th .rv-lc");
+		return { buttons: rows.length, numbers: rows.slice(0, 3).map((tr) => tr.querySelector(".rv-rown").textContent), order: [...lc.children].slice(0, 2).map((c) => c.className.split(" ")[0]) };
 	});
-	expect(rail.buttons).toBeGreaterThan(3);
-	expect(rail.beside).toBe(true);
-	await page.locator(".rv-rd-rail .rv-rd-end").first().click();
+	expect(first.buttons).toBeGreaterThan(3);
+	expect(first.numbers).toEqual(["1", "2", "3"]);
+	expect(first.order).toEqual(["rv-rd-btn", "rv-rown"]);
+	await page.locator("regular-table tbody th .rv-rd-btn").first().click();
 	await expect(page.locator(".rv-rd")).toBeVisible();
 	await page.keyboard.press("Escape");
 	await expect(page.locator(".rv-rd")).toHaveCount(0);

@@ -43,6 +43,10 @@ function row_runs(rows) {
 	return runs;
 }
 
+// a date in the first column of a trial layout, with the details button and the row number;
+// the captions of the report's summary rows take this width alone
+const DATE_LABEL_WIDTH = 200;
+
 export class GridRows {
 	/**
 	 * @param {object} [o]
@@ -94,8 +98,8 @@ export class GridRows {
 		const label = by_key.get(post.label_key);
 		// Label column: design width 320px (--lw of a layout), narrower on phones so numbers stay visible.
 		// a layout that caps the label (label_max) gives a date label the width of a date
-		const fit = label_max < 320 && ["Date", "Datetime"].includes(label.fieldtype) ? 120 : 170;
-		const label_width = widths[label.key] || Math.round(Math.min(label_max, Math.max(fit, fit === 120 ? 0 : width * 0.5)));
+		const date_label = label_max < 320 && ["Date", "Datetime"].includes(label.fieldtype);
+		const label_width = widths[label.key] || (date_label ? DATE_LABEL_WIDTH : Math.round(Math.min(label_max, Math.max(170, width * 0.5))));
 
 		const describe = (key) => {
 			const column = by_key.get(key);

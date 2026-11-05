@@ -632,7 +632,7 @@ export class ReportViewPage {
 		}
 		// a trial layout's head stands in the page: the frame starts under it, its bottom bar on screen
 		const top = this.shell ? Math.max(sticky, wrap.getBoundingClientRect().top + window.scrollY) : sticky;
-		const h = Math.max(420, Math.round(window.innerHeight - Math.max(0, top) - 16 - (this.shell ? this.shell.below_grid() : 0)));
+		const h = Math.max(420, Math.round(window.innerHeight - Math.max(0, top) - (this.shell ? 8 + this.shell.below_grid() : 16)));
 		wrap.style.height = `${h}px`;
 	}
 

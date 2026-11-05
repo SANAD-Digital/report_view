@@ -12,8 +12,7 @@
 //   without its vertical tabs; the row-groups bar only in the Table and Pivot views;
 // - the status bar under the table with «Last updated» (A), or the bottom bar with the saved
 //   views as tabs, the rows and the selection (C);
-// - the «›» at the end of a report row, which opens the row's details (the same button of the
-//   label column, pressed for it).
+// - in the first column of a report row: its details button, then its number.
 // Every control calls what the standard page already does; nothing is computed here.
 
 import { icons } from "../components/icons.js";
@@ -81,19 +80,8 @@ export class TrialLayout {
 			el.addEventListener("pointerover", warm);
 			el.addEventListener("focusin", warm);
 		}
-		// the «›» at the end of the rows (the grid tells when it drew)
-		this.rail = document.createElement("div");
-		this.rail.className = "rv-rd-rail";
-		this.rail.setAttribute("aria-hidden", "true");
-		this.rail.addEventListener("click", (e) => {
-			const b = e.target.closest("[data-y]");
-			if (!b) return;
-			const y = Number(b.dataset.y);
-			const rt = page.grid.rt;
-			for (const th of rt?.querySelectorAll("tbody tr > th:first-child") || []) {
-				if (rt.getMeta(th)?.y === y) th.querySelector(".rv-rd-btn")?.click();
-			}
-		});
+		// the first column: the row's details, then its number (views/grid_view.js details_lead)
+		page.grid.row_numbers = true;
 		// on the Statement the table stands at its full height in the page: the wheel scrolls the
 		// page (Desk's .main-section), not the table, which would keep it for itself
 		page.$(".rv-grid").addEventListener(
@@ -119,7 +107,6 @@ export class TrialLayout {
 			tr?.querySelector("th .rv-rd-btn")?.click();
 		});
 		page.grid.after_style = () => {
-			this.paint_rail();
 			this.fit_statement();
 			this.fit_rows();
 		};
@@ -261,7 +248,6 @@ export class TrialLayout {
 		t.columns.setAttribute("aria-expanded", side === "columns" ? "true" : "false");
 		t.columns.classList.toggle("on", side === "columns");
 		page.root.classList.toggle("rv-side-open", Boolean(side));
-		if (!grid) page.root.classList.remove("rv-has-rail");
 		if (this.kind === "c") {
 			const tools = grid || mode === "pivot";
 			page.header.tools_slot.hidden = !tools;
@@ -466,43 +452,5 @@ export class TrialLayout {
 		const content = menu_content(wrapped, "");
 		open_popover({ root: page.root, anchor, content, width: 240, role: "menu", label: __("More"), align: "end" });
 		content.querySelector(".rv-mi:not(:disabled)")?.focus();
-	}
-
-	/**
-	 * The column of «›» at the end of the table (after each draw of the grid): a cell beside
-	 * every row on screen, with the button where the row has details (the button of its
-	 * label column is pressed for it). The table leaves the column its room (rv_layouts.css).
-	 */
-	paint_rail() {
-		const grid = this.page.grid;
-		const rt = grid.rt;
-		const scroll = rt?.parentElement;
-		if (!rt || !scroll) return;
-		if (this.rail.parentElement !== scroll) scroll.append(this.rail);
-		const box = scroll.getBoundingClientRect();
-		const out = [];
-		let any = false;
-		const label = esc(__("Row details", null, "Report View"));
-		const head = grid.header_height || 0;
-		for (const tr of rt.querySelectorAll("tbody tr")) {
-			if (tr.classList.contains("stale")) continue;
-			const th = tr.firstElementChild;
-			const r = tr.getBoundingClientRect();
-			const top = Math.round(r.top - box.top);
-			// under the headers the row is hidden (regular-table clips its first row)
-			if (top + r.height <= head + 1) continue;
-			const cls = ["rv-rd-cell", tr.classList.contains("group") && "group", tr.classList.contains("foot") && "foot", tr.classList.contains("rv-open") && "on"].filter(Boolean).join(" ");
-			const y = th ? rt.getMeta(th)?.y : null;
-			const button = th?.querySelector(".rv-rd-btn") ? `<button type="button" class="rv-rd-end" tabindex="-1" data-y="${y}" title="${label}">›</button>` : "";
-			if (button) any = true;
-			out.push(`<div class="${cls}" style="top:${Math.max(head, top)}px;height:${Math.round(r.height - Math.max(0, head - top))}px">${button}</div>`);
-		}
-		const html = any ? out.join("") : "";
-		if (html !== this.rail_html) {
-			this.rail.innerHTML = html;
-			this.rail_html = html;
-		}
-		this.rail.style.setProperty("--rv-hh", `${head}px`);
-		this.page.root.classList.toggle("rv-has-rail", any);
 	}
 }

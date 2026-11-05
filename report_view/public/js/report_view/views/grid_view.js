@@ -54,6 +54,8 @@ export class GridView extends RtView {
 		this.detail_y = null;
 		// called after each draw of the rows (layouts/layout.js), or null
 		this.after_style = null;
+		// a trial layout numbers the rows, after the details button (ADR-025)
+		this.row_numbers = false;
 		this.layout = null;
 		this.rows = new GridRows({ cells });
 		this.refocus = null;
@@ -311,8 +313,13 @@ export class GridView extends RtView {
 	// ------------------------------------------------------------ row details (ADR-023)
 
 	// The button of a report row; the same room, empty, before a group or a total.
-	details_lead(rec) {
-		return rec.type === "row" && !this.rows.is_summary(rec) ? details_button_html() : '<span class="rv-rd-sp"></span>';
+	details_lead(rec, y = 0) {
+		const row = rec.type === "row" && !this.rows.is_summary(rec);
+		const lead = row && this.details ? details_button_html() : '<span class="rv-rd-sp"></span>';
+		if (!this.row_numbers) return lead;
+		// a trial layout's column of row numbers: the spacer rows of the opening rows do not count
+		const opening = this.rows.report_rows(this.current).top.length;
+		return `${lead}<span class="rv-rown">${row ? y + 1 - opening : ""}</span>`;
 	}
 
 	/**
@@ -476,7 +483,7 @@ export class GridView extends RtView {
 					const cell_stamp = `${stamp}:${head >= 0 ? `h${head}` : cm.x}`;
 					if (this.rendered.get(cell) === cell_stamp && cell.firstElementChild) continue;
 					if (head === 0) {
-						cell.innerHTML = rec.type === "spacer" ? "" : this.rows.label_html(rec, this.details ? { lead: this.details_lead(rec) } : undefined);
+						cell.innerHTML = rec.type === "spacer" ? "" : this.rows.label_html(rec, this.details || this.row_numbers ? { lead: this.details_lead(rec, meta.y) } : undefined);
 					} else {
 						const col = head > 0 ? m.pinned[head - 1] : m.data[cm.x];
 						if (!col) continue;

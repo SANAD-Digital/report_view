@@ -63,7 +63,13 @@ for (const lang of ["ar", "en"]) {
 		await expect(page.locator("regular-table tbody tr.rv-open")).toHaveCount(1);
 		// tiles: the period's and the closing debit and credit; every field labelled
 		await expect(page.locator(".rv-rd-tile")).toHaveCount(4);
-		expect(await page.locator(".rv-rd-fields dt").count()).toBeGreaterThan(6);
+		// the fields: every other field of the row, an amount of a tile not written twice
+		const labels = await page.evaluate(() => ({
+			tiles: [...document.querySelectorAll(".rv-rd-tile-k")].map((e) => e.textContent.trim()),
+			fields: [...document.querySelectorAll(".rv-rd-sec:not(.rv-rd-entries) > .rv-rd-fields dt")].map((e) => e.textContent.trim()),
+		}));
+		expect(labels.fields.length).toBeGreaterThan(2);
+		expect(labels.fields.filter((f) => labels.tiles.includes(f))).toEqual([]);
 		await page.screenshot({ path: `${OUT}/drawer-${lang}.png` });
 		// ↓ the next row, ↑ back
 		await page.keyboard.press("ArrowDown");

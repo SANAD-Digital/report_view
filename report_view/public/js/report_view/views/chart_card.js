@@ -248,7 +248,7 @@ export class ChartCard {
 			else if (post?.categories !== null && post?.categories !== undefined) {
 				const n = fmt_int;
 				parts.push(
-					post.top ? __("Showing {0} of {1}", [n(this.data?.categories.length ?? post.limit), n(post.categories)]) : __("{0} categories", [n(post.categories)])
+					post.top ? __("Showing {0} of {1}", [n(this.data?.categories.length ?? post.limit), n(post.categories)]) : __("{0} categories", [n(post.categories)], "Report View")
 				);
 			}
 		} else if (def.type !== "kpi") {

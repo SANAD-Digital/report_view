@@ -4668,3 +4668,7 @@ msgstr "لا يمكن قراءة هذا السند"
 
 msgid "{0} «{1}» is not open to you: it was left out."
 msgstr "{0} «{1}» غير متاح لك، فلم يُطبَّق."
+
+msgctxt "Report View"
+msgid "{0} categories"
+msgstr "الفئات: {0}"

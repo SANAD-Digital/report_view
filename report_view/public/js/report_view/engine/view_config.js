@@ -262,6 +262,10 @@ export function to_view_config(view_state, normalized, mode = "grid", opts = {})
 	const user_sort = (state.sort || [])
 		.filter((s) => by_key.has(s.key) && !group_keys.includes(s.key))
 		.map((s) => [sort_column(s.key, by_key), s.dir === "desc" ? "desc" : "asc"]);
+	// a running balance reads down the rows in the report's order: sorted otherwise, it is said
+	const running = visible.find((c) => c.running);
+	const first_sort = (state.sort || []).find((s) => by_key.has(s.key) && !group_keys.includes(s.key));
+	if (running && first_sort && !by_key.get(first_sort.key).date) notices.push({ code: "RUNNING_BALANCE_SORTED", detail: running.key });
 	// The report's own summary rows (a report without a tree): those of the whole report,
 	// and the number of those of its own groups, between the facts.
 	const edges = edge_rows(normalized);

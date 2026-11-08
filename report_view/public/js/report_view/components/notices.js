@@ -35,6 +35,8 @@ export function describe_notices(notices, columns) {
 					n.limit,
 				])
 			);
+		} else if (n.code === "RUNNING_BALANCE_SORTED") {
+			lines.push(__("{0} adds up the rows in date order: in another order its figures do not follow each other.", [__(label_of(n.detail))]));
 		} else if (n.code === "REPORT_ROWS_HIDDEN") {
 			lines.push(
 				__("{0} subtotal rows of the report itself (opening, total and closing of its own groups) are hidden while a filter, a grouping or a sort is applied: they describe the report as it came, not the rows shown now.", [

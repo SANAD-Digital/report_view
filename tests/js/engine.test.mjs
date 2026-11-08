@@ -772,7 +772,8 @@ test("rows as reported: a filter, a grouping or a sort moves the view to the fac
 		assert.equal(sorted.totals.values.debit, reference.debit);
 		assert.equal(sorted.expected.totals.debit, reference.debit);
 		assert.equal(sorted.expected.row_count, 48);
-		assert.deepEqual(sorted.post.notices, [{ code: "REPORT_ROWS_HIDDEN", detail: 24 }]);
+		// sorted by debit, the running balance no longer follows its rows: said
+		assert.deepEqual(sorted.post.notices, [{ code: "RUNNING_BALANCE_SORTED", detail: "balance" }, { code: "REPORT_ROWS_HIDDEN", detail: 24 }]);
 		await session.close_view(sorted);
 
 		// a filter: the matching facts, the engine's total of them

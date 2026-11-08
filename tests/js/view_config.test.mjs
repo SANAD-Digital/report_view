@@ -283,7 +283,10 @@ test("report summary rows: pinned and the reference total without a browser filt
 	const sorted = to_view_config(state({ sort: [{ key: "debit", dir: "desc" }] }), report).post;
 	assert.deepEqual(sorted.pinned_rows, plain.pinned_rows);
 	assert.deepEqual(sorted.total, plain.total);
-	assert.deepEqual(sorted.notices, []);
+	// only that the running balance no longer follows its rows
+	assert.deepEqual(sorted.notices, [{ code: "RUNNING_BALANCE_SORTED", detail: "balance" }]);
+	const by_date = to_view_config(state({ sort: [{ key: "posting_date", dir: "desc" }] }), report).post;
+	assert.deepEqual(by_date.notices, []);
 
 	const filter = [{ key: "debit", type: "range", min: 100, max: null }];
 	const narrowed = to_view_config(state({ filters: filter }), report).post;
@@ -340,7 +343,7 @@ test("rows as reported: a filter, a grouping or a sort of the user reads the fac
 	assert.deepEqual(sorted.config.filter, []);
 	assert.deepEqual(sorted.post.pinned_rows, { top: edges.top, bottom: edges.bottom });
 	assert.deepEqual(sorted.post.total, { source: "row", rid: edges.reference });
-	assert.deepEqual(sorted.post.notices, hidden);
+	assert.deepEqual(sorted.post.notices, [{ code: "RUNNING_BALANCE_SORTED", detail: "balance" }, ...hidden]);
 
 	// a browser filter: the facts that match, the engine's total, nothing pinned
 	const filter = [{ key: "debit", type: "range", min: 100, max: null }];

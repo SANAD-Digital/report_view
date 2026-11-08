@@ -20,7 +20,7 @@ from typing import Any
 import frappe
 from frappe import _
 
-from report_view.core import engine, normalize, runner
+from report_view.core import engine, enrich, normalize, runner
 from report_view.core.errors import RVInvalidInput, RVLimitExceeded
 from report_view.core.export import model as export_model_mod
 from report_view.core.export import xlsx
@@ -57,6 +57,8 @@ def workbook(report, model: dict, response: dict) -> bytes:
 	nr = normalize.normalize(
 		response.pop("raw"), model["filters"], settings["report_settings"], {}, translate=_
 	)
+	# the enrichment columns, as the browser adds them (N6): a view may show, hide or group by one
+	enrich.apply(nr, settings["enrich_rules"])
 	export_model_mod.check_against_report(model, nr)
 	result = engine.apply(
 		nr,

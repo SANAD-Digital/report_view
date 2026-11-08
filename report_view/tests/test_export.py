@@ -168,6 +168,31 @@ class TestExportXlsx(RVTestCase):
 			wb = self._export("Trial Balance", tb_model(view_state=browser))
 		self.assertGreater(wb.active.max_row, 1)
 
+	def test_enrichment_columns_are_exported(self):
+		"""The browser adds the enrichment columns (N6); the export adds them too: a view that
+		hides one (the trial balance's root type) or shows one is exported as shown."""
+		model = tb_model(
+			view_state={
+				"v": 1,
+				"mode": "grid",
+				"tree": {"depth": 3},
+				"columns": {"hidden": ["account__root_type"]},
+			},
+			layout={
+				"title": "Trial Balance",
+				"include_filters": True,
+				"columns": [
+					{"key": "account", "width": None},
+					{"key": "account__account_type", "width": None},
+					{"key": "closing_debit", "width": None},
+				],
+			},
+		)
+		with self.as_user("accountant"):
+			ws = self._export("Trial Balance", model).active
+		headers = [c.value for row in ws.iter_rows(max_row=12) for c in row if isinstance(c.value, str)]
+		self.assertTrue(any("Account Type" in h or "نوع الحساب" in h for h in headers), headers)
+
 	def test_invalid_model(self):
 		with self.as_user("accountant"):
 			for model in (tb_model(version=2), tb_model(format="pdf"), dict(tb_model(), extra=1)):

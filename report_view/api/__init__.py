@@ -10,6 +10,7 @@ import frappe
 from frappe import _
 from frappe.desk import query_report
 
+from report_view.core import enrich as enrich_mod
 from report_view.core import normalize, print_variables, printing, row_details, runner, saved_views
 from report_view.core.errors import RVEnrichNotAllowed, RVInvalidInput, RVLimitExceeded, RVNoExport
 from report_view.core.export import jobs as export_jobs
@@ -184,35 +185,7 @@ def enrich(
 			_("At most {0} names can be enriched per request").format(MAX_ENRICH_NAMES), RVLimitExceeded
 		)
 
-	permitted_all = set(frappe.get_meta(doctype).get_permitted_fieldnames(user=frappe.session.user))
-	permitted = [f for f in dict.fromkeys(fields) if f in permitted_all]
-	dropped = [f for f in dict.fromkeys(fields) if f not in permitted_all]
-	unique = list(dict.fromkeys(names))
-	rows: dict[str, dict] = {}
-	if unique:
-		for doc in frappe.get_list(
-			doctype,
-			filters={"name": ["in", unique]},
-			fields=["name", *permitted],
-			limit=0,
-		):
-			rows[doc["name"]] = {f: doc.get(f) for f in permitted}
-	meta = frappe.get_meta(doctype)
-	field_meta = {}
-	for f in permitted:
-		df = meta.get_field(f)
-		field_meta[f] = {
-			"fieldtype": df.fieldtype if df else "Data",
-			"options": df.options if df and df.fieldtype in ("Select", "Link") else None,
-			"label": _(df.label) if df and df.label else f,
-		}
-	return {
-		"doctype": doctype,
-		"rows": rows,
-		"fields": field_meta,
-		"dropped_fields": dropped,
-		"missing": len(unique) - len(rows),
-	}
+	return enrich_mod.fetch(doctype, names, fields)
 
 
 @frappe.whitelist(methods=["POST"])

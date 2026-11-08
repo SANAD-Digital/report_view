@@ -4616,7 +4616,7 @@ msgid "Choose…"
 msgstr "اختر…"
 
 msgid "Other fields ({0})"
-msgstr "حقول أخرى (0)"
+msgstr "حقول أخرى ({0})"
 
 msgid "{0} adds up the rows in date order: in another order its figures do not follow each other."
 msgstr "{0} يتراكم بترتيب التاريخ: بترتيب آخر لا تتتابع أرقامه."

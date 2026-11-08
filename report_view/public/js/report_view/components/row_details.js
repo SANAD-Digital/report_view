@@ -209,9 +209,11 @@ export class RowDetails {
 	}
 
 	fields_html(d) {
+		// a number reads as in the table, its sign first, in either language
+		const num = (x) => (x.numeric && x.html ? `<bdi dir="ltr">${x.html}</bdi>` : x.html);
 		const tile = (t) =>
-			`<div class="rv-rd-tile"><div class="rv-rd-tile-k">${esc(t.label)}</div><div class="rv-rd-tile-v${t.sign ? ` ${t.sign}` : ""}">${t.html}</div></div>`;
-		const field = (f) => `<dt>${esc(f.label)}</dt><dd class="${[f.numeric && "num", f.sign].filter(Boolean).join(" ")}">${f.html || '<span class="rv-rd-empty">—</span>'}</dd>`;
+			`<div class="rv-rd-tile"><div class="rv-rd-tile-k">${esc(t.label)}</div><div class="rv-rd-tile-v${t.sign ? ` ${t.sign}` : ""}">${num(t)}</div></div>`;
+		const field = (f) => `<dt>${esc(f.label)}</dt><dd class="${[f.numeric && "num", f.sign].filter(Boolean).join(" ")}">${num(f) || '<span class="rv-rd-empty">—</span>'}</dd>`;
 		const tiles = d.tiles.length ? `<div class="rv-rd-tiles">${d.tiles.map(tile).join("")}</div>` : "";
 		// the empty fields wait behind «Other fields»: what the row says comes first
 		const filled = d.fields.filter((f) => f.html);

@@ -40,7 +40,8 @@ export function make_row_details(page) {
 			const raw = m.label?.date ? row[m.label.key] : null;
 			const date = raw ? frappe.datetime.str_to_user(String(raw).slice(0, 10)) : "";
 			return {
-				subtitle: [__(page.report_name), date].filter(Boolean).join(" · "),
+				// the date isolated: in an Arabic line its digits keep their order
+				subtitle: [__(page.report_name), date && `\u2066${date}\u2069`].filter(Boolean).join(" · "),
 				code: "",
 				title: `${__(row.voucher_type)} ${row.voucher_no}`,
 				tiles: conf.content === "fields" ? pick_tiles(cols).map(cell) : [],
@@ -76,9 +77,8 @@ export function make_row_details(page) {
 			render: (row) => api.render_row_details(page.report_name, row_payload(row, page.report.columns), filters(), columns_payload(page.report.columns)),
 			extra: (row) => page.drill_actions?.(row) || [],
 			// a ledger row on a trial layout: the entries of its voucher under its fields
-			entries: page.shell
-				? (row) => (row.voucher_type && row.voucher_no ? api.voucher_entries(page.report_name, row.voucher_type, row.voucher_no) : null)
-				: null,
+			// (read when a drawer opens: the layout's shell is made after the drawer)
+			entries: (row) => (page.shell && row.voucher_type && row.voucher_no ? api.voucher_entries(page.report_name, row.voucher_type, row.voucher_no) : null),
 		},
 	});
 	grid.on_relayout = () => panel.reset();

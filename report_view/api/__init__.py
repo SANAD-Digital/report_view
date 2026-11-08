@@ -105,6 +105,35 @@ def get_entry_state(report_name: str) -> dict:
 	return {"show": True, "route": ["report-view", report_name]}
 
 
+# the entries of one voucher a row's details show (more mean a voucher read on its own page)
+MAX_VOUCHER_ENTRIES = 50
+
+
+@frappe.whitelist(methods=["GET"])
+@_rate_limit(60)
+def voucher_entries(report_name: str, voucher_type: str, voucher_no: str) -> dict:
+	"""The ledger entries of the voucher of a row, for its details: read as the user, with the
+	voucher's own read permission first and the user's permissions on GL Entry."""
+	_guard(report_name)
+	if not isinstance(voucher_type, str) or not isinstance(voucher_no, str) or not voucher_no:
+		frappe.throw(_("Invalid voucher"), RVInvalidInput)
+	if not frappe.db.exists("DocType", voucher_type):
+		frappe.throw(_("Invalid voucher"), RVInvalidInput)
+	if not frappe.has_permission(voucher_type, "read", doc=voucher_no):
+		frappe.throw(
+			_("You do not have permission to read {0} {1}").format(_(voucher_type), voucher_no),
+			frappe.PermissionError,
+		)
+	rows = frappe.get_list(
+		"GL Entry",
+		filters={"voucher_type": voucher_type, "voucher_no": voucher_no, "is_cancelled": 0},
+		fields=["account", "debit", "credit", "party_type", "party", "cost_center"],
+		order_by="creation asc",
+		limit_page_length=MAX_VOUCHER_ENTRIES + 1,
+	)
+	return {"entries": rows[:MAX_VOUCHER_ENTRIES], "more": len(rows) > MAX_VOUCHER_ENTRIES}
+
+
 @frappe.whitelist(methods=["POST"])
 @_rate_limit(60)
 def render_row_details(

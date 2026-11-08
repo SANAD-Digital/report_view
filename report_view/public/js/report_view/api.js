@@ -180,6 +180,10 @@ export const api = {
 	render_row_details: (report_name, row, filters, columns) =>
 		message(call("report_view.api.render_row_details", { report_name, row, filters, columns }, { type: "POST" })),
 
+	// The ledger entries of a row's voucher, read as the user (the trial layouts' row details).
+	voucher_entries: (report_name, voucher_type, voucher_no) =>
+		message(call("report_view.api.voucher_entries", { report_name, voucher_type, voucher_no })),
+
 	// Saved views (ADR-010, §2.7): every call names the report first (the server checks it).
 	views: {
 		list: (report_name) => message(call("report_view.api.views.list_views", { report_name })),

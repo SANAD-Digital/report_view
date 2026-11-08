@@ -75,6 +75,10 @@ export function make_row_details(page) {
 			focus_row: (y) => grid.focus_details(y),
 			render: (row) => api.render_row_details(page.report_name, row_payload(row, page.report.columns), filters(), columns_payload(page.report.columns)),
 			extra: (row) => page.drill_actions?.(row) || [],
+			// a ledger row on a trial layout: the entries of its voucher under its fields
+			entries: page.shell
+				? (row) => (row.voucher_type && row.voucher_no ? api.voucher_entries(page.report_name, row.voucher_type, row.voucher_no) : null)
+				: null,
 		},
 	});
 	grid.on_relayout = () => panel.reset();

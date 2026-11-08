@@ -208,6 +208,29 @@ class TestApiRun(RVTestCase):
 		self.assertEqual(doc.report_name, "Stock Balance")
 		self.assertEqual(frappe.parse_json(doc.filters)["warehouse"], "rv-prepare-xyz")
 
+	def test_voucher_entries_are_read_as_the_user(self):
+		def voucher(company):
+			return frappe.db.get_value(
+				"GL Entry",
+				{"company": company, "is_cancelled": 0},
+				["voucher_type", "voucher_no"],
+				as_dict=True,
+			)
+
+		own = voucher(COMPANY)
+		with self.as_user("accountant"):
+			out = api.voucher_entries("General Ledger", own.voucher_type, own.voucher_no)
+		self.assertTrue(out["entries"])
+		self.assertAlmostEqual(
+			sum(e["debit"] for e in out["entries"]), sum(e["credit"] for e in out["entries"]), places=2
+		)
+		other = voucher(OTHER_COMPANY)
+		if other:
+			with self.as_user("restricted"), self.assertRaises(frappe.PermissionError):
+				api.voucher_entries("General Ledger", other.voucher_type, other.voucher_no)
+		with self.as_user("accountant"), self.assertRaises(RVInvalidInput):
+			api.voucher_entries("General Ledger", "Not A Doctype", "X")
+
 	def test_too_large(self):
 		with self.as_user("accountant"), patch("report_view.core.runner.get_row_limit", return_value=5):
 			response = api.run("Trial Balance", TB_FILTERS, TB_JS_FILTERS)

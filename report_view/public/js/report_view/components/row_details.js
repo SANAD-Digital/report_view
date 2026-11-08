@@ -171,11 +171,41 @@ export class RowDetails {
 		if (conf.content === "fields") {
 			body.innerHTML = this.fields_html(d);
 			this.actions(d.document, false);
+			this.voucher_entries(body, row, token);
 		} else {
 			this.actions(d.document, false);
 			this.frame(body, row, token);
 		}
 		body.scrollTop = 0;
+	}
+
+	/** The entries of the row's voucher, after its fields: what the voucher posted, account by account. */
+	voucher_entries(body, row, token) {
+		const load = this.source.entries?.(row);
+		if (!load) return;
+		const sec = document.createElement("section");
+		sec.className = "rv-rd-sec rv-rd-entries";
+		sec.innerHTML = `<h3>${esc(__("Entries of the voucher"))}</h3><div class="rv-rd-state-s">${esc(__("Loading…"))}</div>`;
+		body.append(sec);
+		const money = (v) => (Number(v) ? `<bdi class="rv-n">${frappe.format(v, { fieldtype: "Currency" }, { inline: true })}</bdi>` : "");
+		Promise.resolve(load)
+			.then((out) => {
+				if (token !== this.token) return;
+				const rows = out?.entries || [];
+				if (!rows.length) {
+					sec.remove();
+					return;
+				}
+				const total = (k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+				sec.innerHTML = `<h3>${esc(__("Entries of the voucher"))}</h3>
+					<table class="rv-rd-entries-t"><thead><tr><th>${esc(__("Account"))}</th><th class="num">${esc(__("Debit"))}</th><th class="num">${esc(__("Credit"))}</th></tr></thead>
+					<tbody>${rows
+						.map((r) => `<tr><td>${esc(r.account || "")}${r.party ? `<div class="rv-rd-entry-p">${esc(r.party)}</div>` : ""}</td><td class="num">${money(r.debit)}</td><td class="num">${money(r.credit)}</td></tr>`)
+						.join("")}</tbody>
+					<tfoot><tr><td>${esc(__("Total"))}</td><td class="num">${money(total("debit"))}</td><td class="num">${money(total("credit"))}</td></tr></tfoot></table>
+					${out.more ? `<div class="rv-rd-state-s">${esc(__("More entries: open the voucher to see them all."))}</div>` : ""}`;
+			})
+			.catch(() => token === this.token && sec.remove());
 	}
 
 	fields_html(d) {

@@ -4620,3 +4620,12 @@ msgstr "حقول أخرى (0)"
 
 msgid "{0} adds up the rows in date order: in another order its figures do not follow each other."
 msgstr "{0} يتراكم بترتيب التاريخ: بترتيب آخر لا تتتابع أرقامه."
+
+msgid "Entries of the voucher"
+msgstr "قيود السند"
+
+msgid "More entries: open the voucher to see them all."
+msgstr "قيود أخرى: افتح السند لتراها كلها."
+
+msgid "Invalid voucher"
+msgstr "سند غير صالح"

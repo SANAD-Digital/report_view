@@ -401,6 +401,8 @@ export class ReportViewPage {
 				rows: pivot.rows,
 				labels,
 				values: pivot.values.map((v) => this.controls.value_title(v)).join(__(", ")),
+				// a balance report nets each account in the table; the pivot adds the two sides apart
+				gross: this.config?.summary?.kind === "balance_pairs" && pivot.values.some((v) => (this.config.summary.pairs || []).some((p) => [p.debit, p.credit, p.debit_column, p.credit_column].includes(v.key))),
 			});
 			return;
 		}

@@ -84,7 +84,7 @@ export class PivotBar {
 	/**
 	 * @param {object} s {cols: string[], rows: string[], labels: {key: label}, values: string}
 	 */
-	set({ cols, rows, labels, values }) {
+	set({ cols, rows, labels, values, gross = false }) {
 		this.cols = [...cols];
 		this.rows = [...rows];
 		const remove = esc(__("Remove", null, "Report View"));
@@ -113,5 +113,13 @@ export class PivotBar {
 		}
 		this.values_el.textContent = __("Value: {0}", [values || "—"]);
 		this.values_el.title = this.values_el.textContent;
+		// the debit and the credit balances added apart: a balance report's table shows them net
+		if (gross) {
+			const note = document.createElement("span");
+			note.className = "rv-pv-gross";
+			note.textContent = __("Debit and credit balances are added separately here, before netting: the table shows each account net.");
+			this.values_el.append(document.createElement("br"), note);
+			this.values_el.title = `${__("Value: {0}", [values || "—"])}\n${note.textContent}`;
+		}
 	}
 }

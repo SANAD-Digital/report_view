@@ -357,8 +357,8 @@
 :is(.rv-layout-a,.rv-layout-c) regular-table .rv-lc > :is(.rv-rd-btn,.rv-rd-sp){margin-inline-end:0}
 :is(.rv-layout-a,.rv-layout-c) regular-table .rv-lc > .rv-rd-btn{opacity:1;color:var(--tx-3);border-color:var(--line-2);background:var(--surface)}
 :is(.rv-layout-a,.rv-layout-c) .rv-rown{flex:none;width:var(--rn-w);box-sizing:border-box;padding-inline:2px;margin-inline-end:calc(var(--lv,0) * var(--ind) + 6px);text-align:end;font-size:11px;font-weight:400;color:var(--tx-3);font-variant-numeric:tabular-nums}
-:is(.rv-layout-a,.rv-layout-c) regular-table thead tr:last-child th:first-child .rv-hcell{padding-inline-start:calc(var(--rd-btn) + var(--rn-w) + 6px)}
-:is(.rv-layout-a,.rv-layout-c) regular-table thead tr:last-child th:first-child::before{content:"#";position:absolute;inset-inline-start:calc(var(--cp) + var(--rd-btn));width:var(--rn-w);box-sizing:border-box;padding-inline:2px;text-align:end;font-size:11px;color:var(--tx-3)}
+:is(.rv-layout-a,.rv-layout-c) .rv-grid:not(.rv-pivotgrid) regular-table thead tr:last-child th:first-child .rv-hcell{padding-inline-start:calc(var(--rd-btn) + var(--rn-w) + 6px)}
+:is(.rv-layout-a,.rv-layout-c) .rv-grid:not(.rv-pivotgrid) regular-table thead tr:last-child th:first-child::before{content:"#";position:absolute;inset-inline-start:calc(var(--cp) + var(--rd-btn));width:var(--rn-w);box-sizing:border-box;padding-inline:2px;text-align:end;font-size:11px;color:var(--tx-3)}
 /* the Statement: a click on the row opens its details; no button, no numbers */
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table .rv-lc > :is(.rv-rd-btn,.rv-rd-sp,.rv-rown){display:none}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table thead tr:last-child th:first-child .rv-hcell{padding-inline-start:0}
@@ -411,3 +411,4 @@
 :is(.rv-layout-a,.rv-layout-c) .rv-pt td.zero .rv-n{visibility:hidden}
 /* the view modes: a visible focus ring, whatever Desk's buttons do */
 .rv-modes button:focus-visible,.rv-tc-modes .rv-tb:focus-visible{outline:2px solid var(--focus,var(--pri)) !important;outline-offset:-2px}
+.rv-pv-gross{display:inline-block;margin-top:2px;font-size:var(--t12);color:var(--warn-tx,var(--tx-2));white-space:normal}

@@ -118,7 +118,8 @@ export class PagesChrome {
 		const heading = this.heading_html(n, total);
 		const replace = heading && s.heading_replace;
 		if (!first) {
-			const parts = [`<b>${esc(title)}</b>`, company ? esc(company) : "", period].filter(Boolean);
+			// each part one box: the line is a flex row, which drops the spaces between a text and its dates
+			const parts = [`<b>${esc(title)}</b>`, company ? `<span>${esc(company)}</span>` : "", period ? `<span>${period}</span>` : ""].filter(Boolean);
 			return `${lh}${heading}${replace ? "" : `<div class="rv-page-cont">${parts.join('<span class="sep">·</span>')}</div>`}`;
 		}
 		const details = [];
@@ -128,7 +129,10 @@ export class PagesChrome {
 		}
 		const facts = [];
 		if (ctx.group_labels?.length) facts.push(esc(t("Grouped by {0}", [ctx.group_labels.map((l) => this.in_lang(l)).join(" › ")])));
-		facts.push(esc(t("{0} rows", [fmt_int(this.current.counts.shown)])));
+		const counts = this.current.counts;
+		// a narrowed table is not the whole report: «14 of 177 rows»
+		if (ctx.narrowing?.length && counts.total > counts.shown) facts.push(esc(t("{0} of {1} rows", [fmt_int(counts.shown), fmt_int(counts.total)])));
+		else facts.push(esc(t("{0} rows", [fmt_int(counts.shown)])));
 		const title_block = replace
 			? ""
 			: `<div class="rv-page-hd">${company && !letterhead?.header ? `<div class="co">${esc(company)}</div>` : ""}<div class="ti">${esc(title)}</div>${period ? `<div class="pe">${period}</div>` : ""}</div>`;
@@ -185,6 +189,10 @@ export class PagesChrome {
 			else if (df?.fieldtype === "Date") text = frappe.datetime.str_to_user(value);
 			else text = this.side_layout && df?.fieldtype === "Select" ? this.in_lang(String(value)) : String(value);
 			parts.push(`<span class="rv-page-filter"><span>${esc(label)}:</span> <b>${esc(text)}</b></span>`);
+		}
+		// the search and the column filters of the screen narrow what is printed: they are filters too
+		for (const n of this.ctx.narrowing || []) {
+			parts.push(`<span class="rv-page-filter"><span>${esc(this.in_lang(n.label))}:</span> <b>${esc(n.value)}</b></span>`);
 		}
 		return parts.join(" · ");
 	}

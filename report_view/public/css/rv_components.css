@@ -44,7 +44,7 @@
 .rv-seg button{height:var(--ctl-sm);padding:0 12px;border:1px solid transparent;border-radius:var(--r-sm);background:transparent;color:var(--tx-2);font-size:var(--fs-sm);font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .rv-seg button:hover{color:var(--tx)}
 .rv-seg button.on{background:var(--surface);color:var(--pri-tx);border-color:var(--line);box-shadow:var(--sh-1)}
-.rv-seg button:focus-visible{outline-offset:-1px}
+.rv-seg button:focus-visible{outline:none;box-shadow:var(--focus) !important}
 
 /* ---------- inputs ---------- */
 .rv-field{display:flex;flex-direction:column;gap:4px;font-size:var(--fs-xs);color:var(--tx-2);font-weight:500}
@@ -444,10 +444,10 @@
 .rv-rd-icon:hover{background:var(--btn-bg-h);color:var(--tx)}
 .rv-rd-icon.ghost{border-color:transparent;background:transparent}
 .rv-rd-icon.ghost:hover{background:var(--btn-ghost-h)}
-.rv-rd :focus-visible{outline:2px solid var(--focus,var(--pri));outline-offset:1px}
+.rv-rd :focus-visible{outline:none;box-shadow:var(--focus)}
 
 .rv-rd-body{flex:1;min-height:0;overflow:auto;padding:var(--padding-lg,20px);display:flex;flex-direction:column;gap:var(--padding-lg,20px);outline:0}
-.rv-rd-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap)}
+.rv-rd-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:var(--gap)}
 .rv-rd-tile{min-width:0;padding:var(--pad);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface-2)}
 .rv-rd-tile-k{font-size:var(--fs-xs);color:var(--tx-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rv-rd-tile-v{margin-top:4px;font-size:var(--text-lg,16px);font-weight:var(--fw-b);font-variant-numeric:tabular-nums;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

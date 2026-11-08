@@ -127,7 +127,8 @@ function sanitize_pivot(pivot) {
 	const values = Array.isArray(pivot.values)
 		? pivot.values
 				.filter((v) => v && typeof v.key === "string" && PIVOT_AGGS.includes(v.agg))
-				.map((v) => ({ key: v.key, agg: v.agg }))
+				// minus: a net value, the debit of a balance pair less its credit (engine/pivot_config.js)
+				.map((v) => (typeof v.minus === "string" && v.agg === "sum" ? { key: v.key, agg: v.agg, minus: v.minus } : { key: v.key, agg: v.agg }))
 				.slice(0, LIMIT_PIVOT)
 		: [];
 	return {

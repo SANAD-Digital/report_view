@@ -265,7 +265,10 @@ export function to_view_config(view_state, normalized, mode = "grid", opts = {})
 	// a running balance reads down the rows in the report's order: sorted otherwise, it is said
 	const running = visible.find((c) => c.running);
 	const first_sort = (state.sort || []).find((s) => by_key.has(s.key) && !group_keys.includes(s.key));
-	if (running && first_sort && !by_key.get(first_sort.key).date) notices.push({ code: "RUNNING_BALANCE_SORTED", detail: running.key });
+	// (a date sorted down turns the report's order within a day upside down too)
+	if (running && first_sort && (!by_key.get(first_sort.key).date || first_sort.dir === "desc")) notices.push({ code: "RUNNING_BALANCE_SORTED", detail: running.key });
+	// a part of the rows (a search, a filter, a grouping) keeps each row's balance of the whole report
+	else if (running && (browser_filter.length || group_keys.length)) notices.push({ code: "RUNNING_BALANCE_PARTIAL", detail: running.key });
 	// The report's own summary rows (a report without a tree): those of the whole report,
 	// and the number of those of its own groups, between the facts.
 	const edges = edge_rows(normalized);

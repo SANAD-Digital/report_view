@@ -79,7 +79,7 @@ export class GridView extends RtView {
 			this.destroy();
 			return;
 		}
-		const model = this.rows.set({ report, state, config, post: opened.post, fmt, session, width: this.parent.clientWidth, label_max: css_int(this.parent, "--lw", 320), num_min: css_int(this.parent, "--nw", 138), numbers_only: Boolean(this.parent.closest(".rv-mode-statement")) });
+		const model = this.rows.set({ report, state, config, post: opened.post, fmt, session, width: this.parent.clientWidth, label_max: css_int(this.parent, "--lw", 320), num_min: css_int(this.parent, "--nw", 138), numbers_only: Boolean(this.parent.closest(".rv-mode-statement")), fit_text: Boolean(this.parent.closest(".rv-layout-a, .rv-layout-c")) });
 		const density = state.ui?.density;
 		// What needs a new table: the columns and the density. Widths and rows do not.
 		const signature = JSON.stringify({

@@ -5,7 +5,7 @@
 // load) is left out. Every number comes from the card's Perspective view.
 
 // Trial Balance (design: reference/design/screens/charts.png): closing balances of the
-// top-level groups, the expense accounts, and the accounts that moved the most.
+// top-level groups, the expense accounts (debit and credit), and the accounts that moved the most.
 report_view.register("Trial Balance", {
 	charts: {
 		cards: [
@@ -16,13 +16,16 @@ report_view.register("Trial Balance", {
 				series: ["closing_debit", "closing_credit"],
 				title: __("Closing balances by account type"),
 			},
+			// bars, not a donut: an expense account may close on a credit (a stock adjustment),
+			// which a donut can only drop (the critic's review of 2026-11-08: 13.4M left out)
 			{
 				id: "expenses",
-				type: "donut",
+				type: "hbar",
 				x: "account",
-				series: ["closing_debit"],
+				series: ["closing_debit", "closing_credit"],
 				filter: [{ key: "account__root_type", values: ["Expense"] }],
-				title: __("Expenses distribution"),
+				top: 10,
+				title: __("Expense accounts: closing balances"),
 			},
 			{
 				id: "moving",

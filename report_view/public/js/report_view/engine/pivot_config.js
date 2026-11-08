@@ -26,6 +26,24 @@ export const PIVOT_AGGS = ["sum", "avg", "count", "min", "max"];
 const VALUE_PREFIX = "__pv";
 const ROW_TYPES = new Set(["string", "date", "boolean"]);
 const LINK_TYPES = new Set(["Link", "Dynamic Link"]);
+// the first rows of a ledger's default pivot, the first of these with more than one value
+const LEDGER_ROWS = ["voucher_type", "account", "party"];
+
+/** A ledger: a running balance down its rows (ADR-027). */
+function is_ledger(normalized) {
+	return normalized.columns.some((c) => c.running);
+}
+
+/** Whether a column has more than one value in the report's facts. */
+function varies(normalized, key) {
+	const seen = new Set();
+	for (const r of normalized.rows || []) {
+		if (r.__kind !== "data") continue;
+		seen.add(r[key] ?? "");
+		if (seen.size > 1) return true;
+	}
+	return false;
+}
 
 /**
  * Dimensions a pivot may group or split by: the levels of a report tree (top-level groups
@@ -54,12 +72,18 @@ export function pivot_measures(normalized) {
 		.map((c) => c.key);
 }
 
+/**
+ * The values of a pivot. `minus` (a measure) makes a value the net of two: the debit of a
+ * balance pair less its credit, summed (a trial balance's groups net as the table nets each
+ * account, the critic's review of 2026-11-08).
+ */
 function clean_values(values, measures) {
 	const out = [];
 	for (const v of Array.isArray(values) ? values : []) {
 		if (!v || !measures.includes(v.key) || !PIVOT_AGGS.includes(v.agg)) continue;
-		if (out.some((o) => o.key === v.key && o.agg === v.agg)) continue;
-		out.push({ key: v.key, agg: v.agg });
+		const minus = typeof v.minus === "string" && v.agg === "sum" && measures.includes(v.minus) ? v.minus : null;
+		if (out.some((o) => o.key === v.key && o.agg === v.agg && (o.minus || null) === minus)) continue;
+		out.push(minus ? { key: v.key, agg: v.agg, minus } : { key: v.key, agg: v.agg });
 	}
 	return out.slice(0, MAX_PIVOT_VALUES);
 }
@@ -89,8 +113,12 @@ export function default_pivot(normalized, register = {}, label_key = null) {
 	if (!rows.length) {
 		const columns = dims.filter((d) => d.level === null && d.key !== label_key);
 		const text = columns.filter((d) => d.type === "string");
+		// a ledger: its vouchers by type, not one row per voucher (the critic's review of
+		// 2026-11-08: 177 rows of one voucher each)
+		const ledger = is_ledger(normalized) && LEDGER_ROWS.map((f) => text.find((d) => by_key.get(d.key)?.fieldname === f && varies(normalized, d.key))).find(Boolean);
 		const first =
 			(normalized.tree?.enabled && keys.includes(LEVEL_PREFIX + 1) ? LEVEL_PREFIX + 1 : null) ??
+			ledger?.key ??
 			text.find((d) => LINK_TYPES.has(d.fieldtype))?.key ??
 			text[0]?.key ??
 			columns[0]?.key ??
@@ -101,8 +129,13 @@ export function default_pivot(normalized, register = {}, label_key = null) {
 	const cols = clean_dims(own.cols, keys, rows);
 	let values = clean_values(own.values, measures);
 	if (!values.length && measures.length) {
-		const agg = by_key.get(measures[0])?.agg;
-		values = [{ key: measures[0], agg: PIVOT_AGGS.includes(agg) ? agg : "sum" }];
+		// a ledger's debit and credit side by side; else the first measure
+		const sides = ["debit", "credit"].map((f) => measures.find((k) => by_key.get(k)?.fieldname === f));
+		if (is_ledger(normalized) && sides.every(Boolean)) values = sides.map((key) => ({ key, agg: "sum" }));
+		else {
+			const agg = by_key.get(measures[0])?.agg;
+			values = [{ key: measures[0], agg: PIVOT_AGGS.includes(agg) ? agg : "sum" }];
+		}
 	}
 	return { rows, cols, values, totals: { rows: true, cols: true } };
 }
@@ -167,7 +200,7 @@ export function to_pivot_config(view_state, normalized, pivot, opts = {}) {
 	const cols = blocked ? [] : wanted_cols;
 	if (blocked) notices.push({ code: "PIVOT_TOO_MANY_COLUMNS", detail: measured, limit: MAX_PIVOT_COLUMNS });
 
-	const value_expressions = Object.fromEntries(values.map((v) => [v.name, `"${v.key}"`]));
+	const value_expressions = Object.fromEntries(values.map((v) => [v.name, v.minus && by_key.has(v.minus) ? `"${v.key}" - "${v.minus}"` : `"${v.key}"`]));
 	const value_aggregates = Object.fromEntries(values.map((v) => [v.name, AGGREGATES[v.agg]]));
 	const currency_keys = [...new Set(values.map((v) => v.currency_key).filter((k) => k && !k.includes('"')))];
 	const currency_counts = currency_keys.map((k) => CURRENCY_COUNT_PREFIX + k);

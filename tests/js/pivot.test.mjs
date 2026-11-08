@@ -89,13 +89,22 @@ test("default pivot: register.pivot, else the top-level groups or the first link
 	const tb_default = default_pivot(tb, own, "account");
 	assert.deepEqual(tb_default.rows, ["level_1", "level_2"]);
 	assert.deepEqual(tb_default.values.map((v) => v.key), ["closing_debit", "closing_credit"]);
+	// a net value: the debit of a pair less its credit, kept when both are measures of the report
+	const net = default_pivot(tb, { pivot: { rows: ["level_1"], values: [{ key: "closing_debit", agg: "sum", minus: "closing_credit" }, { key: "debit", agg: "sum", minus: "nope" }] } }, "account");
+	assert.deepEqual(net.values, [{ key: "closing_debit", agg: "sum", minus: "closing_credit" }, { key: "debit", agg: "sum" }]);
+	const cfg = to_pivot_config(state(), tb, { ...net, cols: [], totals: { rows: true, cols: true } });
+	assert.equal(cfg.config.expressions.__pv0, '"closing_debit" - "closing_credit"');
+	assert.equal(cfg.config.expressions.__pv1, '"debit"');
 	const ar = load("accounts_receivable_frappe_total");
 	const p = default_pivot(ar, {}, "posting_date");
 	assert.deepEqual(p.rows, ["party"]);
 	assert.deepEqual(p.cols, []);
 	assert.deepEqual(p.values, [{ key: "invoiced", agg: "sum" }]);
 	const gl = load("general_ledger_consolidated");
-	assert.deepEqual(default_pivot(gl, {}, "posting_date").rows, ["account"]);
+	// a ledger: its vouchers by type, its debit and credit side by side
+	const gl_default = default_pivot(gl, {}, "posting_date");
+	assert.deepEqual(gl_default.rows, ["voucher_type"]);
+	assert.deepEqual(gl_default.values, [{ key: "debit", agg: "sum" }, { key: "credit", agg: "sum" }]);
 });
 
 test("resolve_pivot keeps what fits the report; a pivot column is never also a row; no rows or values fall back", () => {

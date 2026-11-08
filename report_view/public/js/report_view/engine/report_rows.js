@@ -82,6 +82,46 @@ export function edge_rows(normalized) {
 }
 
 /**
+ * The value of `key` each summary row of the report's own groups closes or opens (General
+ * Ledger by account: the account of each opening, total and closing between the facts). An
+ * opening takes the fact after it, a total or a closing the fact before it; the rows of the
+ * whole report (edge_rows) have none. Read by the Statement, where a section names itself.
+ * @returns {Map<number, any>} __rid -> value
+ */
+export function section_values(normalized, key) {
+	const out = new Map();
+	const edges = edge_rows(normalized);
+	if (!edges.inner) return out;
+	const whole = new Set([...edges.top, ...edges.bottom, edges.reference]);
+	const rows = (normalized.rows || []).filter((r) => r.__kind !== SEPARATOR);
+	let before = null;
+	const pending = [];
+	// the facts of one section, between two summary rows: of one value, or `key` is not what
+	// the report's groups are made of (a party within an account) and no section is named
+	let values = new Set();
+	for (const r of rows) {
+		if (r.__kind === "data") {
+			for (const p of pending) out.set(p.__rid, r[key]);
+			pending.length = 0;
+			before = r[key];
+			values.add(r[key] ?? "");
+			if (values.size > 1) return new Map();
+		} else if (SUMMARY.has(r.__kind)) {
+			values = new Set();
+			if (whole.has(r.__rid)) continue;
+			if (r.__kind === "opening" || before === null) pending.push(r);
+			else out.set(r.__rid, before);
+		}
+	}
+	for (const [rid, value] of out) if (is_blank(value)) out.delete(rid);
+	return out;
+}
+
+function is_blank(v) {
+	return v === null || v === undefined || v === "";
+}
+
+/**
  * Input of the rows table: every row of the report in its order and with its kind, without
  * the separators. Null for a tree report (N9: nodes table) and for a report whose facts have
  * no summary rows between them (the facts table shows all of it).

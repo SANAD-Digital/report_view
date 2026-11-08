@@ -186,7 +186,11 @@ export class RowDetails {
 		const sec = document.createElement("section");
 		sec.className = "rv-rd-sec rv-rd-entries";
 		sec.innerHTML = `<h3>${esc(__("Entries of the voucher"))}</h3><div class="rv-rd-state-s">${esc(__("Loading…"))}</div>`;
-		body.append(sec);
+		// what the voucher posted comes first, under the row's own amounts (the critic's review
+		// of 2026-11-08: it stood under the fold, below the same amounts written twice)
+		const tiles = body.querySelector(".rv-rd-tiles");
+		if (tiles) tiles.after(sec);
+		else body.prepend(sec);
 		const money = (v) => (Number(v) ? `<bdi class="rv-n">${frappe.format(v, { fieldtype: "Currency" }, { inline: true })}</bdi>` : "");
 		Promise.resolve(load)
 			.then((out) => {
@@ -216,7 +220,9 @@ export class RowDetails {
 		const field = (f) => `<dt>${esc(f.label)}</dt><dd class="${[f.numeric && "num", f.sign].filter(Boolean).join(" ")}">${num(f) || '<span class="rv-rd-empty">—</span>'}</dd>`;
 		const tiles = d.tiles.length ? `<div class="rv-rd-tiles">${d.tiles.map(tile).join("")}</div>` : "";
 		// the empty fields wait behind «Other fields»: what the row says comes first
-		const filled = d.fields.filter((f) => f.html);
+		// an amount of the tiles above is not written again in the fields
+		const shown = new Set(d.tiles.map((t) => t.label));
+		const filled = d.fields.filter((f) => f.html && !(f.numeric && shown.has(f.label)));
 		const empty = d.fields.filter((f) => !f.html);
 		const rest = empty.length
 			? `<details class="rv-rd-more"><summary>${esc(__("Other fields ({0})", [empty.length]))}</summary><dl class="rv-rd-fields">${empty.map(field).join("")}</dl></details>`

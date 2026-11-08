@@ -10,6 +10,11 @@ import { esc } from "../../util.js";
 import { FIT_GUARD, FIT_RUN, SAFETY_PX, UNORDERED, on_page } from "./settings.js";
 import { breathe, foot_height, strip_scripts, wait_images } from "./support.js";
 
+// text columns printed whole, never cut (fit_input)
+const UNCUT = new Set(["voucher_no"]);
+// facts read for a column's widest value or for whether it is blank (print_columns)
+const FACTS_READ = 5000;
+
 export class PagesLayouts {
 	base_font() {
 		return PAGE_FONT[this.state?.ui?.density === "compact" ? "compact" : "comfortable"];
@@ -26,6 +31,11 @@ export class PagesLayouts {
 		const chars = (html) => frappe.utils.html2text(String(html || "")).trim().length;
 		return this.print_columns().map((d) => {
 			if (d.label) return { width: d.width, flex: true, weight: 0.5 };
+			// a voucher number is the reference a row is matched by: printed whole
+			if (!d.numeric && UNCUT.has(d.column.fieldname)) {
+				const longest = Math.max(8, ...this.facts_of(d.column.key).map((v) => String(v ?? "").length));
+				return { width: Math.ceil((longest * 0.62 + 1.6) * 13), flex: false };
+			}
 			if (!d.numeric) return { width: d.width, flex: true, weight: 1 };
 			const longest = Math.max(10, chars(total?.cell(d).html), ...String(this.title_of(d)).split(/\s+/).map((w) => w.length));
 			// tabular digits are about 0.6em; the padding of a cell is 1.1em (rv_pages.css)
@@ -38,7 +48,31 @@ export class PagesLayouts {
 		const m = this.rows.model;
 		const hidden = new Set(this.settings.hidden);
 		const label = { column: m.label, title: m.label_title, numeric: false, side: null, band: null, totalled: false, width: m.label_width, label: true };
-		return [label, ...m.pinned.filter((d) => !hidden.has(d.column.key)), ...m.data.filter((d) => !hidden.has(d.column.key))];
+		// a trial layout leaves out of the paper a number column with nothing in it (a trial
+		// balance's opening of a first year): a quarter of the sheet for blank cells
+		const blank = (d) => this.side_layout && d.numeric && this.facts_of(d.column.key).every((v) => !Number(v));
+		const shown = (d) => !hidden.has(d.column.key) && !blank(d);
+		return [label, ...m.pinned.filter(shown), ...m.data.filter(shown)];
+	}
+
+	/** The values of a column in the report's facts, up to FACTS_READ of them (kept per report). */
+	facts_of(key) {
+		const report = this.report;
+		if (!report) return [];
+		if (this.facts_owner !== report) {
+			this.facts_owner = report;
+			this.facts_cache = new Map();
+		}
+		if (!this.facts_cache.has(key)) {
+			const out = [];
+			for (const r of report.rows || []) {
+				if (r.__kind !== "data") continue;
+				out.push(r[key]);
+				if (out.length >= FACTS_READ) break;
+			}
+			this.facts_cache.set(key, out);
+		}
+		return this.facts_cache.get(key);
 	}
 
 	/** The block margins of an element (a measured height leaves them out). */
@@ -110,7 +144,16 @@ export class PagesLayouts {
 		const rows = this.rows;
 		const cur = this.current;
 		const t = (m, a) => this.t(m, a);
-		const bottom = rows.report_rows(cur).bottom.map((row) => this.report_row("foot closing", row, cols)).join("");
+		let report_bottom = rows.report_rows(cur).bottom;
+		if (this.side_layout) {
+			// as the trial layouts show it (grid_view.js render_pinned): a row repeated once
+			const seen = new Set();
+			report_bottom = report_bottom.filter((row) => {
+				const key = JSON.stringify([row.__kind, ...cols.map((d) => row[d.column.key])]);
+				return !seen.has(key) && seen.add(key);
+			});
+		}
+		const bottom = report_bottom.map((row) => this.report_row("foot closing", row, cols)).join("");
 		if (!this.settings.include_total) return bottom;
 		const total = rows.total_row(cur, cur.counts);
 		const cells = cols.map((d, i) => {
@@ -119,7 +162,13 @@ export class PagesLayouts {
 			const cls = [d.numeric ? "num" : "", d.band_end ? "be" : "", out.sign].filter(Boolean).join(" ");
 			return `<td class="${cls}">${out.html}</td>`;
 		});
-		return `${bottom}<tr class="total">${cells.join("")}</tr>`;
+		const total_html = `<tr class="total">${cells.join("")}</tr>`;
+		// a trial layout in the order of a ledger, as on the screen: the period's total, then the
+		// closing balance last; the report's own total stands for the grand total
+		if (this.side_layout && report_bottom.some((row) => row.__kind === "closing")) {
+			return (report_bottom.some((row) => row.__kind === "internal_total") ? "" : total_html) + bottom;
+		}
+		return `${bottom}${total_html}`;
 	}
 
 	async layout_standard(token, box, dir) {

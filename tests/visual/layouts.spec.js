@@ -433,7 +433,8 @@ test("a ledger on a trial layout opens on its reader's columns, the numbers last
 	const statement = await titles();
 	expect(statement).toContain("voucher_no");
 	expect(statement).toContain("balance");
-	expect(statement).not.toContain("account");
+	// entries of more than one account: the Statement names each row's (ADR-026, 2026-11-08)
+	expect(statement).toContain("account");
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
@@ -445,15 +446,18 @@ test("the Statement on a phone: the closing balance in a bar, a card per row, a 
 	await settle(page);
 	await expect(page.locator(".rv-card").first()).toBeVisible();
 	const st = await page.evaluate(() => ({
-		cards: document.querySelectorAll(".rv-card").length,
+		// a card per entry; the report's opening, total and closing as cards of their own
+		cards: document.querySelectorAll(".rv-card:not(.sum)").length,
+		sums: document.querySelectorAll(".rv-card.sum").length,
 		facts: window.rv_page.opened.counts.shown,
 		table: getComputedStyle(document.querySelector(".rv-body")).display,
 		hscroll: document.documentElement.scrollWidth > innerWidth,
 	}));
 	expect(st.cards).toBe(st.facts);
+	expect(st.sums).toBeGreaterThan(0);
 	expect(st.table).toBe("none");
 	expect(st.hscroll).toBe(false);
-	await page.locator(".rv-card").first().click();
+	await page.locator(".rv-card:not(.sum)").first().click();
 	await expect(page.locator(".rv-rd")).toBeVisible();
 	expect(problems, "console errors/warnings").toEqual([]);
 });

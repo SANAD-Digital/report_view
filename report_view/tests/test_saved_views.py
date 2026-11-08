@@ -348,6 +348,19 @@ class TestSavedViews(RVTestCase):
 				_save(visibility="Roles", roles=json.dumps(["Guest"]))
 			with self.assertRaises(RVInvalidInput):
 				_save(title="   ")
+			# a net pivot value: the sum of a debit less its credit, no other aggregate
+			net = {
+				"rows": [],
+				"cols": [],
+				"values": [{"key": "closing_debit", "agg": "sum", "minus": "closing_credit"}],
+			}
+			_save(title="Net", state=json.dumps({**STATE, "pivot": net}))
+			for bad in (
+				{"key": "closing_debit", "agg": "avg", "minus": "closing_credit"},
+				{"key": "closing_debit", "agg": "sum", "minus": 3},
+			):
+				with self.assertRaises(RVInvalidViewState):
+					_save(title="Bad net", state=json.dumps({**STATE, "pivot": {**net, "values": [bad]}}))
 			first = _save(title="Twice")
 			with self.assertRaises(RVInvalidInput):
 				_save(title=" Twice ")

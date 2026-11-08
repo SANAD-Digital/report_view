@@ -402,7 +402,7 @@ export class ReportViewPage {
 				labels,
 				values: pivot.values.map((v) => this.controls.value_title(v)).join(__(", ")),
 				// a balance report nets each account in the table; the pivot adds the two sides apart
-				gross: this.config?.summary?.kind === "balance_pairs" && pivot.values.some((v) => (this.config.summary.pairs || []).some((p) => [p.debit, p.credit, p.debit_column, p.credit_column].includes(v.key))),
+				gross: this.config?.summary?.kind === "balance_pairs" && pivot.values.some((v) => !v.minus && (this.config.summary.pairs || []).some((p) => [p.debit, p.credit, p.debit_column, p.credit_column].includes(v.key))),
 			});
 			return;
 		}
@@ -830,7 +830,11 @@ export class ReportViewPage {
 			...(from_view ? this.view_filter_values() : {}),
 			...Object.fromEntries(Object.entries(route_options).filter(([k]) => !RESERVED_PARAMS.has(k))),
 		};
-		await this.filters.set_route_values(filter_options);
+		const refused = await this.filters.set_route_values(filter_options);
+		// a link's value the user may not see is dropped by its control: said, not silent
+		for (const r of refused || []) {
+			frappe.show_alert({ message: __("{0} «{1}» is not open to you: it was left out.", [__(r.label), r.value]), indicator: "orange" }, 8);
+		}
 		this.criteria.refresh();
 		this.refresh_controls();
 		this.fit_height();

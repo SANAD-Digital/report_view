@@ -25,6 +25,9 @@ export const MAX_SERIES = 7;
 export const PCT_PREFIX = "__pct__";
 const SUM_SORT = "__sumsort__";
 const LABEL_SORT = "__lblsort__";
+// a date in time with more days than its card draws: its months instead (the critic's review
+// of 2026-11-08: a year of a ledger stopped in June, 60 days of 153)
+const DATE_BUCKET = "__month__";
 const DIMENSION_TYPES = new Set(["string", "date", "datetime", "boolean"]);
 const LINK_TYPES = new Set(["Link", "Dynamic Link"]);
 const DATE_TYPES = new Set(["Date", "Datetime"]);
@@ -392,6 +395,13 @@ export function to_card_config(view_state, normalized, card, opts = {}) {
 
 	const x = card.x;
 	const x_type = column_type(x, by_key);
+	const by_month = (x_type === "date" || x_type === "datetime") && level === null && sort === "label" && categories !== null && categories > limit;
+	const group_key = by_month ? DATE_BUCKET : x;
+	if (by_month) {
+		expressions[DATE_BUCKET] = `bucket("${x}", 'M')`;
+		post.bucket = "month";
+		post.top = false;
+	}
 	let label_order = [[RID, "asc"]];
 	if (sort === "label" && level === null) {
 		if (x_type === "string" && by_key.has(x)) {
@@ -415,7 +425,7 @@ export function to_card_config(view_state, normalized, card, opts = {}) {
 			config: { group_by: [x], columns: [KIND], aggregates: { [KIND]: "count" }, filter, expressions: { ...quick.expressions } },
 			grouped: true,
 		},
-		config: { group_by: [x], columns, aggregates, filter, expressions, sort: order },
+		config: { group_by: [group_key], columns, aggregates, filter, expressions, sort: order },
 		post,
 	};
 }

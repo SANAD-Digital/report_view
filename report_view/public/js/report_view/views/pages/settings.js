@@ -300,6 +300,8 @@ export const PAGE_MESSAGES = [
 	"Applied filters",
 	"Grouped by {0}",
 	"{0} rows",
+	"{0} of {1} rows",
+	"Search",
 	"Accountant",
 	"Finance Manager",
 	"General Manager",

@@ -63,7 +63,11 @@ export function filter_items(criteria) {
 	const control_item = (c) => {
 		const df = c.df;
 		const label = __(df.label, null, df.parent);
-		return { key: df.fieldname, kind: "filter", fieldname: df.fieldname, label, text: value_text(df, c.get_value()), reqd: Boolean(df.reqd) };
+		const value = c.get_value();
+		// a choice that repeats its filter's name («Categorize by» «Categorize by Voucher»): the
+		// choice alone, not «Categorize by: Categorize by Voucher»
+		const repeats = df.fieldtype === "Select" && typeof value === "string" && df.label && value.toLowerCase().startsWith(String(df.label).toLowerCase());
+		return { key: df.fieldname, kind: "filter", fieldname: df.fieldname, label, text: value_text(df, value), reqd: Boolean(df.reqd), bare: repeats };
 	};
 	const visible = (c) => !c.df.hidden_due_to_dependency;
 	const main = f.controls.filter((c) => plan.place.get(c.df.fieldname) === "main" && visible(c));

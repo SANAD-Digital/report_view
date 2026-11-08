@@ -191,7 +191,7 @@
 .rv regular-table .rv-lc > .rv-rd-btn,.rv regular-table .rv-lc > .rv-rd-sp{flex:none;width:var(--rd-btn);height:var(--rd-btn);margin-inline-start:calc(-1 * var(--lv,0) * var(--ind));margin-inline-end:calc(var(--lv,0) * var(--ind) + var(--gap))}
 .rv-rd-btn{display:inline-flex;align-items:center;justify-content:center;padding:0;border:1px solid transparent;border-radius:var(--r-sm);background:transparent;color:var(--tx-4);opacity:.55;cursor:pointer;transition:opacity .12s,color .12s,background-color .12s}
 .rv regular-table tbody tr:hover .rv-rd-btn,.rv regular-table tbody tr.rv-open .rv-rd-btn,.rv-rd-btn:focus-visible{opacity:1;color:var(--tx);background:var(--surface);border-color:var(--line-2)}
-.rv-rd-btn:focus-visible{outline:2px solid var(--focus,var(--pri));outline-offset:-1px}
+.rv-rd-btn:focus-visible{outline:none;box-shadow:var(--focus)}
 @media (hover:none){.rv-rd-btn{opacity:.8}}
 
 /* a range of cells (phase 5c, views/grid_range.js): tinted, outlined on its edges, the focus

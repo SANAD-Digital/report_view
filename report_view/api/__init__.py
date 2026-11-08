@@ -117,13 +117,19 @@ def voucher_entries(report_name: str, voucher_type: str, voucher_no: str) -> dic
 	_guard(report_name)
 	if not isinstance(voucher_type, str) or not isinstance(voucher_no, str) or not voucher_no:
 		frappe.throw(_("Invalid voucher"), RVInvalidInput)
-	if not frappe.db.exists("DocType", voucher_type):
+	# a voucher posts ledger entries: a submittable document type, no other (a user, a role)
+	if not frappe.db.exists("DocType", voucher_type) or not frappe.get_meta(voucher_type).is_submittable:
 		frappe.throw(_("Invalid voucher"), RVInvalidInput)
-	if not frappe.has_permission(voucher_type, "read", doc=voucher_no):
-		frappe.throw(
-			_("You do not have permission to read {0} {1}").format(_(voucher_type), voucher_no),
-			frappe.PermissionError,
+	# a voucher that does not exist and one the user may not read answer alike: the answer
+	# never tells whether a document is there
+	try:
+		readable = bool(frappe.db.exists(voucher_type, voucher_no)) and frappe.has_permission(
+			voucher_type, "read", doc=voucher_no
 		)
+	except frappe.DoesNotExistError:
+		readable = False
+	if not readable:
+		frappe.throw(_("This voucher cannot be read"), frappe.PermissionError)
 	rows = frappe.get_list(
 		"GL Entry",
 		filters={"voucher_type": voucher_type, "voucher_no": voucher_no, "is_cancelled": 0},

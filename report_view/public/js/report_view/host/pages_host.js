@@ -18,6 +18,8 @@ export class PagesHost {
 			filters: this.last_filters || {},
 			defs: this.report_settings?.filters || [],
 			group_labels: (this.state?.group?.by || []).map((k) => this.controls.title(k)),
+			// a search or a filter on the columns: the paper says so, with the rows it leaves
+			narrowing: this.controls.narrowing(),
 			// read by a report print format only (query_report.raw_data): rebuilt then
 			get raw() {
 				return host.raw_data();

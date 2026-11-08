@@ -9,7 +9,7 @@ import { perspective_type } from "./engine/schema.js";
 import { visible_columns, ordered_columns } from "./engine/view_config.js";
 import { default_state } from "./state/view_state.js";
 import { resolve_pivot, pivot_dimensions, pivot_measures, PIVOT_AGGS } from "./engine/pivot_config.js";
-import { AGG_TITLES } from "./views/pivot_view.js";
+import { AGG_TITLES, net_title } from "./views/pivot_view.js";
 import { header_bands, order_for_groups } from "./state/column_groups.js";
 import { icons } from "./components/icons.js";
 import { open_popover, close_popover, menu_content } from "./components/popover.js";
@@ -194,6 +194,20 @@ export class ViewControls {
 			on_change: (selected) =>
 				this.set_filter(key, selected ? { key, type: "set", values: selected, exclude: false } : null),
 		});
+	}
+
+	/**
+	 * What narrows the rows from the whole report, as {label, value} (the Statement's head,
+	 * the printed page): the free-text search, then the column and quick filters. Empty when
+	 * every row of the report is shown. The label is translated, the value is the user's.
+	 */
+	narrowing() {
+		const s = this.state;
+		if (!s || !this.report) return [];
+		const search = (s.filters || []).find((f) => f.key === "*" && f.value);
+		const out = search ? [{ label: __("Search"), value: `«${search.value}»` }] : [];
+		for (const c of this.chips()) out.push({ label: c.k, value: c.v });
+		return out;
 	}
 
 	/** Facets of the search box: one per active filter. */
@@ -447,6 +461,7 @@ export class ViewControls {
 	}
 
 	value_title(v) {
+		if (v.minus) return net_title(v, this.config, (k) => this.full_title(k));
 		return AGG_TITLES[v.agg](this.full_title(v.key));
 	}
 
@@ -495,7 +510,7 @@ export class ViewControls {
 		const column = this.column(key);
 		this.edit_pivot((p) => {
 			const a = agg || (PIVOT_AGGS.includes(column?.agg) ? column.agg : "sum");
-			if (!p.values.some((v) => v.key === key && v.agg === a)) p.values.push({ key, agg: a });
+			if (!p.values.some((v) => v.key === key && v.agg === a && !v.minus)) p.values.push({ key, agg: a });
 		});
 	}
 
@@ -503,7 +518,9 @@ export class ViewControls {
 		this.edit_pivot((p) => {
 			if (!p.values[index] || !PIVOT_AGGS.includes(agg)) return;
 			p.values[index].agg = agg;
-			p.values = p.values.filter((v, i) => p.values.findIndex((o) => o.key === v.key && o.agg === v.agg) === i);
+			// a net is a sum of a debit less its credit: another aggregate is of the debit alone
+			if (agg !== "sum") delete p.values[index].minus;
+			p.values = p.values.filter((v, i) => p.values.findIndex((o) => o.key === v.key && o.agg === v.agg && (o.minus || null) === (v.minus || null)) === i);
 		});
 	}
 
@@ -667,7 +684,7 @@ export class ViewControls {
 		return {
 			rows: p.rows.map((k) => ({ key: k, label: label(k) })),
 			cols: p.cols.map((k) => ({ key: k, label: label(k) })),
-			values: p.values.map((v) => ({ key: v.key, agg: v.agg, label: this.full_title(v.key) })),
+			values: p.values.map((v) => ({ key: v.key, agg: v.agg, label: v.minus ? this.value_title(v) : this.full_title(v.key) })),
 			dims: dims.filter((d) => !used.has(d.key)),
 			measures: this.pivot_measures(),
 		};

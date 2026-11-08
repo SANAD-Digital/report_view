@@ -284,7 +284,7 @@ export class TrialLayout {
 		const el = document.createElement("div");
 		el.className = "rv-stmt-head";
 		el.innerHTML = `
-			<div class="rv-stmt-title"><div class="t"></div><div class="s"></div></div>
+			<div class="rv-stmt-title"><div class="t"></div><div class="s"></div><div class="n" hidden></div></div>
 			<div class="rv-stmt-levels" role="group" aria-label="${esc(__("Level of detail"))}">
 				<button type="button" data-level="roots">${esc(__("Roots"))}</button>
 				<button type="button" data-level="groups">${esc(__("Groups"))}</button>
@@ -320,7 +320,9 @@ export class TrialLayout {
 	async paint_cards() {
 		const page = this.page;
 		const grid = page.grid;
-		const on = Boolean(this.phone?.matches) && page.state?.mode === "statement" && grid.current && grid.layout && grid.model;
+		// the table too: on a phone a table shows a column or two of its numbers (the critic's
+		// review of 2026-11-08: a trial balance with no number on the screen)
+		const on = Boolean(this.phone?.matches) && ["statement", "grid"].includes(page.state?.mode) && grid.current && grid.layout && grid.model;
 		page.root.classList.toggle("rv-phone-cards", Boolean(on));
 		if (!on) return;
 		const sign = `${grid.epoch}:${grid.body_rows}`;
@@ -336,28 +338,71 @@ export class TrialLayout {
 		const by_name = new Map(m.data.map((d) => [d.column.fieldname, d]));
 		const html_of = (d, row) => (d ? rows_model.report_cell(d, row).html : "");
 		const running = m.data.find((d) => d.column.running);
-		const amounts = m.data.filter((d) => d.numeric && d !== running);
+		// a report of column groups (a trial balance): its last group, the closing balance
+		const last_band = [...new Set(m.data.map((d) => d.band).filter(Boolean))].at(-1);
+		const amounts = m.data.filter((d) => d.numeric && d !== running && (!last_band || d.band === last_band));
+		const band_label = last_band ? m.bands.get(last_band)?.label : "";
 		const text_of = (name, row) => {
 			const d = by_name.get(name);
 			return d ? frappe.utils.escape_html(String(row[d.column.key] ?? "")) : "";
 		};
+		// a summary row of the report (an opening, a total, a closing): its caption, its amounts
+		// and its balance, not a button (it has no voucher to open)
+		const sum_card = (row) => {
+			const sums = amounts
+				.map((d) => [d, rows_model.summary_cell(d, row).html])
+				.filter(([d]) => Number(row[d.column.key]))
+				.map(([d, html]) => `<span class="k">${frappe.utils.escape_html(d.title)}</span> <b>${html}</b>`)
+				.join(" ");
+			return `<div class="rv-card sum">
+				<span class="l1"><span>${rows_model.caption_of(row).html}</span></span>
+				<span class="l2"><span>${sums}</span>${running ? `<span class="b">${rows_model.summary_cell(running, row).html}</span>` : ""}</span>
+			</div>`;
+		};
+		const edges = rows_model.report_rows(cur);
 		this.card_rows = new Map();
-		const cards = [];
+		// the statement starts from its opening balance, as on paper (the critic's review)
+		const cards = edges.top.map(sum_card);
 		for (let y = 0; y < plan.entries.length; y++) {
 			const rec = recs.get(y);
-			if (!rec || rec.type !== "row" || rows_model.is_summary(rec) || !rec.row) continue;
+			if (rec?.type === "row" && rec.row && rows_model.is_summary(rec)) {
+				cards.push(sum_card(rec.row));
+				continue;
+			}
+			if (!rec || rec.type !== "row" || !rec.row) continue;
 			const row = rec.row;
 			this.card_rows.set(y, row);
 			const amount = amounts
 				.filter((d) => Number(row[d.column.key]))
 				.map((d) => `<span class="k">${frappe.utils.escape_html(d.title)}</span> <b>${html_of(d, row)}</b>`)
 				.join(" ");
-			cards.push(`<button type="button" class="rv-card" data-y="${y}">
-				<span class="l1"><span>${rows_model.label_html(rec)}</span><span class="v">${[text_of("voucher_type", row), text_of("voucher_no", row)].filter(Boolean).join(" ")}</span></span>
+			// a tree's rows step in by their depth; a group of it reads bold
+			const depth = Math.min(Number(rec.depth) || 0, 6);
+			const side = [text_of("voucher_type", row), text_of("voucher_no", row)].filter(Boolean).join(" ") || frappe.utils.escape_html(band_label || "");
+			cards.push(`<button type="button" class="rv-card${rec.parent ? " parent" : ""}" data-y="${y}"${depth ? ` style="--lv:${depth}"` : ""}>
+				<span class="l1"><span>${rows_model.label_html(rec).replace(/<button[\s\S]*?<\/button>/g, "")}</span><span class="v">${side}</span></span>
 				<span class="l2"><span>${amount}</span>${running ? `<span class="b">${html_of(running, row)}</span>` : ""}</span>
 			</button>`);
 		}
-		const closing = rows_model.report_rows(cur).bottom.at(-1);
+		// then the period's total and the closing balance, in the order of the screen
+		const bottom = edges.bottom;
+		const ordered = [...bottom.filter((r) => r.__kind !== "closing"), ...bottom.filter((r) => r.__kind === "closing")];
+		// the grand total of the rows shown, when the report has no total of its own
+		if (!bottom.some((r) => r.__kind === "internal_total") && grid.counts) {
+			const total = rows_model.total_row(cur, grid.counts);
+			const sums = amounts
+				.map((d) => [d, total.cell(d).html])
+				.filter(([, html]) => html && html.replace(/<[^>]+>/g, "").trim())
+				.map(([d, html]) => `<span class="k">${frappe.utils.escape_html(d.title)}</span> <b>${html}</b>`)
+				.join(" ");
+			cards.push(`<div class="rv-card sum"><span class="l1"><span>${frappe.utils.escape_html(__("Grand Total"))}</span></span><span class="l2"><span>${sums}</span></span></div>`);
+		}
+		const seen = new Set();
+		for (const row of ordered) {
+			const key = JSON.stringify([row.__kind, ...m.data.map((d) => row[d.column.key])]);
+			if (!seen.has(key) && seen.add(key)) cards.push(sum_card(row));
+		}
+		const closing = bottom.at(-1);
 		const bar = running && closing ? `<div class="rv-cards-bar"><span>${frappe.utils.escape_html(rows_model.caption_of(closing).html.replace(/<[^>]+>/g, ""))}</span><b>${rows_model.summary_cell(running, closing).html}</b></div>` : "";
 		const more = (grid.body_rows || 0) > CARD_ROWS ? `<p class="rv-cards-more">${frappe.utils.escape_html(__("The first {0} rows: print or export for the rest.", [CARD_ROWS]))}</p>` : "";
 		this.cards.innerHTML = bar + cards.join("") + more;
@@ -507,10 +552,15 @@ export class TrialLayout {
 		const party = [].concat(f.party_name || f.party || f.customer || f.supplier || []).join(__(", "));
 		const parts = [party, f.company, from && to ? __("From {0} to {1}", [date(from), date(to)]) : "", f.presentation_currency || ""].filter(Boolean);
 		el.querySelector(".s").textContent = parts.join(" · ");
+		this.paint_narrowing();
 		const levels = el.querySelector(".rv-stmt-levels");
 		const tree = Boolean(page.report?.tree?.enabled);
 		levels.hidden = !tree;
 		if (tree) {
+			// the middle level is a depth of the tree, not the group accounts: a ledger account
+			// above that depth shows too, so it says what it does (the critic's review, 2026-11-08)
+			const max = tree_index(page.report).max_depth;
+			levels.querySelector('[data-level="groups"]').textContent = __("To level {0}", [fmt_int(max)]);
 			const depth = s.tree?.expanded ? null : s.tree?.depth ?? page.report.tree.initial_depth ?? 2;
 			for (const b of levels.querySelectorAll("[data-level]")) {
 				const on = depth != null && this.level_depth(b.dataset.level) === depth;
@@ -520,9 +570,30 @@ export class TrialLayout {
 		}
 	}
 
+	/**
+	 * Under the Statement's title, what narrows it from the whole statement: the search, the
+	 * column filters and the grouping, the rows left of all, and that a running balance stays
+	 * the whole statement's (ADR-027): a part of a statement never reads as all of it.
+	 */
+	paint_narrowing() {
+		const page = this.page;
+		const line = this.stmt?.querySelector(".n");
+		if (!line || !page.state || !page.controls) return;
+		const parts = page.controls.narrowing().map((n) => `${n.label}: ${n.value}`);
+		const by = (page.state.group?.by || []).filter((k) => page.controls.column(k));
+		if (by.length) parts.push(__("Grouped by {0}", [by.map((k) => page.controls.title(k)).join(" › ")]));
+		const counts = this.counts;
+		if (parts.length && counts && counts.total > counts.shown) parts.push(__("{0} of {1} rows", [fmt_int(counts.shown), fmt_int(counts.total)]));
+		if (parts.length && (page.report?.columns || []).some((c) => c.running)) parts.push(__("the balance is the whole statement's"));
+		line.textContent = parts.join(" · ");
+		line.hidden = !parts.length;
+	}
+
 	/** The rows the view shows (update_status): in the card's toolbar (A) or the bottom bar (C). */
 	set_counts(counts) {
 		const page = this.page;
+		this.counts = counts;
+		this.paint_narrowing();
 		const noun = page.config?.rows_label || __("Rows");
 		const parts = [__("{0} {1} of {2}", [noun, fmt_int(counts.shown), fmt_int(counts.total)])];
 		if (counts.groups) parts.push(__("Groups {0}", [fmt_int(counts.groups)]));

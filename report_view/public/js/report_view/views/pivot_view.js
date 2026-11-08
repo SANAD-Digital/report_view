@@ -28,6 +28,15 @@ export const AGG_TITLES = {
 	max: (t) => __("Maximum of {0}", [t]),
 };
 
+/**
+ * The title of a net value (a value with `minus`): «Net Closing Balance» from the report's
+ * balance pair (register summary.pairs), else «Net {debit} − {credit}».
+ */
+export function net_title(v, config, full_title) {
+	const pair = (config?.summary?.pairs || []).find((p) => (p.debit === v.key || p.debit_column === v.key) && (p.credit === v.minus || p.credit_column === v.minus));
+	return pair?.label ? __("Net {0}", [pair.label]) : __("Net {0} − {1}", [full_title(v.key), full_title(v.minus)]);
+}
+
 export class PivotView extends RtView {
 	/**
 	 * @param {object} opts
@@ -58,7 +67,7 @@ export class PivotView extends RtView {
 		const { post } = opened;
 		const { controls, report } = ctx;
 		const labels = new Map();
-		const values = post.values.map((v) => ({ ...v, title: AGG_TITLES[v.agg](controls.full_title(v.key)), column: controls.column(v.key) }));
+		const values = post.values.map((v) => ({ ...v, title: controls.value_title(v), column: controls.column(v.key) }));
 		const many = values.length > 1;
 		const split = post.cols.length > 0;
 		const levels = (split ? post.cols.length : 0) + (many || !split ? 1 : 0);

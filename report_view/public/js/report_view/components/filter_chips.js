@@ -66,7 +66,7 @@ export class FilterChips {
 				});
 				this.chips.set(it.key, b);
 			}
-			const html = `<span class="k">${esc(it.label)}:</span> <b>${item_value_html(it)}</b>${icons.chevron_down(12)}`;
+			const html = `${it.bare && it.text ? "" : `<span class="k">${esc(it.label)}:</span> `}<b>${item_value_html(it)}</b>${icons.chevron_down(12)}`;
 			if (b.dataset.html !== html) {
 				b.innerHTML = html;
 				b.dataset.html = html;

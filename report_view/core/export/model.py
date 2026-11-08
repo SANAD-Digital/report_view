@@ -13,6 +13,7 @@ from report_view.core.engine import value_type
 from report_view.core.errors import RVExportMismatch, RVInvalidInput, RVInvalidViewState
 from report_view.core.expressions import ExpressionError, compile_expression
 from report_view.core.inputs import parse_json_arg, validate_js_filters, validate_report_filters
+from report_view.core.saved_views import clean_state
 
 MODEL_KEYS = frozenset(
 	(
@@ -53,6 +54,19 @@ def _is_number(value: Any) -> bool:
 	return isinstance(value, int | float) and not isinstance(value, bool) and math.isfinite(value)
 
 
+def _browser_state(raw: Any) -> dict:
+	"""The page's state as the browser sends it, checked as a saved view is
+	(``saved_views.clean_state``). What it adds for the screen (the charts, the column
+	groups) does not change the file; the Statement is the table drawn as a statement."""
+	state = clean_state(raw)
+	state.pop("charts", None)
+	if isinstance(state.get("columns"), dict):
+		state["columns"].pop("groups", None)
+	if state.get("mode") == "statement":
+		state["mode"] = "grid"
+	return state
+
+
 def parse(export_model: Any, fmt: str) -> dict:
 	"""Parse and validate the export model shape (§4.2 steps 1-2, 4-6 before the run)."""
 	model = parse_json_arg(export_model, "export_model", dict)
@@ -70,7 +84,7 @@ def parse(export_model: Any, fmt: str) -> dict:
 	if prepared is not None and not isinstance(prepared, str):
 		_bad(_("Invalid prepared report name"))
 
-	state = vs.validate(model.get("view_state") or {"v": 1})
+	state = _browser_state(model.get("view_state") or {"v": 1})
 	if state.get("mode", "grid") != "grid":
 		frappe.throw(_("Only the grid view can be exported in this version"), RVInvalidViewState)
 	quick_filters = _parse_quick_filters(model.get("quick_filters"), state)

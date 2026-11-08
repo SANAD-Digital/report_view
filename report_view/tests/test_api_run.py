@@ -230,6 +230,14 @@ class TestApiRun(RVTestCase):
 				api.voucher_entries("General Ledger", other.voucher_type, other.voucher_no)
 		with self.as_user("accountant"), self.assertRaises(RVInvalidInput):
 			api.voucher_entries("General Ledger", "Not A Doctype", "X")
+		# a document that is not a voucher is refused as such, whether it exists or not
+		for doctype, name in (("User", "Administrator"), ("Role", "System Manager")):
+			with self.as_user("accountant"), self.assertRaises(RVInvalidInput):
+				api.voucher_entries("General Ledger", doctype, name)
+		# a voucher that is not there answers as one the user may not read
+		with self.as_user("accountant"), self.assertRaises(frappe.PermissionError) as missing:
+			api.voucher_entries("General Ledger", own.voucher_type, "NO-SUCH-VOUCHER-0001")
+		self.assertEqual(str(missing.exception), "This voucher cannot be read")
 
 	def test_too_large(self):
 		with self.as_user("accountant"), patch("report_view.core.runner.get_row_limit", return_value=5):

@@ -63,7 +63,7 @@ export class FilterSentence {
 					: q(period.key, "", period.label)
 			);
 		}
-		for (const it of rest) parts.push(`${words(`${it.label}`)} ${q(it.key, it.text, it.label)}`);
+		for (const it of rest) parts.push(it.bare && it.text ? q(it.key, it.text, it.label) : `${words(`${it.label}`)} ${q(it.key, it.text, it.label)}`);
 		const sep = `<span class="w">${esc(__(", "))}</span>`;
 		const more = has_more(this.criteria) ? ` <button type="button" class="rv-q-more" data-q="__more" aria-haspopup="dialog">${esc(__("+ condition"))}</button>` : "";
 		const html = parts.join(sep) + more;

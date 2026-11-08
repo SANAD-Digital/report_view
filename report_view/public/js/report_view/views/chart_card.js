@@ -244,7 +244,8 @@ export class ChartCard {
 			const post = spec?.post;
 			const sort = card_sort(def);
 			if (sort !== "label") parts.push(SORT_LABELS[sort]());
-			if (post?.categories !== null && post?.categories !== undefined) {
+			if (post?.bucket === "month") parts.push(__("By month"));
+			else if (post?.categories !== null && post?.categories !== undefined) {
 				const n = fmt_int;
 				parts.push(
 					post.top ? __("Showing {0} of {1}", [n(this.data?.categories.length ?? post.limit), n(post.categories)]) : __("{0} categories", [n(post.categories)])
@@ -308,6 +309,14 @@ export class ChartCard {
 					if (number && name && !String(name).startsWith(String(number))) return `${number} ${name}`;
 				}
 				return String(name || value);
+			});
+		}
+		// a month of a date in time (chart_config DATE_BUCKET): «03-2026»
+		if (post.bucket === "month") {
+			return data.categories.map((value) => {
+				if (value === null || value === undefined || value === "") return __("Not Set");
+				const d = new Date(value);
+				return Number.isNaN(d.getTime()) ? String(value) : `${String(d.getUTCMonth() + 1).padStart(2, "0")}-${d.getUTCFullYear()}`;
 			});
 		}
 		return data.categories.map((value) => view.value_text(post.x, value));
@@ -458,7 +467,8 @@ export class ChartCard {
 	}
 
 	on_click(params) {
-		if (!this.data || this.spec?.post.route === "totals" || params?.componentType !== "series") return;
+		// a month is not a value of its column: it filters nothing (yet)
+		if (!this.data || this.spec?.post.route === "totals" || this.spec?.post.bucket || params?.componentType !== "series") return;
 		const value = this.data.categories[params.dataIndex];
 		if (value === undefined) return;
 		this.view.cross_filter(this, value);

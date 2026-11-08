@@ -36,7 +36,7 @@
 .rv-pgrp + .rv-pgrp:where(.rv-print-sidecol,.rv-print-sidecol *){border-top:1px solid var(--outline-gray-1);padding-top:calc(var(--spacing,4px) * 2);margin-top:calc(var(--spacing,4px) * 2)}
 .rv-psec > summary:where(.rv-print-sidecol,.rv-print-sidecol *){display:flex;align-items:center;gap:8px;min-height:32px;padding:4px 0;cursor:pointer;list-style:none;user-select:none;border-radius:var(--r-sm)}
 .rv-psec > summary:where(.rv-print-sidecol,.rv-print-sidecol *)::-webkit-details-marker{display:none}
-.rv-psec > summary:focus-visible:where(.rv-print-sidecol,.rv-print-sidecol *){outline:2px solid var(--focus,var(--pri));outline-offset:2px}
+.rv-psec > summary:focus-visible:where(.rv-print-sidecol,.rv-print-sidecol *){outline:none;box-shadow:var(--focus)}
 .rv-psec > summary .tx:where(.rv-print-sidecol,.rv-print-sidecol *){flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .rv-psec > summary .tt:where(.rv-print-sidecol,.rv-print-sidecol *){font-size:var(--text-base);font-weight:var(--weight-medium,500);line-height:1.5;color:var(--tx)}
 .rv-psec > summary .sm:where(.rv-print-sidecol,.rv-print-sidecol *){font-size:var(--text-xs);line-height:1.4;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

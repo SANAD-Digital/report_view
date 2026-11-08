@@ -424,9 +424,10 @@ test("rows as reported: a filter, a grouping or a sort reads the facts, and says
 	expect(narrowed).toMatchObject({ shape: "flat", table: "facts", top: 0, closing: 0, summary: 0 });
 	expect(narrowed.rows).toBeLessThan(48);
 	expect(narrowed.expected.row_count).toBe(narrowed.rows);
-	// the same notice: one bar; closed by the user, it stays closed while the notice is the same
+	// one bar: the hidden rows of the report, and that the balance is each row's of the whole
+	// report (RUNNING_BALANCE_PARTIAL); closed by the user, it stays closed while it is the same
 	expect(await page.locator(".rv-notice").count()).toBe(1);
-	expect(await bar.locator("p").count()).toBe(1);
+	expect(await bar.locator("p").count()).toBe(2);
 	await bar.locator(".rv-chip-x").click();
 	await expect(bar).toBeHidden();
 

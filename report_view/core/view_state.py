@@ -180,8 +180,11 @@ def validate(state: Any) -> dict:
 		_key_list(pivot.get("rows", []), "pivot.rows", MAX_PIVOT_DIMS)
 		_key_list(pivot.get("cols", []), "pivot.cols", MAX_PIVOT_DIMS)
 		for item in pivot.get("values", []) or []:
-			_check_keys(item, {"key", "agg"}, "pivot.values")
+			# minus: the credit of a debit/credit pair, the value is their net (engine/pivot_config.js)
+			_check_keys(item, {"key", "agg", "minus"}, "pivot.values")
 			if not isinstance(item.get("key"), str) or item.get("agg") not in AGGS:
+				_fail(_("View state: invalid pivot.values"))
+			if "minus" in item and (not isinstance(item["minus"], str) or item["agg"] != "sum"):
 				_fail(_("View state: invalid pivot.values"))
 
 	if state.get("chart") is not None and not isinstance(state["chart"], dict):
@@ -255,6 +258,7 @@ def referenced_keys(state: dict) -> set[str]:
 	keys.update(pivot.get("rows") or [])
 	keys.update(pivot.get("cols") or [])
 	keys.update(v["key"] for v in pivot.get("values") or [])
+	keys.update(v["minus"] for v in pivot.get("values") or [] if v.get("minus"))
 	return keys
 
 

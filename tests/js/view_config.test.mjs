@@ -16,7 +16,7 @@ import {
 	visible_columns,
 	AGGREGATES,
 } from "../../report_view/public/js/report_view/engine/view_config.js";
-import { edge_rows } from "../../report_view/public/js/report_view/engine/report_rows.js";
+import { edge_rows, section_values } from "../../report_view/public/js/report_view/engine/report_rows.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dir = path.resolve(here, "../../report_view/tests/fixtures/normalize");
@@ -285,8 +285,11 @@ test("report summary rows: pinned and the reference total without a browser filt
 	assert.deepEqual(sorted.total, plain.total);
 	// only that the running balance no longer follows its rows
 	assert.deepEqual(sorted.notices, [{ code: "RUNNING_BALANCE_SORTED", detail: "balance" }]);
-	const by_date = to_view_config(state({ sort: [{ key: "posting_date", dir: "desc" }] }), report).post;
+	const by_date = to_view_config(state({ sort: [{ key: "posting_date", dir: "asc" }] }), report).post;
 	assert.deepEqual(by_date.notices, []);
+	// a date sorted down turns each day upside down too
+	const by_date_down = to_view_config(state({ sort: [{ key: "posting_date", dir: "desc" }] }), report).post;
+	assert.deepEqual(by_date_down.notices, [{ code: "RUNNING_BALANCE_SORTED", detail: "balance" }]);
 
 	const filter = [{ key: "debit", type: "range", min: 100, max: null }];
 	const narrowed = to_view_config(state({ filters: filter }), report).post;
@@ -294,13 +297,15 @@ test("report summary rows: pinned and the reference total without a browser filt
 	assert.equal(narrowed.total.source, "view");
 	assert.equal(narrowed.total.view.table, "facts");
 	assert.deepEqual(narrowed.total.view.config.filter, [["debit", ">=", 100]]);
+	// a part of the rows: the balance is still each row's of the whole report, and it is said
+	assert.deepEqual(narrowed.notices, [{ code: "RUNNING_BALANCE_PARTIAL", detail: "balance" }]);
 
 	// grouping reads the facts only: nothing pinned, the total is the view's row 0
 	const grouped = to_view_config(state({ group: { by: ["account"], subtotals: true, expanded: "all" } }), report).post;
 	// grouped, all the rows are there: the report's closing rows still stand for them
 	assert.deepEqual(grouped.pinned_rows, { top: [], bottom: plain.pinned_rows.bottom });
 	assert.equal(grouped.total.source, "row0");
-	assert.deepEqual(grouped.notices, []);
+	assert.deepEqual(grouped.notices, [{ code: "RUNNING_BALANCE_PARTIAL", detail: "balance" }]);
 });
 
 test("rows as reported: a report with summary rows between its facts is shown from the rows table", () => {
@@ -352,14 +357,14 @@ test("rows as reported: a filter, a grouping or a sort of the user reads the fac
 	assert.equal(narrowed.post.shape, "flat");
 	assert.deepEqual(narrowed.post.pinned_rows, { top: [], bottom: [] });
 	assert.equal(narrowed.post.total.source, "view");
-	assert.deepEqual(narrowed.post.notices, hidden);
+	assert.deepEqual(narrowed.post.notices, [{ code: "RUNNING_BALANCE_PARTIAL", detail: "balance" }, ...hidden]);
 
 	const grouped = to_view_config(state({ group: { by: ["account"], subtotals: true, expanded: "all" } }), report);
 	assert.equal(grouped.table, "facts");
 	assert.equal(grouped.post.shape, "group");
 	assert.deepEqual(grouped.post.pinned_rows, { top: [], bottom: edges.bottom });
 	assert.equal(grouped.post.total.source, "row0");
-	assert.deepEqual(grouped.post.notices, hidden);
+	assert.deepEqual(grouped.post.notices, [{ code: "RUNNING_BALANCE_PARTIAL", detail: "balance" }, ...hidden]);
 
 	// a sort on an unknown column is no sort
 	assert.equal(to_view_config(state({ sort: [{ key: "nope", dir: "asc" }] }), report).post.shape, "report");
@@ -396,4 +401,27 @@ test("fold in the view state: group.expanded as paths, subtotals, expand all / c
 	).post;
 	assert.equal(levels.shape, "levels");
 	assert.deepEqual(levels.tree.expanded, [0, 1]);
+});
+
+test("sections of a statement: each opening, total and closing of the report's groups names its account", () => {
+	const report = load("general_ledger_by_account");
+	const edges = edge_rows(report);
+	const sections = section_values(report, "account");
+	// every summary row of the report's own groups, none of the whole report
+	assert.equal(sections.size, edges.inner);
+	for (const rid of [...edges.top, ...edges.bottom]) assert.equal(sections.has(rid), false);
+	// an opening takes the account of the facts after it, a total or a closing those before it
+	const rows = report.rows.filter((r) => r.__kind !== "separator");
+	for (const [rid, account] of sections) {
+		const i = rows.findIndex((r) => r.__rid === rid);
+		const kind = rows[i].__kind;
+		const step = kind === "opening" ? 1 : -1;
+		let j = i + step;
+		while (rows[j].__kind !== "data") j += step;
+		assert.equal(account, rows[j].account, `${kind} ${rid}`);
+	}
+	// a column the groups are not made of (a party within an account) names no section
+	assert.equal(section_values(report, "voucher_no").size, 0);
+	// a report without groups of its own has none
+	assert.equal(section_values(load("general_ledger_consolidated"), "account").size, 0);
 });

@@ -67,7 +67,7 @@
 .rv-modes button{height:24px;padding:0 var(--s3);border:0;border-radius:calc(var(--rad) - 2px);background:transparent;color:var(--tx-2);font-size:var(--t13);line-height:24px;cursor:pointer;white-space:nowrap}
 .rv-modes button:hover{color:var(--tx)}
 .rv-modes button.on{background:var(--surface);box-shadow:var(--sh-1);color:var(--tx);font-weight:var(--fw-b)}
-.rv-modes button:focus-visible{outline:2px solid var(--focus,var(--pri));outline-offset:-1px}
+.rv-modes button:focus-visible{outline:none;box-shadow:var(--focus)}
 .rv-ha-acts{display:flex;align-items:center;gap:6px}
 .rv-ha .rv-off-pages{display:none !important}
 .rv-ha-r2{display:flex;align-items:center;gap:var(--s2);padding:0 var(--gut) var(--s2);min-width:0;min-height:var(--h28)}
@@ -77,7 +77,7 @@
 .rv-fchip b{font-weight:var(--fw-b);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .rv-fchip svg{flex:none;color:var(--tx-3)}
 .rv-fchip:hover,.rv-fchip[aria-expanded="true"]{background:var(--hover);border-color:var(--line-2)}
-.rv-fchip:focus-visible{outline:2px solid var(--focus,var(--pri));outline-offset:1px}
+.rv-fchip:focus-visible{outline:none;box-shadow:var(--focus)}
 .rv-fchip.unset b{color:var(--tx-3);font-weight:var(--fw)}
 .rv-fchip.add{border-style:dashed;color:var(--tx-2)}
 .rv-unset{color:var(--tx-3);font-weight:var(--fw)}
@@ -135,7 +135,7 @@
 .rv-sentence .w{white-space:pre-wrap}
 .rv-q{border:0;border-bottom:1px dashed var(--line-3);border-radius:0;background:transparent;font:inherit;font-weight:var(--fw-b);color:var(--tx);padding:0 2px;margin:0;cursor:pointer;line-height:20px}
 .rv-q:hover,.rv-q[aria-expanded="true"]{border-bottom-color:var(--tx-2);background:var(--hover)}
-.rv-q:focus-visible{outline:2px solid var(--focus,var(--pri));outline-offset:1px}
+.rv-q:focus-visible{outline:none;box-shadow:var(--focus)}
 .rv-q.unset{color:var(--tx-3);font-weight:var(--fw)}
 .rv-q-more{border:0;background:transparent;font:inherit;color:var(--tx-2);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:0 2px}
 .rv-q-more:hover{color:var(--tx)}
@@ -146,7 +146,7 @@
 .rv-tb svg{color:var(--tx-2)}
 .rv-tb:hover{background:var(--hover)}
 .rv-tb[aria-pressed="true"],.rv-tb.on{background:var(--ctl-bg);font-weight:var(--fw-b)}
-.rv-tb:focus-visible{outline:2px solid var(--focus,var(--pri));outline-offset:-1px}
+.rv-tb:focus-visible{outline:none;box-shadow:var(--focus)}
 .rv-tb.icon{width:var(--h28);padding:0;justify-content:center}
 .rv-tb .lbl{min-width:0;max-width:220px;overflow:hidden;text-overflow:ellipsis}
 .rv-tb b{font-weight:var(--fw-b)}
@@ -165,7 +165,7 @@
 .rv-vtab .nm{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .rv-vtab:hover{color:var(--tx);background:var(--hover)}
 .rv-vtab[aria-selected="true"]{border-top-color:var(--tx);background:var(--surface);color:var(--tx);font-weight:var(--fw-b)}
-.rv-vtab:focus-visible{outline:2px solid var(--focus,var(--pri));outline-offset:-2px}
+.rv-vtab:focus-visible{outline:none;box-shadow:var(--focus)}
 .rv-vtab .dot{flex:none;width:6px;height:6px;border-radius:50%;background:var(--warn)}
 .rv-vtab .star{color:var(--warn)}
 .rv-vtab.add{padding:0 var(--s3);font-size:var(--t14)}
@@ -202,7 +202,7 @@
 .rv-pgrp{border-bottom:1px solid var(--line)}
 .rv-pgrp > summary{display:flex;align-items:center;gap:var(--s2);min-height:var(--s8);padding:var(--s2) 0;cursor:pointer;list-style:none;user-select:none}
 .rv-pgrp > summary::-webkit-details-marker{display:none}
-.rv-pgrp > summary:focus-visible{outline:2px solid var(--focus,var(--pri));outline-offset:2px;border-radius:var(--r-sm)}
+.rv-pgrp > summary:focus-visible{outline:none;box-shadow:var(--focus);border-radius:var(--r-sm)}
 .rv-pgrp > summary .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .rv-pgrp > summary .tt{font-size:var(--t13);font-weight:var(--fw-b);line-height:20px;color:var(--tx)}
 .rv-pgrp > summary .sm{font-size:var(--t12);line-height:16px;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -295,6 +295,8 @@
 .rv-stmt-title{grid-column:2;text-align:center;min-width:0}
 .rv-stmt-title .t{font-size:var(--t14);font-weight:var(--fw-b);line-height:20px;color:var(--tx)}
 .rv-stmt-title .s{font-size:var(--t12);line-height:16px;color:var(--tx-3)}
+/* a part of the statement says so under its title (layout.js paint_narrowing) */
+.rv-stmt-title .n{margin-top:2px;font-size:var(--t12);line-height:16px;color:var(--warn);font-weight:var(--fw-m)}
 .rv-stmt-levels{grid-column:3;justify-self:end;display:flex;gap:2px;height:22px;box-sizing:border-box;padding:2px;border-radius:var(--rad);background:var(--ctl-bg)}
 .rv-stmt-levels[hidden]{display:none}
 .rv-stmt-levels button{height:18px;padding:0 var(--s2);border:0;border-radius:calc(var(--rad) - 2px);background:transparent;color:var(--tx-2);font-size:11px;line-height:18px;cursor:pointer;white-space:nowrap}
@@ -313,17 +315,16 @@
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table thead th.rv-hb{border:1px solid var(--line-2,var(--line));border-bottom:0;background:var(--surface-2);color:var(--tx);font-weight:var(--fw-b)}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table thead th.rv-hb.empty{border:0;background:var(--surface)}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table thead tr:last-child th{border-bottom:1.5px solid var(--tx)}
-/* a zero is an empty cell: a «—» beside the next column's number reads as a minus */
-:is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table td.zero .rv-n,
-:is(.rv-layout-a,.rv-layout-c).rv-mode-statement :is(.rv-rt-top,.rv-rt-bottom) .rv-c.zero .rv-n{visibility:hidden}
+/* a zero is an empty cell: a «—» beside the next column's number reads as a minus. Not on an
+   opening, a total or a closing: there an empty cell reads as «not worked out» (0.00) */
+:is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table td.zero .rv-n{visibility:hidden}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-rt-bottom .rv-row{border-top:1.5px solid var(--tx);border-bottom:3px double var(--tx);background:var(--surface);font-weight:var(--fw-b)}
 
 /* ---------------------------------------------------------------- the table as Grid.dc.html
-   a zero is an empty cell, no «—»; no vertical rules: neither after the label column (its
-   hairline comes back only while columns pass under it) nor between the column groups */
+   a zero is an empty cell, no «—» (an opening, a total, a closing keep their 0.00); no vertical
+   rules: neither after the label column (its hairline comes back only while columns pass
+   under it) nor between the column groups */
 :is(.rv-layout-a,.rv-layout-c):not(.rv-mode-statement) regular-table td.zero .rv-n{visibility:hidden}
-:is(.rv-layout-a,.rv-layout-c):not(.rv-mode-statement) .rv-rt-top .rv-c.zero .rv-n,
-:is(.rv-layout-a,.rv-layout-c):not(.rv-mode-statement) .rv-rt-bottom .rv-c.zero .rv-n{visibility:hidden}
 :is(.rv-layout-a,.rv-layout-c) .rv-rt:not(.scrolled-x) .pin-edge-s{border-inline-end-color:transparent}
 :is(.rv-layout-a,.rv-layout-c):not(.rv-mode-statement) regular-table tbody td.band-end{border-inline-end:0}
 /* the report's opening row: a quiet row, as the others */
@@ -358,7 +359,7 @@
 :is(.rv-layout-a,.rv-layout-c) regular-table .rv-lc > .rv-rd-btn{opacity:1;color:var(--tx-3);border-color:var(--line-2);background:var(--surface)}
 :is(.rv-layout-a,.rv-layout-c) .rv-rown{flex:none;width:var(--rn-w);box-sizing:border-box;padding-inline:2px;margin-inline-end:calc(var(--lv,0) * var(--ind) + 6px);text-align:end;font-size:11px;font-weight:400;color:var(--tx-3);font-variant-numeric:tabular-nums}
 :is(.rv-layout-a,.rv-layout-c) .rv-grid:not(.rv-pivotgrid) regular-table thead tr:last-child th:first-child .rv-hcell{padding-inline-start:calc(var(--rd-btn) + var(--rn-w) + 6px)}
-:is(.rv-layout-a,.rv-layout-c) .rv-grid:not(.rv-pivotgrid) regular-table thead tr:last-child th:first-child::before{content:"#";position:absolute;inset-inline-start:calc(var(--cp) + var(--rd-btn));width:var(--rn-w);box-sizing:border-box;padding-inline:2px;text-align:end;font-size:11px;color:var(--tx-3)}
+:is(.rv-layout-a,.rv-layout-c):not(.rv-mode-statement) .rv-grid:not(.rv-pivotgrid) regular-table thead tr:last-child th:first-child::before{content:"#";position:absolute;inset-inline-start:calc(var(--cp) + var(--rd-btn));width:var(--rn-w);box-sizing:border-box;padding-inline:2px;text-align:end;font-size:11px;color:var(--tx-3)}
 /* the Statement: a click on the row opens its details; no button, no numbers */
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table .rv-lc > :is(.rv-rd-btn,.rv-rd-sp,.rv-rown){display:none}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table thead tr:last-child th:first-child .rv-hcell{padding-inline-start:0}
@@ -408,9 +409,9 @@
 @media (prefers-reduced-motion:reduce){:is(.rv-layout-a,.rv-layout-c).rv-reloading .rv-gridwrap::after{animation:none;background:var(--pri,var(--tx))}}
 /* printed numbers at their column's right edge, a zero an empty cell (the screen's rule) */
 :is(.rv-layout-a,.rv-layout-c) .rv-pt :is(td,th).num{direction:ltr;text-align:end}
-:is(.rv-layout-a,.rv-layout-c) .rv-pt td.zero .rv-n{visibility:hidden}
+:is(.rv-layout-a,.rv-layout-c) .rv-pt tr:not(.opening,.foot,.total) td.zero .rv-n{visibility:hidden}
 /* the view modes: a visible focus ring, whatever Desk's buttons do */
-.rv-modes button:focus-visible,.rv-tc-modes .rv-tb:focus-visible{outline:2px solid var(--focus,var(--pri)) !important;outline-offset:-2px}
+.rv-modes button:focus-visible,.rv-tc-modes .rv-tb:focus-visible{outline:none !important;box-shadow:var(--focus) !important}
 .rv-pv-gross{display:inline-block;margin-top:2px;font-size:var(--t12);color:var(--warn-tx,var(--tx-2));white-space:normal}
 /* the Statement on a phone: cards instead of the sheet's table */
 .rv-cards{display:none}
@@ -423,6 +424,10 @@
 .rv-cards-bar b{font-size:var(--t14);font-variant-numeric:tabular-nums}
 .rv-card{display:flex;flex-direction:column;gap:4px;width:100%;min-height:44px;box-sizing:border-box;padding:var(--s2) var(--s3);border:1px solid var(--line);border-radius:var(--rad);background:var(--surface);color:var(--tx);font:inherit;font-size:var(--t13);text-align:start;cursor:pointer}
 .rv-card:active{background:var(--hover)}
+.rv-card[style*="--lv"]{margin-inline-start:calc(var(--lv) * var(--s3));width:calc(100% - var(--lv) * var(--s3))}
+.rv-card.parent .l1{font-weight:var(--fw-b)}
+.rv-card.sum{cursor:default;background:var(--surface-2);border-color:var(--line-2)}
+.rv-card.sum .l1{font-weight:var(--fw-b)}
 .rv-card .l1,.rv-card .l2{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);min-width:0}
 .rv-card .l1 .v{color:var(--tx-2);font-size:var(--t12);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rv-card .l1 .rv-lc{padding:0}

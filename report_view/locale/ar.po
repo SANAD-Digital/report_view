@@ -4635,3 +4635,36 @@ msgstr "الأرصدة المدينة والدائنة تُجمع هنا كلٌ�
 
 msgid "The first {0} rows: print or export for the rest."
 msgstr "أول {0} سطر: اطبع أو صدّر لترى الباقي."
+
+msgid "{0} of {1} rows"
+msgstr "{0} من {1} سطراً"
+
+msgid "Search"
+msgstr "بحث"
+
+msgid "the balance is the whole statement's"
+msgstr "الرصيد هو رصيد الكشف الكامل"
+
+msgid "{0} is each row's balance in the report's own order: with its rows filtered or grouped, its figures may not follow each other."
+msgstr "«{0}» هو رصيد كل سطر بترتيب التقرير نفسه: مع البحث أو الفلترة أو التجميع قد لا تتتابع أرقامه."
+
+msgid "To level {0}"
+msgstr "حتى المستوى {0}"
+
+msgid "Net {0}"
+msgstr "صافي {0}"
+
+msgid "Net {0} − {1}"
+msgstr "صافي {0} − {1}"
+
+msgid "Expense accounts: closing balances"
+msgstr "حسابات المصروفات: الأرصدة الختامية"
+
+msgid "By month"
+msgstr "بالشهر"
+
+msgid "This voucher cannot be read"
+msgstr "لا يمكن قراءة هذا السند"
+
+msgid "{0} «{1}» is not open to you: it was left out."
+msgstr "{0} «{1}» غير متاح لك، فلم يُطبَّق."

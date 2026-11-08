@@ -140,6 +140,34 @@ class TestExportXlsx(RVTestCase):
 				with self.subTest(state=state), self.assertRaises(RVInvalidViewState):
 					self._export("Trial Balance", tb_model(view_state=state))
 
+	def test_state_as_the_browser_sends_it(self):
+		"""The page sends its whole state (state/view_state.js default_state): the charts, the
+		column groups, the page's own preferences, and the Statement as its mode."""
+		browser = {
+			"v": 1,
+			"mode": "statement",
+			"report_filters": TB_FILTERS,
+			"columns": {
+				"order": [],
+				"hidden": [],
+				"widths": {},
+				"pinned": {"start": [], "end": []},
+				"groups": [{"label": "Opening", "keys": ["opening_debit", "opening_credit"]}],
+			},
+			"sort": [],
+			"filters": [],
+			"quick_filters": [],
+			"group": {"by": [], "subtotals": True, "expanded": "all"},
+			"tree": {"depth": 3, "expanded": None},
+			"values": [],
+			"charts": {"cards": [{"id": "c1", "type": "kpi"}], "slicers": [], "cross": {}},
+			"pivot": None,
+			"ui": {"density": "comfortable", "side_panel": None},
+		}
+		with self.as_user("accountant"):
+			wb = self._export("Trial Balance", tb_model(view_state=browser))
+		self.assertGreater(wb.active.max_row, 1)
+
 	def test_invalid_model(self):
 		with self.as_user("accountant"):
 			for model in (tb_model(version=2), tb_model(format="pdf"), dict(tb_model(), extra=1)):

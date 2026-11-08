@@ -148,9 +148,11 @@ export class ReportFilters {
 		return Promise.all(jobs);
 	}
 
-	// Values coming from the URL / frappe.route_options (QJ:671-698).
+	// Values coming from the URL / frappe.route_options (QJ:671-698). Returns the link values
+	// the control did not keep (a company the user has no access to): [{label, value}].
 	async set_route_values(options) {
 		this._no_refresh = true;
+		const refused = [];
 		try {
 			for (const f of this.controls) {
 				if (!Object.hasOwn(options, f.df.fieldname)) continue;
@@ -163,10 +165,12 @@ export class ReportFilters {
 					}
 				}
 				await f.set_value(value);
+				if (f.df.fieldtype === "Link" && typeof value === "string" && value && !f.get_value()) refused.push({ label: f.df.label, value });
 			}
 		} finally {
 			this._no_refresh = false;
 		}
+		return refused;
 	}
 
 	toggle_filter_display(fieldname, flag) {

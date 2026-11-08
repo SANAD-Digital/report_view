@@ -13,6 +13,7 @@ import { entry_at } from "../engine/row_layout.js";
 import { column_runs } from "../engine/queries.js";
 import { header_bands } from "../state/column_groups.js";
 import { is_empty } from "../engine/columns_util.js";
+import { section_values } from "../engine/report_rows.js";
 
 // Pinned columns next to the label need room: on a narrower grid only the label is pinned.
 const MIN_WIDTH_FOR_PINS = 600;
@@ -44,7 +45,67 @@ function row_runs(rows) {
 }
 
 // the Statement of a ledger keeps what tells the rows apart, with these widths (ADR-026)
-const STATEMENT_TEXT = { voucher_type: 110, voucher_no: 160, remarks: 240, remark: 240 };
+const STATEMENT_TEXT = { voucher_type: 110, voucher_no: 176, remarks: 240, remark: 240 };
+// and, when its rows are of more than one account or party, the column that names it: a
+// statement of two parties or of every account never reads as one (party_name before party)
+const STATEMENT_VARIED = { account: 200, party_name: 180, party: 160 };
+// per report: whether a column has more than one value in its facts
+const VARIES = new WeakMap();
+
+// the narrowest a text column gives way to the numbers (fit_text_columns); a voucher number
+// is the reference a row is matched by and is never cut
+const TEXT_MIN = 110;
+const TEXT_FLOOR = { voucher_no: 176 };
+
+/**
+ * A trial layout shows the numbers first (the critic's review of 2026-11-08: at 1440px the
+ * credit and the balance were off the screen behind a 400px account): when the columns are
+ * wider than the grid, the text columns the user did not size give way, the widest first,
+ * down to TEXT_MIN. The numbers keep their width; a cut text says itself on hover.
+ */
+function fit_text_columns(columns, room, widths) {
+	if (!(room > 0)) return;
+	const flexible = columns.filter((d) => !d.numeric && !widths[d.column.key]);
+	if (!flexible.length) return;
+	const fixed = columns.filter((d) => !flexible.includes(d)).reduce((a, d) => a + d.width, 0);
+	const space = room - fixed;
+	const floor = (d) => Math.min(d.width, TEXT_FLOOR[d.column.fieldname] || TEXT_MIN);
+	const at = (d, cap) => Math.max(floor(d), Math.min(d.width, cap));
+	const total = (cap) => flexible.reduce((a, d) => a + at(d, cap), 0);
+	if (total(Infinity) <= space) return;
+	let lo = 0;
+	let hi = Math.max(...flexible.map((d) => d.width));
+	for (let i = 0; i < 24 && hi - lo > 1; i++) {
+		const mid = (lo + hi) / 2;
+		if (total(mid) > space) hi = mid;
+		else lo = mid;
+	}
+	for (const d of flexible) d.width = Math.floor(at(d, lo));
+}
+
+const SECTIONS = new WeakMap();
+
+function sections_of(report, key) {
+	let known = SECTIONS.get(report);
+	if (!known) SECTIONS.set(report, (known = new Map()));
+	if (!known.has(key)) known.set(key, section_values(report, key));
+	return known.get(key);
+}
+
+function varies(report, key) {
+	let known = VARIES.get(report);
+	if (!known) VARIES.set(report, (known = new Map()));
+	if (!known.has(key)) {
+		const seen = new Set();
+		for (const r of report.rows || []) {
+			if (r.__kind !== "data") continue;
+			seen.add(r[key] ?? "");
+			if (seen.size > 1) break;
+		}
+		known.set(key, seen.size > 1);
+	}
+	return known.get(key);
+}
 
 // a date in the first column of a trial layout, with the details button and the row number;
 // the captions of the report's summary rows take this width alone
@@ -71,14 +132,14 @@ export class GridRows {
 	 * @param {object} p {report, state, config, post, fmt, session, width}
 	 * @returns {object} the model
 	 */
-	set({ report, state, config, post, fmt, session, width, label_max = 320, num_min = 138, numbers_only = false }) {
+	set({ report, state, config, post, fmt, session, width, label_max = 320, num_min = 138, numbers_only = false, fit_text = false }) {
 		if (this.cache_owner !== report || this.fmt !== fmt) {
 			this.html_cache.clear();
 			this.cache_owner = report;
 		}
 		this.fmt = fmt;
 		this.session = session;
-		this.model = this.build_model(report, state, config, post, width, { label_max, num_min, numbers_only });
+		this.model = this.build_model(report, state, config, post, width, { label_max, num_min, numbers_only, fit_text });
 		// Captions depend on the columns shown, not only on the report.
 		this.captions.clear();
 		return this.model;
@@ -86,7 +147,7 @@ export class GridRows {
 
 	// ------------------------------------------------------------ model
 
-	build_model(report, state, config, post, width, { label_max = 320, num_min = 138, numbers_only = false } = {}) {
+	build_model(report, state, config, post, width, { label_max = 320, num_min = 138, numbers_only = false, fit_text = false } = {}) {
 		const by_key = new Map(report.columns.map((c) => [c.key, c]));
 		const col_conf = config.columns || {};
 		const { bands, band_of } = header_bands(state, config);
@@ -124,18 +185,26 @@ export class GridRows {
 		// columns.pinned.start: row headers of regular-table next to the label column.
 		const roomy = width >= MIN_WIDTH_FOR_PINS;
 		// the Statement (ADR-026) shows the label and the numbers only
-		const keep = (d) => !numbers_only || d.numeric || (date_label && d.column.fieldname in STATEMENT_TEXT);
+		const party_named = [...post.pinned_keys, ...post.data_keys].some((k) => by_key.get(k)?.fieldname === "party_name" && varies(report, k));
+		const varied = (c) => c.fieldname in STATEMENT_VARIED && !(c.fieldname === "party" && party_named) && varies(report, c.key);
+		const keep = (d) => !numbers_only || d.numeric || (date_label && (d.column.fieldname in STATEMENT_TEXT || varied(d.column)));
 		const statement_width = (d) => {
-			if (numbers_only && !d.numeric && !widths[d.column.key]) d.width = STATEMENT_TEXT[d.column.fieldname] || d.width;
+			if (numbers_only && !d.numeric && !widths[d.column.key]) d.width = STATEMENT_TEXT[d.column.fieldname] || STATEMENT_VARIED[d.column.fieldname] || d.width;
 			return d;
 		};
 		const all_pinned = roomy ? post.pinned_keys.map(describe) : [];
 		const all_data = (roomy ? post.data_keys : [...post.pinned_keys, ...post.data_keys]).map(describe);
 		const pinned = all_pinned.filter(keep).map(statement_width);
 		const data = all_data.filter(keep).map(statement_width);
+		if (fit_text) fit_text_columns([...pinned, ...data], width - label_width, widths);
 		// where a summary row's caption may come from: the text columns, shown or not
 		const caption_columns = [...all_pinned, ...all_data].filter((d) => !d.numeric);
 		for (const p of pinned) p.band = null;
+		// the Statement: a section's opening, total and closing name its account or party
+		const sections = new Map();
+		if (numbers_only) {
+			for (const d of [...pinned, ...data]) if (!d.numeric && d.column.fieldname in STATEMENT_VARIED) sections.set(d.column.key, sections_of(report, d.column.key));
+		}
 		data.forEach((d, i) => {
 			d.band_end = Boolean(d.band) && data[i + 1]?.band !== d.band;
 		});
@@ -163,6 +232,7 @@ export class GridRows {
 			parts: config.tree?.name_key && (config.tree.label_key || report.tree?.label_key) === label.key ? config.tree : null,
 			pinned,
 			caption_columns,
+			sections,
 			heads: 1 + pinned.length,
 			data,
 			levels,
@@ -446,6 +516,8 @@ export class GridRows {
 
 	// A cell of a summary row of the report, as the report returned it (no link is built).
 	summary_cell(col, row) {
+		const section = this.model.sections?.get(col.column.key)?.get(row.__rid);
+		if (section !== undefined) return { html: this.fmt.caption_html(col.column, { [col.column.key]: section, __kind: "group" }), sign: "" };
 		if (col.column.key === this.caption_of(row).key) return BLANK;
 		return { html: this.fmt.caption_html(col.column, row), sign: this.fmt.sign_of(col.column, row) };
 	}

@@ -273,6 +273,13 @@ test("card config: order and Top N by the engine (sort + rows read), label order
 	const dates = to_card_config(state(), ar, card({ type: "area", x: "posting_date", series: ["paid"] }));
 	assert.deepEqual(dates.config.sort[0], ["__lblsort__", "asc"]);
 	assert.equal(dates.config.aggregates.__lblsort__, "min");
+	assert.deepEqual(dates.config.group_by, ["posting_date"]);
+	// more days than the card draws: its months, every one of them, in time
+	const many = to_card_config(state(), ar, card({ type: "area", x: "posting_date", series: ["paid"] }), { categories: CARD_LIMITS.area + 1 });
+	assert.deepEqual(many.config.group_by, ["__month__"]);
+	assert.equal(many.config.expressions.__month__, `bucket("posting_date", 'M')`);
+	assert.deepEqual(many.config.sort[0], ["__lblsort__", "asc"]);
+	assert.deepEqual([many.post.bucket, many.post.top], ["month", false]);
 	// every sort column is a view column (Perspective mis-windows hidden sort columns)
 	for (const spec of [top, stacked, dates]) for (const [k] of spec.config.sort) assert.ok(spec.config.columns.includes(k), k);
 });

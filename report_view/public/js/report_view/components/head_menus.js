@@ -24,7 +24,7 @@ export function open_export_menu(page, anchor) {
 	if (can_export) {
 		items.push({
 			key: "excel",
-			label: __("Excel"),
+			label: __("Excel", null, "Report View"),
 			hint: ".xlsx",
 			icon: icons.sheet(),
 			disabled: !table || Boolean(page.header?.exporting),

@@ -393,6 +393,12 @@ def _classify_rows(
 	# 'Opening' in `account`, AR keeps "Total" in `party`).
 	label_scan = ([label_key] if label_key else []) + [k for k in dims if k != label_key]
 	total_words = {"Total", translate("Total")}
+	# English is what the fixtures compare; the translated forms cover a report that quotes
+	# _("Opening") in the session language, as adapter/classify.js does (an Arabic General
+	# Ledger by account: its openings and closings were read as totals, and the last account's
+	# closing as the grand total of the export, the critic's review of 2026-11-08)
+	opening_words = {"Opening", translate("Opening")}
+	closing_words = {"Closing (Opening + Total)", translate("Closing (Opening + Total)")}
 	group_header_key = register.get("group_header_key")
 
 	for rid, row in enumerate(rows):
@@ -415,9 +421,9 @@ def _classify_rows(
 					label = value[1:-1]
 					row["__label_raw"] = value
 					row[key] = label
-					if label == "Opening":
+					if label in opening_words:
 						kind = KIND_OPENING
-					elif label == "Closing (Opening + Total)":
+					elif label in closing_words:
 						kind = KIND_CLOSING
 					else:
 						kind = KIND_INTERNAL_TOTAL

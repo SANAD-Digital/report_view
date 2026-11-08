@@ -26,3 +26,31 @@ class TestNormalize(UnitTestCase):
 
 		for text in ("Sales Order", "Date of Birth", "a-b c", "مبلغ الفاتورة"):
 			self.assertEqual(scrub(text), frappe.scrub(text))
+
+	def test_quoted_captions_in_the_session_language(self):
+		"""A report that quotes _("Opening") in Arabic: its openings and closings are read as
+		such, as the browser reads them (adapter/classify.js), not as totals."""
+		import copy
+		import json
+
+		words = {
+			"Opening": "الافتتاحي",
+			"Closing (Opening + Total)": "الرصيد (الافتتاحي + الإجمالي)",
+			"Total": "الإجمالي",
+		}
+		case = next(c for c in load_fixtures() if c["name"] == "general_ledger_by_account")
+		i = case["input"]
+		raw = copy.deepcopy(i["raw"])
+		text = json.dumps(raw, ensure_ascii=False)
+		for en, ar in words.items():
+			text = text.replace(f"\"'{en}'\"", json.dumps(f"'{ar}'", ensure_ascii=False))
+		raw = json.loads(text)
+		self.assertIn("'الافتتاحي'", text)
+		got = normalize(
+			raw, i["filters"], i["report_settings"], i["register"], translate=lambda s: words.get(s, s)
+		)
+		kinds = [r["__kind"] for r in got["rows"]]
+		want = [r["__kind"] for r in case["expected"]["rows"]]
+		self.assertEqual(kinds, want)
+		self.assertIn("opening", kinds)
+		self.assertIn("closing", kinds)

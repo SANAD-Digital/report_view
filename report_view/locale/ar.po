@@ -4672,3 +4672,7 @@ msgstr "{0} «{1}» غير متاح لك، فلم يُطبَّق."
 msgctxt "Report View"
 msgid "{0} categories"
 msgstr "الفئات: {0}"
+
+msgctxt "Report View"
+msgid "Excel"
+msgstr "Excel"

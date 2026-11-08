@@ -148,6 +148,13 @@ export class PagesChrome {
 	}
 
 	period_text() {
+		const period = this.period_only();
+		const f = this.ctx.filters || {};
+		const party = this.side_layout ? [].concat(f.party_name || f.party || []).filter(Boolean).join(this.t(", ")) : "";
+		return party && period ? `<b>${esc(party)}</b> · ${period}` : period;
+	}
+
+	period_only() {
 		const f = this.ctx.filters || {};
 		const t = (m, a) => this.t(m, a);
 		const d = (v) => `<bdi class="rv-pnum">${esc(frappe.datetime.str_to_user(v))}</bdi>`;

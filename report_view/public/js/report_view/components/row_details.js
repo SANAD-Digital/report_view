@@ -183,7 +183,13 @@ export class RowDetails {
 			`<div class="rv-rd-tile"><div class="rv-rd-tile-k">${esc(t.label)}</div><div class="rv-rd-tile-v${t.sign ? ` ${t.sign}` : ""}">${t.html}</div></div>`;
 		const field = (f) => `<dt>${esc(f.label)}</dt><dd class="${[f.numeric && "num", f.sign].filter(Boolean).join(" ")}">${f.html || '<span class="rv-rd-empty">—</span>'}</dd>`;
 		const tiles = d.tiles.length ? `<div class="rv-rd-tiles">${d.tiles.map(tile).join("")}</div>` : "";
-		return `${tiles}<section class="rv-rd-sec"><h3>${esc(__("All fields of the row"))}</h3><dl class="rv-rd-fields">${d.fields.map(field).join("")}</dl></section>`;
+		// the empty fields wait behind «Other fields»: what the row says comes first
+		const filled = d.fields.filter((f) => f.html);
+		const empty = d.fields.filter((f) => !f.html);
+		const rest = empty.length
+			? `<details class="rv-rd-more"><summary>${esc(__("Other fields ({0})", [empty.length]))}</summary><dl class="rv-rd-fields">${empty.map(field).join("")}</dl></details>`
+			: "";
+		return `${tiles}<section class="rv-rd-sec"><h3>${esc(__("All fields of the row"))}</h3><dl class="rv-rd-fields">${filled.map(field).join("")}</dl>${rest}</section>`;
 	}
 
 	// The footer's verbs: the row's document (open, print), the printed content.

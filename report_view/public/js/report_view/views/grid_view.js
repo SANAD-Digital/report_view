@@ -310,6 +310,22 @@ export class GridView extends RtView {
 		return true;
 	}
 
+	/** The number of the report row at `y`: its place among the report rows of the view. */
+	row_number(y) {
+		if (this.numbers_epoch !== this.epoch) {
+			this.numbers_epoch = this.epoch;
+			const size = this.body_rows || 0;
+			const numbers = new Int32Array(size);
+			let n = 0;
+			for (let i = 0; i < size; i++) {
+				const rec = this.rec_at(i);
+				numbers[i] = rec && rec.type === "row" && !this.rows.is_summary(rec) ? ++n : 0;
+			}
+			this.numbers = numbers;
+		}
+		return this.numbers[y] || "";
+	}
+
 	// ------------------------------------------------------------ row details (ADR-023)
 
 	// The button of a report row; the same room, empty, before a group or a total.
@@ -317,9 +333,9 @@ export class GridView extends RtView {
 		const row = rec.type === "row" && !this.rows.is_summary(rec);
 		const lead = row && this.details ? details_button_html() : '<span class="rv-rd-sp"></span>';
 		if (!this.row_numbers) return lead;
-		// a trial layout's column of row numbers: the spacer rows of the opening rows do not count
-		const opening = this.rows.report_rows(this.current).top.length;
-		return `${lead}<span class="rv-rown">${row ? y + 1 - opening : ""}</span>`;
+		// a trial layout's column of row numbers: report rows only, not the groups, their totals
+		// or the spacers of the opening rows
+		return `${lead}<span class="rv-rown">${row ? this.row_number(y) : ""}</span>`;
 	}
 
 	/**

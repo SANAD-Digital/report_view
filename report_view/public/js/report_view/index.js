@@ -205,6 +205,14 @@ export class ReportViewPage {
 			on_row_moved: (key, at) => this.controls.move_pivot_dim(key, "cols", at),
 		});
 		this.overlay = new StateOverlay(wrap);
+		// whatever the overlay shows next, the dimmed table of a reload is over
+		for (const k of ["show", "hide", "loading"]) {
+			const shown = this.overlay[k].bind(this.overlay);
+			this.overlay[k] = (...a) => {
+				this.root.classList.remove("rv-reloading");
+				return shown(...a);
+			};
+		}
 		this.notices = new NoticeBar({ parent: wrap, before: body });
 		this.cells = new HeaderCells({
 			kind: (key) => this.controls.kind(key),
@@ -719,6 +727,11 @@ export class ReportViewPage {
 
 	// The first run of a page loads the engine (worker and WASM): the loading state says so.
 	show_loading() {
+		// a trial layout keeps what it shows while the next result comes: dimmed, a line moving
+		if (this.shell && this.opened && engine_ready()) {
+			this.root.classList.add("rv-reloading");
+			return;
+		}
 		this.overlay.loading(engine_ready() ? "" : __("Preparing the engine…"));
 		this.show_summary("loading");
 	}

@@ -401,3 +401,13 @@
 .rv-layout-a .rv-stateov{inset-block-start:37px}
 /* the printed numbers: the weight comes from the row, not from the report's own markup */
 :is(.rv-layout-a,.rv-layout-c) .rv-pt td .rv-n,:is(.rv-layout-a,.rv-layout-c) .rv-pt td .rv-n *{font-weight:inherit !important}
+/* a reload over a shown table: the rows stay, dimmed, and a thin line moves at the frame's top */
+:is(.rv-layout-a,.rv-layout-c).rv-reloading .rv-body{opacity:.5;pointer-events:none;transition:opacity .15s}
+:is(.rv-layout-a,.rv-layout-c).rv-reloading .rv-gridwrap::after{content:"";position:absolute;inset-inline:0;top:0;height:2px;z-index:20;background:linear-gradient(90deg,transparent,var(--pri,var(--tx)),transparent);background-size:40% 100%;background-repeat:no-repeat;animation:rv-reload 1s linear infinite}
+@keyframes rv-reload{from{background-position:-40% 0}to{background-position:140% 0}}
+@media (prefers-reduced-motion:reduce){:is(.rv-layout-a,.rv-layout-c).rv-reloading .rv-gridwrap::after{animation:none;background:var(--pri,var(--tx))}}
+/* printed numbers at their column's right edge, a zero an empty cell (the screen's rule) */
+:is(.rv-layout-a,.rv-layout-c) .rv-pt :is(td,th).num{direction:ltr;text-align:end}
+:is(.rv-layout-a,.rv-layout-c) .rv-pt td.zero .rv-n{visibility:hidden}
+/* the view modes: a visible focus ring, whatever Desk's buttons do */
+.rv-modes button:focus-visible,.rv-tc-modes .rv-tb:focus-visible{outline:2px solid var(--focus,var(--pri)) !important;outline-offset:-2px}

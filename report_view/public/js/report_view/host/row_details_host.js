@@ -35,6 +35,19 @@ export function make_row_details(page) {
 		};
 		const parts = m.parts;
 		const name = parts?.name_key ? row[parts.name_key] : null;
+		// a ledger's row is named by its voucher, its date in the table's format under it
+		if (row.voucher_type && row.voucher_no && !name) {
+			const raw = m.label?.date ? row[m.label.key] : null;
+			const date = raw ? frappe.datetime.str_to_user(String(raw).slice(0, 10)) : "";
+			return {
+				subtitle: [__(page.report_name), date].filter(Boolean).join(" · "),
+				code: "",
+				title: `${__(row.voucher_type)} ${row.voucher_no}`,
+				tiles: conf.content === "fields" ? pick_tiles(cols).map(cell) : [],
+				fields: conf.content === "fields" ? cols.map(cell) : [],
+				document: document_of(conf, row, m.label),
+			};
+		}
 		return {
 			subtitle: __(page.report_name),
 			code: parts?.number_key && name ? String(row[parts.number_key] ?? "") : "",

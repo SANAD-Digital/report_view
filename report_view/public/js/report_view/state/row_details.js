@@ -118,6 +118,10 @@ export function document_of(conf, row, label_column) {
 	const link = label_column?.link;
 	const name = label_column && row[label_column.key];
 	if (link?.kind === "static" && link.doctype && typeof name === "string" && name) return { doctype: link.doctype, name };
+	// a ledger's row: its voucher
+	if (typeof row.voucher_type === "string" && row.voucher_type && typeof row.voucher_no === "string" && row.voucher_no) {
+		return { doctype: row.voucher_type, name: row.voucher_no };
+	}
 	return null;
 }
 

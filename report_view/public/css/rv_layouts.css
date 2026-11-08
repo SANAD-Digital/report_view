@@ -412,3 +412,22 @@
 /* the view modes: a visible focus ring, whatever Desk's buttons do */
 .rv-modes button:focus-visible,.rv-tc-modes .rv-tb:focus-visible{outline:2px solid var(--focus,var(--pri)) !important;outline-offset:-2px}
 .rv-pv-gross{display:inline-block;margin-top:2px;font-size:var(--t12);color:var(--warn-tx,var(--tx-2));white-space:normal}
+/* the Statement on a phone: cards instead of the sheet's table */
+.rv-cards{display:none}
+:is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-cards{display:flex;flex-direction:column;gap:var(--s2);width:100%}
+:is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-body{display:none}
+:is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-gridwrap{padding:var(--s2)}
+:is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-stmt-head{width:100%;padding:var(--s3);grid-template-columns:1fr;justify-items:center;gap:var(--s2);box-shadow:none;clip-path:none;border-radius:var(--rad)}
+:is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-stmt-title,:is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-stmt-levels{grid-column:1;justify-self:center}
+.rv-cards-bar{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:var(--s2);padding:var(--s2) var(--s3);border-radius:var(--rad);background:var(--surface);border:1px solid var(--line-2);font-size:var(--t13)}
+.rv-cards-bar b{font-size:var(--t14);font-variant-numeric:tabular-nums}
+.rv-card{display:flex;flex-direction:column;gap:4px;width:100%;min-height:44px;box-sizing:border-box;padding:var(--s2) var(--s3);border:1px solid var(--line);border-radius:var(--rad);background:var(--surface);color:var(--tx);font:inherit;font-size:var(--t13);text-align:start;cursor:pointer}
+.rv-card:active{background:var(--hover)}
+.rv-card .l1,.rv-card .l2{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s2);min-width:0}
+.rv-card .l1 .v{color:var(--tx-2);font-size:var(--t12);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-card .l1 .rv-lc{padding:0}
+.rv-card .l1 .rv-lc > :is(.rv-rd-btn,.rv-rd-sp,.rv-rown){display:none}
+.rv-card .k{color:var(--tx-3);font-size:var(--t12)}
+.rv-card :is(b,.b) .rv-n{direction:ltr;unicode-bidi:isolate}
+.rv-card .b{font-weight:var(--fw-b);font-variant-numeric:tabular-nums}
+.rv-cards-more{margin:var(--s2) 0;text-align:center;color:var(--tx-3);font-size:var(--t12)}

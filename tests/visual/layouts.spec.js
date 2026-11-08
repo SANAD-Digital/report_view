@@ -436,3 +436,24 @@ test("a ledger on a trial layout opens on its reader's columns, the numbers last
 	expect(statement).not.toContain("account");
 	expect(problems, "console errors/warnings").toEqual([]);
 });
+
+test("the Statement on a phone: the closing balance in a bar, a card per row, a tap opens its details", async ({ page }) => {
+	const problems = watch_console(page);
+	await open(page, "report=gl&lang=ar&layout=a", { width: 390, height: 844 });
+	await settle(page);
+	await page.locator('[data-mode="statement"]:visible').first().click();
+	await settle(page);
+	await expect(page.locator(".rv-card").first()).toBeVisible();
+	const st = await page.evaluate(() => ({
+		cards: document.querySelectorAll(".rv-card").length,
+		facts: window.rv_page.opened.counts.shown,
+		table: getComputedStyle(document.querySelector(".rv-body")).display,
+		hscroll: document.documentElement.scrollWidth > innerWidth,
+	}));
+	expect(st.cards).toBe(st.facts);
+	expect(st.table).toBe("none");
+	expect(st.hscroll).toBe(false);
+	await page.locator(".rv-card").first().click();
+	await expect(page.locator(".rv-rd")).toBeVisible();
+	expect(problems, "console errors/warnings").toEqual([]);
+});

@@ -4632,3 +4632,6 @@ msgstr "سند غير صالح"
 
 msgid "Debit and credit balances are added separately here, before netting: the table shows each account net."
 msgstr "الأرصدة المدينة والدائنة تُجمع هنا كلٌّ على حدة قبل المقاصة، والجدول يعرض صافي كل حساب."
+
+msgid "The first {0} rows: print or export for the rest."
+msgstr "أول {0} سطر: اطبع أو صدّر لترى الباقي."

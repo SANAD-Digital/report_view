@@ -25,6 +25,8 @@ import { tree_index } from "../engine/tree_nodes.js";
 export const LAYOUTS = ["a", "c"];
 // the rows a Statement draws at their full height; beyond them its body scrolls
 const STATEMENT_MAX_ROWS = 1500;
+// the cards of the Statement on a phone
+const CARD_ROWS = 500;
 // a ledger's default columns: what tells a row apart, then the numbers
 const LEDGER_TEXT = ["account", "voucher_type", "voucher_no", "party", "party_name", "remarks", "remark"];
 const LEDGER_NUMBERS = ["debit", "credit", "balance", "running_balance", "actual_qty", "qty_after_transaction", "stock_value"];
@@ -73,6 +75,17 @@ export class TrialLayout {
 		// the Statement (ADR-026): the table drawn as a statement, with its own head
 		this.stmt = this.make_statement_head();
 		wrap.prepend(this.stmt);
+		// the Statement on a phone: a card per row (paint_cards)
+		this.cards = document.createElement("div");
+		this.cards.className = "rv-cards";
+		this.cards.addEventListener("click", (e) => {
+			const card = e.target.closest("[data-y]");
+			const row = card && this.card_rows?.get(Number(card.dataset.y));
+			if (row) page.row_details.open({ y: Number(card.dataset.y), row, opener: card });
+		});
+		this.stmt.after(this.cards);
+		this.phone = window.matchMedia?.("(max-width: 600px)");
+		this.phone?.addEventListener?.("change", () => this.paint_cards());
 		// the Pages tab warms its settings up, as the classic toolbar's does
 		const warm = (e) => {
 			if (e.target.closest?.('[data-mode="pages"]') && page.report && page.meta?.perms?.can_print) {
@@ -114,6 +127,7 @@ export class TrialLayout {
 			this.fit_rows();
 			this.mark_search();
 			this.stick_titles();
+			this.paint_cards();
 		};
 		// the sheet scrolls with the page: its column titles stay on screen
 		page.root.closest(".main-section")?.addEventListener("scroll", () => this.stick_titles(), { passive: true });
@@ -298,6 +312,57 @@ export class TrialLayout {
 		page.render();
 	}
 
+	/**
+	 * The Statement on a phone: the closing balance in a bar that stays, then a card per report
+	 * row (its date and voucher, then its amount and its balance); a tap opens its details.
+	 * Read from the view the sheet shows, its filters and search included, up to CARD_ROWS.
+	 */
+	async paint_cards() {
+		const page = this.page;
+		const grid = page.grid;
+		const on = Boolean(this.phone?.matches) && page.state?.mode === "statement" && grid.current && grid.layout && grid.model;
+		page.root.classList.toggle("rv-phone-cards", Boolean(on));
+		if (!on) return;
+		const sign = `${grid.epoch}:${grid.body_rows}`;
+		if (this.cards_sign === sign) return;
+		this.cards_sign = sign;
+		const token = (this.cards_token = (this.cards_token || 0) + 1);
+		const cur = grid.current;
+		const rows_model = grid.rows;
+		const plan = rows_model.plan(grid.layout, 0, Math.min(grid.body_rows || 0, CARD_ROWS));
+		const recs = await rows_model.read_records(cur, plan, grid.layout);
+		if (token !== this.cards_token) return;
+		const m = grid.model;
+		const by_name = new Map(m.data.map((d) => [d.column.fieldname, d]));
+		const html_of = (d, row) => (d ? rows_model.report_cell(d, row).html : "");
+		const running = m.data.find((d) => d.column.running);
+		const amounts = m.data.filter((d) => d.numeric && d !== running);
+		const text_of = (name, row) => {
+			const d = by_name.get(name);
+			return d ? frappe.utils.escape_html(String(row[d.column.key] ?? "")) : "";
+		};
+		this.card_rows = new Map();
+		const cards = [];
+		for (let y = 0; y < plan.entries.length; y++) {
+			const rec = recs.get(y);
+			if (!rec || rec.type !== "row" || rows_model.is_summary(rec) || !rec.row) continue;
+			const row = rec.row;
+			this.card_rows.set(y, row);
+			const amount = amounts
+				.filter((d) => Number(row[d.column.key]))
+				.map((d) => `<span class="k">${frappe.utils.escape_html(d.title)}</span> <b>${html_of(d, row)}</b>`)
+				.join(" ");
+			cards.push(`<button type="button" class="rv-card" data-y="${y}">
+				<span class="l1"><span>${rows_model.label_html(rec)}</span><span class="v">${[text_of("voucher_type", row), text_of("voucher_no", row)].filter(Boolean).join(" ")}</span></span>
+				<span class="l2"><span>${amount}</span>${running ? `<span class="b">${html_of(running, row)}</span>` : ""}</span>
+			</button>`);
+		}
+		const closing = rows_model.report_rows(cur).bottom.at(-1);
+		const bar = running && closing ? `<div class="rv-cards-bar"><span>${frappe.utils.escape_html(rows_model.caption_of(closing).html.replace(/<[^>]+>/g, ""))}</span><b>${rows_model.summary_cell(running, closing).html}</b></div>` : "";
+		const more = (grid.body_rows || 0) > CARD_ROWS ? `<p class="rv-cards-more">${frappe.utils.escape_html(__("The first {0} rows: print or export for the rest.", [CARD_ROWS]))}</p>` : "";
+		this.cards.innerHTML = bar + cards.join("") + more;
+	}
+
 	/** On the Statement the column titles stay at the top of the page's scroller. */
 	stick_titles() {
 		const page = this.page;
@@ -435,7 +500,8 @@ export class TrialLayout {
 		if (s.mode !== "statement") page.root.classList.remove("rv-stmt-sized");
 		el.querySelector(".t").textContent = __(page.report_name || "");
 		const f = page.last_filters || {};
-		const date = (v) => (v ? frappe.datetime.str_to_user(v) : "");
+		// each date isolated: in an Arabic line its digits keep their order
+		const date = (v) => (v ? `\u2066${frappe.datetime.str_to_user(v)}\u2069` : "");
 		const from = f.from_date || f.period_start_date;
 		const to = f.to_date || f.period_end_date;
 		const party = [].concat(f.party_name || f.party || f.customer || f.supplier || []).join(__(", "));

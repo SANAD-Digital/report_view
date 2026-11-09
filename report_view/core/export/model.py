@@ -41,9 +41,13 @@ LAYOUT_KEYS = frozenset(
 		"include_subtotals",
 		"include_signatures",
 		"columns",
+		"filters",
 	)
 )
 MAX_TITLE = 140
+# layout.filters: the criteria as the page writes them ([label, text] pairs, translated)
+MAX_FILTER_LINES = 50
+MAX_FILTER_TEXT = 300
 
 
 def _bad(message: str) -> None:
@@ -136,6 +140,20 @@ def parse(export_model: Any, fmt: str) -> dict:
 			_bad(_("Invalid layout"))
 		if col.get("width") is not None and not _is_number(col["width"]):
 			_bad(_("Invalid layout"))
+	# the criteria as the page shows them (translated labels and values, the search and the
+	# column filters): text for the file's head only, never read as a filter
+	filter_lines = layout.get("filters")
+	if filter_lines is not None and (
+		not isinstance(filter_lines, list)
+		or len(filter_lines) > MAX_FILTER_LINES
+		or not all(
+			isinstance(p, list)
+			and len(p) == 2
+			and all(isinstance(t, str) and len(t) <= MAX_FILTER_TEXT for t in p)
+			for p in filter_lines
+		)
+	):
+		_bad(_("Invalid layout"))
 
 	return {
 		"filters": filters,
@@ -151,6 +169,7 @@ def parse(export_model: Any, fmt: str) -> dict:
 			"include_filters": layout.get("include_filters", True) is not False,
 			"include_subtotals": layout.get("include_subtotals", True) is not False,
 			"columns": layout_columns,
+			"filters": filter_lines,
 		},
 	}
 

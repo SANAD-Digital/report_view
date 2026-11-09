@@ -193,6 +193,21 @@ class TestExportXlsx(RVTestCase):
 		headers = [c.value for row in ws.iter_rows(max_row=12) for c in row if isinstance(c.value, str)]
 		self.assertTrue(any("Account Type" in h or "نوع الحساب" in h for h in headers), headers)
 
+	def test_the_criteria_as_the_page_writes_them(self):
+		"""layout.filters: the head of the file says the criteria in the page's words; text
+		only, never a formula, never a filter."""
+		lines = [["المنشأة", "SND Accounting"], ["", "تجميع بحسب المستند (موحد)"], ["بحث", "=HYPERLINK(1)"]]
+		layout = {"title": "Trial Balance", "include_filters": True, "filters": lines}
+		with self.as_user("accountant"):
+			ws = self._export("Trial Balance", tb_model(layout=layout)).active
+		head = [c.value for row in ws.iter_rows(max_row=4) for c in row if isinstance(c.value, str)]
+		text = next(h for h in head if "SND Accounting" in h and "|" in h)
+		self.assertEqual(text, "المنشأة: SND Accounting | تجميع بحسب المستند (موحد) | بحث: =HYPERLINK(1)")
+		self.assertFalse(text.startswith("="))
+		for bad in ([["a"]], [["a", 1]], [["a", "x" * 301]], "text"):
+			with self.subTest(bad=bad), self.as_user("accountant"), self.assertRaises(RVInvalidInput):
+				self._export("Trial Balance", tb_model(layout={**layout, "filters": bad}))
+
 	def test_invalid_model(self):
 		with self.as_user("accountant"):
 			for model in (tb_model(version=2), tb_model(format="pdf"), dict(tb_model(), extra=1)):

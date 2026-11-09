@@ -69,6 +69,13 @@ def _cell_value(value: Any, column: dict) -> Any:
 	return str(value)
 
 
+def _page_filters_text(lines: list) -> str:
+	"""The criteria as the page wrote them: «label: text | …». Plain text in one cell, never a
+	formula (a text that starts with =, +, - or @ is one in a spreadsheet)."""
+	text = " | ".join(f"{label}: {value}" if label else value for label, value in lines if value)
+	return text.lstrip("=+-@ ")
+
+
 def _filters_text(filters: dict) -> str:
 	parts = []
 	for key, value in filters.items():
@@ -167,7 +174,7 @@ def build(
 		top.append((str(company), Font(bold=True, size=14)))
 	top.append((layout.get("title") or _(report_name), Font(bold=True, size=12)))
 	if layout.get("include_filters"):
-		text = _filters_text(filters)
+		text = _page_filters_text(layout["filters"]) if layout.get("filters") else _filters_text(filters)
 		if text:
 			top.append((text, None))
 	bands = _bands(columns, settings.get("balance_pairs") or [])

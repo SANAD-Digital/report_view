@@ -7,6 +7,7 @@ import { visible_columns } from "../engine/view_config.js";
 import { wait_for_export, ExportJobError } from "../export_job.js";
 import { esc, fmt_int, session_lang, download_blob } from "../util.js";
 import { ERROR_TITLES } from "./error_titles.js";
+import { filter_items } from "../filters/filter_summary.js";
 
 export class ExportFlow {
 	// Export model v1 (docs/architecture.md §4.1). Quick filters travel with their definitions
@@ -42,9 +43,26 @@ export class ExportFlow {
 				include_subtotals: true,
 				include_signatures: false,
 				columns: cols.map((c) => ({ key: c.key, width: this.state.columns.widths[c.key] || c.width || null })),
+				// the criteria as the head shows them, then the search and the column filters
+				filters: this.export_filter_lines(),
 			},
 			locale: { lang: session_lang(), rtl: this.rtl },
 		};
+	}
+
+	/** [label, text] of every criterion that holds a value, as the page writes it. */
+	export_filter_lines() {
+		const cut = (s) => String(s ?? "").slice(0, 300);
+		let items = [];
+		try {
+			items = filter_items(this.criteria).filter((it) => it.text);
+		} catch {
+			items = [];
+		}
+		// a choice that repeats its filter's name stands alone, as on the chip
+		const lines = items.map((it) => [it.bare ? "" : cut(it.label), cut(it.text)]);
+		for (const n of this.controls?.narrowing?.() || []) lines.push([cut(n.label), cut(n.value)]);
+		return lines.slice(0, 50);
 	}
 
 	async export_xlsx() {

@@ -44,6 +44,8 @@ VISIBILITY = ("Private", "Roles", "Public")
 NO_SHARE_ROLES = frozenset(("Guest", "All", "Administrator"))
 OWNER_PTYPES = frozenset(("write", "delete", "cancel", "submit", "amend", "share"))
 READ_PTYPES = frozenset(("read", "email", "print"))
+# columns a Statement of its own may show (a report has fewer)
+MAX_STATEMENT_COLUMNS = 500
 DEFAULT_KEY = "report_view_default::"
 # DefaultValue.defkey is a Data field (varchar 140)
 _DEFKEY_MAX = 140
@@ -248,6 +250,15 @@ def clean_state(raw) -> dict:
 	cols = state.get("columns")
 	groups = cols.pop("groups", None) if isinstance(cols, dict) else None
 	_check_groups(groups)
+	# the Statement's own columns, in order (layouts/layout.js): column keys, checked against
+	# the report when the view opens, as every key of a view is
+	statement = cols.pop("statement", None) if isinstance(cols, dict) else None
+	if statement is not None and (
+		not isinstance(statement, list)
+		or len(statement) > MAX_STATEMENT_COLUMNS
+		or not all(isinstance(k, str) for k in statement)
+	):
+		_bad_state(_("View state: invalid columns.statement"))
 	if state.get("report_filters") is not None:
 		_check_report_filters(state["report_filters"])
 	mode = state.get("mode", "grid")
@@ -260,6 +271,7 @@ def clean_state(raw) -> dict:
 	state["charts"] = charts
 	if isinstance(state.get("columns"), dict):
 		state["columns"]["groups"] = groups
+		state["columns"]["statement"] = statement
 	if len(json.dumps(state, separators=(",", ":")).encode("utf-8")) > MAX_STATE_BYTES:
 		_bad_state(_("The view is too large"))
 	return state

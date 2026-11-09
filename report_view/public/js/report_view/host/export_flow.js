@@ -14,7 +14,9 @@ export class ExportFlow {
 	// (ADR-013): the server applies the same expressions; an id with no definition is left
 	// out, as the screen leaves it out (a QUICK_FILTER_UNKNOWN notice).
 	export_model() {
-		const cols = visible_columns(this.report, this.state);
+		// the Statement exports the columns it shows (its own, when chosen)
+		const shown = this.statement_state ? this.statement_state() : this.state;
+		const cols = visible_columns(this.report, shown);
 		const defined = (this.config?.quick_filters || []).filter((q) => q && typeof q.id === "string" && typeof q.expression === "string");
 		const known = new Set(defined.map((q) => q.id));
 		return {
@@ -24,7 +26,7 @@ export class ExportFlow {
 			js_filters: this.filters.js_filters(),
 			prepared_report_name: this.prepared_report_name,
 			view_state: {
-				...this.state,
+				...shown,
 				// the Statement is the table drawn as a statement: the server exports the table
 				mode: this.state.mode === "statement" ? "grid" : this.state.mode,
 				quick_filters: (this.state.quick_filters || []).filter((id) => known.has(id)),

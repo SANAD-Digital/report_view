@@ -45,7 +45,7 @@ import * as dashboard_state from "./state/dashboard_state.js";
 import { ViewControls } from "./view_controls.js";
 import { NoticeBar, describe_notices } from "./components/notices.js";
 import { icons } from "./components/icons.js";
-import { esc, fmt_int, session_lang, settings_saver, set_desk_theme } from "./util.js";
+import { esc, fmt_int, session_lang, settings_saver, set_desk_theme, load_bundle } from "./util.js";
 import { ERROR_TITLES } from "./host/error_titles.js";
 import { PagesHost } from "./host/pages_host.js";
 import { ExportFlow } from "./host/export_flow.js";
@@ -311,8 +311,8 @@ export class ReportViewPage {
 
 	async load_pages() {
 		if (!this.pages_view) {
-			if (!window.report_view?.PagesView) await frappe.require("report_view_pages.bundle.js");
-			this.pages_view ||= new report_view.PagesView({ parent: this.$(".rv-pages"), root: this.root, rtl: this.rtl, host: this, side: this.layout !== "classic" });
+			const PagesView = await load_bundle("report_view_pages.bundle.js", "PagesView");
+			this.pages_view ||= new PagesView({ parent: this.$(".rv-pages"), root: this.root, rtl: this.rtl, host: this, side: this.layout !== "classic" });
 		}
 		return this.pages_view;
 	}
@@ -543,7 +543,7 @@ export class ReportViewPage {
 	// The Charts view and ECharts load on first use (report_view_charts.bundle.js).
 	async show_charts(session) {
 		if (!this.charts) {
-			if (!window.report_view?.ChartsView) await frappe.require("report_view_charts.bundle.js");
+			await load_bundle("report_view_charts.bundle.js", "ChartsView");
 			if (!this.charts) {
 				this.charts = new report_view.ChartsView({
 					parent: this.$(".rv-charts-slot"),
@@ -1044,6 +1044,22 @@ export class ReportViewPage {
 		}
 	}
 
+	/**
+	 * The state the table reads. On the Statement with columns of its own
+	 * (state.columns.statement, chosen and ordered from its head): those columns in that order
+	 * after the label, the others hidden; the table's own choice of columns stays as it was.
+	 */
+	statement_state() {
+		const s = this.state;
+		const own = s?.mode === "statement" && Array.isArray(s.columns?.statement) ? s.columns.statement : null;
+		if (!own || !this.report) return s;
+		const label = this.controls.label_key();
+		const keys = new Set(this.report.columns.filter((c) => !c.hidden).map((c) => c.key));
+		const list = own.filter((k) => keys.has(k) && k !== label);
+		const hidden = this.report.columns.filter((c) => c.key !== label && !list.includes(c.key)).map((c) => c.key);
+		return { ...s, columns: { ...s.columns, hidden, order: [label, ...list], pinned: { start: [], end: [] } } };
+	}
+
 	// A view state change: the new view is opened, swapped into the grid, then the old one
 	// is deleted (no flicker). A newer render() supersedes this one.
 	async render() {
@@ -1086,7 +1102,9 @@ export class ReportViewPage {
 		// The pivot and the charts read their own views: what the page shows around them
 		// (summary cards, status bar, notices) needs no grid view (ReportSession.summarize).
 		const light = charts || pivot;
-		const spec = session.spec_of(this.state);
+		// the Statement with columns of its own reads them (statement_state)
+		const shown = this.statement_state();
+		const spec = session.spec_of(shown);
 		const key = session.view_key(spec);
 		let opened;
 		const kept = this.opened;
@@ -1097,7 +1115,7 @@ export class ReportViewPage {
 			opened = session.adopt(kept, spec);
 		} else {
 			try {
-				opened = light ? await session.summarize(this.state, spec) : await session.open(this.state, "grid", spec);
+				opened = light ? await session.summarize(this.state, spec) : await session.open(shown, "grid", spec);
 			} catch (e) {
 				// The result was replaced (its tables deleted) while this view was being opened.
 				if (session !== this.session) return;
@@ -1131,7 +1149,7 @@ export class ReportViewPage {
 					report,
 					opened,
 					session,
-					state: this.state,
+					state: shown,
 					config: this.config,
 					fmt: this.formatter,
 				});
@@ -1285,7 +1303,10 @@ export class ReportViewPage {
 			title,
 			text: e?.message || "",
 			code: exc || "",
-			actions: [{ label: __("Try again"), primary: true, action: () => this.run() }],
+			// a bundle of an older build: only a reload brings the new one
+			actions: e?.rv_reload
+				? [{ label: __("Reload the page"), primary: true, action: () => window.location.reload() }]
+				: [{ label: __("Try again"), primary: true, action: () => this.run() }],
 		});
 	}
 

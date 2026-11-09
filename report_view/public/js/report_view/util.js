@@ -126,3 +126,20 @@ export function set_desk_theme(theme) {
 	if (window.frappe?.ui?.set_theme) frappe.ui.set_theme(theme);
 	else document.documentElement.setAttribute("data-theme", theme);
 }
+
+/**
+ * A bundle of the app loaded on first use (the Pages, the Charts), and the name it defines on
+ * window.report_view. A page opened before the app was built again asks for a file the build
+ * removed: the name is missing and the page says to reload, not «X is not a constructor».
+ */
+export async function load_bundle(file, name) {
+	if (window.report_view?.[name]) return window.report_view[name];
+	await frappe.require(file);
+	const loaded = window.report_view?.[name];
+	if (!loaded) {
+		const e = new Error(__("Report View was updated since this page opened: reload the page to use it."));
+		e.rv_reload = true;
+		throw e;
+	}
+	return loaded;
+}

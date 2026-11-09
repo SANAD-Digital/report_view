@@ -64,7 +64,7 @@ class TestDrill(RVTestCase):
 		self.assertEqual(rule["filters"]["to_date"], "filter:to_date")
 		features = load_settings(TB)["features"]
 		self.assertTrue(features["drill"] and features["range_selection"])
-		self.assertEqual(load_settings(TB)["link_open"], "new_tab")
+		self.assertEqual(load_settings(TB)["link_open"], "side_panel")
 
 	def test_invalid_rules_are_refused_on_save(self):
 		good = {

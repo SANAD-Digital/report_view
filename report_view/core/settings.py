@@ -72,7 +72,7 @@ ROW_CONTAINERS = {"Drawer": "drawer", "Dialog": "dialog"}
 ROW_WIDTHS = {"Narrow": "narrow", "Medium": "medium", "Wide": "wide"}
 ROW_CONTENTS = {"Fields": "fields", "HTML template": "html", "Print format": "print_format"}
 # How the value of a Link column opens its document (phase 5d): Select labels -> keys.
-LINK_OPEN = {"New tab": "new_tab", "Same tab": "same_tab", "Drawer": "drawer"}
+LINK_OPEN = {"Side panel": "side_panel", "New tab": "new_tab", "Same tab": "same_tab", "Drawer": "drawer"}
 # The JSON fields of the record, parsed with the loader's own functions.
 JSON_PARTS = ("report_settings", "enrich_rules", "balance_pairs", "filter_defs", "drilldowns")
 
@@ -114,7 +114,7 @@ def empty_settings(report_name: str) -> dict:
 		"features": default_features(),
 		"default_view": {"group_by": [], "hidden": [], "pinned": []},
 		"row_details": default_row_details(),
-		"link_open": "new_tab",
+		"link_open": "side_panel",
 	}
 
 
@@ -247,7 +247,7 @@ def record_layer(doc, strict: bool = False) -> dict:
 	features["chart_types"] = [t for t in CHART_TYPES if doc.get("chart_" + t)]
 	layer["features"] = features
 	layer["row_details"] = row_details_layer(doc, strict)
-	layer["link_open"] = LINK_OPEN.get(doc.get("link_open") or "", "new_tab")
+	layer["link_open"] = LINK_OPEN.get(doc.get("link_open") or "", "side_panel")
 	layer["default_mode"] = DEFAULT_MODES.get(doc.get("default_mode") or "")
 	layer["default_view"] = {
 		"group_by": _key_list(doc.get("default_group_by")),
@@ -346,7 +346,7 @@ def merge_settings(shipped: dict, record: dict | None) -> dict:
 	out["row_details"] = record["row_details"]
 	if record.get("drilldowns") is not None:
 		out["drilldowns"] = _merge_by(shipped["drilldowns"], record["drilldowns"], lambda r: r["label"])
-	out["link_open"] = record.get("link_open") or out.get("link_open") or "new_tab"
+	out["link_open"] = record.get("link_open") or out.get("link_open") or "side_panel"
 	return out
 
 

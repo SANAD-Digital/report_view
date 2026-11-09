@@ -435,12 +435,17 @@ for (const theme of ["light", "dark"]) {
 
 // ------------------------------------------------------------ links (5d)
 
-for (const how of ["new_tab", "same_tab", "drawer"]) {
+for (const how of ["side_panel", "new_tab", "same_tab", "drawer"]) {
 	test(`a Link column opens its document: ${how}`, async ({ page }) => {
 		const problems = watch_console(page);
-		await open(page, `report=gl&lang=en${how === "new_tab" ? "" : rvs({ link_open: how })}`);
+		// side_panel is the default: Frappe's own preview (frappe.ui.get_side_panel), stubbed here
+		await open(page, `report=gl&lang=en${how === "side_panel" ? "" : rvs({ link_open: how })}`);
 		await page.evaluate(() => {
 			window.rv_opened = [];
+			frappe.ui.split_view_enabled = () => true;
+			frappe.model.can_read = () => true;
+			frappe.require = () => Promise.resolve();
+			frappe.ui.get_side_panel = () => ({ open: (doctype, name) => window.rv_opened.push({ side_panel: [doctype, name] }) });
 			window.open = (url, target) => (window.rv_opened.push({ url, target }), null);
 			frappe.set_route = (...args) => window.rv_opened.push({ route: args });
 			frappe.db.get_doc = (doctype, name) => Promise.resolve({ doctype, name, account_name: "Cash", account_type: "Cash", company: "SND Accounting" });
@@ -461,8 +466,10 @@ for (const how of ["new_tab", "same_tab", "drawer"]) {
 			await expect(drawer).toHaveCount(0);
 			expect(await page.evaluate(() => window.rv_opened)).toEqual([]);
 		} else {
+			await page.waitForFunction(() => window.rv_opened.length > 0);
 			const opened = await page.evaluate(() => window.rv_opened);
-			if (how === "new_tab") expect(opened).toEqual([{ url: `/app/Account/${encodeURIComponent(name)}`, target: "_blank" }]);
+			if (how === "side_panel") expect(opened).toEqual([{ side_panel: ["Account", name] }]);
+			else if (how === "new_tab") expect(opened).toEqual([{ url: `/app/Account/${encodeURIComponent(name)}`, target: "_blank" }]);
 			else expect(opened).toEqual([{ route: ["Form", "Account", name] }]);
 		}
 		// the page itself did not navigate

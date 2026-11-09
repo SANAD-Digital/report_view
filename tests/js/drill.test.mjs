@@ -74,9 +74,11 @@ test("shipped: Trial Balance drills to the General Ledger of the account and the
 	});
 });
 
-test("link_open: New tab by default; Same tab and Drawer as the settings say", () => {
-	assert.equal(link_open_of(null), "new_tab");
+test("link_open: Frappe's side panel by default; New tab, Same tab and Drawer as the settings say", () => {
+	assert.equal(link_open_of(null), "side_panel");
+	assert.equal(link_open_of({ link_open: "New tab" }), "new_tab");
 	assert.equal(link_open_of({ link_open: "same_tab" }), "same_tab");
 	assert.equal(link_open_of({ link_open: "Drawer" }), "drawer");
-	assert.equal(link_open_of({ link_open: "elsewhere" }), "new_tab");
+	assert.equal(link_open_of({ link_open: "Side panel" }), "side_panel");
+	assert.equal(link_open_of({ link_open: "elsewhere" }), "side_panel");
 });

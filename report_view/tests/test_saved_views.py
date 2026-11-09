@@ -376,6 +376,7 @@ class TestSavedViews(RVTestCase):
 				"columns": {
 					**STATE["columns"],
 					"groups": [{"id": "g1", "label": "Opening", "keys": ["opening_debit"]}],
+					"statement": ["closing_debit", "closing_credit"],
 				},
 				"report_filters": {"company": "X", "cost_center": ["A", "B"], "show_zero_values": 0},
 			}
@@ -400,6 +401,8 @@ class TestSavedViews(RVTestCase):
 			self.assertEqual(got["state"]["mode"], "pages")
 			self.assertEqual(got["state"]["charts"]["cards"][0]["id"], "c1")
 			self.assertEqual(got["state"]["columns"]["groups"][0]["id"], "g1")
+			# the Statement's own columns, in their order
+			self.assertEqual(got["state"]["columns"]["statement"], ["closing_debit", "closing_credit"])
 			self.assertEqual(got["state"]["report_filters"]["cost_center"], ["A", "B"])
 			# Public: the roles are emptied
 			self.assertEqual(got["roles"], [])

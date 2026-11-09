@@ -245,7 +245,11 @@ export class RowDetails {
 	}
 
 	print_document() {
-		if (this.document) frappe.utils.print(this.document.doctype, this.document.name);
+		// the app's own print (ADR-017, /desk/rv-print/<doctype>/<name>), not Desk's print view;
+		// in a new tab, as Desk opens its own, so the report stays where it is
+		if (!this.document) return;
+		const { doctype, name } = this.document;
+		window.open(`/desk/rv-print/${encodeURIComponent(doctype)}/${encodeURIComponent(name)}`, "_blank", "noopener");
 	}
 
 	print_frame() {

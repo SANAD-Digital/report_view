@@ -89,11 +89,12 @@ export function map_filters(rule, row, filters, columns = []) {
 	return out;
 }
 
-const LINK_OPEN = { "new tab": "new_tab", new_tab: "new_tab", "same tab": "same_tab", same_tab: "same_tab", drawer: "drawer" };
+const LINK_OPEN = { "side panel": "side_panel", side_panel: "side_panel", "new tab": "new_tab", new_tab: "new_tab", "same tab": "same_tab", same_tab: "same_tab", drawer: "drawer" };
 
-/** link_open of the report's settings (how a Link column opens its document): new_tab (the default), same_tab or drawer. */
+/** link_open of the report's settings (how a Link column opens its document): side_panel (the
+ * default: Frappe's own preview, as its reports do), new_tab, same_tab or drawer. */
 export function link_open_of(settings) {
-	return LINK_OPEN[String(settings?.link_open || "").trim().toLowerCase()] || "new_tab";
+	return LINK_OPEN[String(settings?.link_open || "").trim().toLowerCase()] || "side_panel";
 }
 
 /**

@@ -187,7 +187,9 @@ export class GridRows {
 		// the Statement (ADR-026) shows the label and the numbers only
 		const party_named = [...post.pinned_keys, ...post.data_keys].some((k) => by_key.get(k)?.fieldname === "party_name" && varies(report, k));
 		const varied = (c) => c.fieldname in STATEMENT_VARIED && !(c.fieldname === "party" && party_named) && varies(report, c.key);
-		const keep = (d) => !numbers_only || d.numeric || (date_label && (d.column.fieldname in STATEMENT_TEXT || varied(d.column)));
+		// the Statement's own columns (state.columns.statement): every column the view has
+		const chosen = Array.isArray(state.columns.statement);
+		const keep = (d) => !numbers_only || chosen || d.numeric || (date_label && (d.column.fieldname in STATEMENT_TEXT || varied(d.column)));
 		const statement_width = (d) => {
 			if (numbers_only && !d.numeric && !widths[d.column.key]) d.width = STATEMENT_TEXT[d.column.fieldname] || STATEMENT_VARIED[d.column.fieldname] || d.width;
 			return d;

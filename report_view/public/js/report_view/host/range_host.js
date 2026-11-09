@@ -15,7 +15,7 @@ import { open_popover, menu_content, close_popover } from "../components/popover
 import { icons } from "../components/icons.js";
 import { Drawer } from "../components/drawer.js";
 import { DrillPanel } from "./drill_host.js";
-import { download_blob, esc } from "../util.js";
+import { download_blob, esc, load_bundle } from "../util.js";
 import { error_text } from "../api.js";
 
 // The status bar waits this long after the last change of the range before it reads the engine.
@@ -229,9 +229,29 @@ export class RangeHost {
 	}
 
 	open_document(doc, how = this.link_open) {
+		if (how === "side_panel") return this.open_side_panel(doc);
 		if (how === "same_tab") frappe.set_route("Form", doc.doctype, doc.name);
 		else if (how === "drawer") this.open_doc_drawer(doc);
 		else window.open(this.form_link(doc), "_blank", "noopener");
+	}
+
+	/**
+	 * The document in Frappe's own side panel (frappe.ui.get_side_panel, Frappe 16: the preview
+	 * its reports open from a Link cell), read with the user's permissions. Without read access
+	 * nothing opens and it is said; a Frappe without the panel (or with it turned off in Desk
+	 * Settings, or on a phone) opens the app's own drawer.
+	 */
+	open_side_panel(doc) {
+		if (frappe.model?.can_read && !frappe.model.can_read(doc.doctype)) {
+			frappe.show_alert({ message: __("You do not have permission to read {0}", [__(doc.doctype)]), indicator: "orange" });
+			return;
+		}
+		const enabled = typeof frappe.ui?.split_view_enabled === "function" ? frappe.ui.split_view_enabled() : false;
+		if (!enabled) return this.open_doc_drawer(doc);
+		frappe
+			.require("side_panel.bundle.js")
+			.then(() => frappe.ui.get_side_panel().open(doc.doctype, doc.name))
+			.catch(() => this.open_doc_drawer(doc));
 	}
 
 	/** The document in a drawer: its fields as Frappe gives them to the user (frappe.client.get). */
@@ -259,7 +279,7 @@ export class RangeHost {
 	async chart_range() {
 		const r = this.grid.range_rect();
 		if (!r || !this.features.charts) return;
-		if (!window.report_view?.RangeChart) await frappe.require("report_view_charts.bundle.js");
+		await load_bundle("report_view_charts.bundle.js", "RangeChart");
 		const grid = this.grid;
 		const fmt = this.formatter;
 		const chart = new report_view.RangeChart({

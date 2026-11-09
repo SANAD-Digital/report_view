@@ -88,14 +88,29 @@ export function open_popover({ root, anchor, content, cls = "", width = null, al
 		const rr = root.getBoundingClientRect();
 		if (width) el.style.width = `${Math.min(width, rr.width - 2 * POP_MARGIN)}px`;
 		const a = at ? { left: at.x, right: at.x, top: at.y, bottom: at.y } : anchor.getBoundingClientRect();
+		// measured at its own height, then held inside the window: a popover taller than the
+		// window scrolls in itself, so a field focused at its foot never scrolls the page and
+		// carries its head off the screen (the owner's More options, 2026-11-09)
+		el.style.maxHeight = "";
+		el.classList.remove("rv-pop-scroll");
 		const w = el.offsetWidth;
-		const h = el.offsetHeight;
+		const natural = el.offsetHeight;
 		const p = place_near(a, { w, align, rtl, min_x: rr.left, max_x: rr.right });
-		// under the anchor; above it when its height does not fit under, else over it
-		let top = p.top;
-		if (top + h > window.innerHeight - POP_MARGIN) {
-			if (a.top - h - 4 > POP_MARGIN) top = a.top - h - 4;
-			else top = Math.max(POP_MARGIN, window.innerHeight - POP_MARGIN - h);
+		const below = window.innerHeight - POP_MARGIN - (a.bottom + 4);
+		const above = a.top - 4 - POP_MARGIN;
+		const whole = window.innerHeight - 2 * POP_MARGIN;
+		let top;
+		let h = natural;
+		if (natural <= below) top = p.top;
+		else if (natural <= above) top = a.top - natural - 4;
+		else if (natural <= whole) top = Math.max(POP_MARGIN, window.innerHeight - POP_MARGIN - natural);
+		else {
+			// taller than the window: on the side with more room, scrolling inside
+			const side = Math.max(below, above);
+			h = side >= Math.min(whole, 320) ? side : whole;
+			top = h === whole ? POP_MARGIN : below >= above ? a.bottom + 4 : a.top - 4 - h;
+			el.style.maxHeight = `${Math.floor(h)}px`;
+			el.classList.add("rv-pop-scroll");
 		}
 		const left = p.left;
 		el.style.left = `${Math.round(left - rr.left)}px`;
@@ -116,9 +131,26 @@ export function open_popover({ root, anchor, content, cls = "", width = null, al
 		handle.close();
 	};
 	const on_resize = () => handle.close();
+	// the page scrolls under it (Desk's .main-section): it follows its anchor, and closes
+	// when the anchor leaves the window; its own scrolling is not the page's
+	let frame = 0;
+	const on_scroll = (e) => {
+		if (e.target instanceof Node && el.contains(e.target)) return;
+		if (frame) return;
+		frame = requestAnimationFrame(() => {
+			frame = 0;
+			if (handle.closed) return;
+			if (anchor && !at) {
+				const r = anchor.getBoundingClientRect();
+				if (r.bottom < 0 || r.top > window.innerHeight) return handle.close();
+			}
+			place();
+		});
+	};
 	outside.set(true);
 	document.addEventListener("keydown", on_key, true);
 	window.addEventListener("resize", on_resize);
+	document.addEventListener("scroll", on_scroll, true);
 
 	const handle = {
 		el,
@@ -131,6 +163,8 @@ export function open_popover({ root, anchor, content, cls = "", width = null, al
 			outside.set(false);
 			document.removeEventListener("keydown", on_key, true);
 			window.removeEventListener("resize", on_resize);
+			document.removeEventListener("scroll", on_scroll, true);
+			if (frame) cancelAnimationFrame(frame);
 			anchor?.setAttribute("aria-expanded", "false");
 			const active = document.activeElement;
 			const inside = el.contains(active) || !active || active === document.body;

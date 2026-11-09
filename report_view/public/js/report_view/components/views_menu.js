@@ -70,8 +70,12 @@ export class ViewsMenu {
 	/** @param {{mine: Array, shared: Array}|null} list */
 	set_list(list) {
 		this.list = list;
-		// the rows only: the actions stay the same elements (a press on them is never lost)
-		if (this.is_open) this.render_body();
+		// the rows only: the actions stay the same elements (a press on them is never lost);
+		// placed again, the list may make it taller (above the button, it grows upwards)
+		if (this.is_open) {
+			this.render_body();
+			this.place();
+		}
 		this.on.changed?.();
 	}
 
@@ -253,11 +257,19 @@ export class ViewsMenu {
 		// the inline-end edges of the button and the menu line up (the head's actions are at
 		// the inline end of the page)
 		const start = this.rtl ? r.left : r.right - w;
+		// under the button, or above it when the room is there (the views of C sit in the bar
+		// at the foot of the page: the menu opened down, off the screen)
+		Object.assign(menu.style, { width: `${w}px`, maxHeight: "none", top: "0px", bottom: "auto" });
+		const natural = menu.offsetHeight;
+		const below = window.innerHeight - r.bottom - 14;
+		const above = r.top - 14;
+		const up = natural > below && above > below;
+		const room = Math.max(160, Math.round(up ? above : below));
+		const h = Math.min(natural, room);
 		Object.assign(menu.style, {
-			top: `${Math.round(r.bottom + 6)}px`,
+			top: `${Math.round(up ? r.top - 6 - h : r.bottom + 6)}px`,
 			left: `${Math.round(Math.max(8, Math.min(start, window.innerWidth - w - 8)))}px`,
-			width: `${w}px`,
-			maxHeight: `${Math.max(240, Math.round(window.innerHeight - r.bottom - 18))}px`,
+			maxHeight: `${room}px`,
 		});
 	}
 

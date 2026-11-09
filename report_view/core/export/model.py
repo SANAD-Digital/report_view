@@ -66,6 +66,8 @@ def _browser_state(raw: Any) -> dict:
 	state.pop("charts", None)
 	if isinstance(state.get("columns"), dict):
 		state["columns"].pop("groups", None)
+		# the page sends the Statement's own columns as hidden and order already
+		state["columns"].pop("statement", None)
 	if state.get("mode") == "statement":
 		state["mode"] = "grid"
 	return state

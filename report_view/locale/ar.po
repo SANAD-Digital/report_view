@@ -4676,3 +4676,28 @@ msgstr "الفئات: {0}"
 msgctxt "Report View"
 msgid "Excel"
 msgstr "Excel"
+
+msgctxt "Report View"
+msgid "Columns"
+msgstr "الأعمدة"
+
+msgid "Statement columns"
+msgstr "أعمدة الكشف"
+
+msgctxt "Report View"
+msgid "Default"
+msgstr "الافتراضي"
+
+msgctxt "Report View"
+msgid "Move up"
+msgstr "إلى الأعلى"
+
+msgctxt "Report View"
+msgid "Move down"
+msgstr "إلى الأسفل"
+
+msgid "Report View was updated since this page opened: reload the page to use it."
+msgstr "حُدِّث عرض التقرير بعد فتح هذه الصفحة: أعد تحميل الصفحة لاستعماله."
+
+msgid "Reload the page"
+msgstr "إعادة تحميل الصفحة"

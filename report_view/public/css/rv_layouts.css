@@ -297,7 +297,22 @@
 .rv-stmt-title .s{font-size:var(--t12);line-height:16px;color:var(--tx-3)}
 /* a part of the statement says so under its title (layout.js paint_narrowing) */
 .rv-stmt-title .n{margin-top:2px;font-size:var(--t12);line-height:16px;color:var(--warn);font-weight:var(--fw-m)}
-.rv-stmt-levels{grid-column:3;justify-self:end;display:flex;gap:2px;height:22px;box-sizing:border-box;padding:2px;border-radius:var(--rad);background:var(--ctl-bg)}
+.rv-stmt-tools{grid-column:3;justify-self:end;display:flex;align-items:center;gap:var(--s2)}
+.rv-stmt-colsbtn{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 var(--s2);border:0;border-radius:var(--rad);background:var(--ctl-bg);color:var(--tx-2);font-size:11px;cursor:pointer;white-space:nowrap}
+.rv-stmt-colsbtn:hover{color:var(--tx)}
+.rv-stmt-colsbtn svg{width:13px;height:13px}
+.rv-stmt-colsbtn:focus-visible{outline:none;box-shadow:var(--focus)}
+.rv-stmtcols-list{max-height:min(60vh,420px);overflow-y:auto;padding:2px 4px 4px}
+.rv-stmtcols-row{display:flex;align-items:center;gap:2px;min-height:28px;border-radius:var(--r-sm)}
+.rv-stmtcols-row:hover{background:var(--hover)}
+.rv-stmtcols-row label{flex:1;min-width:0;display:flex;align-items:center;gap:8px;margin:0;padding:0 6px;font-size:var(--fs-sm);font-weight:400;color:var(--tx-2);cursor:pointer}
+.rv-stmtcols-row.on label{color:var(--tx)}
+.rv-stmtcols-row label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-stmtcols-mv,.rv-stmtcols-sp{flex:none;width:24px;height:24px}
+.rv-stmtcols-mv{border:0;border-radius:var(--r-sm);background:transparent;color:var(--tx-3);cursor:pointer;font-size:13px;line-height:24px}
+.rv-stmtcols-mv:hover{background:var(--ctl-bg);color:var(--tx)}
+.rv-stmtcols-mv:focus-visible{outline:none;box-shadow:var(--focus)}
+.rv-stmt-levels{display:flex;gap:2px;height:22px;box-sizing:border-box;padding:2px;border-radius:var(--rad);background:var(--ctl-bg)}
 .rv-stmt-levels[hidden]{display:none}
 .rv-stmt-levels button{height:18px;padding:0 var(--s2);border:0;border-radius:calc(var(--rad) - 2px);background:transparent;color:var(--tx-2);font-size:11px;line-height:18px;cursor:pointer;white-space:nowrap}
 .rv-stmt-levels button.on{background:var(--surface);color:var(--tx);font-weight:var(--fw-b);box-shadow:0 1px 2px #00000014}
@@ -397,6 +412,10 @@
 .rv-fchip.wanted{border-color:var(--pri,var(--tx-2));border-style:dashed}
 .rv-fchip.wanted b{color:var(--tx)}
 /* the Statement's titles while they stay on screen */
+/* the whole statement in the page: the page's own scroll moves it (no wheel by hand), its
+   column titles stick to the top of Desk's scroller by CSS, not by a transform each scroll */
+:is(.rv-layout-a,.rv-layout-c).rv-mode-statement.rv-stmt-whole regular-table{overflow:visible !important;overscroll-behavior:auto !important}
+:is(.rv-layout-a,.rv-layout-c).rv-mode-statement.rv-stmt-whole regular-table thead{position:sticky;top:0;z-index:6}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table thead.rv-stuck{position:relative;z-index:6;box-shadow:0 2px 4px #00000014}
 /* A: a state of the report stands under the table's tools, which stay */
 .rv-layout-a .rv-stateov{inset-block-start:37px}
@@ -419,7 +438,7 @@
 :is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-body{display:none}
 :is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-gridwrap{padding:var(--s2)}
 :is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-stmt-head{width:100%;padding:var(--s3);grid-template-columns:1fr;justify-items:center;gap:var(--s2);box-shadow:none;clip-path:none;border-radius:var(--rad)}
-:is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-stmt-title,:is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-stmt-levels{grid-column:1;justify-self:center}
+:is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-stmt-title,:is(.rv-layout-a,.rv-layout-c).rv-phone-cards .rv-stmt-tools{grid-column:1;justify-self:center}
 .rv-cards-bar{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:var(--s2);padding:var(--s2) var(--s3);border-radius:var(--rad);background:var(--surface);border:1px solid var(--line-2);font-size:var(--t13)}
 .rv-cards-bar b{font-size:var(--t14);font-variant-numeric:tabular-nums}
 .rv-card{display:flex;flex-direction:column;gap:4px;width:100%;min-height:44px;box-sizing:border-box;padding:var(--s2) var(--s3);border:1px solid var(--line);border-radius:var(--rad);background:var(--surface);color:var(--tx);font:inherit;font-size:var(--t13);text-align:start;cursor:pointer}

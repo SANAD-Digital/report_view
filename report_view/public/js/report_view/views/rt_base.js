@@ -125,12 +125,19 @@ export class RtView {
 		this.remove_styler = rt.addStyleListener(this.styler);
 		rt.addEventListener("click", this.on_click);
 		rt.addEventListener("dblclick", this.on_dblclick);
-		// a cell cut short says its whole text on hover (cells are reused: set or cleared each time)
+		// a cell cut short says its whole text on hover (cells are reused: set or cleared each
+		// time). Measured once the pointer rests on it: measuring every cell the pointer crosses
+		// while the page scrolls laid the whole table out again and again (the scroll shook)
+		let hover_timer = 0;
 		rt.addEventListener("mouseover", (e) => {
 			const td = e.target.closest?.("td");
+			clearTimeout(hover_timer);
 			if (!td) return;
-			if (td.scrollWidth > td.clientWidth) td.title = td.textContent.trim();
-			else td.removeAttribute("title");
+			hover_timer = setTimeout(() => {
+				if (!td.isConnected || !td.matches(":hover")) return;
+				if (td.scrollWidth > td.clientWidth) td.title = td.textContent.trim();
+				else td.removeAttribute("title");
+			}, 250);
 		});
 		rt.addEventListener("regular-table-scroll", this.on_scrolled);
 		// Capture: regular-table's own resize handler (it assumes LTR) must not see the press.

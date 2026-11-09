@@ -33,6 +33,18 @@ function user_date(d) {
  * @param {object} df the filter's definition
  * @param {*} value
  */
+// Link filters whose values are names of document types (Party Type's records are named after
+// them): shown translated, «Customer» is «عميل»
+const DOCTYPE_NAMED = new Set(["DocType", "Party Type"]);
+
+/** A value as the user reads it: a document type's name, or a choice of an Autocomplete (the
+ * party type of Accounts Receivable), translated as Frappe shows it. */
+export function named_value(df, value) {
+	if (typeof value !== "string") return String(value);
+	if (df?.fieldtype === "Autocomplete") return __(value);
+	return df?.fieldtype === "Link" && DOCTYPE_NAMED.has(df.options) ? __(value) : value;
+}
+
 export function value_text(df, value) {
 	if (is_empty(value)) return "";
 	const type = df?.fieldtype || "";
@@ -40,12 +52,12 @@ export function value_text(df, value) {
 		if (type === "DateRange" && value.length === 2) return `${user_date(value[0])} – ${user_date(value[1])}`;
 		const items = value.map((v) => (v && typeof v === "object" ? v.value ?? v.name ?? "" : v)).filter((v) => !is_empty(v));
 		if (!items.length) return "";
-		return items.length === 1 ? String(items[0]) : __("{0} selected", [fmt_int(items.length)]);
+		return items.length === 1 ? named_value(df, items[0]) : __("{0} selected", [fmt_int(items.length)]);
 	}
 	if (type === "Check") return value ? __("Yes") : __("No");
 	if (type === "Date") return user_date(value);
 	if (type === "Select") return __(String(value));
-	return String(value);
+	return named_value(df, value);
 }
 
 /**

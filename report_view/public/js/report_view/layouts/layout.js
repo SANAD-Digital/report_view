@@ -104,6 +104,9 @@ export class TrialLayout {
 			"wheel",
 			(e) => {
 				if (page.state?.mode !== "statement" || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+				// a whole statement passes the wheel to the page itself (the owner: the scroll
+				// was slow and shook when moved here by hand)
+				if (page.root.classList.contains("rv-stmt-whole")) return;
 				if ((page.grid.body_rows || 0) > STATEMENT_MAX_ROWS) return;
 				// the table's scroll does not chain to the page (overscroll-behavior): the page's
 				// scroller is moved here
@@ -285,15 +288,91 @@ export class TrialLayout {
 		el.className = "rv-stmt-head";
 		el.innerHTML = `
 			<div class="rv-stmt-title"><div class="t"></div><div class="s"></div><div class="n" hidden></div></div>
-			<div class="rv-stmt-levels" role="group" aria-label="${esc(__("Level of detail"))}">
-				<button type="button" data-level="roots">${esc(__("Roots"))}</button>
-				<button type="button" data-level="groups">${esc(__("Groups"))}</button>
-				<button type="button" data-level="all">${esc(__("All accounts"))}</button>
+			<div class="rv-stmt-tools">
+				<button type="button" class="rv-stmt-colsbtn" aria-haspopup="dialog">${icons.columns()}<span>${esc(__("Columns", null, "Report View"))}</span></button>
+				<div class="rv-stmt-levels" role="group" aria-label="${esc(__("Level of detail"))}">
+					<button type="button" data-level="roots">${esc(__("Roots"))}</button>
+					<button type="button" data-level="groups">${esc(__("Groups"))}</button>
+					<button type="button" data-level="all">${esc(__("All accounts"))}</button>
+				</div>
 			</div>`;
 		for (const b of el.querySelectorAll("[data-level]")) {
 			b.addEventListener("click", () => this.set_level(b.dataset.level));
 		}
+		const cols = el.querySelector(".rv-stmt-colsbtn");
+		cols.addEventListener("click", () => this.open_statement_columns(cols));
 		return el;
+	}
+
+	/** The columns the Statement shows now, in order (its own, or those it keeps of the table). */
+	statement_keys() {
+		const page = this.page;
+		const own = page.state?.columns?.statement;
+		if (Array.isArray(own)) return own;
+		const m = page.grid?.model;
+		return m ? [...m.pinned, ...m.data].map((d) => d.column.key) : [];
+	}
+
+	/**
+	 * The Statement's columns, chosen and ordered from its head: a box shows or hides a column,
+	 * the arrows move it; «Default» gives back the columns the Statement keeps of the table.
+	 * Written to state.columns.statement (saved with a view); the table keeps its own columns.
+	 */
+	open_statement_columns(anchor) {
+		const page = this.page;
+		if (!page.report || !page.controls) return;
+		const label = page.controls.label_key();
+		const box = document.createElement("div");
+		box.className = "rv-stmtcols";
+		const write = (list) => {
+			page.change((s) => {
+				s.columns.statement = list;
+			});
+		};
+		const paint = () => {
+			const shown = this.statement_keys().filter((k) => k !== label);
+			const others = page.report.columns.filter((c) => !c.hidden && c.key !== label && !shown.includes(c.key)).map((c) => c.key);
+			const own = Array.isArray(page.state?.columns?.statement);
+			const row = (key, on, i) => {
+				const title = esc(page.controls.full_title(key));
+				const up = on && i > 0 ? `<button type="button" class="rv-stmtcols-mv" data-up="${esc(key)}" aria-label="${esc(__("Move up", null, "Report View"))}" title="${esc(__("Move up", null, "Report View"))}">↑</button>` : '<span class="rv-stmtcols-sp"></span>';
+				const down = on && i < shown.length - 1 ? `<button type="button" class="rv-stmtcols-mv" data-down="${esc(key)}" aria-label="${esc(__("Move down", null, "Report View"))}" title="${esc(__("Move down", null, "Report View"))}">↓</button>` : '<span class="rv-stmtcols-sp"></span>';
+				return `<div class="rv-stmtcols-row${on ? " on" : ""}"><label><input type="checkbox" data-key="${esc(key)}"${on ? " checked" : ""}><span>${title}</span></label>${up}${down}</div>`;
+			};
+			box.innerHTML = `<div class="rv-pop-hd"><span>${esc(__("Statement columns"))}</span>${
+				own ? `<button type="button" class="rv-link" data-reset>${esc(__("Default", null, "Report View"))}</button>` : ""
+			}</div>
+				<div class="rv-stmtcols-list">${shown.map((k, i) => row(k, true, i)).join("")}${others.length ? '<div class="rv-msep"></div>' : ""}${others.map((k) => row(k, false, 0)).join("")}</div>`;
+			pop?.place?.();
+		};
+		box.addEventListener("click", (e) => {
+			const t = e.target;
+			const shown = this.statement_keys().filter((k) => k !== label);
+			if (t.closest?.("[data-reset]")) {
+				write(null);
+				return setTimeout(paint, 350);
+			}
+			const up = t.closest?.("[data-up]")?.dataset.up;
+			const down = t.closest?.("[data-down]")?.dataset.down;
+			const key = up || down;
+			if (!key) return;
+			const i = shown.indexOf(key);
+			const j = up ? i - 1 : i + 1;
+			if (i < 0 || j < 0 || j >= shown.length) return;
+			[shown[i], shown[j]] = [shown[j], shown[i]];
+			write(shown);
+			paint();
+		});
+		box.addEventListener("change", (e) => {
+			const input = e.target.closest?.("input[data-key]");
+			if (!input) return;
+			const key = input.dataset.key;
+			const shown = this.statement_keys().filter((k) => k !== label && k !== key);
+			write(input.checked ? [...shown, key] : shown);
+			paint();
+		});
+		const pop = open_popover({ root: page.root, anchor, content: box, cls: "rv-stmtcols-pop", width: 300, label: __("Statement columns") });
+		paint();
 	}
 
 	/** The depth of the report tree for a level of detail, or null without a tree. */
@@ -411,6 +490,13 @@ export class TrialLayout {
 	/** On the Statement the column titles stay at the top of the page's scroller. */
 	stick_titles() {
 		const page = this.page;
+		if (this.page.root.classList.contains("rv-stmt-whole")) {
+			// held by CSS (position: sticky): nothing moves it by hand while the page scrolls
+			const head = this.page.grid.rt?.querySelector("thead");
+			if (head?.style.transform) head.style.transform = "";
+			head?.classList.remove("rv-stuck");
+			return;
+		}
 		const thead = page.grid.rt?.querySelector("thead");
 		if (!thead) return;
 		const scroller = page.root.closest(".main-section");
@@ -505,10 +591,13 @@ export class TrialLayout {
 		const page = this.page;
 		const root = page.root;
 		if (page.state?.mode !== "statement") {
-			root.classList.remove("rv-stmt-sized");
+			root.classList.remove("rv-stmt-sized", "rv-stmt-whole");
 			return;
 		}
 		const grid = page.grid;
+		// the whole statement stands in the page (rv_layouts.css): the browser scrolls it with
+		// the page, smoothly, and its column titles stick by CSS; a very long one scrolls itself
+		root.classList.toggle("rv-stmt-whole", (grid.body_rows || 0) <= STATEMENT_MAX_ROWS);
 		const widths = grid.model ? grid.size_widths() : [];
 		if (!widths.length) return;
 		// the widths of the model, or what the table drew when its cells made a column wider

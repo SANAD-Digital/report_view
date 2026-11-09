@@ -41,6 +41,17 @@ test("a filter's value as a chip says it: a date in the user's format, a list as
 	assert.equal(value_text({ fieldtype: "MultiSelectList" }, []), "");
 	assert.equal(value_text({ fieldtype: "Check" }, 1), "Yes");
 	assert.equal(value_text({ fieldtype: "Select" }, "Categorize by Account"), "Categorize by Account");
+	// a document type's name and an Autocomplete's choice read translated (the party type)
+	const was = globalThis.__;
+	globalThis.__ = (t, a) => ({ Customer: "عميل" })[t] ?? was(t, a);
+	try {
+		assert.equal(value_text({ fieldtype: "Autocomplete" }, "Customer"), "عميل");
+		assert.equal(value_text({ fieldtype: "Link", options: "Party Type" }, "Customer"), "عميل");
+		assert.equal(value_text({ fieldtype: "Link", options: "DocType" }, "Customer"), "عميل");
+		assert.equal(value_text({ fieldtype: "Link", options: "Customer" }, "Customer"), "Customer");
+	} finally {
+		globalThis.__ = was;
+	}
 	assert.equal(value_text({ fieldtype: "Data" }, null), "");
 });
 

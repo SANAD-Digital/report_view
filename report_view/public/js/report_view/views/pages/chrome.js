@@ -187,6 +187,7 @@ export class PagesChrome {
 			if (df?.fieldtype === "Check") text = this.t("Yes");
 			else if (Array.isArray(value)) text = value.map(String).join(", ");
 			else if (df?.fieldtype === "Date") text = frappe.datetime.str_to_user(value);
+			else if (df?.fieldtype === "Autocomplete" || (df?.fieldtype === "Link" && ["DocType", "Party Type"].includes(df.options))) text = this.t(String(value));
 			else text = this.side_layout && df?.fieldtype === "Select" ? this.in_lang(String(value)) : String(value);
 			parts.push(`<span class="rv-page-filter"><span>${esc(label)}:</span> <b>${esc(text)}</b></span>`);
 		}

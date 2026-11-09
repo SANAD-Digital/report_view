@@ -307,6 +307,9 @@ export class GridView extends RtView {
 		if (!d?.column.link) return false;
 		if (!this.on_link({ column: d.column, row: rec.row, event, anchor: a })) return false;
 		event.preventDefault();
+		// Desk's router follows every <a> pressed in the page from <body>, whatever was
+		// prevented (Frappe's own link_side_panel.js stops the press the same way)
+		event.stopPropagation();
 		return true;
 	}
 

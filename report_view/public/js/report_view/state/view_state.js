@@ -41,6 +41,8 @@ export function default_state(config = {}) {
 			widths: {},
 			pinned: { start: str_list(config.default_pinned), end: [] },
 			groups: null,
+			// the Statement's own columns, in order (null: the table's, as a statement shows them)
+			statement: null,
 		},
 		sort: [],
 		filters: [],
@@ -85,6 +87,7 @@ export function sanitize(state, config = {}) {
 		out.columns.pinned.end = str_list(cols.pinned.end);
 	}
 	out.columns.groups = sanitize_groups(cols.groups);
+	out.columns.statement = Array.isArray(cols.statement) ? str_list(cols.statement) : null;
 	if (Array.isArray(state.sort)) {
 		out.sort = state.sort
 			.filter((s) => s && typeof s.key === "string")

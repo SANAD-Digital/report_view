@@ -15,6 +15,13 @@ export class PagesLang {
 		return RTL_LANGS.has(String(this.lang()).split("-")[0]);
 	}
 
+	// The name the pages print: a document's is its doctype in the language of the pages and its
+	// name; a report's, its title through the pack.
+	report_title() {
+		const doc = this.doc_mode && this.ctx?.doc;
+		return doc?.doctype ? `${this.t(doc.doctype)} ${doc.name}` : this.t(this.ctx.report_name);
+	}
+
 	// The translation of the pages' own words: the session's, or the pack of the language.
 	t(msgid, args, context = null) {
 		const lang = this.settings.lang;
@@ -47,7 +54,7 @@ export class PagesLang {
 		if (this.lang_packs.has(key)) return this.lang_packs.get(key);
 		if (this.doc_mode) {
 			// a document is rendered by the server in the language; the page's own words here
-			const pack = (await this.host.pages_translations(lang, [...PAGE_MESSAGES, ...this.signature_labels().map((x) => this.msgid_of(x))])) || {};
+			const pack = (await this.host.pages_translations(lang, [...PAGE_MESSAGES, ...(this.ctx?.doc?.doctype ? [this.ctx.doc.doctype] : []), ...this.signature_labels().map((x) => this.msgid_of(x))])) || {};
 			const entry = { pack, report: undefined };
 			this.lang_packs.set(key, entry);
 			return entry;

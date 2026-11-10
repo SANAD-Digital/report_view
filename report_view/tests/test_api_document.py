@@ -1,6 +1,8 @@
 """The document print page API (ADR-017): a document's print format in the pages of
 Report View, behind the print permission on the document."""
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests import UnitTestCase
 
@@ -34,6 +36,50 @@ class TestDocumentPrint(RVTestCase):
 		self.assertNotIn('class="letter-head"', out["html"])
 		with self.as_user("accountant"), self.assertRaises(frappe.DoesNotExistError):
 			api.render_doc_print("Journal Entry", self.je, "No Such Format")
+
+	def test_a_print_style_dresses_the_standard_format_only(self):
+		"""Frappe's Print Styles, its own first in its order; the one chosen reaches Frappe's
+		renderer for the Standard format; an unknown one is refused."""
+		if frappe.get_meta("Journal Entry").default_print_format:
+			self.skipTest("Journal Entry has a default print format on this site")
+		with self.as_user("accountant"):
+			opts = api.get_doc_print_options("Journal Entry", self.je)
+		styles = opts["print_styles"]
+		ours = [s for s in styles if s in api._STANDARD_PRINT_STYLES]
+		self.assertEqual(ours, [s for s in api._STANDARD_PRINT_STYLES if s in styles])
+		self.assertEqual(styles[: len(ours)], ours)
+		if not styles:
+			self.skipTest("no Print Style on this site")
+		seen = []
+		real = api.get_html_and_style
+
+		def spy(*args, **kwargs):
+			seen.append(kwargs.get("style"))
+			return real(*args, **kwargs)
+
+		with self.as_user("accountant"), patch.object(api, "get_html_and_style", side_effect=spy):
+			api.render_doc_print("Journal Entry", self.je, print_style=styles[0])
+			api.render_doc_print("Journal Entry", self.je)
+			with self.assertRaises(frappe.DoesNotExistError):
+				api.render_doc_print("Journal Entry", self.je, print_style="No Such Style")
+		self.assertEqual(seen, [styles[0], None])
+
+	def test_the_documents_own_print_settings_only_are_taken(self):
+		"""Frappe's additional print settings: the document's own (get_print_settings) as 0/1;
+		a flag such as allow_print_for_draft is never changed from the print page."""
+		doc = frappe._dict(get_print_settings=lambda: ["compact_item_print", "print_uom_after_quantity"])
+		out = api._allowed_doc_settings(
+			doc, '{"compact_item_print": true, "print_uom_after_quantity": "0", "allow_print_for_draft": 1}'
+		)
+		self.assertEqual(out, {"compact_item_print": 1, "print_uom_after_quantity": 0})
+		self.assertEqual(api._allowed_doc_settings(doc, None), {})
+		with self.assertRaises(RVInvalidInput):
+			api._allowed_doc_settings(doc, "[1, 2]")
+		with self.as_user("accountant"):
+			opts = api.get_doc_print_options("Journal Entry", self.je)
+		self.assertIsInstance(opts["doc_settings"], list)
+		for f in opts["doc_settings"]:
+			self.assertEqual(set(f), {"fieldname", "label", "default"})
 
 	def test_print_permission_is_required(self):
 		with self.as_user("none"):
@@ -96,8 +142,6 @@ class TestDocumentPrint(RVTestCase):
 				self.assertEqual(set(out) - {"header", "footer"}, set())
 
 	def test_a_letter_head_prints_the_document_escaped(self):
-		from unittest.mock import patch
-
 		lh = frappe.get_doc(
 			{
 				"doctype": "Letter Head",
@@ -135,3 +179,21 @@ class TestDocumentFragment(UnitTestCase):
 		self.assertNotIn("print_format.bundle", html + css)
 		# a fragment comes back as it came
 		self.assertEqual(document_fragment("<div>x</div>", "c"), ("<div>x</div>", "c"))
+		# the classes of <body> stay on an element around its content (the builder's
+		# <body class="print-format-doc">, which every rule of the format starts from)
+		html, _ = document_fragment(
+			'<!DOCTYPE html><html><body class="print-format-doc"><p>B</p></body></html>'
+		)
+		self.assertEqual(html, '<div class="print-format-doc"><p>B</p></div>')
+
+	def test_the_stylesheets_a_whole_document_links(self):
+		"""Frappe's own (under /assets/) are kept for the pages to set under the format; a
+		stylesheet of another site, and a fragment, give none."""
+		from report_view.core.printing import linked_stylesheets
+
+		whole = (
+			'<!DOCTYPE html><html><head><link rel="stylesheet" href="/assets/frappe/dist/css/print_format.bundle.X.css">'
+			'<link rel="stylesheet" href="https://example.com/x.css"><link rel="icon" href="/assets/i.png"></head><body></body></html>'
+		)
+		self.assertEqual(linked_stylesheets(whole), ["/assets/frappe/dist/css/print_format.bundle.X.css"])
+		self.assertEqual(linked_stylesheets("<div>x</div>"), [])

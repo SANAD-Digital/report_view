@@ -96,6 +96,19 @@ PAPER_FIELDS = {
 }
 
 
+def arabic_name(company_name: str | None, own: str | None = None) -> str:
+	"""The company's Arabic name as the paper prints it (the template's ``_rvn``): its own
+	field, else the Translation of its company_name, else nothing."""
+	if own:
+		return own
+	if not company_name:
+		return ""
+	return (
+		frappe.db.get_value("Translation", {"source_text": company_name, "language": "ar"}, "translated_text")
+		or ""
+	)
+
+
 def paper_fields() -> list[str]:
 	"""The app's fields of the paper that this site's Company has (a site where they were not
 	synced yet reads none of them, and prints those tokens empty)."""

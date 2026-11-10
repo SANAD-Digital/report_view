@@ -189,6 +189,78 @@ function scope_rules(rules, scope) {
 }
 
 /**
+ * A stylesheet's text held to the sheets (as scope_format_css holds a format's <style>).
+ * @returns {string} the scoped CSS, "" when it cannot be read
+ */
+export function scope_css(text, scope = FORMAT_SCOPE) {
+	if (!text || typeof CSSStyleSheet !== "function") return "";
+	try {
+		const sheet = new CSSStyleSheet();
+		sheet.replaceSync(text);
+		return scope_rules(sheet.cssRules, scope);
+	} catch {
+		return "";
+	}
+}
+
+// Frappe's stylesheets under a format, held to the sheets: once each for the session
+const SCOPED_SHEETS = new Map();
+
+/** A stylesheet of the site (/assets/…) held to the sheets; "" when it cannot be had. */
+export function scoped_stylesheet(url) {
+	if (!SCOPED_SHEETS.has(url)) {
+		const p = fetch(url, { credentials: "same-origin" })
+			.then((r) => (r.ok ? r.text() : ""))
+			.then((css) => scope_css(css))
+			.catch(() => "");
+		// a failure is not kept: the next format asks again
+		p.then((css) => css || SCOPED_SHEETS.delete(url));
+		SCOPED_SHEETS.set(url, p);
+	}
+	return SCOPED_SHEETS.get(url);
+}
+
+/**
+ * What Frappe's print view sets under a format, held to the sheets: without it Desk's own
+ * styles (Bootstrap 4, its tables and headings) stood under the format, and the sheets did
+ * not print as Frappe prints them (critic 2026-11-11, L1).
+ * - a format of the new print format builder: the stylesheets its document links
+ *   (print_format.bundle.css), as Frappe shows that document;
+ * - any other: print.bundle.css (www/printview.html).
+ * @param {boolean} rtl the pages' direction (Frappe's rtl_ build)
+ * @param {string[]} [links] the stylesheets the format's document links
+ * @returns {Promise<string>} "" when none can be had
+ */
+export function frappe_print_base(rtl, links = []) {
+	const own = (links || []).filter((u) => typeof u === "string" && u.startsWith("/assets/"));
+	const urls = own.length ? own : [window.frappe?.assets?.bundled_asset?.("print.bundle.css", rtl)].filter((u) => u && u.startsWith("/assets/"));
+	return Promise.all(urls.map(scoped_stylesheet)).then((parts) => parts.filter(Boolean).join("\n"));
+}
+
+/**
+ * A format that came back as a whole document (Frappe's new print format builder: head,
+ * styles and body) as the pages take it: its body, its styles joined to its CSS. The server
+ * does the same (core/printing.py document_fragment); a server still running older code
+ * sent the whole document, and its body never reached the sheets. A fragment is returned
+ * as it came.
+ * @param {{html?: string, css?: string}} fmt
+ */
+export function format_fragment(fmt) {
+	const html = fmt?.html;
+	if (!html || !/^\s*(?:<!doctype\b|<html\b)/i.test(html) || typeof DOMParser !== "function") return fmt;
+	const doc = new DOMParser().parseFromString(html, "text/html");
+	const styles = [...doc.querySelectorAll("style")].map((x) => x.textContent);
+	// Frappe's own stylesheets the document links stand under the format (frappe_print_base)
+	const stylesheets = [...doc.querySelectorAll('link[rel~="stylesheet"][href]')].map((x) => x.getAttribute("href")).filter((h) => h.startsWith("/assets/"));
+	for (const x of doc.querySelectorAll("style, link, meta, title, script")) x.remove();
+	// the classes of <body> (<body class="print-format-doc">, which every rule of the format
+	// starts from) stay, on an element around the body's content
+	const inner = doc.body.innerHTML.trim();
+	const html_out = doc.body.className ? `<div class="${esc(doc.body.className)}">${inner}</div>` : inner;
+	return { ...fmt, html: html_out, css: [fmt.css, ...styles].filter(Boolean).join("\n"), stylesheets };
+}
+
+/**
  * The <style> blocks of a print format held to the sheets (the owner's print page, 2026-11-10:
  * «Sales Invoice Classic» sets `body { display: flex; flex-direction: column }`, which turned
  * Desk itself upside down). Read by the browser's own CSS parser; a block it cannot read is
@@ -203,7 +275,9 @@ export function scope_format_css(html, scope = FORMAT_SCOPE) {
 			const sheet = new CSSStyleSheet();
 			sheet.replaceSync(style.textContent || "");
 			style.textContent = scope_rules(sheet.cssRules, scope);
-		} catch {
+		} catch (e) {
+			// said in the console: the format looks different here and its author can see why
+			console.warn("report_view: a <style> block of the print format could not be read and is not applied", e);
 			style.remove();
 		}
 	}

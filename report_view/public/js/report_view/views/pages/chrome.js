@@ -110,7 +110,7 @@ export class PagesChrome {
 		const t = (m, a) => this.t(m, a);
 		const ctx = this.ctx;
 		const company = ctx.company || "";
-		const title = t(ctx.report_name);
+		const title = this.report_title();
 		const period = this.period_text();
 		const lh = this.top_number(n, total) + (letterhead?.header && on_page(s.lh_pages, n, total) ? `<div class="rv-page-lh fit-${s.lh_fit}">${letterhead.header}</div>` : "");
 		// the print heading under the letter head; "instead of the title" drops the title
@@ -232,7 +232,7 @@ export class PagesChrome {
 		// this page: the band does not repeat it (the probe keeps both, the tallest foot)
 		const lh_numbers = Boolean(lhf) && !measure && /class="(?:page|topage)"/.test(letterhead.footer);
 		const number = where === "bottom" && !lh_numbers ? this.number_html(n, total) : "";
-		const name = s.number_caption ? `<span class="nm">${[esc(t(ctx.report_name)), ctx.company ? esc(ctx.company) : ""].filter(Boolean).join(" · ")}</span>` : "";
+		const name = s.number_caption ? `<span class="nm">${[esc(this.report_title()), ctx.company ? esc(ctx.company) : ""].filter(Boolean).join(" · ")}</span>` : "";
 		const slots = { start: "", center: "", end: "" };
 		if (number) slots[side] = number;
 		if (name) {
@@ -299,6 +299,7 @@ export class PagesChrome {
 	page_shell(i, box, dir, inner) {
 		const look = `ps-${this.settings.style}${this.settings.template ? " ps-format" : ""}`;
 		const p = box.pad;
-		return `<section class="rv-page ${look}" dir="${dir}" data-page="${i}" style="width:${box.w}px;height:${box.h}px;padding-block:${p.top}px ${p.bottom}px;padding-inline:${p.start}px ${p.end}px;--pp-m:${box.margin}px">${inner}${this.watermark_html(i)}</section>`;
+		// lang: the print format's [lang] rules and the browser's hyphenation follow the pages' language
+		return `<section class="rv-page ${look}" dir="${dir}" lang="${esc(this.lang())}" data-page="${i}" style="width:${box.w}px;height:${box.h}px;padding-block:${p.top}px ${p.bottom}px;padding-inline:${p.start}px ${p.end}px;--pp-m:${box.margin}px">${inner}${this.watermark_html(i)}</section>`;
 	}
 }

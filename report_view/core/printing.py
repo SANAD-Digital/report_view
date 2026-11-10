@@ -394,6 +394,24 @@ def report_view_signature(name: str, doc=None) -> str:
 _WHOLE_DOCUMENT = re.compile(r"^\s*(?:<!doctype\b|<html\b)", re.IGNORECASE)
 
 
+def linked_stylesheets(html: str) -> list[str]:
+	"""The site's stylesheets (/assets/…) a whole document of a print format links: Frappe's
+	print_format.bundle.css under a format of the new print format builder. The pages set them
+	under the format, held to the sheets (views/pages/support.js frappe_print_base)."""
+	if not html or not _WHOLE_DOCUMENT.match(html):
+		return []
+	from bs4 import BeautifulSoup
+
+	soup = BeautifulSoup(html, "html.parser")
+	out = []
+	for link in soup.find_all("link", href=True):
+		rel = link.get("rel") or []
+		href = link["href"]
+		if "stylesheet" in rel and href.startswith("/assets/") and href not in out:
+			out.append(href)
+	return out
+
+
 def document_fragment(html: str, css: str = "") -> tuple[str, str]:
 	"""A print format's output as the pages take it: its body, and its styles apart.
 
@@ -412,5 +430,10 @@ def document_fragment(html: str, css: str = "") -> tuple[str, str]:
 	for tag in soup.find_all(["style", "link", "meta", "title", "script"]):
 		tag.decompose()
 	body = soup.body
-	inner = body.decode_contents() if body else str(soup)
-	return inner.strip(), "\n".join(part for part in [css, *styles] if part)
+	inner = (body.decode_contents() if body else str(soup)).strip()
+	# the classes of <body> (Frappe's builder: <body class="print-format-doc">, which every
+	# rule of the format starts from) stay, on an element around the body's content
+	classes = body.get("class") if body else None
+	if classes:
+		inner = f'<div class="{escape_html(" ".join(classes))}">{inner}</div>'
+	return inner, "\n".join(part for part in [css, *styles] if part)

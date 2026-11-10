@@ -322,6 +322,10 @@ export class PagesOutput {
 			head.push(`<style>${fixed.replace(/<\/style/gi, "<\\/style")}</style>`);
 		}
 		const clone = root.cloneNode(true);
+		// Frappe's print styles under a format go with the sheets, only the rules they use
+		const base = root.querySelector("style.rv-frappe-base");
+		const base_copy = clone.querySelector("style.rv-frappe-base");
+		if (base?.sheet && base_copy) base_copy.textContent = used(base.sheet.cssRules).replace(/<\/style/gi, "<\\/style");
 		const cache = new Map();
 		const inline = async (src) => {
 			if (!src || src.startsWith("data:")) return src;

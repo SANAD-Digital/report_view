@@ -28,7 +28,7 @@ import { PagesLayouts } from "./pages/layouts.js";
 import { PagesOutput } from "./pages/output.js";
 import { PagesPanel } from "./pages/panel.js";
 import { DEFAULT_SETTINGS, KEEP_FORMATS, KEEP_LANGS, KEEP_LETTERHEADS, KEEP_PARTS, PAGE_GAP, PAINT_KEYS, PRINT_MAX_PAGES, SKELETON_BARS, STAGE_PAD, ZOOM_STEPS, sanitize_settings } from "./pages/settings.js";
-import { Lru, scope_format_css, strip_scripts } from "./pages/support.js";
+import { Lru, format_fragment, scope_format_css, strip_scripts } from "./pages/support.js";
 import { PagesVirtual } from "./pages/virtual.js";
 
 export class PagesView {
@@ -44,9 +44,12 @@ export class PagesView {
 	 * @param {boolean} [o.side] the settings in a side column at the inline start, as Frappe's
 	 *   print view (the trial layouts, ADR-025); else the toolbar above the pages
 	 */
-	constructor({ parent, root, rtl, host, side = false }) {
+	constructor({ parent, root, rtl, host, side = false, head_in_side = false }) {
 		this.root = root;
 		this.side_layout = Boolean(side);
+		// the setup's name, Reset and the note at the top of the side column (a document's
+		// print page: Print and PDF are in Desk's page head)
+		this.head_in_side = this.side_layout && Boolean(head_in_side);
 		this.rtl = rtl;
 		this.host = host;
 		this.rows = new GridRows();
@@ -133,15 +136,17 @@ export class PagesView {
 		// a button of Frappe's print preview bar (espresso es-button, Frappe's own icons)
 		const fbtn = (action, label, icon) =>
 			`<button type="button" class="es-button" data-variant="ghost" data-size="sm" data-icon-button="true" data-bar="${action}" aria-label="${esc(label)}" title="${esc(label)}">${frappe.utils?.icon ? frappe.utils.icon(icon, "sm") : ""}</button>`;
+		const head = `<div class="rv-print-hd${this.head_in_side ? " rv-print-side-top" : ""}">
+					<div class="rv-print-hd-t"><strong>${esc(__("Print setup"))}</strong><span class="rv-print-count"></span></div>
+					<button type="button" class="rv-btn sm ghost" data-action="reset" title="${esc(__("Back to the default settings"))}">${icons.reset()}<span>${esc(__("Reset", null, "Report View"))}</span></button>
+				</div>`;
+		const note = `<span class="rv-print-note"></span>`;
 		el.classList.add("rv-print-sidecol");
 		el.innerHTML = `
 			<div class="rv-print-bar">
-				<div class="rv-print-hd">
-					<div class="rv-print-hd-t"><strong>${esc(__("Print setup"))}</strong><span class="rv-print-count"></span></div>
-					<button type="button" class="rv-btn sm ghost" data-action="reset" title="${esc(__("Back to the default settings"))}">${icons.reset()}<span>${esc(__("Reset", null, "Report View"))}</span></button>
-				</div>
+				${this.head_in_side ? "" : head}
 				<div class="rv-print-ft">
-					<span class="rv-print-note"></span>
+					${this.head_in_side ? "" : note}
 					<div class="rv-print-acts">
 						<button type="button" class="rv-btn rv-print-opts" data-action="print-settings" aria-expanded="false" aria-haspopup="dialog">${icons.sliders()}<span>${esc(__("Print settings"))}</span></button>
 						<button type="button" class="rv-btn rv-print-pdf" data-action="pdf" title="${esc(__("The same pages as a PDF file, made by the server"))}">${icons.download()}<span>${esc(__("PDF"))}</span></button>
@@ -152,10 +157,10 @@ export class PagesView {
 			<div class="rv-print-body">
 			<aside class="rv-print-side" aria-label="${esc(__("Print settings"))}" tabindex="-1">
 				<div class="rv-print-side-hd"><strong>${esc(__("Print settings"))}</strong><button type="button" class="rv-pop-x" data-action="close-options" aria-label="${esc(__("Close"))}">${icons.close()}</button></div>
+				${this.head_in_side ? head + note : ""}
 				<div class="bd"></div>
 			</aside>
 			<div class="rv-print-main">
-			<nav class="rv-print-thumbs" aria-label="${esc(__("Pages", null, "Report View"))}"></nav>
 			<div class="rv-print-stagewrap">
 			<div class="rv-print-stage" tabindex="0">
 				<div class="rv-print-busy" role="status" aria-live="polite" hidden><span class="rv-spin" aria-hidden="true"></span><span class="txt"></span><button type="button" class="rv-btn sm ghost" data-action="pdf-cancel" hidden>${esc(__("Cancel"))}</button></div>
@@ -220,8 +225,9 @@ export class PagesView {
 			}
 		);
 		this.on_resize = () => this.place_menu();
+		// the thumbnails: the standard page only; the side layout has the floating bar instead
 		this.thumbs = el.querySelector(".rv-print-thumbs");
-		this.thumbs.addEventListener("click", (e) => {
+		this.thumbs?.addEventListener("click", (e) => {
 			const b = e.target.closest("[data-thumb]");
 			if (b) this.go_to_page(Number(b.dataset.thumb));
 		});
@@ -231,8 +237,8 @@ export class PagesView {
 			const act = e.target.closest?.("[data-bar]")?.dataset.bar;
 			if (!act) return;
 			if (act === "zoom-in" || act === "zoom-out") return this.zoom(act === "zoom-in" ? "in" : "out");
-			// the page on screen (data-thumb counts from 0), then the one after or before it
-			const at = Number(this.thumbs?.querySelector('[aria-current="page"]')?.dataset.thumb) || 0;
+			// the page on screen (page_at counts from 1, go_to_page from 0), then the one after or before it
+			const at = (this.page_at || 1) - 1;
 			this.go_to_page(Math.max(0, Math.min(this.pages.length - 1, at + (act === "next-page" ? 1 : -1))));
 		});
 		this.stage.addEventListener("scroll", () => this.update_position(), { passive: true });
@@ -370,8 +376,9 @@ export class PagesView {
 			}
 		}
 		// the side layout opens as Frappe's print page does: the sheets at their real size (the
-		// owner, 2026-11-10: a fitted sheet did not look like Frappe's); «Fit» stays one press away
-		if (this.side_layout && this.settings.zoom === "fit") this.settings.zoom = 1;
+		// owner, 2026-11-10: a fitted sheet did not look like Frappe's), smaller only when a wide
+		// sheet does not fit the stage (zoom_value «auto»); «Fit» stays one press away
+		if (this.side_layout && this.settings.zoom === "fit") this.auto_zoom = true;
 		this.settings_report = name;
 		this.options_report = name;
 		// Unknown choices of a saved setting fall back; the company's letter head is the
@@ -453,11 +460,16 @@ export class PagesView {
 	 * The <style> blocks of a print format, once for all its pages, beside the sheets (and
 	 * printed with them); "" removes them.
 	 */
-	set_format_css(html) {
-		if (this.fmt_css_html === html) return;
+	set_format_css(html, frappe_base = false) {
+		// the pages of a Frappe print format stand on Frappe's print styles, as in its print
+		// view (layouts.js layout_custom loads them); the format's own come after and win
+		const base = frappe_base ? this.frappe_base || "" : "";
+		if (this.fmt_css_html === html && this.fmt_css_base === base) return;
 		this.fmt_css_html = html;
+		this.fmt_css_base = base;
 		// held to the sheets: a format's rules never reach Desk's own page
-		this.fmt_css.innerHTML = scope_format_css(html);
+		const base_el = base ? `<style class="rv-frappe-base">${base.replace(/<\/style/gi, "<\\/style")}</style>` : "";
+		this.fmt_css.innerHTML = base_el + scope_format_css(html);
 	}
 
 	note(text, warn = false) {
@@ -672,6 +684,20 @@ export class PagesView {
 		return this.parts.get(key);
 	}
 
+	/** A document's Standard format: Frappe dresses it in a Print Style (its print page). */
+	is_frappe_standard() {
+		return this.doc_mode && (this.settings.template || this.options?.default_print_format || "Standard") === "Standard";
+	}
+
+	/** The Print Style the document is printed in: the one chosen, else the site's; "" when
+	 * its format is not the Standard one or the site has none. */
+	frappe_style() {
+		if (!this.is_frappe_standard()) return "";
+		const styles = this.options?.print_styles || [];
+		const s = this.settings.print_style || this.options?.print_style || "";
+		return styles.includes(s) ? s : "";
+	}
+
 	async load_format(name) {
 		// a document always has a format: "" is its doctype's default
 		if (!name && !this.doc_mode) return null;
@@ -679,10 +705,10 @@ export class PagesView {
 		// variables (ADR-024): one per all of them
 		const cols = this.view_columns();
 		const vars = this.variable_values(name || (this.doc_mode ? this.options?.default_print_format || "" : ""));
-		const key = `${name}|${this.settings.lang || ""}|${JSON.stringify(this.ctx.filters || {})}|${JSON.stringify(cols)}|${JSON.stringify(vars)}`;
+		const key = `${name}|${this.settings.lang || ""}|${this.frappe_style()}|${JSON.stringify(this.doc_settings || {})}|${JSON.stringify(this.ctx.filters || {})}|${JSON.stringify(cols)}|${JSON.stringify(vars)}`;
 		if (!this.formats.has(key)) {
 			try {
-				this.formats.set(key, await this.host.pages_format(name, this.settings.lang || null, this.options?.print_format_types?.[name], cols, vars));
+				this.formats.set(key, format_fragment(await this.host.pages_format(name, this.settings.lang || null, this.options?.print_format_types?.[name], cols, vars)));
 			} catch (e) {
 				this.note(__("The print format could not be loaded: {0}", [error_text(e)]), true);
 				return null;
@@ -702,7 +728,10 @@ export class PagesView {
 			// the sheets' own padding (smaller on a narrow screen), at the zoom it is drawn with
 			const pad = this.sheet_metrics().pad_inline;
 			const w = this.stage.clientWidth - 2 * pad;
-			return Math.max(0.3, Math.min(1.25, w / (this.box?.w || 794)));
+			const fit = Math.max(0.3, Math.min(1.25, w / (this.box?.w || 794)));
+			// opened in the side layout: the real size, or what fits when the sheet is wider
+			// (a landscape sheet at 1440: its last columns were off the stage)
+			return this.auto_zoom ? Math.min(1, fit) : fit;
 		}
 		return z;
 	}
@@ -741,6 +770,8 @@ export class PagesView {
 	}
 
 	zoom(how) {
+		// a press of the person's own: no longer the size it opened with
+		this.auto_zoom = false;
 		if (how === "fit") {
 			this.settings.zoom = "fit";
 		} else {
@@ -762,7 +793,8 @@ export class PagesView {
 		const h = (this.box.h + gap) * z;
 		const at = Math.min(this.pages.length, Math.floor((this.stage.scrollTop + this.stage.clientHeight / 2 - pad * z) / h) + 1);
 		const num = fmt_int;
-		this.pos_el.textContent = __("Page {0} of {1}", [num(Math.max(1, at)), num(this.pages.length)]);
+		this.page_at = Math.max(1, at);
+		this.pos_el.textContent = __("Page {0} of {1}", [num(this.page_at), num(this.pages.length)]);
 		const cur = this.thumbs?.querySelector('[aria-current="page"]');
 		const next = this.thumbs?.children[Math.max(1, at) - 1];
 		if (cur !== next) {

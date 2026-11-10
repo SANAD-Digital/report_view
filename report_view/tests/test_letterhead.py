@@ -489,6 +489,29 @@ class TestCurrentLetterHead(RVTestCase):
 		self.assertEqual(cur["header_image"], "/files/hand.png")
 		self.assertIn(ctx["company"], cur["header"])
 
+	def test_an_empty_or_broken_letter_head_as_it_prints(self):
+		"""Nothing to show: no frame (the gallery hides «as it prints now»); a template with an
+		error: a sentence, never the raw template."""
+		frappe.get_doc(
+			{"doctype": "Letter Head", "letter_head_name": "RV LH Empty", "source": "HTML", "content": ""}
+		).insert(ignore_permissions=True)
+		frappe.get_doc(
+			{
+				"doctype": "Letter Head",
+				"letter_head_name": "RV LH Broken",
+				"source": "HTML",
+				"content": "<div>{{ doc.company </div>",
+			}
+		).insert(ignore_permissions=True)
+		# the error is logged (frappe.log_error commits): watched here, not written
+		with self.as_user("admin"), patch("frappe.log_error") as logged:
+			empty = api.builder_context(letter_head="RV LH Empty")["letter_head"]["current"]
+			broken = api.builder_context(letter_head="RV LH Broken")["letter_head"]["current"]
+		self.assertTrue(logged.called)
+		self.assertEqual((empty["header"], empty["footer"]), ("", ""))
+		self.assertNotIn("{{", broken["header"])
+		self.assertIn("<strong>", broken["header"])
+
 
 class TestRefresh(RVTestCase):
 	def test_a_saved_letter_head_follows_the_generator(self):
@@ -523,6 +546,28 @@ class TestRefresh(RVTestCase):
 		frappe.db.set_value("Letter Head", "RV LH Refresh", "content", "<div>by hand</div>")
 		self.assertFalse(lh.refresh_letter_head("RV LH Refresh"))
 		self.assertEqual(frappe.db.get_value("Letter Head", "RV LH Refresh", "content"), "<div>by hand</div>")
+
+	def test_refresh_all_rewrites_the_stale_only(self):
+		"""After migrate: a builder letter head written by an older generator is written again;
+		one of today's and one edited by hand are left as they are."""
+		with self.as_user("admin"):
+			api.save(layout=json.dumps(LAYOUT), name="RV LH All Old")
+			api.save(layout=json.dumps(LAYOUT), name="RV LH All New")
+		old = '<div class="rvlh" data-rv-lh="header">old</div>'
+		record = frappe.get_all("Letter Head Layout", filters={"letter_head": "RV LH All Old"}, pluck="name")[
+			0
+		]
+		frappe.db.set_value("Letter Head", "RV LH All Old", "content", old)
+		frappe.db.set_value(
+			"Letter Head Layout",
+			record,
+			"generated_hash",
+			lh.content_hash(old, frappe.db.get_value("Letter Head", "RV LH All Old", "footer")),
+		)
+		done = lh.refresh_all_letter_heads()
+		self.assertIn("RV LH All Old", done)
+		self.assertNotIn("RV LH All New", done)
+		self.assertFalse(lh.is_stale(frappe.db.get_value("Letter Head", "RV LH All Old", "content")))
 
 
 class TestLetterHeadApi(RVTestCase):

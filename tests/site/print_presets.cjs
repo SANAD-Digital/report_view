@@ -97,7 +97,7 @@ async function api_client(user, pwd) {
 	}));
 	const name = `RV doc ${Date.now()}`;
 	if (!doc) check("a submitted Journal Entry to print", false);
-	else {
+	else try {
 		await page.goto(`${BASE}/desk/rv-print/Journal%20Entry/${encodeURIComponent(doc)}`);
 		await settle();
 		let s = await state();
@@ -135,6 +135,13 @@ async function api_client(user, pwd) {
 		await page.waitForFunction((n) => document.querySelector(".rv-preset-btn .nm")?.textContent !== n, name, { timeout: 15000 }).catch(() => {});
 		const after = await a.get("list_presets", { context: "Document", target: "Journal Entry" });
 		check("«Delete» removes it", !after.body.message?.mine.some((r) => r.preset_name === name));
+	} finally {
+		// a step that threw leaves no preset of this run behind (it was found by its name)
+		const left = await a.get("list_presets", { context: "Document", target: "Journal Entry" }).catch(() => null);
+		for (const r of left?.body.message?.mine || []) {
+			if (r.preset_name === name && !created.includes(r.name)) created.push(r.name);
+		}
+		for (const n of created.splice(0)) await a.post("delete", { name: n }).catch(() => {});
 	}
 	check("no errors in the console", problems.length === 0, problems.join(" | "));
 	for (const n of created) await a.post("delete", { name: n });

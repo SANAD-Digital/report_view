@@ -110,11 +110,17 @@
 /* "page width": the letter head spans the page body at the height chosen */
 .rv-page-lh.fit-wide{align-items:stretch}
 .rv-page-lh.fit-wide img{width:100%;height:var(--pp-lh-h,26mm);max-height:none;object-fit:fill}
-.rv-page-lh *{max-height:calc(var(--pp-lh-h,26mm) + 4mm)}
 /* a letter head that sizes its image itself (Frappe's own: `width:100% !important` on the img)
    is drawn whole inside the band, its proportions kept, not cut at the band's foot */
-.rv-page .rv-page-lh:not(.fit-wide) img{max-height:var(--pp-lh-h,26mm) !important;height:auto !important;object-fit:contain !important}
-.rv-page .rv-page-lhf img{max-height:var(--pp-lhf-h,11mm) !important;height:auto !important;object-fit:contain !important}
+.rv-page .rv-page-lh:not(.fit-wide) img:not([width],[height]){max-height:var(--pp-lh-h,26mm) !important;height:auto !important;object-fit:contain !important}
+/* an image letter head as Frappe writes it (letter_head.py set_image_as_html: width or height
+   in pixels on the image) prints at that size, as on Frappe's print page: its band grows to it */
+.rv-page-lh:has(img[width],img[height]):not(.fit-wide){max-height:none}
+.rv-page .rv-page-lh:not(.fit-wide) img:is([width],[height]){max-width:100%;max-height:none;object-fit:contain}
+.rv-page .rv-page-lhf img:not([width],[height]){max-height:var(--pp-lhf-h,11mm) !important;height:auto !important;object-fit:contain !important}
+/* a footer image as Frappe writes it (its size on the image): that size, the band grows to it */
+.rv-page-lhf:has(img[width],img[height]){max-height:none}
+.rv-page .rv-page-lhf img:is([width],[height]){max-width:100%;max-height:none;object-fit:contain}
 .rv-page-lhf{max-height:calc(var(--pp-lhf-h,11mm) + 3mm);margin-block:var(--pp-foot-mb,1.5mm);margin-inline:var(--pp-foot-mi,0);border-top:var(--pp-foot-line,0 solid transparent);padding-top:1.2mm;display:flex;flex-direction:column;align-items:var(--pp-lhf-align,center)}
 .rv-page-lhf img{max-width:100%;max-height:var(--pp-lhf-h,11mm);width:auto;height:auto;object-fit:contain}
 /* a letter head of the builder (ADR-018, .rvlh) is a fixed design: its band is its own height
@@ -410,7 +416,13 @@
 @media (min-width:768px){
   .rv-docprint .rv-print-sidecol .rv-print-bar{display:none}
 }
-.rv-docprint .rv-print-side{display:flex;flex-direction:column}
+/* the column beside the stage on a desk; on a phone it is the sheet of «Print settings»
+   (the rules of the 900px media query below), opened from the bar */
+@media (min-width:901px){
+  .rv-docprint .rv-print-side{display:flex;flex-direction:column}
+}
+/* Print and PDF are Desk's page head's (doc_print.js frappe_head): not again in the bar */
+.rv-docprint .rv-print-bar :is(.rv-print-go,.rv-print-pdf){display:none}
 .rv-docprint .rv-print-side > .bd{flex:1;min-height:0}
 .rv-docprint .rv-print-side-top{flex:0 0 auto;height:auto;display:flex;align-items:center;align-content:flex-start;justify-content:flex-start;flex-wrap:wrap;gap:var(--s2,8px);margin:0;padding:var(--s3,12px) var(--gut,12px) var(--s2,8px);border-bottom:1px solid var(--outline-gray-1,var(--line))}
 .rv-docprint .rv-print-side-top .rv-print-hd-t{flex:1 1 100%;display:flex;align-items:baseline;gap:8px}
@@ -490,7 +502,6 @@
 .rv-print-main:where(:not(.rv-print-sidecol,.rv-print-sidecol *)){flex:1;min-height:0;display:flex}
 .rv-print-thumbs:where(:not(.rv-print-sidecol,.rv-print-sidecol *)){width:92px;flex:none;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 0;background:var(--surface-2);border-inline-end:1px solid var(--line);scrollbar-width:thin}
 .rv-print-main:where(.rv-print-sidecol,.rv-print-sidecol *){flex:1;min-width:0;min-height:0;display:flex}
-.rv-print-thumbs:where(.rv-print-sidecol,.rv-print-sidecol *){width:92px;flex:none;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 0;background:var(--surface-2);border-inline-start:1px solid var(--line);scrollbar-width:thin;order:2}
 .rv-print-thumbs:empty{display:none}
 .rv-print-thumbs button{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0;border:0;background:none;cursor:pointer;color:var(--tx-3);font:inherit;font-size:10.5px;font-variant-numeric:tabular-nums}
 .rv-print-thumbs i{display:block;width:54px;aspect-ratio:1/var(--th-ratio,1.414);box-sizing:border-box;border:1px solid var(--line-2);border-radius:2px;background:var(--pp-bg) linear-gradient(var(--pp-line),var(--pp-line)) 6px 7px/calc(100% - 12px) 4px no-repeat;box-shadow:var(--sh-1)}
@@ -630,3 +641,8 @@ button.rv-preset-star:focus-visible{outline:2px solid var(--pri);outline-offset:
 .rv-vars{display:flex;flex-direction:column;gap:8px}
 .rv-var{display:flex;flex-direction:column;gap:3px}
 .rv-var-desc{font-size:var(--fs-xs);color:var(--tx-3);line-height:1.4}
+
+/* Frappe's .print-format around a format (layouts.js in_print_format): its print style's
+   rules start from it; its page box (width, padding, rounded white sheet) is Frappe's page,
+   and here the sheet is the page, so only its lettering stays */
+:is(.rv-print-sheets,.rv-print-probe) .print-format.rv-print-format{width:auto !important;max-width:none !important;min-height:0 !important;height:auto !important;margin:0 !important;padding:0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important}

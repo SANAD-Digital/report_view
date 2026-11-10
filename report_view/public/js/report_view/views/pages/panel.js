@@ -15,6 +15,10 @@ import { to_number, values_for } from "../../print_variables.js";
 import { BOX_MM, DEFAULT_OPEN_SECS, DROPDOWN_FLIP_UNDER, DROPDOWN_MAX_H, DROPDOWN_MIN_H, FOOT_SCOPES, MENU_GAP, MENU_GAP_BELOW, MENU_MIN_H, MENU_W, MOBILE_QUERY, NUMS, PAGE_SCOPES, PAGE_STYLES, RIBBON, SIDE_GROUPS, SIDES, clamp } from "./settings.js";
 import { can_write_letter_head } from "./support.js";
 
+// Frappe's select (form/controls/select.js): its own chevrons over a select without the
+// browser's arrow
+const sel_icon = () => `<span class="rv-sel-ic" aria-hidden="true">${frappe.utils?.icon ? frappe.utils.icon("chevrons-up-down", "sm") : ""}</span>`;
+
 export class PagesPanel {
 	/**
 	 * The settings panel: sections that fold (paper, template, letter head, footer, page
@@ -41,7 +45,7 @@ export class PagesPanel {
 			return `<label class="rv-field rv-num-field"><span>${esc(label)}</span><span class="rv-num"><input type="number" class="rv-input" data-num="${key}" min="${min}" max="${max}" step="${step}" value="${s[key]}"><i>${esc(unit)}</i></span></label>`;
 		};
 		const select = (key, label, opts) =>
-			`<label class="rv-field"><span>${esc(label)}</span><select class="rv-input" data-set="${key}">${opts.map(([v, l]) => option(v, l, String(s[key]) === String(v))).join("")}</select></label>`;
+			`<label class="rv-field"><span>${esc(label)}</span><span class="rv-selbox"><select class="rv-input" data-set="${key}">${opts.map(([v, l]) => option(v, l, String(s[key]) === String(v))).join("")}</select>${sel_icon()}</span></label>`;
 		// the little page between the four fields draws them: wider margins, a smaller body
 		const box_preview = (b) => SIDES.map((side) => `--m-${side}:${Math.min(38, Number(b[side]) * 1.6)}%`).join(";");
 		// four margins as Word draws them: top and bottom, the two sides, a page between
@@ -55,14 +59,14 @@ export class PagesPanel {
 		const rule = (key, label) =>
 			`<div class="rv-field rv-rule-field"><span>${esc(label)}</span><div class="rv-rule-ctl">
 				<span class="rv-num"><input type="number" class="rv-input" data-num="${key}_w" min="0" max="6" step="0.2" value="${s[`${key}_w`]}" aria-label="${esc(__("Thickness"))}"><i>px</i></span>
-				<select class="rv-input" data-set="${key}_s" aria-label="${esc(__("Line style"))}">${[
+				<span class="rv-selbox"><select class="rv-input" data-set="${key}_s" aria-label="${esc(__("Line style"))}">${[
 					["solid", __("Solid")],
 					["dashed", __("Dashed")],
 					["dotted", __("Dotted")],
 					["double", __("Double")],
 				]
 					.map(([v, l]) => option(v, l, s[`${key}_s`] === v))
-					.join("")}</select>
+					.join("")}</select>${sel_icon()}</span>
 				<input type="color" data-color="${key}_c" value="${this.color_of(s, `${key}_c`)}" aria-label="${esc(__("Colour"))}" title="${esc(__("Colour"))}"></div></div>`;
 		const section = this.side_layout
 			? // the side column: a part of a group (side_panel folds the groups): its small title, its controls
@@ -105,7 +109,7 @@ export class PagesPanel {
 			vars: ic('<path d="M4 7h9M18 7h2M4 17h3M12 17h8"/><circle cx="15.5" cy="7" r="2.5"/><circle cx="9.5" cy="17" r="2.5"/>'),
 		};
 		const paper_sum = `${s.size} · ${s.orientation === "landscape" ? __("Landscape", null, "Report View") : __("Portrait", null, "Report View")} · ${[pm.top, pm.end, pm.bottom, pm.start].join("/")} ${mm}`;
-		const tpl_sum = [s.template || PAGE_STYLES.find((x) => x.id === s.style)?.label(), s.font, s.lang ? o.languages.find((l) => l.name === s.lang)?.label : ""].filter(Boolean).join(" · ");
+		const tpl_sum = [s.template || (this.doc_mode ? this.frappe_style() && __(this.frappe_style()) : PAGE_STYLES.find((x) => x.id === s.style)?.label()), s.font, s.lang ? o.languages.find((l) => l.name === s.lang)?.label : ""].filter(Boolean).join(" · ");
 		const scope_label = { all: __("Every page"), first: __("First page"), rest: __("All but the first"), last: __("Last page") };
 		// four choices do not fit one line: two by two
 		const scopes = (key, list) => seg(key, __("Apply to"), list.map((v) => [v, scope_label[v]])).replace("rv-print-seg", `rv-print-seg${list.length > 3 ? " grid2" : ""}`);
@@ -143,7 +147,8 @@ export class PagesPanel {
 				__("Template and language"),
 				tpl_sum,
 				`${link("template", __("Print template"))}
-				${select("style", __("Print style"), PAGE_STYLES.map((st) => [st.id, st.label()]))}
+				${this.doc_mode ? this.frappe_styles_html() : select("style", __("Print style"), PAGE_STYLES.map((st) => [st.id, st.label()]))}
+				${this.doc_settings_html()}
 				<div class="rv-field"><span>${esc(__("Font"))}</span>${font_picker_html({ value: s.font, key: "font", label: __("Font"), empty: __("The template's font") })}</div>
 				${link("letter_head", __("Letter Head", null, "Report View"))}
 				${link("heading", __("Print Heading", null, "Report View"))}
@@ -238,14 +243,14 @@ export class PagesPanel {
 				`${sw("pb_on", __("Border round the page"))}
 				${
 					s.pb_on
-						? `<div class="rv-print-row">${num("pb_w", __("Thickness"), "px")}<label class="rv-field"><span>${esc(__("Line style"))}</span><select class="rv-input" data-set="pb_s">${[
+						? `<div class="rv-print-row">${num("pb_w", __("Thickness"), "px")}<label class="rv-field"><span>${esc(__("Line style"))}</span><span class="rv-selbox"><select class="rv-input" data-set="pb_s">${[
 								["solid", __("Solid")],
 								["dashed", __("Dashed")],
 								["dotted", __("Dotted")],
 								["double", __("Double")],
 						  ]
 								.map(([v, l]) => option(v, l, s.pb_s === v))
-								.join("")}</select></label></div>
+								.join("")}</select>${sel_icon()}</span></label></div>
 					<div class="rv-print-row">${num("pb_offset", __("From the edge of the paper"), mm)}${num("pb_radius", __("Rounded corners"), mm)}</div>
 					<div class="rv-print-row"><label class="rv-field"><span>${esc(__("Colour"))}</span><input type="color" class="rv-color-wide" data-color="pb_c" value="${this.color_of(s, "pb_c")}"></label></div>
 					${scopes("pb_pages", PAGE_SCOPES)}`
@@ -307,12 +312,13 @@ export class PagesPanel {
 							.join("")}</div>`
 				  ),
 		];
-		const note = __("The pages show the table as it is: the same filters, grouping and folded groups.");
+		// a document is not a table: no word about filters and groups under its column
+		const note = this.doc_mode ? "" : __("The pages show the table as it is: the same filters, grouping and folded groups.");
 		if (this.side_layout) {
 			this.side_panel(secs, note);
 			return;
 		}
-		this.bd.innerHTML = [...secs, `<p class="rv-zone-empty">${esc(note)}</p>`].join("");
+		this.bd.innerHTML = [...secs, note ? `<p class="rv-zone-empty">${esc(note)}</p>` : ""].join("");
 		this.ribbon_layout();
 		this.bd.scrollLeft = this.ribbon_scroll || 0;
 		const menu = this.bd.querySelector(".rv-print-pop");
@@ -346,7 +352,7 @@ export class PagesPanel {
 			return `<details class="rv-pgrp" data-group="${g.id}" ${open}><summary><span class="tx"><span class="tt">${esc(g.label())}</span><span class="sm">${esc(sum)}</span></span><span class="chev">${icons.chevron_down(12)}</span></summary>${tmp.innerHTML}</details>`;
 		});
 		const top = this.bd.scrollTop;
-		this.bd.innerHTML = `${groups.join("")}<p class="rv-zone-empty rv-print-side-note">${esc(note)}</p>`;
+		this.bd.innerHTML = `${groups.join("")}${note ? `<p class="rv-zone-empty rv-print-side-note">${esc(note)}</p>` : ""}`;
 		this.bind_panel();
 		// the column stays where the person was in it
 		this.bd.scrollTop = top;
@@ -558,7 +564,7 @@ export class PagesPanel {
 						.filter(Boolean)
 						.map((o) => `<option value="${esc(o)}" ${o === v ? "selected" : ""}>${esc(__(o))}</option>`)
 						.join("");
-					return `<label class="rv-field rv-var"><span>${esc(label)}</span><select class="rv-input" data-var="${key}">${opts}</select>${hint(d)}</label>`;
+					return `<label class="rv-field rv-var"><span>${esc(label)}</span><span class="rv-selbox"><select class="rv-input" data-var="${key}">${opts}</select>${sel_icon()}</span>${hint(d)}</label>`;
 				}
 				if (d.fieldtype === "Link") {
 					return `<div class="rv-field rv-var"><span>${esc(label)}</span><div class="rv-linkf" data-var-link="${key}" data-doctype="${esc(d.options)}" data-label="${esc(label)}"></div>${hint(d)}</div>`;
@@ -621,6 +627,45 @@ export class PagesPanel {
 				if (to_number(i.dataset.type, i.value) === null) i.value = String(this.variable_values()?.[i.dataset.varNum] ?? 0);
 			});
 		}
+	}
+
+	/**
+	 * A document's Standard format in Frappe's Print Styles: the picker of Frappe's print page
+	 * (printing/page/print/print.js render_style_options), its markup and classes, so it looks
+	 * as Frappe draws it. Another format carries its own look: nothing.
+	 */
+	frappe_styles_html() {
+		const styles = this.options?.print_styles || [];
+		if (!this.is_frappe_standard() || !styles.length) return "";
+		const active = this.frappe_style();
+		const scrub = (n) => String(n).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+		const tiles = styles
+			.map((name) => {
+				const on = name === active;
+				return `<button type="button" class="print-style-option${on ? " active" : ""}" data-print-style="${esc(name)}" aria-pressed="${on}">
+					<span class="print-style-thumb print-style-thumb--${esc(scrub(name))}"><span class="thumb-label"></span><span class="thumb-fields"><i></i><i></i></span><span class="thumb-table"><i></i><i></i><i></i></span></span>
+					<span class="print-style-name">${esc(__(name))}</span>
+				</button>`;
+			})
+			.join("");
+		return `<div class="rv-field print-style-picker rv-frappe-styles"><span>${esc(__("Style"))}</span><div class="print-style-options">${tiles}</div></div>`;
+	}
+
+	/**
+	 * A document's own print settings (Sales Invoice: group same items, the unit after the
+	 * quantity, taxes of nought): Frappe's print page shows them under the page's settings,
+	 * each at the site's value (Print Settings); a change holds for this print only.
+	 */
+	doc_settings_html() {
+		const fields = this.doc_mode ? this.options?.doc_settings || [] : [];
+		if (!fields.length) return "";
+		const own = this.doc_settings || {};
+		return `<div class="rv-setlist rv-doc-settings">${fields
+			.map((f) => {
+				const on = f.fieldname in own ? own[f.fieldname] : f.default;
+				return `<label class="rv-setitem"><span class="rv-check"><input type="checkbox" data-doc-setting="${esc(f.fieldname)}" ${on ? "checked" : ""}><span>${esc(f.label)}</span></span></label>`;
+			})
+			.join("")}</div>`;
 	}
 
 	/** The thumbnails of the pages (numbers on little sheets): one each, the current marked. */
@@ -742,6 +787,14 @@ export class PagesPanel {
 			sel.addEventListener("change", () => this.update({ [sel.dataset.set]: sel.value }));
 		}
 		for (const b of bd.querySelectorAll("[data-orient]")) b.addEventListener("click", () => this.update({ orientation: b.dataset.orient }));
+		for (const b of bd.querySelectorAll("[data-print-style]")) b.addEventListener("click", () => this.update({ print_style: b.dataset.printStyle }));
+		// the document's own print settings: this print only, never saved (Frappe's print page)
+		for (const c of bd.querySelectorAll("[data-doc-setting]")) {
+			c.addEventListener("change", () => {
+				this.doc_settings = { ...(this.doc_settings || {}), [c.dataset.docSetting]: c.checked ? 1 : 0 };
+				this.update({});
+			});
+		}
 		for (const b of bd.querySelectorAll("[data-sw]")) b.addEventListener("click", () => this.update({ [b.dataset.sw]: !this.settings[b.dataset.sw] }));
 		for (const b of bd.querySelectorAll("[data-seg]")) {
 			b.addEventListener("click", () => {

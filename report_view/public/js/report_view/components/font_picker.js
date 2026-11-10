@@ -44,7 +44,7 @@ export function font_picker_html({ value, key, label = __("Font"), empty = "" })
 		)
 		.join("");
 	return `<div class="rv-fontpick" data-font-key="${esc(key)}">
-		<button type="button" class="rv-fontpick-btn" aria-haspopup="listbox" aria-expanded="false"${shown.style}><span class="n" dir="auto">${esc(shown.name)}</span><span class="s" dir="auto">${esc(shown.sample)}</span><span class="cv" aria-hidden="true"></span></button>
+		<button type="button" class="rv-fontpick-btn" aria-haspopup="listbox" aria-expanded="false"${shown.style}><span class="n" dir="auto">${esc(shown.name)}</span><span class="s" dir="auto">${esc(shown.sample)}</span><span class="cv${window.frappe?.utils?.icon ? " is-icon" : ""}" aria-hidden="true">${window.frappe?.utils?.icon ? frappe.utils.icon("chevrons-up-down", "sm") : ""}</span></button>
 		<div class="rv-fontpick-pop" hidden>
 			<input type="search" class="rv-input sm rv-fontpick-q" placeholder="${esc(__("Search fonts"))}" aria-label="${esc(__("Search fonts"))}" autocomplete="off" spellcheck="false">
 			<div class="rv-fontpick-list" role="listbox" aria-label="${esc(label)}">${none}${groups}<p class="rv-fontpick-none" hidden>${esc(__("No font matches"))}</p></div>

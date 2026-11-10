@@ -280,7 +280,7 @@ test("pages in the trial layouts: the side column holds every section in four gr
 				width: Math.round(side.width),
 				start: rtl ? side.left >= stage.right - 1 : side.right <= stage.left + 1,
 				// no column of thumbnails: the floating bar at the sheets' foot moves through the pages
-				thumbs: getComputedStyle(document.querySelector(".rv-print-thumbs")).display,
+				thumbs: document.querySelectorAll(".rv-print-thumbs").length,
 				bar_acts: [...document.querySelectorAll(".rv-print-floatbar [data-bar], .rv-print-floatbar [data-zoom]")].map((b) => b.dataset.bar || b.dataset.zoom),
 				ribbon: document.querySelectorAll(".rv-rg, .rv-print-pop").length,
 				head: [...document.querySelectorAll(".rv-print-bar [data-action]")].map((b) => b.dataset.action),
@@ -300,7 +300,7 @@ test("pages in the trial layouts: the side column holds every section in four gr
 		expect(st.bar).toBeLessThanOrEqual(45);
 		expect(st.width).toBe(288);
 		expect(st.start).toBe(true);
-		expect(st.thumbs).toBe("none");
+		expect(st.thumbs).toBe(0);
 		expect(st.bar_acts).toEqual(["prev-page", "next-page", "zoom-out", "zoom-in", "fit"]);
 		expect(st.ribbon).toBe(0);
 		expect(st.head).toEqual(["reset", "print-settings", "pdf", "print"]);

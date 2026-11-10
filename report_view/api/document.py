@@ -9,6 +9,7 @@ print the document (``guard_doc_print``), as the report functions check the repo
 
 import frappe
 from frappe import _
+from frappe.utils import cint
 from frappe.www.printview import get_html_and_style
 
 from report_view.core import print_variables, printing
@@ -71,6 +72,13 @@ def get_doc_print_options(doctype: str, name: str) -> dict:
 			[f.name for f in formats] + ([meta.default_print_format] if meta.default_print_format else [])
 		),
 		"print_headings": [h.name for h in headings],
+		# Frappe's print styles (its print page offers them for the Standard format) and the
+		# site's own (Print Settings)
+		"print_styles": _print_styles(),
+		# the document's own print settings (Sales Invoice: group same items, …), as Frappe's
+		# print page lists them, each at the site's value
+		"doc_settings": _doc_settings(doctype, doc.name),
+		"print_style": frappe.db.get_single_value("Print Settings", "print_style") or "",
 		"print_signatures": signatures,
 		"languages": [{"name": lg.name, "label": lg.language_name or lg.name} for lg in languages],
 		"lang": frappe.local.lang,
@@ -81,15 +89,62 @@ def get_doc_print_options(doctype: str, name: str) -> dict:
 	}
 
 
+# the order of Frappe's print page (printing/page/print/print.js STANDARD_PRINT_STYLES)
+_STANDARD_PRINT_STYLES = ("Redesign", "Modern", "Classic", "Striped", "Monochrome")
+
+
+def _print_styles() -> list[str]:
+	"""The enabled Print Styles, Frappe's own first in its order (as its print page lists them,
+	frappe.printing.page.print.print.get_print_styles)."""
+	names = frappe.get_all("Print Style", filters={"disabled": 0}, pluck="name", order_by="creation asc")
+	rank = {n: i for i, n in enumerate(_STANDARD_PRINT_STYLES)}
+	return sorted(names, key=lambda n: rank.get(n, len(rank)))
+
+
+def _doc_settings(doctype: str, name: str) -> list[dict]:
+	"""The Print Settings a document lets its print change (its get_print_settings), as
+	frappe.printing.page.print.print.get_print_settings_to_show gives them."""
+	from frappe.printing.page.print.print import get_print_settings_to_show
+
+	out = []
+	for df in get_print_settings_to_show(doctype, name) or []:
+		if df.fieldtype != "Check":
+			continue
+		out.append(
+			{
+				"fieldname": df.fieldname,
+				"label": _(df.label),
+				"default": cint(df.default),
+			}
+		)
+	return out
+
+
+def _allowed_doc_settings(doc, settings: dict | str | None) -> dict:
+	"""The values chosen on the print page, of the document's own print settings only: never
+	a flag such as allow_print_for_draft (Frappe's get_allowed_print_settings_override)."""
+	settings = frappe.parse_json(settings) if settings else {}
+	if not isinstance(settings, dict):
+		frappe.throw(_("Invalid print settings"), RVInvalidInput)
+	own = set(doc.get_print_settings() or []) if hasattr(doc, "get_print_settings") else set()
+	return {key: cint(value) for key, value in settings.items() if key in own}
+
+
 @frappe.whitelist(methods=["GET"])
 def render_doc_print(
-	doctype: str, name: str, print_format: str | None = None, variables: dict | str | None = None
+	doctype: str,
+	name: str,
+	print_format: str | None = None,
+	variables: dict | str | None = None,
+	print_style: str | None = None,
+	settings: dict | str | None = None,
 ) -> dict:
 	"""The document's print format as Frappe renders it (without Frappe's letter head: the
 	pages carry their own), in the request's language (``_lang``). ``variables`` (ADR-024):
 	the values chosen on the print page, checked against the format's own; its template
 	reads them, defaults filled in, as ``variables``."""
-	guard_doc_print(doctype, name)
+	doc = guard_doc_print(doctype, name)
+	overrides = _allowed_doc_settings(doc, settings)
 	if print_format:
 		found = frappe.get_list(
 			"Print Format",
@@ -109,14 +164,27 @@ def render_doc_print(
 		if pf_name and frappe.db.exists("Print Format", pf_name)
 		else None
 	)
+	# a Print Style dresses the Standard format only, as on Frappe's print page
+	style = None
+	if print_style and (pf_name or "Standard") == "Standard":
+		if print_style not in _print_styles():
+			frappe.throw(_("Print Style {0} not found").format(print_style), frappe.DoesNotExistError)
+		style = print_style
 	with print_variables.for_render(pf, variables):
 		out = get_html_and_style(
-			doctype, name, print_format=print_format or None, no_letterhead=1, trigger_print=False
+			doctype,
+			name,
+			print_format=print_format or None,
+			no_letterhead=1,
+			trigger_print=False,
+			style=style,
+			settings=overrides or None,
 		)
 	if out.get("html") is None:
 		frappe.throw(_("The print format could not be rendered"), RVInvalidInput)
+	stylesheets = printing.linked_stylesheets(out["html"])
 	html, css = printing.document_fragment(out["html"], out.get("style") or "")
-	return {"name": print_format or "", "type": "Jinja", "html": html, "css": css}
+	return {"name": print_format or "", "type": "Jinja", "html": html, "css": css, "stylesheets": stylesheets}
 
 
 @frappe.whitelist(methods=["POST"])

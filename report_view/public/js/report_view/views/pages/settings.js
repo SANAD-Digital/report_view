@@ -103,6 +103,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
 	template: "",
 	// the look of Report View's own template (rv_pages.css .ps-<style>)
 	style: "classic",
+	// a document's: Frappe's Print Style for the Standard format ("" = Print Settings')
+	print_style: "",
 	// the font of the pages: a family of the font library (report_view/fonts.json), "" = the template's
 	font: "",
 	letter_head: "",
@@ -347,7 +349,7 @@ export function sanitize_settings(raw, base = DEFAULT_SETTINGS) {
 	}
 	for (const k of BOXES) if (raw[k]) out[k] = sanitize_box(raw[k], out[k]);
 	if (raw.margins === "custom" && raw.page_m) out.margins = "custom";
-	for (const k of ["template", "letter_head", "lang", "heading", "signature"]) if (typeof raw[k] === "string") out[k] = raw[k];
+	for (const k of ["template", "letter_head", "lang", "heading", "signature", "print_style"]) if (typeof raw[k] === "string") out[k] = raw[k];
 	for (const k of BOOL_KEYS) if (typeof raw[k] === "boolean") out[k] = raw[k];
 	// the setting of the first version: the letter head on every page
 	// the switches of earlier versions: the letter head on every page, the footer on every page

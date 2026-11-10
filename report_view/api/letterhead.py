@@ -85,9 +85,8 @@ def _values(company: frappe._dict, address: dict) -> dict:
 	"""``{token: value}`` of a company: what each field of the layout prints."""
 	name = company.company_name or company.name
 	# the company's own Arabic name, else its translation; never the English name again
-	name_ar = (
-		company.get("rv_company_name_ar") or frappe.translate.get_user_translations("ar").get(name) or ""
-	)
+	# one source with the paper (the template's _rvn): the preview never differs from the print
+	name_ar = lh_core.arabic_name(company.company_name, company.get("rv_company_name_ar"))
 	city_line = ", ".join(v for v in (address.get("city"), address.get("state"), address.get("pincode")) if v)
 	full = "\n".join(
 		v
@@ -168,7 +167,9 @@ def _current(lh: frappe._dict, company: str | None) -> dict:
 		try:
 			return frappe.render_template(html, context)
 		except Exception:
-			return html
+			# a template that does not render is said, not shown raw
+			frappe.log_error(title=f"Report View: letter head {lh.name} does not render")
+			return f"<p><strong>{frappe.utils.escape_html(_('The letter head does not render: its template has an error. Open it in Frappe to correct it.'))}</strong></p>"
 
 	# the HTML whenever there is some: Frappe marks a letter head «Image» when it has no image
 	# field, whatever its HTML holds
@@ -296,22 +297,35 @@ def save_company_paper(company: str, values: dict | str) -> dict:
 	if not isinstance(values, dict):
 		frappe.throw(_("Invalid values"), RVInvalidInput)
 	fields = set(lh_core.paper_fields())
+	meta = frappe.get_meta("Company")
 	changes = {}
 	for token, value in values.items():
 		field = lh_core.PAPER_FIELDS.get(token)
 		if field not in fields:
 			frappe.throw(_("Unknown field {0}").format(token), RVInvalidInput)
+		label = _(meta.get_label(field))
 		if value is not None and not isinstance(value, str):
-			frappe.throw(_("Invalid values"), RVInvalidInput)
+			frappe.throw(_("Invalid value of {0}").format(label), RVInvalidInput)
 		text = (value or "").strip()
 		if len(text) > (500 if token == "address_ar" else 140):
-			frappe.throw(_("{0} is too long").format(token), RVInvalidInput)
+			frappe.throw(_("{0} is too long").format(label), RVInvalidInput)
 		changes[field] = text
 	doc = frappe.get_doc("Company", company)
 	doc.check_permission("write")
 	# the paper's fields only: ERPNext's Company.on_update (default accounts, warehouses) has
-	# nothing to do with them and is not run
-	doc.db_set(changes, notify=True)
+	# nothing to do with them and is not run; the change is kept in the company's history as
+	# a save keeps it (a registration number or an IBAN printed on every page)
+	changed = [[f, doc.get(f) or "", v] for f, v in changes.items() if (doc.get(f) or "") != v]
+	if changed:
+		doc.db_set(changes, notify=True)
+		frappe.get_doc(
+			{
+				"doctype": "Version",
+				"ref_doctype": "Company",
+				"docname": company,
+				"data": frappe.as_json({"changed": changed, "added": [], "removed": [], "row_changed": []}),
+			}
+		).insert(ignore_permissions=True)
 	return {"company_data": _company_data(company), "can_set_default": _can_set_default(company)}
 
 

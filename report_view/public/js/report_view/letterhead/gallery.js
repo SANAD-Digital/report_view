@@ -55,19 +55,7 @@ export class Gallery {
 		}).join("");
 		const layout = h.preset_layout(this.selected);
 		const hidden = missing_tokens(layout, ctx);
-		const title = h.letter_head ? h.letter_head : __("New letter head");
 		this.parent.innerHTML = `
-			<header class="rvlb-bar">
-				<div class="rvlb-title"><strong>${esc(title)}</strong></div>
-				<ol class="rvlb-steps" aria-label="${esc(__("Steps"))}">
-					<li class="on" aria-current="step">1 · ${esc(__("Choose a style"))}</li>
-					<li>2 · ${esc(__("Fine-tune on the page"))}</li>
-					<li>3 · ${esc(__("Save to the letter heads"))}</li>
-				</ol>
-				<span class="rvlb-flex"></span>
-				<button type="button" class="rv-btn" data-act="blank">${esc(__("Blank page"))}</button>
-				<button type="button" class="rv-btn primary" data-act="start">${esc(__("Start with this style"))}</button>
-			</header>
 			<div class="rvlb-gal">
 				<aside class="rvlb-gal-side" aria-label="${esc(__("Company data"))}">
 					<label class="rv-field">${esc(__("Company"))}
@@ -95,7 +83,7 @@ export class Gallery {
 					}
 				</aside>
 				<main class="rvlb-gal-main">
-					${h.letter_head && !h.has_layout ? this.current_html(h) : ""}
+					${h.letter_head && !h.has_layout && (h.current?.header || h.current?.footer) ? this.current_html(h) : ""}
 					<div class="rvlb-gal-hd"><strong>${esc(__("{0} styles drawn with your company's data", [PRESETS.length]))}</strong><span>${esc(h.brand ? __("The colour comes from the logo; change it on the next step.") : __("Change the colours and the font on the next step."))}</span></div>
 					${families}
 					<div class="rvlb-cards">${cards}</div>

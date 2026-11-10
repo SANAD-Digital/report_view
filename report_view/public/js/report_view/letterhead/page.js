@@ -98,7 +98,7 @@ class LetterheadBuilderPage {
 				<header class="rvlb-bar">
 					<div class="rvlb-title"><strong data-ref="name"></strong><span class="rvlb-status" data-ref="status" role="status"></span></div>
 					<span class="rvlb-flex"></span>
-					<label class="rvlb-company"><span>${esc(__("Preview with the data of"))}</span><select class="rv-input sm" data-ref="company" aria-label="${esc(__("Preview with the data of"))}"></select></label>
+					<label class="rvlb-company"><span>${esc(__("Preview with the data of"))}</span><span class="rv-selbox"><select class="rv-input sm" data-ref="company" aria-label="${esc(__("Preview with the data of"))}"></select><span class="rv-sel-ic" aria-hidden="true">${frappe.utils?.icon ? frappe.utils.icon("chevrons-up-down", "sm") : ""}</span></span></label>
 					<div class="rvlb-group" role="group" aria-label="${esc(__("History"))}">
 						<button type="button" class="rv-btn icon ghost" data-act="undo" aria-label="${esc(__("Undo"))}" title="${esc(__("Undo"))} (Ctrl+Z)"><span class="rvlb-flip">${icons.undo()}</span></button>
 						<button type="button" class="rv-btn icon ghost" data-act="redo" aria-label="${esc(__("Redo"))}" title="${esc(__("Redo"))} (Ctrl+Y)"><span class="rvlb-flip">${icons.redo()}</span></button>
@@ -271,7 +271,9 @@ class LetterheadBuilderPage {
 	 */
 	edit_company_paper() {
 		const name = this.company;
-		const v = this.data.get(name)?.values || {};
+		const v = { ...(this.data.get(name)?.values || {}) };
+		// a server that still gave the English name for the Arabic one: never saved as Arabic
+		if (v.company_name_ar && v.company_name_ar === v.company_name) v.company_name_ar = "";
 		const f = (token, fieldtype = "Data", extra = {}) => ({ fieldname: token, fieldtype, label: token_label(token), default: v[token] || "", ...extra });
 		const d = new frappe.ui.Dialog({
 			title: __("The paper data of {0}", [name]),
@@ -645,9 +647,11 @@ class LetterheadBuilderPage {
 					<span class="rvlb-h3">${esc(__("Rendered by the server"))}</span>
 					<p class="rvlb-note">${esc(__("This is the HTML saved in the letter head, rendered for {0}, as Frappe's print, the PDF and the Report View pages show it.", [this.company || ""]))}</p>
 					${warnings.length ? `<div class="rvlb-warn" role="note">${icons.alert()}<ul>${warnings.map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>` : ""}
-					<span class="rvlb-h3">${esc(__("PDF with wkhtmltopdf"))}</span>
-					<p class="rvlb-note">${esc(__("With «Repeat header and footer», the page margins this letter head needs are added by themselves. Only a print format that sets its own .print-format margin keeps it; such a format needs this line instead:"))}</p>
-					<div class="rvlb-code"><code class="ltr" dir="ltr">${esc(css)}</code><button type="button" class="rv-btn sm" data-copy>${icons.copy()}<span>${esc(__("Copy"))}</span></button></div>
+					<details class="rvlb-dev">
+						<summary>${esc(__("For developers"))}</summary>
+						<p class="rvlb-note">${esc(__("With «Repeat header and footer», the page margins this letter head needs are added by themselves. Only a print format that sets its own .print-format margin keeps it; such a format needs this line instead:"))}</p>
+						<div class="rvlb-code"><code class="ltr" dir="ltr">${esc(css)}</code><button type="button" class="rv-btn sm" data-copy>${icons.copy()}<span>${esc(__("Copy"))}</span></button></div>
+					</details>
 				</aside>
 			</div>`;
 		body.querySelector("[data-copy]").addEventListener("click", () => frappe.utils.copy_to_clipboard(css));

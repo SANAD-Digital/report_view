@@ -4867,3 +4867,37 @@ msgstr "عائلات الأنماط"
 
 msgid "{0} styles drawn with your company's data"
 msgstr "{0} نمطاً مرسومة ببيانات شركتك"
+
+msgid "Invalid value of {0}"
+msgstr "قيمة {0} غير صالحة"
+
+msgid "Unknown field {0}"
+msgstr "حقل غير معروف: {0}"
+
+msgid "{0} is too long"
+msgstr "{0} أطول من المسموح"
+
+msgid "Invalid values"
+msgstr "قيم غير صالحة"
+
+msgid "Invalid letter head"
+msgstr "ترويسة غير صالحة"
+
+msgid "The letter head does not render: its template has an error. Open it in Frappe to correct it."
+msgstr "الترويسة لا تُعرض: في قالبها خطأ. افتحها في Frappe لتصحيحه."
+
+# Frappe writes «ترئيس الرسالة»: one name for one thing on every screen (the review of 2026-11-11)
+msgid "Letter Head"
+msgstr "الترويسة"
+
+msgid "For developers"
+msgstr "للمطورين"
+
+msgid "Print Style {0} not found"
+msgstr "نمط الطباعة {0} غير موجود"
+
+msgid "Even at {0} mm it is cut: shorten the text or make its letters smaller."
+msgstr "حتى بارتفاع {0} مم يُقص: اختصر النص أو صغّر حروفه."
+
+msgid "Invalid print settings"
+msgstr "إعدادات طباعة غير صالحة"

@@ -65,8 +65,8 @@ class DocPrintPage {
 		this.root.replaceChildren(parent);
 		// the settings in a side column, as Frappe's print view (the owner, 2026-11-10: the print
 		// engine as part of Frappe)
-		this.pages = new PagesView({ parent, root: this.root, rtl: this.rtl, host: kind === "custom" ? this.custom : this, side: true });
-		this.frappe_head(parent);
+		this.pages = new PagesView({ parent, root: this.root, rtl: this.rtl, host: kind === "custom" ? this.custom : this, side: true, head_in_side: true });
+		this.frappe_head();
 		this.page.clear_secondary_action();
 		this.page.clear_menu();
 		if (kind === "custom") {
@@ -87,27 +87,34 @@ class DocPrintPage {
 
 	/**
 	 * As Frappe's print page (printing/page/print/print.js): Print the primary action of Desk's
-	 * page head and the PDF an icon beside it; the setup's name, Reset and the notes at the top
-	 * of the side column. The row of the pages' own head stays for a phone, where it opens the
-	 * side column as a sheet.
+	 * page head and the PDF an icon beside it (the setup's name, Reset and the notes are built at
+	 * the top of the side column: PagesView head_in_side). The row of the pages' own head stays
+	 * for a phone, where it opens the side column as a sheet.
 	 */
-	frappe_head(parent) {
+	frappe_head() {
 		const pages = this.pages;
-		const side = parent.querySelector(".rv-print-side");
-		const bd = side?.querySelector(".bd");
-		const hd = parent.querySelector(".rv-print-bar .rv-print-hd");
-		const note = parent.querySelector(".rv-print-bar .rv-print-note");
-		if (side && bd && hd) {
-			hd.classList.add("rv-print-side-top");
-			side.insertBefore(hd, bd);
-			if (note) side.insertBefore(note, bd);
-		}
 		this.page.clear_primary_action();
 		this.page.clear_icons?.();
 		this.page.set_primary_action(__("Print", null, "Report View"), () => pages.guard(() => pages.print()), "printer");
 		if (pages.host?.pages_pdf_target) {
 			this.page.add_action_icon("file", () => pages.guard(() => pages.pdf()), "", __("PDF"));
 		}
+	}
+
+	/** As Frappe's print page (print.js set_breadcrumbs): the list, the document, «Print». */
+	set_breadcrumbs() {
+		const slug = frappe.router.slug(this.doctype);
+		const doc_href = `/desk/${slug}/${encodeURIComponent(this.name)}`;
+		if (typeof this.page.set_breadcrumbs === "function") {
+			this.page.set_breadcrumbs([
+				{ label: __(this.doctype), href: `/desk/${slug}` },
+				{ label: this.name, href: doc_href },
+				{ label: __("Print") },
+			]);
+			return;
+		}
+		// Frappe 15: the module and the doctype, as its own pages add them
+		frappe.breadcrumbs?.add(locals.DocType?.[this.doctype]?.module || "", this.doctype);
 	}
 
 	fit_height() {
@@ -124,6 +131,8 @@ class DocPrintPage {
 		this.pages.formats.clear();
 		this.pages.parts.clear();
 		this.pages.letterheads.clear();
+		// another document starts at the site's print settings, as on Frappe's print page
+		this.pages.doc_settings = {};
 	}
 
 	show() {
@@ -143,6 +152,7 @@ class DocPrintPage {
 		this.name = name;
 		this.options = null;
 		this.page.set_title(`${__(doctype)} ${name}`);
+		this.set_breadcrumbs();
 		this.reset_pages();
 		this.pages.show_document().catch((e) => this.pages.note(error_text(e), true));
 	}
@@ -200,10 +210,21 @@ class DocPrintPage {
 	}
 
 	/** The document's print format ("" = the doctype's default), in the language of the pages,
-	 * with the values of its variables (ADR-024). */
+	 * with the values of its variables (ADR-024) and Frappe's Print Style chosen (the Standard
+	 * format's only, as on Frappe's print page). */
 	pages_format(name, lang = null, type = null, view_columns = null, variables = null) {
 		const vars = variables ? { variables: JSON.stringify(variables) } : {};
-		return call("report_view.api.document.render_doc_print", { doctype: this.doctype, name: this.name, print_format: name || null, ...vars, ...(lang ? { _lang: lang } : {}) });
+		const style = this.pages?.frappe_style();
+		return call("report_view.api.document.render_doc_print", {
+			doctype: this.doctype,
+			name: this.name,
+			print_format: name || null,
+			...vars,
+			...(style ? { print_style: style } : {}),
+			// the document's own print settings changed here (Frappe's additional settings)
+			...(Object.keys(this.pages?.doc_settings || {}).length ? { settings: JSON.stringify(this.pages.doc_settings) } : {}),
+			...(lang ? { _lang: lang } : {}),
+		});
 	}
 
 	pages_part(kind, name, lang = null) {

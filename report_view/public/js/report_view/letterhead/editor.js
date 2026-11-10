@@ -218,9 +218,13 @@ export class Canvas {
 			z.el.classList.toggle("is-cut", cut);
 			if (!cut) continue;
 			const [, hi] = b === "header" ? LIMITS.header_h : LIMITS.footer_h;
-			const need = Math.min(hi, Math.ceil(band.h + over + 1));
+			// 2 mm more than the lines: the foot of the letters, and a breath before the cut
+			const wanted = Math.ceil(band.h + over + 2);
+			const need = Math.min(hi, wanted);
+			// the band at its tallest still cuts them: the other way out is said
+			const short = wanted > hi ? `<span class="rvlb-overflow-alt">${esc(__("Even at {0} mm it is cut: shorten the text or make its letters smaller.", [fmt(hi)]))}</span>` : "";
 			notes.push(
-				`<div class="rvlb-overflow-row"><span>${esc(__("The lines of the {0} run {1} mm past its foot: their end is cut when it prints.", [band_label(b), fmt(Math.ceil(over * 10) / 10)]))}</span>${
+				`<div class="rvlb-overflow-row"><span>${esc(__("The lines of the {0} run {1} mm past its foot: their end is cut when it prints.", [band_label(b), fmt(Math.ceil(over * 10) / 10)]))}${short}</span>${
 					need > band.h ? `<button type="button" class="btn btn-default btn-xs" data-band="${b}" data-raise="${need}">${esc(__("Make it {0} mm", [fmt(need)]))}</button>` : ""
 				}</div>`
 			);

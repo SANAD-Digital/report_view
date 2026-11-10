@@ -42,6 +42,7 @@ SETTINGS_KEYS = frozenset(
 		"page_m",
 		"template",
 		"style",
+		"print_style",
 		"letter_head",
 		"heading",
 		"heading_pages",

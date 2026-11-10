@@ -8,12 +8,25 @@ import { build_layout } from "../../engine/row_layout.js";
 import { ordered_columns } from "../../engine/view_config.js";
 import { esc } from "../../util.js";
 import { FIT_GUARD, FIT_RUN, SAFETY_PX, UNORDERED, on_page } from "./settings.js";
-import { breathe, foot_height, strip_scripts, wait_images } from "./support.js";
+import { breathe, foot_height, frappe_print_base, strip_scripts, wait_images } from "./support.js";
 
 // text columns printed whole, never cut (fit_input)
 const UNCUT = new Set(["voucher_no"]);
 // facts read for a column's widest value or for whether it is blank (print_columns)
 const FACTS_READ = 5000;
+
+/**
+ * A format's HTML inside Frappe's .print-format (its page box is reset: rv_pages.css
+ * .rv-print-format), its <style> blocks before it, as the flow takes them (each held to the
+ * sheets once).
+ */
+function in_print_format(html) {
+	const t = document.createElement("template");
+	t.innerHTML = html;
+	const styles = [...t.content.querySelectorAll("style")];
+	for (const st of styles) st.remove();
+	return `${styles.map((st) => st.outerHTML).join("")}<div class="print-format rv-print-format">${t.innerHTML}</div>`;
+}
 
 export class PagesLayouts {
 	base_font() {
@@ -260,6 +273,10 @@ export class PagesLayouts {
 	 */
 	async layout_custom(token, box, dir, remeasure = false) {
 		if (remeasure) this.flow_cache = null;
+		// Frappe's print styles under the format before anything is measured
+		this.frappe_base = await frappe_print_base(dir === "rtl", this.format?.stylesheets);
+		if (token !== this.token) return;
+		this.set_format_css(this.fmt_css_html || "", true);
 		const ctx = this.ctx;
 		let html = "";
 		try {
@@ -269,7 +286,7 @@ export class PagesLayouts {
 			else {
 				const { columns, data, report } = this.query_report_facade();
 				html = frappe.render_template(`<style>${this.format.css || ""}</style>${this.format.html}`, {
-				title: this.t(ctx.report_name),
+				title: this.report_title(),
 				subtitle: this.settings.include_filters ? this.filters_html() : null,
 				filters: ctx.filters || {},
 				data,
@@ -289,6 +306,9 @@ export class PagesLayouts {
 		// The format's own @page rules (paper and margins of a whole-document print) would
 		// fight the pages' paper: the pages are the paper here.
 		html = strip_scripts(html).replace(/@page\s*\{[^}]*\}/g, "");
+		// in Frappe's print view a format stands in .print-format (www/printview.html), which
+		// its print style's rules start from; a format of the new builder brings its own
+		if (!this.format?.stylesheets?.length) html = in_print_format(html);
 		// the signature closes the format's flow, as it closes the standard template
 		if (this.sig_in_tail()) html += this.signatures_html();
 		// Flow the HTML at the width of the page body and measure its blocks: once for a format,
@@ -337,7 +357,7 @@ export class PagesLayouts {
 		this.custom_styles = units.filter((u) => u.style).map((u) => u.node.outerHTML).join("");
 		// the format's styles once, for the pages measured and the pages shown: a <style> in
 		// every page would make the browser restyle the whole window for each of them
-		this.set_format_css(this.custom_styles);
+		this.set_format_css(this.custom_styles, true);
 		this.custom_room = body_h;
 		const pages = this.pack_units(units.filter((u) => !u.style), first_body_h, body_h);
 		this.custom_pages = pages;
@@ -623,7 +643,9 @@ export class PagesLayouts {
 					}
 					continue;
 				}
-				if (hh > body_h && child.children.length) {
+				// a block taller than a page, or one holding a page break of the format (its
+				// wrapper: .print-format), is read block by block
+				if (child.children.length && (hh > body_h || child.querySelector(".page-break"))) {
 					walk(child, [...path, child.cloneNode(false)]);
 					continue;
 				}

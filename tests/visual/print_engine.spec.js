@@ -376,3 +376,100 @@ test("pages: on a phone the sheet has a scrim and a close button, and no field t
 	expect((await st()).open).toBe(false);
 	expect(problems).toEqual([]);
 });
+
+test("pages: a format that comes as a whole document (the new print format builder) prints its body, its head's styles held to the sheets", async ({ page }) => {
+	const problems = watch_console(page);
+	// the stylesheet the document links (Frappe's print_format.bundle.css) stands under it
+	await page.route("**/assets/frappe/dist/css/print_format.bundle.TEST.css", (route) =>
+		route.fulfill({ contentType: "text/css", body: ".whole-mark{text-transform:uppercase}.data-field{display:flex}" })
+	);
+	await open(page, `report=gl&lang=en&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await settle(page);
+	const out = await page.evaluate(async () => {
+		const v = window.rv_page.pages;
+		v.options.print_formats = ["Whole"];
+		v.options.print_format_types = { Whole: "Jinja" };
+		// as get_html_and_style returns it for a builder-beta format (a server before document_fragment)
+		v.host.pages_format = async () => ({
+			type: "Jinja",
+			html: `<!DOCTYPE html><html><head><meta charset="utf-8"><title>x</title><link rel="stylesheet" href="/assets/frappe/dist/css/print_format.bundle.TEST.css"><style>body{display:flex;flex-direction:column}.print-format-doc .whole-mark{letter-spacing:4px}</style></head><body class="print-format-doc"><div class="print-format"><p class="whole-mark">Body of the format</p></div></body></html>`,
+			css: "",
+		});
+		v.update({ template: "Whole" });
+		await v.ready;
+		await window.rv_settle();
+		const mark = document.querySelector(".rv-print-sheets .whole-mark");
+		return {
+			text: mark?.textContent,
+			spacing: mark ? getComputedStyle(mark).letterSpacing : null,
+			desk: getComputedStyle(document.body).flexDirection,
+			links: v.sheets.querySelectorAll("link, title, meta").length,
+			linked: mark ? getComputedStyle(mark).textTransform : null,
+			outside: getComputedStyle(document.body).textTransform,
+		};
+	});
+	expect(out.text).toBe("Body of the format");
+	expect(out.spacing).toBe("4px");
+	expect(out.desk).not.toBe("column");
+	expect(out.links).toBe(0);
+	expect(out.linked).toBe("uppercase");
+	expect(out.outside).toBe("none");
+	expect(problems, "console errors/warnings").toEqual([]);
+});
+
+test("pages: a Frappe format stands on Frappe's print styles (print.bundle.css) held to the sheets; the format's own rules win", async ({ page }) => {
+	const problems = watch_console(page);
+	// Frappe's print bundle, as the site serves it: a Bootstrap 3 border and a heading weight
+	await page.route("**/assets/frappe/dist/css/print.bundle.TEST.css", (route) =>
+		route.fulfill({ contentType: "text/css", body: ".table-bordered td{border:1px solid rgb(1, 2, 3)}h2{font-weight:300}.only-base{color:rgb(4, 5, 6)}html,body{font-size:10px;margin:40px}" })
+	);
+	await open(page, `report=gl&lang=en&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
+	await settle(page);
+	const out = await page.evaluate(async () => {
+		window.frappe.assets = { ...(window.frappe.assets || {}), bundled_asset: (p) => (p === "print.bundle.css" ? "/assets/frappe/dist/css/print.bundle.TEST.css" : p) };
+		// Desk's own rule for the same cells (Bootstrap 4), as desk.bundle.css carries it
+		const desk = document.createElement("style");
+		desk.textContent = ".table-bordered td{border:1px solid rgb(200, 0, 0)}";
+		document.head.appendChild(desk);
+		const v = window.rv_page.pages;
+		v.options.print_formats = ["Base"];
+		v.options.print_format_types = { Base: "Jinja" };
+		v.host.pages_format = async () => ({
+			type: "Jinja",
+			html: `<div class="print-format"><h2>Title</h2><table class="table table-bordered"><tr><td class="c">1</td><td>2</td></tr></table><p class="only-base">x</p><p class="own">y</p></div>`,
+			css: "h2{font-weight:600}",
+		});
+		v.update({ template: "Base" });
+		await v.ready;
+		await window.rv_settle();
+		const q = (s) => document.querySelector(`.rv-print-sheets ${s}`);
+		const outside = document.createElement("table");
+		outside.className = "table-bordered";
+		outside.innerHTML = "<tr><td>o</td></tr>";
+		document.body.appendChild(outside);
+		const r = {
+			base: Boolean(document.querySelector(".rv-print-fmt-css style.rv-frappe-base")),
+			cell: getComputedStyle(q("td.c")).borderTopColor,
+			h2: getComputedStyle(q("h2")).fontWeight,
+			only: getComputedStyle(q(".only-base")).color,
+			desk_cell: getComputedStyle(outside.querySelector("td")).borderTopColor,
+			body_margin: getComputedStyle(document.body).marginTop,
+		};
+		outside.remove();
+		desk.remove();
+		// the standard template again: Frappe's styles leave with the format
+		v.update({ template: "" });
+		await v.ready;
+		r.after = document.querySelectorAll(".rv-print-fmt-css style.rv-frappe-base").length;
+		return r;
+	});
+	expect(out.base).toBe(true);
+	expect(out.cell).toBe("rgb(1, 2, 3)");
+	expect(out.h2).toBe("600");
+	expect(out.only).toBe("rgb(4, 5, 6)");
+	// held to the sheets: Desk's own tables and page keep their look
+	expect(out.desk_cell).toBe("rgb(200, 0, 0)");
+	expect(out.body_margin).not.toBe("40px");
+	expect(out.after).toBe(0);
+	expect(problems, "console errors/warnings").toEqual([]);
+});

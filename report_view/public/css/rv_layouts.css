@@ -53,7 +53,7 @@
 :is(.rv-layout-a,.rv-layout-c) .btn.btn-sm.on{background:var(--btn-bg-h);box-shadow:inset 0 0 0 1px var(--line-2)}
 :is(.rv-layout-a,.rv-layout-c) .btn.btn-sm[hidden]{display:none}
 /* the views menu's button, as a Frappe default button */
-:is(.rv-ha-acts,.rv-cfoot) .rv-views-btn{height:var(--h28);padding:0 var(--s2);border-radius:var(--rad);background:var(--btn-bg);color:var(--tx);font-size:var(--t14);box-shadow:inset 0 1px #ffffff26,0 1px 1px #00000013}
+:is(.rv-ha-acts,.rv-cfoot) .rv-views-btn{height:var(--h28);padding:0 var(--s2);border-radius:var(--rad);background:var(--btn-bg);color:var(--tx);font-size:var(--t14);box-shadow:var(--shadow-sm,inset 0 1px #ffffff26,0 1px 1px #00000013)}
 :is(.rv-ha-acts,.rv-cfoot) .rv-views-btn:hover{background:var(--btn-bg-h)}
 
 /* ---------- head of A: two rows (Main.dc.html) ---------- */
@@ -193,7 +193,7 @@
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-print-bar{min-height:0;padding:var(--s2) var(--gut);gap:var(--s2)}
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-print-hd-t strong{font-size:var(--t14)}
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-print-count{font-size:var(--t12)}
-:is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-print-bar .rv-btn,:is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-preset-btn{height:var(--h28);font-size:var(--t13);border-radius:var(--rad)}
+:is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-print-bar .rv-btn,:is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-print-side-top .rv-btn,:is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-preset-btn{height:var(--h28);font-size:var(--t13);border-radius:var(--rad)}
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-print-side{flex:0 0 18rem;width:18rem;max-width:18rem;border-inline-end:1px solid var(--line)}
 /* one scrollbar for the column, out of sight between it and the stage */
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-print-side .bd{padding:var(--s2) var(--gut) var(--s4);scrollbar-width:none}
@@ -221,7 +221,11 @@
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-psec-bd .rv-field > span{font-size:var(--text-sm);line-height:18px;color:var(--text-muted,var(--tx-3))}
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-psec-bd .rv-input,
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-psec-bd [data-link] .form-control,
-:is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-psec-bd [data-var-link] .form-control{height:var(--h28);font-size:var(--t13);border-radius:var(--rad)}
+:is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-psec-bd [data-var-link] .form-control{height:var(--h28);font-size:var(--t14);border-radius:var(--rad)}
+/* Frappe's select: no browser arrow, its chevrons at the end (form/controls/select.js) */
+:is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-selbox{position:relative;display:flex;flex:1 1 auto;min-width:0}
+:is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-selbox select.rv-input{-webkit-appearance:none;appearance:none;width:100%;padding-inline-end:28px;cursor:pointer}
+:is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-sel-ic{position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none;color:var(--ink-gray-5,var(--tx-3))}
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-psec-bd .rv-print-seg{height:var(--h28);box-sizing:border-box;padding:2px;border-radius:var(--rad)}
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-psec-bd .rv-print-seg button{height:24px;font-size:var(--t12);border-radius:calc(var(--rad) - 2px);padding:0 var(--s1)}
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-psec-bd .rv-print-sw{font-size:var(--t13);color:var(--tx)}
@@ -251,7 +255,6 @@
 /* the sheets as Frappe's preview (.print-preview-wrapper, .print-preview): on gray, 80px above
    and below, rounded, no shadow; no column of page thumbnails, the bar at the foot moves through
    the pages (the owner, 2026-11-10) */
-:is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-print-thumbs{display:none}
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-print-sheets{padding:80px 28px}
 :is(.rv-layout-a,.rv-layout-c) .rv-print-sidecol .rv-print-sheets > .rv-page{border-radius:var(--radius,8px);box-shadow:none}
 
@@ -307,8 +310,8 @@
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table tbody tr{cursor:pointer}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-stmt-head,
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-body{flex:none;box-sizing:border-box;width:min(100%, calc(var(--rv-stmt-w, 900px) + 2 * var(--sheet-x)));background:var(--surface);padding-inline:var(--sheet-x)}
-:is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-stmt-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:var(--s2);padding-top:var(--s6);padding-bottom:var(--s4);border-radius:var(--r-sm,4px) var(--r-sm,4px) 0 0;box-shadow:0 1px 3px #0000000f,0 8px 24px #0000000d;clip-path:inset(-30px -30px 0 -30px)}
-:is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-body{height:var(--rv-stmt-h, 600px);padding-bottom:var(--s6);border-radius:0 0 var(--r-sm,4px) var(--r-sm,4px);box-shadow:0 1px 3px #0000000f,0 8px 24px #0000000d;clip-path:inset(0 -30px -30px -30px)}
+:is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-stmt-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:var(--s2);padding-top:var(--s6);padding-bottom:var(--s4);border-radius:var(--r-sm,4px) var(--r-sm,4px) 0 0;box-shadow:var(--shadow-md,0 1px 3px #0000000f,0 8px 24px #0000000d);clip-path:inset(-30px -30px 0 -30px)}
+:is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-body{height:var(--rv-stmt-h, 600px);padding-bottom:var(--s6);border-radius:0 0 var(--r-sm,4px) var(--r-sm,4px);box-shadow:var(--shadow-md,0 1px 3px #0000000f,0 8px 24px #0000000d);clip-path:inset(0 -30px -30px -30px)}
 .rv-stmt-title{grid-column:2;text-align:center;min-width:0}
 .rv-stmt-title .t{font-size:var(--t14);font-weight:var(--fw-b);line-height:20px;color:var(--tx)}
 .rv-stmt-title .s{font-size:var(--t12);line-height:16px;color:var(--tx-3)}
@@ -332,7 +335,7 @@
 .rv-stmt-levels{display:flex;gap:2px;height:22px;box-sizing:border-box;padding:2px;border-radius:var(--rad);background:var(--ctl-bg)}
 .rv-stmt-levels[hidden]{display:none}
 .rv-stmt-levels button{height:18px;padding:0 var(--s2);border:0;border-radius:calc(var(--rad) - 2px);background:transparent;color:var(--tx-2);font-size:11px;line-height:18px;cursor:pointer;white-space:nowrap}
-.rv-stmt-levels button.on{background:var(--surface);color:var(--tx);font-weight:var(--fw-b);box-shadow:0 1px 2px #00000014}
+.rv-stmt-levels button.on{background:var(--surface);color:var(--tx);font-weight:var(--fw-b);box-shadow:var(--shadow-sm,0 1px 2px #00000014)}
 /* only the sheet: the table's tools and the summary cards stay out */
 .rv-layout-a.rv-mode-statement .rv-ta,
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement .rv-sumline,
@@ -433,7 +436,7 @@
    column titles stick to the top of Desk's scroller by CSS, not by a transform each scroll */
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement.rv-stmt-whole regular-table{overflow:visible !important;overscroll-behavior:auto !important}
 :is(.rv-layout-a,.rv-layout-c).rv-mode-statement.rv-stmt-whole regular-table thead{position:sticky;top:0;z-index:6}
-:is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table thead.rv-stuck{position:relative;z-index:6;box-shadow:0 2px 4px #00000014}
+:is(.rv-layout-a,.rv-layout-c).rv-mode-statement regular-table thead.rv-stuck{position:relative;z-index:6;box-shadow:var(--shadow,0 2px 4px #00000014)}
 /* A: a state of the report stands under the table's tools, which stay */
 .rv-layout-a .rv-stateov{inset-block-start:37px}
 /* the printed numbers: the weight comes from the row, not from the report's own markup */
@@ -472,3 +475,7 @@
 .rv-card :is(b,.b) .rv-n{direction:ltr;unicode-bidi:isolate}
 .rv-card .b{font-weight:var(--fw-b);font-variant-numeric:tabular-nums}
 .rv-cards-more{margin:var(--s2) 0;text-align:center;color:var(--tx-3);font-size:var(--t12)}
+
+/* a document's Standard format: Frappe's own Print Style picker (desk print_preview.scss),
+   one field among the others here, without the rule above it on Frappe's print page */
+.rv-print-side .rv-frappe-styles.print-style-picker{border-top:0;padding-top:0;margin-top:0}

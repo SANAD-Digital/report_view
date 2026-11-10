@@ -2391,7 +2391,7 @@ msgid "It is HTML and CSS only: the HTML (with Jinja for the data) in the HTML f
 msgstr "هو HTML و CSS فقط: الـ HTML (مع Jinja للبيانات) في حقل HTML، والأنماط في حقل CSS. أنماط CSS تصل إلى المحتوى المطبوع وحده، على الشاشة وفي PDF."
 
 msgid "Letter Head Layout"
-msgstr "تخطيط ورق الشركة"
+msgstr "تخطيط الترويسة"
 
 msgid "Layout Version"
 msgstr "إصدار التخطيط"
@@ -2412,10 +2412,10 @@ msgid "The style the design started from"
 msgstr "النمط الذي بدأ منه التصميم"
 
 msgid "The letter head's HTML as the builder last wrote it; a different hash means it was edited by hand"
-msgstr "بصمة HTML ورق الشركة كما كتبه المنشئ آخر مرة؛ اختلافها يعني أنه عُدّل يدوياً"
+msgstr "بصمة HTML الترويسة كما كتبه المنشئ آخر مرة؛ اختلافها يعني أنها عُدّلت يدوياً"
 
 msgid "Choose the company of the letter head"
-msgstr "اختر شركة ورق الشركة"
+msgstr "اختر شركة الترويسة"
 
 msgid "Company {0} not found"
 msgstr "الشركة {0} غير موجودة"
@@ -2457,7 +2457,7 @@ msgid "Invalid elements of the {0}"
 msgstr "عناصر {0} غير صالحة"
 
 msgid "Invalid letter head layout"
-msgstr "تخطيط ورق الشركة غير صالح"
+msgstr "تخطيط الترويسة غير صالح"
 
 msgid "Invalid properties of {0}"
 msgstr "خصائص {0} غير صالحة"
@@ -2481,22 +2481,22 @@ msgid "Invalid {0} in the layout"
 msgstr "{0} غير صالح في التخطيط"
 
 msgid "Letter Head {0} already exists"
-msgstr "ورق الشركة {0} موجود مسبقاً"
+msgstr "الترويسة {0} موجودة مسبقاً"
 
 msgid "Letter Head {0} was edited by hand. Saving the design replaces its HTML."
-msgstr "عُدّل ورق الشركة {0} يدوياً. حفظ التصميم يستبدل HTML الخاص به."
+msgstr "عُدّلت الترويسة {0} يدوياً. حفظ التصميم يستبدل HTML الخاص بها."
 
 msgid "Name the letter head"
-msgstr "سمِّ ورق الشركة"
+msgstr "سمِّ الترويسة"
 
 msgid "Not permitted to change the default letter head of the company"
-msgstr "غير مسموح لك بتغيير ورق الشركة الافتراضي للشركة"
+msgstr "غير مسموح لك بتغيير الترويسة الافتراضية للشركة"
 
 msgid "Not permitted to design letter heads"
-msgstr "غير مسموح لك بتصميم ورق الشركة"
+msgstr "غير مسموح لك بتصميم الترويسة"
 
 msgid "Not permitted to save letter heads"
-msgstr "غير مسموح لك بحفظ ورق الشركة"
+msgstr "غير مسموح لك بحفظ الترويسة"
 
 msgid "The company has no logo"
 msgstr "الشركة بلا شعار"
@@ -2793,10 +2793,10 @@ msgid "Length"
 msgstr "الطول"
 
 msgid "Letter Head Builder"
-msgstr "منشئ ورق الشركة"
+msgstr "منشئ الترويسات"
 
 msgid "Letter head name"
-msgstr "اسم ورق الشركة"
+msgstr "اسم الترويسة"
 
 msgid "Library"
 msgstr "المكتبة"
@@ -2829,7 +2829,7 @@ msgid "Muted colour"
 msgstr "اللون الخافت"
 
 msgid "New letter head"
-msgstr "ورق شركة جديد"
+msgstr "ترويسة جديدة"
 
 msgid "No Arabic name yet: add a Translation of the company name and it shows on the right."
 msgstr "لا يوجد اسم عربي بعد: أضف ترجمة لاسم الشركة فيظهر في اليمين."
@@ -2931,16 +2931,16 @@ msgid "Save"
 msgstr "حفظ"
 
 msgid "Save to the letter heads"
-msgstr "حفظ في ورق الشركة"
+msgstr "حفظ في الترويسات"
 
 msgid "Saved"
 msgstr "محفوظ"
 
 msgid "Saved in the letter head «{0}»"
-msgstr "حُفظ في ورق الشركة «{0}»"
+msgstr "حُفظت في الترويسة «{0}»"
 
 msgid "Saving the letter head…"
-msgstr "جارٍ حفظ ورق الشركة…"
+msgstr "جارٍ حفظ الترويسة…"
 
 msgid "Select an element on the page to edit it."
 msgstr "حدد عنصراً على الورقة لتعديله."
@@ -3012,7 +3012,7 @@ msgid "The content of «{0}» was edited by hand after the builder made it. Over
 msgstr "محتوى «{0}» عُدّل يدوياً بعد أن ولّده المنشئ. هل تريد الكتابة فوقه بهذا التصميم؟"
 
 msgid "The default letter head of {0}"
-msgstr "ورق الشركة الافتراضي لـ {0}"
+msgstr "الترويسة الافتراضية لـ {0}"
 
 msgid "The design is too large to save (over 64 KB). Remove some elements."
 msgstr "التصميم أكبر من أن يُحفظ (أكثر من 64KB). احذف بعض العناصر."
@@ -3033,13 +3033,13 @@ msgid "The server could not render the preview."
 msgstr "تعذّر على الخادم توليد المعاينة."
 
 msgid "The server is rendering the letter head…"
-msgstr "الخادم يولّد ورق الشركة…"
+msgstr "الخادم يولّد الترويسة…"
 
 msgid "There is no letter head «{0}»."
-msgstr "لا يوجد ورق شركة باسم «{0}»."
+msgstr "لا توجد ترويسة باسم «{0}»."
 
 msgid "This is the HTML saved in the letter head, rendered for {0}, as Frappe's print, the PDF and the Report View pages show it."
-msgstr "هذا هو HTML المحفوظ في ورق الشركة، مولَّداً لـ {0}، كما تعرضه طباعة Frappe وملف PDF وصفحات Report View."
+msgstr "هذا هو HTML المحفوظ في الترويسة، مولَّداً لـ {0}، كما تعرضه طباعة Frappe وملف PDF وصفحات Report View."
 
 msgid "Three slots"
 msgstr "ثلاث خانات"
@@ -3147,10 +3147,10 @@ msgid "Colour corner"
 msgstr "زاوية لونية"
 
 msgid "Edit in the letter head builder"
-msgstr "تعديله في منشئ ورق الشركة"
+msgstr "تعديلها في منشئ الترويسات"
 
 msgid "Design a new letter head"
-msgstr "تصميم ورق شركة جديد"
+msgstr "تصميم ترويسة جديدة"
 
 msgid "Sans serif"
 msgstr "بلا زوائد"
@@ -3533,7 +3533,7 @@ msgid "Element {0} runs past the edge of the {1}: it is cut off in print"
 msgstr "العنصر {0} يتجاوز حافة {1}: يُقصّ عند الطباعة"
 
 msgid "Letter Head {0} was edited by hand. Open it in the letter head builder to replace its HTML."
-msgstr "عُدّل ورق الشركة {0} يدوياً. افتحه في منشئ ورق الشركة ليُستبدل HTML الخاص به."
+msgstr "عُدّلت الترويسة {0} يدوياً. افتحها في منشئ الترويسات ليُستبدل HTML الخاص بها."
 
 msgid "Invalid print preset"
 msgstr "إعداد محفوظ غير صالح"
@@ -3542,13 +3542,13 @@ msgid "The data of {0} could not be loaded."
 msgstr "تعذّر تحميل بيانات {0}."
 
 msgid "You may not write letter heads."
-msgstr "لا تملك صلاحية كتابة ورق الشركة."
+msgstr "لا تملك صلاحية كتابة الترويسة."
 
 msgid "You may not read letter heads."
-msgstr "لا تملك صلاحية قراءة ورق الشركة."
+msgstr "لا تملك صلاحية قراءة الترويسة."
 
 msgid "The QR code could not be drawn now; it is drawn when the letter head is saved."
-msgstr "تعذّر رسم رمز QR الآن؛ يُرسم عند حفظ ورق الشركة."
+msgstr "تعذّر رسم رمز QR الآن؛ يُرسم عند حفظ الترويسة."
 
 msgid "With «Repeat header and footer», the page margins this letter head needs are added by themselves. Only a print format that sets its own .print-format margin keeps it; such a format needs this line instead:"
 msgstr "مع «تكرار الترويسة والتذييل» تُضاف هوامش الصفحة التي يحتاجها هذا الورق تلقائياً. قالب الطباعة الذي يضع هامش .print-format بنفسه وحده يحتفظ بهامشه، ويحتاج هذا السطر بدلاً من ذلك:"
@@ -4701,3 +4701,169 @@ msgstr "حُدِّث عرض التقرير بعد فتح هذه الصفحة: أ
 
 msgid "Reload the page"
 msgstr "إعادة تحميل الصفحة"
+
+msgid "Address in Arabic"
+msgstr "العنوان بالعربية"
+
+msgid "Commercial Registration No."
+msgstr "رقم السجل التجاري"
+
+msgid "Unified No."
+msgstr "الرقم الموحد"
+
+msgid "P.O. Box"
+msgstr "صندوق البريد"
+
+msgid "Bank on the Letter Head"
+msgstr "البنك في الترويسة"
+
+msgid "IBAN"
+msgstr "رقم الآيبان"
+
+msgid "Line of Business in Arabic"
+msgstr "النشاط بالعربية"
+
+msgid "Line of Business in English"
+msgstr "النشاط بالإنجليزية"
+
+msgid "Company Name in Arabic"
+msgstr "اسم الشركة بالعربية"
+
+msgid "On the Letter Head"
+msgstr "في الترويسة"
+
+msgid "Edit the company's paper data"
+msgstr "تعديل بيانات الشركة في الترويسة"
+
+msgctxt "Report View"
+msgid "Edit"
+msgstr "تعديل"
+
+msgid "The paper data of {0}"
+msgstr "بيانات {0} في الترويسة"
+
+msgid "Save to the company"
+msgstr "حفظ في سجل الشركة"
+
+msgid "Saved to {0}"
+msgstr "حُفظت في {0}"
+
+msgid "Printed on the Arabic side. Empty: the styles show the name once, in English."
+msgstr "يُطبع في الجهة العربية. إن بقي فارغاً تعرض الأنماط الاسم مرة واحدة بالإنجليزية."
+
+msgid "The letter head as it prints now"
+msgstr "الترويسة كما تُطبع الآن"
+
+msgid "«{0}» as it prints now"
+msgstr "«{0}» كما تُطبع الآن"
+
+msgid "Start from it to edit it in the builder, or choose a style below: nothing changes until you save."
+msgstr "ابدأ منها لتعديلها في المنشئ، أو اختر نمطاً من الأسفل. لا يتغير شيء قبل أن تحفظ."
+
+msgid "It was written by hand and has no image to carry over: choose a style below; nothing changes until you save."
+msgstr "كُتبت يدوياً وليس فيها صورة تُنقل إلى المنشئ. اختر نمطاً من الأسفل. لا يتغير شيء قبل أن تحفظ."
+
+msgid "Start from it"
+msgstr "ابدأ منها"
+
+msgid "No Arabic name yet"
+msgstr "لا يوجد اسم عربي بعد"
+
+msgid "Without it the styles print the name once, in English. Add it with «Edit the company's paper data»."
+msgstr "بدونه تطبع الأنماط الاسم مرة واحدة بالإنجليزية. أضفه من «تعديل بيانات الشركة في الترويسة»."
+
+msgid "The English name from the company record, the Arabic one from its paper data."
+msgstr "الاسم الإنجليزي من سجل الشركة، والعربي من بيانات الترويسة."
+
+msgid "Update the letter head"
+msgstr "تحديث الترويسة"
+
+msgid "«{0}» was written again with the builder's latest version."
+msgstr "أُعيدت كتابة «{0}» بآخر إصدار من المنشئ."
+
+msgid "«{0}» is up to date."
+msgstr "«{0}» محدّثة."
+
+msgid "Out of date"
+msgstr "تحتاج تحديثاً"
+
+msgid "The lines of the {0} run {1} mm past its foot: their end is cut when it prints."
+msgstr "أسطر {0} تتجاوز أسفله بـ {1} مم، فيُقص آخرها عند الطباعة."
+
+msgid "Make it {0} mm"
+msgstr "اجعله {0} مم"
+
+msgid "Bilingual with registration numbers"
+msgstr "بلغتين مع أرقام السجل"
+
+msgid "Bilingual with a contact strip"
+msgstr "بلغتين مع شريط اتصال"
+
+msgid "Government, Republic of Yemen"
+msgstr "حكومي — الجمهورية اليمنية"
+
+msgid "Government, Kingdom of Saudi Arabia"
+msgstr "حكومي — المملكة العربية السعودية"
+
+msgid "Institution, centred emblem"
+msgstr "مؤسسة، الشعار في الوسط"
+
+msgid "Logo left, names right"
+msgstr "الشعار يساراً والأسماء يميناً"
+
+msgid "Finance, bank and IBAN"
+msgstr "مالي، البنك والآيبان"
+
+msgid "Bank, legal footer"
+msgstr "مصرفي، تذييل نظامي"
+
+msgid "Law office nameplate"
+msgstr "لوحة مكتب محاماة"
+
+msgid "Contacts on a footer band"
+msgstr "الاتصال على شريط التذييل"
+
+msgid "Contracting, top and bottom bars"
+msgstr "مقاولات، شريطان أعلى وأسفل"
+
+msgid "Colour tab with the Arabic name"
+msgstr "لسان لوني بالاسم العربي"
+
+msgid "Names only, no logo"
+msgstr "الأسماء فقط بلا شعار"
+
+msgid "Logo and a details column"
+msgstr "شعار وعمود بيانات"
+
+msgid "Compact head for long reports"
+msgstr "رأس مختصر للتقارير الطويلة"
+
+msgid "One-line running head"
+msgstr "رأس من سطر واحد"
+
+msgid "Bilingual"
+msgstr "بلغتين"
+
+msgid "Government"
+msgstr "حكومي"
+
+msgid "Companies"
+msgstr "شركات"
+
+msgid "Formal"
+msgstr "رسمي"
+
+msgid "Colour bands"
+msgstr "أشرطة لونية"
+
+msgid "Minimal"
+msgstr "بسيط"
+
+msgid "Following pages"
+msgstr "الصفحات التالية"
+
+msgid "Families of styles"
+msgstr "عائلات الأنماط"
+
+msgid "{0} styles drawn with your company's data"
+msgstr "{0} نمطاً مرسومة ببيانات شركتك"

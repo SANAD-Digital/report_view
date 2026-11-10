@@ -1,0 +1,120 @@
+{
+ "custom_fields": [
+  {
+   "doctype": "Custom Field",
+   "dt": "Company",
+   "fieldname": "rv_letter_head_section",
+   "fieldtype": "Section Break",
+   "insert_after": "registration_details",
+   "label": "On the Letter Head",
+   "collapsible": 1,
+   "module": "Report View",
+   "name": "Company-rv_letter_head_section"
+  },
+  {
+   "doctype": "Custom Field",
+   "dt": "Company",
+   "fieldname": "rv_company_name_ar",
+   "fieldtype": "Data",
+   "insert_after": "rv_letter_head_section",
+   "label": "Company Name in Arabic",
+   "translatable": 0,
+   "module": "Report View",
+   "name": "Company-rv_company_name_ar"
+  },
+  {
+   "doctype": "Custom Field",
+   "dt": "Company",
+   "fieldname": "rv_activity_ar",
+   "fieldtype": "Data",
+   "insert_after": "rv_company_name_ar",
+   "label": "Line of Business in Arabic",
+   "module": "Report View",
+   "name": "Company-rv_activity_ar"
+  },
+  {
+   "doctype": "Custom Field",
+   "dt": "Company",
+   "fieldname": "rv_activity_en",
+   "fieldtype": "Data",
+   "insert_after": "rv_activity_ar",
+   "label": "Line of Business in English",
+   "module": "Report View",
+   "name": "Company-rv_activity_en"
+  },
+  {
+   "doctype": "Custom Field",
+   "dt": "Company",
+   "fieldname": "rv_address_ar",
+   "fieldtype": "Small Text",
+   "insert_after": "rv_activity_en",
+   "label": "Address in Arabic",
+   "module": "Report View",
+   "name": "Company-rv_address_ar"
+  },
+  {
+   "doctype": "Custom Field",
+   "dt": "Company",
+   "fieldname": "rv_letter_head_column",
+   "fieldtype": "Column Break",
+   "insert_after": "rv_address_ar",
+   "module": "Report View",
+   "name": "Company-rv_letter_head_column"
+  },
+  {
+   "doctype": "Custom Field",
+   "dt": "Company",
+   "fieldname": "rv_cr_no",
+   "fieldtype": "Data",
+   "insert_after": "rv_letter_head_column",
+   "label": "Commercial Registration No.",
+   "module": "Report View",
+   "name": "Company-rv_cr_no"
+  },
+  {
+   "doctype": "Custom Field",
+   "dt": "Company",
+   "fieldname": "rv_unified_no",
+   "fieldtype": "Data",
+   "insert_after": "rv_cr_no",
+   "label": "Unified No.",
+   "module": "Report View",
+   "name": "Company-rv_unified_no"
+  },
+  {
+   "doctype": "Custom Field",
+   "dt": "Company",
+   "fieldname": "rv_po_box",
+   "fieldtype": "Data",
+   "insert_after": "rv_unified_no",
+   "label": "P.O. Box",
+   "module": "Report View",
+   "name": "Company-rv_po_box"
+  },
+  {
+   "doctype": "Custom Field",
+   "dt": "Company",
+   "fieldname": "rv_bank_name",
+   "fieldtype": "Data",
+   "insert_after": "rv_po_box",
+   "label": "Bank on the Letter Head",
+   "module": "Report View",
+   "name": "Company-rv_bank_name"
+  },
+  {
+   "doctype": "Custom Field",
+   "dt": "Company",
+   "fieldname": "rv_iban",
+   "fieldtype": "Data",
+   "insert_after": "rv_bank_name",
+   "label": "IBAN",
+   "module": "Report View",
+   "name": "Company-rv_iban"
+  }
+ ],
+ "custom_perms": [],
+ "doctype": "Company",
+ "links": [],
+ "property_setters": [],
+ "sync_on_migrate": 1
+}

@@ -84,6 +84,16 @@ export class Canvas {
 			const z = parent.querySelector(`.rvlb-zone[data-band=${b}]`);
 			this.zones[b] = { el: z, paper: z.querySelector(".rvlb-paper"), slots: z.querySelector(".rvlb-slots"), guides: z.querySelector(".rvlb-guides"), drop: z.querySelector(".rvlb-drop"), sel: z.querySelector(".rvlb-sel"), edge: z.querySelector(".rvlb-edge"), tag: z.querySelector(".rvlb-tag") };
 		}
+		// what is cut at the foot of a band when it prints (check_overflow), above the page
+		this.cut_note = document.createElement("div");
+		this.cut_note.className = "rvlb-overflow";
+		this.cut_note.hidden = true;
+		this.cut_note.setAttribute("role", "status");
+		parent.prepend(this.cut_note);
+		this.cut_note.addEventListener("click", (e) => {
+			const btn = e.target.closest("[data-raise]");
+			if (btn) this.store.commit((l) => set_band_height(l, btn.dataset.band, Number(btn.dataset.raise)));
+		});
 		this.sheet.addEventListener("pointerdown", (e) => this.on_pointerdown(e));
 		this.sheet.addEventListener("keydown", (e) => this.on_keydown(e));
 		this.sheet.addEventListener("dblclick", (e) => {
@@ -178,11 +188,45 @@ export class Canvas {
 		}
 		this.position_body();
 		this.draw_overlay();
+		this.check_overflow();
 		if (focus_id) {
 			const node = focus_id.startsWith("edge:") ? this.zones[focus_id.slice(5)]?.edge : this.sheet.querySelector(`[data-el="${focus_id}"]`);
 			node?.focus({ preventScroll: true });
 		}
 		this.host.after_render?.();
+	}
+
+	/**
+	 * A slot whose lines run past the foot of its band is cut when it prints (the band's
+	 * overflow is hidden): said under the band, with the height that holds it (the critic's
+	 * review of 2026-11-10, B3: «604» of an address was cut on every print).
+	 */
+	check_overflow() {
+		const notes = [];
+		for (const b of BANDS) {
+			const z = this.zones[b];
+			const band = this.layout[b];
+			let over = 0;
+			if (band.h > 0) {
+				for (const slot of z.paper.querySelectorAll("[data-slot]")) {
+					if (!slot.childElementCount) continue;
+					const m = this.measure(slot, z.el);
+					over = Math.max(over, m.y + m.h - band.h);
+				}
+			}
+			const cut = over > 0.5;
+			z.el.classList.toggle("is-cut", cut);
+			if (!cut) continue;
+			const [, hi] = b === "header" ? LIMITS.header_h : LIMITS.footer_h;
+			const need = Math.min(hi, Math.ceil(band.h + over + 1));
+			notes.push(
+				`<div class="rvlb-overflow-row"><span>${esc(__("The lines of the {0} run {1} mm past its foot: their end is cut when it prints.", [band_label(b), fmt(Math.ceil(over * 10) / 10)]))}</span>${
+					need > band.h ? `<button type="button" class="btn btn-default btn-xs" data-band="${b}" data-raise="${need}">${esc(__("Make it {0} mm", [fmt(need)]))}</button>` : ""
+				}</div>`
+			);
+		}
+		this.cut_note.innerHTML = notes.join("");
+		this.cut_note.hidden = !notes.length;
 	}
 
 	position_body(hh = this.layout.header.h, fh = this.layout.footer.h) {

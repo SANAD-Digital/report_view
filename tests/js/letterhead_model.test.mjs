@@ -99,7 +99,9 @@ test("clamp: elements — types, ids, style, props, the 60 limit", () => {
 	assert.equal(new Set(e.map((x) => x.id)).size, e.length);
 	const many = clamp_layout({ header: { elements: Array.from({ length: 80 }, (_, i) => ({ id: `t${i}`, type: "text", slot: "right" })) } });
 	assert.equal(many.header.elements.length, LIMITS.elements);
-	assert.equal(TOKENS.length, 13);
+	// the company record's fields, then those of the paper the app adds (custom/company.json)
+	assert.equal(TOKENS.length, 21);
+	for (const t of ["address_ar", "cr_no", "unified_no", "po_box", "bank_name", "iban", "activity_ar", "activity_en"]) assert.ok(TOKENS.includes(t), t);
 });
 
 test("clamp_element: a box always has a size; a free text keeps auto height", () => {

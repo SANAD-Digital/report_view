@@ -85,7 +85,7 @@ export class Library {
 			</div>
 			<div class="rvlb-tabpanel" role="tabpanel" id="rvlb-panel-elements" aria-labelledby="rvlb-tab-elements" data-panel="elements">
 				<label class="rvlb-search">${icons.search()}<input type="search" class="rvlb-q" placeholder="${esc(__("Find a field or an element"))}" aria-label="${esc(__("Find a field or an element"))}" value="${esc(this.query)}"></label>
-				<h3 class="rvlb-h3">${esc(__("From the company's data"))}</h3>
+				<h3 class="rvlb-h3 rvlb-h3-act"><span>${esc(__("From the company's data"))}</span><button type="button" class="btn btn-link btn-xs" data-act="company-paper">${esc(__("Edit", null, "Report View"))}</button></h3>
 				<div class="rvlb-fields">${TOKENS.map(field).join("")}</div>
 				<h3 class="rvlb-h3">${esc(__("Design elements"))}</h3>
 				<div class="rvlb-tiles">${DESIGN.map(design).join("")}</div>
@@ -143,6 +143,7 @@ export class Library {
 	on_click(e) {
 		const tab = e.target.closest("[data-tab]");
 		if (tab) return this.set_tab(tab.dataset.tab);
+		if (e.target.closest('[data-act="company-paper"]')) return this.host.edit_company_paper();
 		const preset = e.target.closest("[data-preset]");
 		if (preset) return this.host.apply_preset(preset.dataset.preset);
 		const btn = e.target.closest("[data-add]");

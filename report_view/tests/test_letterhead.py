@@ -220,9 +220,11 @@ class TestGeneratedHtml(RVTestCase):
 		html = lh.generate(lh.validate_layout(LAYOUT))
 		header, footer = html["header"], html["footer"]
 		self.assertTrue(header.startswith("<!-- rv-lh v1 header h=35 -->"))
-		self.assertIn('data-rv-lh="header" data-h="35" dir="ltr"', header)
+		self.assertIn(
+			f'data-rv-lh="header" data-rv-gen="{lh.GENERATOR_VERSION}" data-h="35" dir="ltr"', header
+		)
 		self.assertIn("height:35mm;overflow:hidden", header)
-		self.assertIn('data-rv-lh="footer" data-h="15"', footer)
+		self.assertIn(f'data-rv-lh="footer" data-rv-gen="{lh.GENERATOR_VERSION}" data-h="15"', footer)
 		for part in (header, footer):
 			# the one <style> holds the @font-face of the layout's font (its files are the app's)
 			self.assertEqual(part.count("<style>"), 1)
@@ -405,6 +407,33 @@ class TestGeneratedHtml(RVTestCase):
 		)
 		self.assertIn("سند للمحاسبة &lt;ع&gt;", out)
 
+	def test_the_paper_fields_of_the_company(self):
+		"""The company's own Arabic name wins over its translation; no Arabic name prints nothing
+		(not the English name again); the paper's other fields print from the app's fields."""
+		raw = layout()
+		raw["header"]["elements"] = [
+			{"id": "n", "type": "field", "slot": "right", "props": {"token": "company_name_ar"}},
+			{"id": "c", "type": "field", "slot": "left", "props": {"token": "cr_no", "label": "C.R."}},
+			{"id": "i", "type": "field", "slot": "left", "props": {"token": "iban"}},
+		]
+		html = lh.generate(lh.validate_layout(raw))["header"]
+		frappe.db.set_value("Company", COMPANY, {"rv_company_name_ar": "", "rv_cr_no": "", "rv_iban": ""})
+		empty = frappe.render_template(html, {"doc": {"company": COMPANY}})
+		self.assertNotIn(frappe.utils.escape_html(company_value("company_name")), empty)
+		frappe.db.set_value(
+			"Company",
+			COMPANY,
+			{
+				"rv_company_name_ar": "سند للمحاسبة",
+				"rv_cr_no": "1010123456",
+				"rv_iban": "SA0380000000608010167519",
+			},
+		)
+		out = frappe.render_template(html, {"doc": {"company": COMPANY}})
+		self.assertIn("سند للمحاسبة", out)
+		self.assertIn("1010123456", out)
+		self.assertIn("SA0380000000608010167519", out)
+
 	def test_a_closed_slot_is_not_printed_and_warned(self):
 		raw = layout()
 		raw["header"]["slots"]["center"] = 0
@@ -412,6 +441,88 @@ class TestGeneratedHtml(RVTestCase):
 		self.assertNotIn('data-slot="center"', lh.generate(clean)["header"])
 		warnings = lh.layout_warnings(clean, {"company_logo": "/private/files/x.png", "website": ""})
 		self.assertTrue(any("c1" in w for w in warnings))
+
+
+class TestCompanyPaper(RVTestCase):
+	def test_the_paper_data_is_saved_by_who_may_write_the_company(self):
+		with self.as_user("admin"):
+			out = api.save_company_paper(
+				COMPANY, json.dumps({"company_name_ar": " سند ", "cr_no": "4030000000"})
+			)
+		self.assertEqual(out["company_data"]["values"]["company_name_ar"], "سند")
+		self.assertEqual(frappe.db.get_value("Company", COMPANY, "rv_cr_no"), "4030000000")
+		with self.as_user("admin"), self.assertRaises(RVInvalidInput):
+			api.save_company_paper(COMPANY, json.dumps({"company_name": "renamed"}))
+		with self.as_user("admin"), self.assertRaises(RVInvalidInput):
+			api.save_company_paper(COMPANY, json.dumps({"cr_no": "x" * 141}))
+		# a user who may not write the company (the accountant may: Accounts Manager)
+		with self.as_user("restricted"), self.assertRaises(frappe.PermissionError):
+			api.save_company_paper(COMPANY, json.dumps({"cr_no": "1"}))
+
+
+class TestCurrentLetterHead(RVTestCase):
+	def test_the_image_a_letter_head_shows(self):
+		"""The builder carries a letter head it did not make by its image: the Image field, else
+		the first <img> of its HTML; only a public file of the site."""
+		self.assertEqual(api._first_image(None, "/files/logo.png"), "/files/logo.png")
+		self.assertEqual(
+			api._first_image('<div><img alt="x" src="/files/a b.png"><img src="/files/c.png"></div>', None),
+			"/files/a b.png",
+		)
+		self.assertIsNone(api._first_image('<img src="https://example.com/x.png">', None))
+		self.assertIsNone(api._first_image('<img src="/private/files/x.png">', None))
+		self.assertIsNone(api._first_image("<p>text only</p>", None))
+
+	def test_the_builder_opens_on_a_hand_made_letter_head_as_it_prints(self):
+		name = "RV LH Hand Made"
+		frappe.get_doc(
+			{
+				"doctype": "Letter Head",
+				"letter_head_name": name,
+				"source": "HTML",
+				"content": '<div><img src="/files/hand.png"> {{ doc.company }}</div>',
+			}
+		).insert(ignore_permissions=True)
+		with self.as_user("admin"):
+			ctx = api.builder_context(letter_head=name)
+		cur = ctx["letter_head"]["current"]
+		self.assertEqual(cur["header_image"], "/files/hand.png")
+		self.assertIn(ctx["company"], cur["header"])
+
+
+class TestRefresh(RVTestCase):
+	def test_a_saved_letter_head_follows_the_generator(self):
+		"""Written by an older generator and not by hand since: refreshed; edited by hand: left."""
+		with self.as_user("admin"):
+			api.save(layout=json.dumps(LAYOUT), name="RV LH Refresh")
+		record = frappe.get_all(
+			"Letter Head Layout", filters={"letter_head": "RV LH Refresh"}, fields=["name", "generated_hash"]
+		)[0]
+		self.assertFalse(lh.refresh_letter_head("RV LH Refresh"))
+		self.assertEqual(
+			lh.written_version(frappe.db.get_value("Letter Head", "RV LH Refresh", "content")),
+			lh.GENERATOR_VERSION,
+		)
+		# an older generator wrote it (no version in its HTML), its hash recorded as the builder's
+		old = '<div class="rvlh" data-rv-lh="header">old</div>'
+		frappe.db.set_value("Letter Head", "RV LH Refresh", "content", old)
+		frappe.db.set_value(
+			"Letter Head Layout",
+			record.name,
+			"generated_hash",
+			lh.content_hash(old, frappe.db.get_value("Letter Head", "RV LH Refresh", "footer")),
+		)
+		with self.as_user("admin"):
+			self.assertTrue(api.builder_context(letter_head="RV LH Refresh")["letter_head"]["stale"])
+			self.assertTrue(api.refresh("RV LH Refresh")["refreshed"])
+		self.assertEqual(
+			lh.written_version(frappe.db.get_value("Letter Head", "RV LH Refresh", "content")),
+			lh.GENERATOR_VERSION,
+		)
+		# edited by hand since: never rewritten
+		frappe.db.set_value("Letter Head", "RV LH Refresh", "content", "<div>by hand</div>")
+		self.assertFalse(lh.refresh_letter_head("RV LH Refresh"))
+		self.assertEqual(frappe.db.get_value("Letter Head", "RV LH Refresh", "content"), "<div>by hand</div>")
 
 
 class TestLetterHeadApi(RVTestCase):
@@ -693,8 +804,8 @@ def _parts(html: str) -> dict:
 
 
 class TestRendererParity(RVTestCase):
-	"""The editor (render.js) and the print (core/letterhead.py) draw a layout alike: the six
-	styles of the gallery and an edge fixture of every type and option, as
+	"""The editor (render.js) and the print (core/letterhead.py) draw a layout alike: every
+	style of the library and an edge fixture of every type and option, as
 	tests/js/letterhead_parity.test.mjs wrote them (report_view/tests/fixtures/
 	letterhead_parity.json), drawn again here with the same company values and compared
 	part by part: dir and inline styles, numbers exact."""
@@ -705,8 +816,10 @@ class TestRendererParity(RVTestCase):
 		"""The bands as they print for a company with ``values``: the template's company
 		block reads them from the fixture instead of the database."""
 		line1, line2, country = values["address"].split("\n")
+		# the paper's own fields are read from the app's fields of Company (rv_…)
+		paper = {field: values.get(token, "") for token, field in lh.PAPER_FIELDS.items()}
 		fx = {
-			"o": frappe._dict({**values, "company_logo": logo}),
+			"o": frappe._dict({**values, **paper, "company_logo": logo}),
 			"a": frappe._dict(
 				address_line1=line1, address_line2=line2, city="", state="", pincode="", country=country
 			),
@@ -723,7 +836,8 @@ class TestRendererParity(RVTestCase):
 	def test_both_renderers_draw_alike(self):
 		with open(self.GOLDEN, encoding="utf-8") as f:
 			golden = json.load(f)
-		self.assertEqual(len(golden["cases"]), 7)
+		# every style of the library (ADR-030) and the fixture of every element type
+		self.assertEqual(len(golden["cases"]), 23)
 		compared = 0
 		for case in golden["cases"]:
 			with self.subTest(case=case["id"]):

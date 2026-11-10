@@ -13,6 +13,7 @@ import { Canvas } from "./editor.js";
 import { Library, Inspector } from "./panels.js";
 import { Gallery } from "./gallery.js";
 import { icons } from "./icons.js";
+import { token_label } from "./labels.js";
 
 const API = "report_view.api.letterhead";
 const call = (method, args, type = "GET") => frappe.call({ method: `${API}.${method}`, args, type }).then((r) => r?.message);
@@ -39,6 +40,10 @@ function context_of(r = {}) {
 		template: lh?.template || null,
 		fixed_company: lh?.company || null,
 		hand_edited: Boolean(lh?.hand_edited),
+		// a letter head the builder did not make, as it prints, and the images it shows
+		current: lh?.current || null,
+		// written by an older builder and not by hand since: «Update» writes it again
+		stale: Boolean(lh?.stale),
 		exists: Boolean(lh),
 	};
 }
@@ -155,7 +160,22 @@ class LetterheadBuilderPage {
 		} else if (this.view === "editor") {
 			if (this.can_write !== false) page.set_primary_action(__("Save", null, "Report View"), () => this.save(), "save");
 			page.add_action_icon("eye", () => this.preview(), "", __("Real preview"));
+			if (this.stale && this.letter_head && this.can_write !== false) {
+				page.set_secondary_action(__("Update the letter head"), () => this.refresh_saved(), "refresh");
+			}
 			this.paint_indicator();
+		}
+	}
+
+	/** The saved letter head written again by today's builder (its design kept, as it is). */
+	async refresh_saved() {
+		try {
+			const r = await call("refresh", { letter_head: this.letter_head }, "POST");
+			this.stale = false;
+			this.frappe_head();
+			frappe.show_alert({ message: r?.refreshed ? __("«{0}» was written again with the builder's latest version.", [this.letter_head]) : __("«{0}» is up to date.", [this.letter_head]), indicator: "green" });
+		} catch {
+			// the call's own message says why
 		}
 	}
 
@@ -163,6 +183,7 @@ class LetterheadBuilderPage {
 	paint_indicator() {
 		if (this.view !== "editor") return;
 		const dirty = !this.letter_head || this.store.dirty;
+		if (!dirty && this.stale) return this.page.set_indicator(__("Out of date"), "orange");
 		this.page.set_indicator(!this.letter_head ? __("Not Saved") : dirty ? __("Not Saved") : __("Saved"), dirty ? "orange" : "green");
 	}
 
@@ -196,6 +217,8 @@ class LetterheadBuilderPage {
 		if (this.company && !this.data.has(this.company)) await this.fetch_company(this.company);
 		this.fixed_company = ctx.fixed_company;
 		this.hand_edited = ctx.hand_edited;
+		this.current = ctx.current;
+		this.stale = ctx.stale;
 		this.template = ctx.template;
 		this.has_layout = Boolean(ctx.layout);
 		this.detect_brand(this.company);
@@ -239,6 +262,49 @@ class LetterheadBuilderPage {
 		this.company = name;
 		this.detect_brand(name);
 		this.refresh_company();
+	}
+
+	/**
+	 * What the paper prints and the company record lacked (its Arabic name and address, its
+	 * registration and unified numbers, P.O. Box, bank), in a Frappe dialog: saved to the
+	 * company as the user (api.letterhead.save_company_paper), then drawn at once.
+	 */
+	edit_company_paper() {
+		const name = this.company;
+		const v = this.data.get(name)?.values || {};
+		const f = (token, fieldtype = "Data", extra = {}) => ({ fieldname: token, fieldtype, label: token_label(token), default: v[token] || "", ...extra });
+		const d = new frappe.ui.Dialog({
+			title: __("The paper data of {0}", [name]),
+			size: "large",
+			fields: [
+				f("company_name_ar", "Data", { description: __("Printed on the Arabic side. Empty: the styles show the name once, in English.") }),
+				f("activity_ar"),
+				f("activity_en"),
+				f("address_ar", "Small Text"),
+				{ fieldtype: "Column Break" },
+				f("cr_no"),
+				f("unified_no"),
+				f("po_box"),
+				f("bank_name"),
+				f("iban"),
+			],
+			primary_action_label: __("Save to the company"),
+			primary_action: async (values) => {
+				const out = {};
+				for (const k of ["company_name_ar", "activity_ar", "activity_en", "address_ar", "cr_no", "unified_no", "po_box", "bank_name", "iban"]) out[k] = values[k] || "";
+				d.get_primary_btn().prop("disabled", true);
+				try {
+					const r = await call("save_company_paper", { company: name, values: out }, "POST");
+					this.data.set(name, { ...company_of(r?.company_data), can_set_default: Boolean(r?.can_set_default) });
+					d.hide();
+					frappe.show_alert({ message: __("Saved to {0}", [name]), indicator: "green" });
+					this.refresh_company();
+				} finally {
+					d.get_primary_btn().prop("disabled", false);
+				}
+			},
+		});
+		d.show();
 	}
 
 	refresh_company() {
@@ -307,6 +373,28 @@ class LetterheadBuilderPage {
 	}
 
 	// ------------------------------------------------------------------ editor
+
+	/**
+	 * A letter head the builder did not make, carried into it: its header image (and its
+	 * footer's) as image elements across the band, the rest of the page empty to add to.
+	 */
+	start_from_current() {
+		const cur = this.current || {};
+		const layout = blank_layout({ colors: { primary: this.brand || DEFAULT_COLORS.primary } });
+		const image = (src, h) => ({ ...make_element("image"), slot: null, x: 0, y: 1, w: REF_W, h, props: { src, fit: "contain" } });
+		if (cur.header_image) {
+			layout.header.h = Math.max(layout.header.h, 34);
+			layout.header.elements = [{ ...image(cur.header_image, layout.header.h - 4), id: "e1" }];
+		}
+		if (cur.footer_image) {
+			layout.footer.h = Math.max(layout.footer.h, 16);
+			layout.footer.elements = [{ ...image(cur.footer_image, layout.footer.h - 3), id: "e2" }];
+		}
+		this.template = null;
+		this.store.replace(layout, { fresh: !this.letter_head });
+		this.store.select(null);
+		this.open_editor();
+	}
 
 	start_from(preset) {
 		const layout = preset ? this.preset_layout(preset) : blank_layout({ colors: { primary: this.brand || DEFAULT_COLORS.primary } });

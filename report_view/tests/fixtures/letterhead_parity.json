@@ -12,7 +12,15 @@
 		"country": "Yemen",
 		"address": "Hadda St.\nSana'a, Amanat\nYemen",
 		"address_line1": "Hadda St.",
-		"city": "Sana'a"
+		"city": "Sana'a",
+		"address_ar": "شارع حدة\nصنعاء",
+		"cr_no": "4030123456",
+		"unified_no": "7001234567",
+		"po_box": "1234",
+		"bank_name": "بنك التضامن",
+		"iban": "YE00 1234 5678 9012",
+		"activity_ar": "خدمات محاسبية",
+		"activity_en": "Accounting services"
 	},
 	"logo": "/files/logo.png",
 	"cases": [
@@ -27,7 +35,7 @@
 					"muted": "#5B6660"
 				},
 				"header": {
-					"h": 35,
+					"h": 33,
 					"pad_top": 5,
 					"slots": {
 						"right": 36,
@@ -72,7 +80,7 @@
 								"gap": 0.6
 							},
 							"props": {
-								"token": "address_line1",
+								"token": "address_ar",
 								"label": "",
 								"hide_empty": true
 							}
@@ -93,8 +101,8 @@
 								"gap": 0.6
 							},
 							"props": {
-								"token": "phone_no",
-								"label": "هاتف:",
+								"token": "cr_no",
+								"label": "س.ت:",
 								"hide_empty": true
 							}
 						},
@@ -173,7 +181,7 @@
 								"gap": 0.6
 							},
 							"props": {
-								"token": "email",
+								"token": "address_line1",
 								"label": "",
 								"hide_empty": true
 							}
@@ -194,8 +202,8 @@
 								"gap": 0.6
 							},
 							"props": {
-								"token": "website",
-								"label": "",
+								"token": "phone_no",
+								"label": "Tel:",
 								"hide_empty": true
 							}
 						},
@@ -215,17 +223,38 @@
 								"gap": 0.6
 							},
 							"props": {
-								"token": "registration_details",
-								"label": "CR:",
+								"token": "email",
+								"label": "",
 								"hide_empty": true
 							}
 						},
 						{
 							"id": "e10",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "tax_id",
+								"label": "VAT No.:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e11",
 							"type": "line",
 							"slot": null,
 							"x": 0,
-							"y": 31.5,
+							"y": 30,
 							"w": 180,
 							"h": 0,
 							"style": {
@@ -252,7 +281,7 @@
 					},
 					"elements": [
 						{
-							"id": "e11",
+							"id": "e12",
 							"type": "line",
 							"slot": null,
 							"x": 0,
@@ -272,7 +301,7 @@
 							}
 						},
 						{
-							"id": "e12",
+							"id": "e13",
 							"type": "field",
 							"slot": "right",
 							"x": 0,
@@ -293,7 +322,7 @@
 							}
 						},
 						{
-							"id": "e13",
+							"id": "e14",
 							"type": "page",
 							"slot": "center",
 							"x": 0,
@@ -312,7 +341,7 @@
 							}
 						},
 						{
-							"id": "e14",
+							"id": "e15",
 							"type": "field",
 							"slot": "left",
 							"x": 0,
@@ -335,11 +364,11 @@
 					]
 				}
 			},
-			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"35\" dir=\"ltr\" style=\"position:relative;width:100%;height:35mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:5mm;right:0;width:36%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" style=\"font-size:15pt;font-weight:700;color:#1E5C45;margin:0 0 1.2mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e2\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi>Hadda St.</bdi></div><div data-el=\"e3\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:5mm;left:50%;margin-left:-12%;width:24%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e5\" style=\"margin:0 0 1.5mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:26mm;max-height:22mm\"></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:5mm;left:0;width:36%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e6\" style=\"font-size:13pt;font-weight:600;color:#1E5C45;margin:0 0 1.2mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e7\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">info@example.com</bdi></div><div data-el=\"e8\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div><div data-el=\"e9\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\">CR: <bdi>CR 1234<br>Chamber 99</bdi></div></div><div data-el=\"e10\" style=\"position:absolute;left:0%;top:31.5mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.8mm solid #1E5C45\"></div></div></div>",
-			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"14\" dir=\"ltr\" style=\"position:relative;width:100%;height:14mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:4mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e12\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi>Hadda St.</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:4mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e13\" dir=\"ltr\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:4mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e14\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e11\" style=\"position:absolute;left:0%;top:1mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.2mm solid #5B6660\"></div></div></div>"
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"33\" dir=\"ltr\" style=\"position:relative;width:100%;height:33mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:5mm;right:0;width:36%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" style=\"font-size:15pt;font-weight:700;color:#1E5C45;margin:0 0 1.2mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e2\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi>شارع حدة<br>صنعاء</bdi></div><div data-el=\"e3\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\">س.ت: <bdi dir=\"ltr\">4030123456</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:5mm;left:50%;margin-left:-12%;width:24%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e5\" style=\"margin:0 0 1.5mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:26mm;max-height:22mm\"></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:5mm;left:0;width:36%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e6\" style=\"font-size:13pt;font-weight:600;color:#1E5C45;margin:0 0 1.2mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e7\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi>Hadda St.</bdi></div><div data-el=\"e8\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\">Tel: <bdi dir=\"ltr\">777 999 579</bdi></div><div data-el=\"e9\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">info@example.com</bdi></div></div><div data-el=\"e11\" style=\"position:absolute;left:0%;top:30mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.8mm solid #1E5C45\"></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"14\" dir=\"ltr\" style=\"position:relative;width:100%;height:14mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:4mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e13\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi>Hadda St.</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:4mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e14\" dir=\"ltr\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:4mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e15\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e12\" style=\"position:absolute;left:0%;top:1mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.2mm solid #5B6660\"></div></div></div>"
 		},
 		{
-			"id": "band_top",
+			"id": "bilingual_registry",
 			"layout": {
 				"v": 1,
 				"font": "IBM Plex Sans Arabic",
@@ -349,64 +378,127 @@
 					"muted": "#5B6660"
 				},
 				"header": {
-					"h": 34,
-					"pad_top": 20,
+					"h": 40,
+					"pad_top": 4,
 					"slots": {
-						"right": 34,
-						"center": 30,
-						"left": 34
+						"right": 38,
+						"center": 22,
+						"left": 38
 					},
 					"elements": [
 						{
 							"id": "e1",
-							"type": "band",
-							"slot": null,
+							"type": "field",
+							"slot": "right",
 							"x": 0,
 							"y": 0,
-							"w": 180,
-							"h": 20,
+							"w": 0,
+							"h": 0,
 							"style": {
-								"size": 9,
-								"weight": 400,
+								"size": 15,
+								"weight": 700,
 								"color": "primary",
 								"align": "start",
-								"gap": 1
+								"gap": 0.8
 							},
 							"props": {
-								"fill": "primary",
-								"radius": 1,
-								"corners": "all"
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
 							}
 						},
 						{
 							"id": "e2",
-							"type": "band",
-							"slot": null,
-							"x": 4,
-							"y": 2.5,
-							"w": 17,
-							"h": 15,
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
 							"style": {
-								"size": 9,
-								"weight": 400,
-								"color": "primary",
+								"size": 8.5,
+								"weight": 500,
+								"color": "text",
 								"align": "start",
 								"gap": 1
 							},
 							"props": {
-								"fill": "#FFFFFF",
-								"radius": 1.5,
-								"corners": "all"
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
 							}
 						},
 						{
 							"id": "e3",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "cr_no",
+								"label": "س.ت:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "unified_no",
+								"label": "الرقم الموحد:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e5",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "tax_id",
+								"label": "الرقم الضريبي:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e6",
 							"type": "logo",
-							"slot": null,
-							"x": 5,
-							"y": 3.5,
-							"w": 15,
-							"h": 13,
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 30,
+							"h": 24,
 							"style": {
 								"size": 9,
 								"weight": 400,
@@ -417,86 +509,23 @@
 							"props": {}
 						},
 						{
-							"id": "e4",
+							"id": "e7",
 							"type": "field",
-							"slot": null,
-							"x": 60,
-							"y": 3.5,
-							"w": 116,
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
 							"h": 0,
 							"style": {
-								"size": 16,
-								"weight": 700,
-								"color": "#FFFFFF",
+								"size": 13,
+								"weight": 600,
+								"color": "primary",
 								"align": "start",
-								"gap": 1.2
-							},
-							"props": {
-								"token": "company_name_ar",
-								"label": "",
-								"hide_empty": true
-							}
-						},
-						{
-							"id": "e5",
-							"type": "field",
-							"slot": null,
-							"x": 60,
-							"y": 11.5,
-							"w": 116,
-							"h": 0,
-							"style": {
-								"size": 9,
-								"weight": 500,
-								"color": "#FFFFFF",
-								"align": "end",
-								"gap": 1.2
+								"gap": 0.8
 							},
 							"props": {
 								"token": "company_name",
 								"label": "",
-								"hide_empty": true
-							}
-						},
-						{
-							"id": "e6",
-							"type": "field",
-							"slot": "right",
-							"x": 0,
-							"y": 0,
-							"w": 0,
-							"h": 0,
-							"style": {
-								"size": 8,
-								"weight": 400,
-								"color": "muted",
-								"align": "start",
-								"gap": 0.6
-							},
-							"props": {
-								"token": "address_line1",
-								"label": "",
-								"hide_empty": true
-							}
-						},
-						{
-							"id": "e7",
-							"type": "field",
-							"slot": "center",
-							"x": 0,
-							"y": 0,
-							"w": 0,
-							"h": 0,
-							"style": {
-								"size": 8,
-								"weight": 400,
-								"color": "muted",
-								"align": "start",
-								"gap": 0.6
-							},
-							"props": {
-								"token": "phone_no",
-								"label": "Tel",
 								"hide_empty": true
 							}
 						},
@@ -509,92 +538,20 @@
 							"w": 0,
 							"h": 0,
 							"style": {
-								"size": 8,
-								"weight": 400,
-								"color": "muted",
+								"size": 8.5,
+								"weight": 500,
+								"color": "text",
 								"align": "start",
-								"gap": 0.6
+								"gap": 1
 							},
 							"props": {
-								"token": "email",
+								"token": "activity_en",
 								"label": "",
 								"hide_empty": true
 							}
-						}
-					]
-				},
-				"footer": {
-					"h": 12,
-					"pad_top": 4,
-					"slots": {
-						"right": 40,
-						"center": 20,
-						"left": 40
-					},
-					"elements": [
+						},
 						{
 							"id": "e9",
-							"type": "band",
-							"slot": null,
-							"x": 0,
-							"y": 0,
-							"w": 180,
-							"h": 1.2,
-							"style": {
-								"size": 9,
-								"weight": 400,
-								"color": "primary",
-								"align": "start",
-								"gap": 1
-							},
-							"props": {
-								"fill": "primary",
-								"radius": 0,
-								"corners": "all"
-							}
-						},
-						{
-							"id": "e10",
-							"type": "field",
-							"slot": "right",
-							"x": 0,
-							"y": 0,
-							"w": 0,
-							"h": 0,
-							"style": {
-								"size": 7.5,
-								"weight": 400,
-								"color": "muted",
-								"align": "start",
-								"gap": 0.6
-							},
-							"props": {
-								"token": "tax_id",
-								"label": "الرقم الضريبي:",
-								"hide_empty": true
-							}
-						},
-						{
-							"id": "e11",
-							"type": "page",
-							"slot": "center",
-							"x": 0,
-							"y": 0,
-							"w": 60,
-							"h": 0,
-							"style": {
-								"size": 7.5,
-								"weight": 400,
-								"color": "muted",
-								"align": "start",
-								"gap": 1
-							},
-							"props": {
-								"format": "both"
-							}
-						},
-						{
-							"id": "e12",
 							"type": "field",
 							"slot": "left",
 							"x": 0,
@@ -606,125 +563,62 @@
 								"weight": 400,
 								"color": "muted",
 								"align": "start",
-								"gap": 0.6
+								"gap": 0.3
 							},
 							"props": {
-								"token": "website",
-								"label": "",
+								"token": "cr_no",
+								"label": "C.R.",
 								"hide_empty": true
 							}
-						}
-					]
-				}
-			},
-			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"34\" dir=\"ltr\" style=\"position:relative;width:100%;height:34mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:20mm;right:0;width:34%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e6\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi>Hadda St.</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:20mm;left:50%;margin-left:-15%;width:30%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e7\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\">Tel <bdi dir=\"ltr\">777 999 579</bdi></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:20mm;left:0;width:34%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e8\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">info@example.com</bdi></div></div><div data-el=\"e1\" style=\"position:absolute;left:0%;top:0mm;width:100%;height:20mm;background-color:#1E5C45;border-radius:1mm\"></div><div data-el=\"e2\" style=\"position:absolute;left:2.2222%;top:2.5mm;width:9.4444%;height:15mm;background-color:#FFFFFF;border-radius:1.5mm\"></div><div data-el=\"e3\" style=\"position:absolute;left:2.7778%;top:3.5mm;width:8.3333%;height:13mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:100%;max-height:13mm\"></div><div data-el=\"e4\" dir=\"rtl\" style=\"position:absolute;left:33.3333%;top:3.5mm;width:64.4444%;font-size:16pt;font-weight:700;color:#FFFFFF;text-align:right\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e5\" dir=\"ltr\" style=\"position:absolute;left:33.3333%;top:11.5mm;width:64.4444%;font-size:9pt;font-weight:500;color:#FFFFFF;text-align:right\"><bdi>SND Accounting</bdi></div></div>",
-			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"12\" dir=\"ltr\" style=\"position:relative;width:100%;height:12mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:4mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e11\" dir=\"ltr\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:4mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e12\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e9\" style=\"position:absolute;left:0%;top:0mm;width:100%;height:1.2mm;background-color:#1E5C45\"></div></div>"
-		},
-		{
-			"id": "center_logo",
-			"layout": {
-				"v": 1,
-				"font": "IBM Plex Sans Arabic",
-				"colors": {
-					"primary": "#1E5C45",
-					"text": "#17211C",
-					"muted": "#5B6660"
-				},
-				"header": {
-					"h": 40,
-					"pad_top": 3,
-					"slots": {
-						"right": 0,
-						"center": 70,
-						"left": 0
-					},
-					"elements": [
-						{
-							"id": "e1",
-							"type": "logo",
-							"slot": "center",
-							"x": 0,
-							"y": 0,
-							"w": 24,
-							"h": 17,
-							"style": {
-								"size": 9,
-								"weight": 400,
-								"color": "text",
-								"align": "start",
-								"gap": 1.5
-							},
-							"props": {}
 						},
 						{
-							"id": "e2",
+							"id": "e10",
 							"type": "field",
-							"slot": "center",
+							"slot": "left",
 							"x": 0,
 							"y": 0,
 							"w": 0,
 							"h": 0,
 							"style": {
-								"size": 14,
-								"weight": 700,
-								"color": "primary",
-								"align": "start",
-								"gap": 0.4
-							},
-							"props": {
-								"token": "company_name_ar",
-								"label": "",
-								"hide_empty": true
-							}
-						},
-						{
-							"id": "e3",
-							"type": "field",
-							"slot": "center",
-							"x": 0,
-							"y": 0,
-							"w": 0,
-							"h": 0,
-							"style": {
-								"size": 9,
-								"weight": 500,
-								"color": "muted",
-								"align": "start",
-								"gap": 0.4
-							},
-							"props": {
-								"token": "company_name",
-								"label": "",
-								"hide_empty": true
-							}
-						},
-						{
-							"id": "e4",
-							"type": "field",
-							"slot": "center",
-							"x": 0,
-							"y": 0,
-							"w": 0,
-							"h": 0,
-							"style": {
-								"size": 8,
+								"size": 7.5,
 								"weight": 400,
 								"color": "muted",
 								"align": "start",
-								"gap": 0.6
+								"gap": 0.3
 							},
 							"props": {
-								"token": "website",
-								"label": "",
+								"token": "unified_no",
+								"label": "Unified No.",
 								"hide_empty": true
 							}
 						},
 						{
-							"id": "e5",
+							"id": "e11",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "tax_id",
+								"label": "VAT No.",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e12",
 							"type": "line",
 							"slot": null,
 							"x": 0,
-							"y": 37,
+							"y": 36,
 							"w": 180,
 							"h": 0,
 							"style": {
@@ -735,25 +629,65 @@
 								"gap": 1.5
 							},
 							"props": {
-								"thick": 1.2,
-								"style": "double"
+								"thick": 1,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e13",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 38,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.3,
+								"style": "solid"
 							}
 						}
 					]
 				},
 				"footer": {
-					"h": 12,
-					"pad_top": 4,
+					"h": 16,
+					"pad_top": 3.5,
 					"slots": {
-						"right": 0,
-						"center": 70,
-						"left": 0
+						"right": 40,
+						"center": 20,
+						"left": 40
 					},
 					"elements": [
 						{
-							"id": "e6",
+							"id": "e14",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 0.8,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.2,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e15",
 							"type": "field",
-							"slot": "center",
+							"slot": "right",
 							"x": 0,
 							"y": 0,
 							"w": 0,
@@ -763,16 +697,58 @@
 								"weight": 400,
 								"color": "muted",
 								"align": "start",
-								"gap": 0.6
+								"gap": 0.3
 							},
 							"props": {
-								"token": "address_line1",
+								"token": "address_ar",
 								"label": "",
 								"hide_empty": true
 							}
 						},
 						{
-							"id": "e7",
+							"id": "e16",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "po_box",
+								"label": "ص.ب:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e17",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e18",
 							"type": "page",
 							"slot": "center",
 							"x": 0,
@@ -789,12 +765,2290 @@
 							"props": {
 								"format": "both"
 							}
+						},
+						{
+							"id": "e19",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_line1",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e20",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "po_box",
+								"label": "P.O. Box",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e21",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
 						}
 					]
 				}
 			},
-			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"40\" dir=\"ltr\" style=\"position:relative;width:100%;height:40mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3mm;left:50%;margin-left:-35%;width:70%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e1\" style=\"margin:0 0 1.5mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:24mm;max-height:17mm\"></div><div data-el=\"e2\" style=\"font-size:14pt;font-weight:700;color:#1E5C45;margin:0 0 0.4mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e3\" style=\"font-size:9pt;font-weight:500;color:#5B6660;margin:0 0 0.4mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e4\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e5\" style=\"position:absolute;left:0%;top:37mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:1.2mm double #1E5C45\"></div></div></div>",
-			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"12\" dir=\"ltr\" style=\"position:relative;width:100%;height:12mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:4mm;left:50%;margin-left:-35%;width:70%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e6\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi>Hadda St.</bdi></div><div data-el=\"e7\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div></div>"
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"40\" dir=\"ltr\" style=\"position:relative;width:100%;height:40mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:4mm;right:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" style=\"font-size:15pt;font-weight:700;color:#1E5C45;margin:0 0 0.8mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e2\" style=\"font-size:8.5pt;font-weight:500;color:#17211C;margin:0 0 1mm\"><bdi>خدمات محاسبية</bdi></div><div data-el=\"e3\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">س.ت: <bdi dir=\"ltr\">4030123456</bdi></div><div data-el=\"e4\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">الرقم الموحد: <bdi dir=\"ltr\">7001234567</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:4mm;left:50%;margin-left:-11%;width:22%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e6\" style=\"margin:0 0 1.5mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:30mm;max-height:24mm\"></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:4mm;left:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e7\" style=\"font-size:13pt;font-weight:600;color:#1E5C45;margin:0 0 0.8mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e8\" style=\"font-size:8.5pt;font-weight:500;color:#17211C;margin:0 0 1mm\"><bdi>Accounting services</bdi></div><div data-el=\"e9\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">C.R. <bdi dir=\"ltr\">4030123456</bdi></div><div data-el=\"e10\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">Unified No. <bdi dir=\"ltr\">7001234567</bdi></div></div><div data-el=\"e12\" style=\"position:absolute;left:0%;top:36mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:1mm solid #1E5C45\"></div></div><div data-el=\"e13\" style=\"position:absolute;left:0%;top:38mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.3mm solid #5B6660\"></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"16\" dir=\"ltr\" style=\"position:relative;width:100%;height:16mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:3.5mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e15\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>شارع حدة<br>صنعاء</bdi></div><div data-el=\"e16\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">ص.ب: <bdi dir=\"ltr\">1234</bdi></div><div data-el=\"e17\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3.5mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e18\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3.5mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e19\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>Hadda St.</bdi></div><div data-el=\"e20\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">P.O. Box <bdi dir=\"ltr\">1234</bdi></div><div data-el=\"e21\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi dir=\"ltr\">info@example.com</bdi></div></div><div data-el=\"e14\" style=\"position:absolute;left:0%;top:0.8mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.2mm solid #5B6660\"></div></div></div>"
+		},
+		{
+			"id": "contact_strip",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 36,
+					"pad_top": 3,
+					"slots": {
+						"right": 38,
+						"center": 22,
+						"left": 38
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 15,
+								"weight": 700,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 500,
+								"color": "text",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "logo",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 26,
+							"h": 20,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {}
+						},
+						{
+							"id": "e4",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 12.5,
+								"weight": 600,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e5",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 500,
+								"color": "text",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "activity_en",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e6",
+							"type": "band",
+							"slot": null,
+							"x": 0,
+							"y": 27,
+							"w": 180,
+							"h": 7,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"fill": "#F1F3F2",
+								"radius": 1,
+								"corners": "all"
+							}
+						},
+						{
+							"id": "e7",
+							"type": "field",
+							"slot": null,
+							"x": 124,
+							"y": 28.7,
+							"w": 54,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e8",
+							"type": "field",
+							"slot": null,
+							"x": 63,
+							"y": 28.7,
+							"w": 54,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "text",
+								"align": "center",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e9",
+							"type": "field",
+							"slot": null,
+							"x": 2,
+							"y": 28.7,
+							"w": 54,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 16,
+					"pad_top": 3.5,
+					"slots": {
+						"right": 40,
+						"center": 20,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e10",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 1,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.3,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e11",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e12",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "cr_no",
+								"label": "س.ت:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e13",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "tax_id",
+								"label": "الرقم الضريبي:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e14",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						},
+						{
+							"id": "e15",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_line1",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e16",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "cr_no",
+								"label": "C.R.",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e17",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "tax_id",
+								"label": "VAT No.",
+								"hide_empty": true
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"36\" dir=\"ltr\" style=\"position:relative;width:100%;height:36mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:3mm;right:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" style=\"font-size:15pt;font-weight:700;color:#1E5C45;margin:0 0 0.6mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e2\" style=\"font-size:8.5pt;font-weight:500;color:#17211C;margin:0 0 0mm\"><bdi>خدمات محاسبية</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3mm;left:50%;margin-left:-11%;width:22%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e3\" style=\"margin:0 0 1.5mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:26mm;max-height:20mm\"></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3mm;left:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e4\" style=\"font-size:12.5pt;font-weight:600;color:#1E5C45;margin:0 0 0.6mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e5\" style=\"font-size:8.5pt;font-weight:500;color:#17211C;margin:0 0 0mm\"><bdi>Accounting services</bdi></div></div><div data-el=\"e6\" style=\"position:absolute;left:0%;top:27mm;width:100%;height:7mm;background-color:#F1F3F2;border-radius:1mm\"></div><div data-el=\"e7\" dir=\"rtl\" style=\"position:absolute;left:68.8889%;top:28.7mm;width:30%;font-size:7.5pt;font-weight:400;color:#17211C;text-align:right\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div><div data-el=\"e8\" dir=\"ltr\" style=\"position:absolute;left:35%;top:28.7mm;width:30%;font-size:7.5pt;font-weight:400;color:#17211C;text-align:center\"><bdi dir=\"ltr\">info@example.com</bdi></div><div data-el=\"e9\" dir=\"ltr\" style=\"position:absolute;left:1.1111%;top:28.7mm;width:30%;font-size:7.5pt;font-weight:400;color:#17211C;text-align:left\"><bdi dir=\"ltr\">example.com</bdi></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"16\" dir=\"ltr\" style=\"position:relative;width:100%;height:16mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:3.5mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e11\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>شارع حدة<br>صنعاء</bdi></div><div data-el=\"e12\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">س.ت: <bdi dir=\"ltr\">4030123456</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3.5mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e14\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3.5mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e15\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>Hadda St.</bdi></div><div data-el=\"e16\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">C.R. <bdi dir=\"ltr\">4030123456</bdi></div></div><div data-el=\"e10\" style=\"position:absolute;left:0%;top:1mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.3mm solid #5B6660\"></div></div></div>"
+		},
+		{
+			"id": "gov_yemen",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 40,
+					"pad_top": 2,
+					"slots": {
+						"right": 38,
+						"center": 20,
+						"left": 38
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "text",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 12,
+								"weight": 700,
+								"color": "text",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"text": "الجمهورية اليمنية",
+								"dir": "rtl"
+							}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 13,
+								"weight": 700,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.4
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 10,
+								"weight": 600,
+								"color": "text",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "logo",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 24,
+							"h": 24,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {}
+						},
+						{
+							"id": "e5",
+							"type": "text",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 11,
+								"weight": 700,
+								"color": "text",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"text": "Republic of Yemen",
+								"dir": "ltr"
+							}
+						},
+						{
+							"id": "e6",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 11,
+								"weight": 600,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.4
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e7",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 9.5,
+								"weight": 600,
+								"color": "text",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "activity_en",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e8",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 29,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 1,
+								"style": "double"
+							}
+						},
+						{
+							"id": "e9",
+							"type": "text",
+							"slot": null,
+							"x": 0,
+							"y": 32.5,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"text": "الرقم: ......................  التاريخ: ....../....../......هـ  الموافق: ....../....../......م  المرفقات: ..........",
+								"dir": "rtl"
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 16,
+					"pad_top": 3.5,
+					"slots": {
+						"right": 40,
+						"center": 20,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e10",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 1,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.3,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e11",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e12",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e13",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "fax",
+								"label": "فاكس:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e14",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "ar"
+							}
+						},
+						{
+							"id": "e15",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e16",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"40\" dir=\"ltr\" style=\"position:relative;width:100%;height:40mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:2mm;right:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" dir=\"rtl\" style=\"font-size:12pt;font-weight:700;color:#17211C;margin:0 0 0.6mm\">الجمهورية اليمنية</div><div data-el=\"e2\" style=\"font-size:13pt;font-weight:700;color:#1E5C45;margin:0 0 0.4mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e3\" style=\"font-size:10pt;font-weight:600;color:#17211C;margin:0 0 0mm\"><bdi>خدمات محاسبية</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:2mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e4\" style=\"margin:0 0 1.5mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:24mm;max-height:24mm\"></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:2mm;left:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e5\" dir=\"ltr\" style=\"font-size:11pt;font-weight:700;color:#17211C;margin:0 0 0.6mm\">Republic of Yemen</div><div data-el=\"e6\" style=\"font-size:11pt;font-weight:600;color:#1E5C45;margin:0 0 0.4mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e7\" style=\"font-size:9.5pt;font-weight:600;color:#17211C;margin:0 0 0mm\"><bdi>Accounting services</bdi></div></div><div data-el=\"e8\" style=\"position:absolute;left:0%;top:29mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:1mm double #17211C\"></div></div><div data-el=\"e9\" dir=\"rtl\" style=\"position:absolute;left:0%;top:32.5mm;width:100%;font-size:9pt;font-weight:400;color:#17211C;text-align:right\">الرقم: ......................  التاريخ: ....../....../......هـ  الموافق: ....../....../......م  المرفقات: ..........</div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"16\" dir=\"ltr\" style=\"position:relative;width:100%;height:16mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:3.5mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e11\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>شارع حدة<br>صنعاء</bdi></div><div data-el=\"e12\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3.5mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e14\" dir=\"rtl\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3.5mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e15\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi dir=\"ltr\">info@example.com</bdi></div><div data-el=\"e16\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e10\" style=\"position:absolute;left:0%;top:1mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.3mm solid #17211C\"></div></div></div>"
+		},
+		{
+			"id": "gov_saudi",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 36,
+					"pad_top": 2,
+					"slots": {
+						"right": 38,
+						"center": 24,
+						"left": 34
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "text",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 12,
+								"weight": 700,
+								"color": "text",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"text": "المملكة العربية السعودية",
+								"dir": "rtl"
+							}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 13,
+								"weight": 700,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.4
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 10,
+								"weight": 600,
+								"color": "text",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "logo",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 30,
+							"h": 24,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {}
+						},
+						{
+							"id": "e5",
+							"type": "text",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 9.5,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 2.4
+							},
+							"props": {
+								"text": "الرقم: ..............................",
+								"dir": "rtl"
+							}
+						},
+						{
+							"id": "e6",
+							"type": "text",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 9.5,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 2.4
+							},
+							"props": {
+								"text": "التاريخ: ......./......./.......هـ",
+								"dir": "rtl"
+							}
+						},
+						{
+							"id": "e7",
+							"type": "text",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 9.5,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"text": "المرفقات: ..........................",
+								"dir": "rtl"
+							}
+						},
+						{
+							"id": "e8",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 31,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.8,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e9",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 32.8,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.3,
+								"style": "solid"
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 16,
+					"pad_top": 3.5,
+					"slots": {
+						"right": 40,
+						"center": 20,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e10",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 1,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.3,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e11",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e12",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "po_box",
+								"label": "ص.ب:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e13",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e14",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "ar"
+							}
+						},
+						{
+							"id": "e15",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e16",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"36\" dir=\"ltr\" style=\"position:relative;width:100%;height:36mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:2mm;right:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" dir=\"rtl\" style=\"font-size:12pt;font-weight:700;color:#17211C;margin:0 0 0.6mm\">المملكة العربية السعودية</div><div data-el=\"e2\" style=\"font-size:13pt;font-weight:700;color:#1E5C45;margin:0 0 0.4mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e3\" style=\"font-size:10pt;font-weight:600;color:#17211C;margin:0 0 0mm\"><bdi>خدمات محاسبية</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:2mm;left:50%;margin-left:-12%;width:24%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e4\" style=\"margin:0 0 1.5mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:30mm;max-height:24mm\"></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:2mm;left:0;width:34%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e5\" dir=\"rtl\" style=\"font-size:9.5pt;font-weight:400;color:#17211C;margin:0 0 2.4mm\">الرقم: ..............................</div><div data-el=\"e6\" dir=\"rtl\" style=\"font-size:9.5pt;font-weight:400;color:#17211C;margin:0 0 2.4mm\">التاريخ: ......./......./.......هـ</div><div data-el=\"e7\" dir=\"rtl\" style=\"font-size:9.5pt;font-weight:400;color:#17211C;margin:0 0 0mm\">المرفقات: ..........................</div></div><div data-el=\"e8\" style=\"position:absolute;left:0%;top:31mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.8mm solid #1E5C45\"></div></div><div data-el=\"e9\" style=\"position:absolute;left:0%;top:32.8mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.3mm solid #1E5C45\"></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"16\" dir=\"ltr\" style=\"position:relative;width:100%;height:16mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:3.5mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e11\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>شارع حدة<br>صنعاء</bdi></div><div data-el=\"e12\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">ص.ب: <bdi dir=\"ltr\">1234</bdi></div><div data-el=\"e13\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3.5mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e14\" dir=\"rtl\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3.5mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e15\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi dir=\"ltr\">example.com</bdi></div><div data-el=\"e16\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi dir=\"ltr\">info@example.com</bdi></div></div><div data-el=\"e10\" style=\"position:absolute;left:0%;top:1mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.3mm solid #1E5C45\"></div></div></div>"
+		},
+		{
+			"id": "institution_centered",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 43,
+					"pad_top": 2,
+					"slots": {
+						"right": 30,
+						"center": 38,
+						"left": 30
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 9.5,
+								"weight": 600,
+								"color": "text",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "logo",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 28,
+							"h": 20,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.2
+							},
+							"props": {}
+						},
+						{
+							"id": "e4",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 13,
+								"weight": 700,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e5",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 9.5,
+								"weight": 600,
+								"color": "text",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e6",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 600,
+								"color": "text",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "activity_en",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e7",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "address_line1",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e8",
+							"type": "text",
+							"slot": null,
+							"x": 124,
+							"y": 31,
+							"w": 56,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"text": "الرقم: ..............................",
+								"dir": "rtl"
+							}
+						},
+						{
+							"id": "e9",
+							"type": "text",
+							"slot": null,
+							"x": 124,
+							"y": 35.5,
+							"w": 56,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"text": "التاريخ: ......../......../........",
+								"dir": "rtl"
+							}
+						},
+						{
+							"id": "e10",
+							"type": "text",
+							"slot": null,
+							"x": 0,
+							"y": 31,
+							"w": 56,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"text": "Ref.: ..............................",
+								"dir": "ltr"
+							}
+						},
+						{
+							"id": "e11",
+							"type": "text",
+							"slot": null,
+							"x": 0,
+							"y": 35.5,
+							"w": 56,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"text": "Date: ......../......../........",
+								"dir": "ltr"
+							}
+						},
+						{
+							"id": "e12",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 41.5,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.5,
+								"style": "solid"
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 15,
+					"pad_top": 3.5,
+					"slots": {
+						"right": 40,
+						"center": 20,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e13",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 1,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.3,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e14",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e15",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "fax",
+								"label": "فاكس:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e16",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e17",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						},
+						{
+							"id": "e18",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "Tel",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e19",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"43\" dir=\"ltr\" style=\"position:relative;width:100%;height:43mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:2mm;right:0;width:30%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" style=\"font-size:9.5pt;font-weight:600;color:#17211C;margin:0 0 0.6mm\"><bdi>خدمات محاسبية</bdi></div><div data-el=\"e2\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi>شارع حدة<br>صنعاء</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:2mm;left:50%;margin-left:-19%;width:38%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e3\" style=\"margin:0 0 1.2mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:28mm;max-height:20mm\"></div><div data-el=\"e4\" style=\"font-size:13pt;font-weight:700;color:#1E5C45;margin:0 0 0.3mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e5\" style=\"font-size:9.5pt;font-weight:600;color:#17211C;margin:0 0 0mm\"><bdi>SND Accounting</bdi></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:2mm;left:0;width:30%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e6\" style=\"font-size:9pt;font-weight:600;color:#17211C;margin:0 0 0.6mm\"><bdi>Accounting services</bdi></div><div data-el=\"e7\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi>Hadda St.</bdi></div></div><div data-el=\"e8\" dir=\"rtl\" style=\"position:absolute;left:68.8889%;top:31mm;width:31.1111%;font-size:8.5pt;font-weight:400;color:#17211C;text-align:right\">الرقم: ..............................</div><div data-el=\"e9\" dir=\"rtl\" style=\"position:absolute;left:68.8889%;top:35.5mm;width:31.1111%;font-size:8.5pt;font-weight:400;color:#17211C;text-align:right\">التاريخ: ......../......../........</div><div data-el=\"e10\" dir=\"ltr\" style=\"position:absolute;left:0%;top:31mm;width:31.1111%;font-size:8.5pt;font-weight:400;color:#17211C;text-align:left\">Ref.: ..............................</div><div data-el=\"e11\" dir=\"ltr\" style=\"position:absolute;left:0%;top:35.5mm;width:31.1111%;font-size:8.5pt;font-weight:400;color:#17211C;text-align:left\">Date: ......../......../........</div><div data-el=\"e12\" style=\"position:absolute;left:0%;top:41.5mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.5mm solid #1E5C45\"></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"15\" dir=\"ltr\" style=\"position:relative;width:100%;height:15mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:3.5mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e14\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3.5mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e16\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi dir=\"ltr\">example.com</bdi></div><div data-el=\"e17\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3.5mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e18\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">Tel <bdi dir=\"ltr\">777 999 579</bdi></div><div data-el=\"e19\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi dir=\"ltr\">info@example.com</bdi></div></div><div data-el=\"e13\" style=\"position:absolute;left:0%;top:1mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.3mm solid #1E5C45\"></div></div></div>"
+		},
+		{
+			"id": "logo_left_names_right",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 34,
+					"pad_top": 5,
+					"slots": {
+						"right": 62,
+						"center": 0,
+						"left": 34
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "logo",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 40,
+							"h": 22,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 16,
+								"weight": 700,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.4
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 10,
+								"weight": 600,
+								"color": "text",
+								"align": "start",
+								"gap": 1.6
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e5",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "activity_en",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e6",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 31.5,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.4,
+								"style": "solid"
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 15,
+					"pad_top": 4,
+					"slots": {
+						"right": 40,
+						"center": 20,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e7",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 0.8,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.6,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e8",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e9",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e10",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						},
+						{
+							"id": "e11",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e12",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"34\" dir=\"ltr\" style=\"position:relative;width:100%;height:34mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:5mm;right:0;width:62%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e2\" style=\"font-size:16pt;font-weight:700;color:#1E5C45;margin:0 0 0.4mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e3\" style=\"font-size:10pt;font-weight:600;color:#17211C;margin:0 0 1.6mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e4\" style=\"font-size:8.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>خدمات محاسبية</bdi></div><div data-el=\"e5\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi>Accounting services</bdi></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:5mm;left:0;width:34%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e1\" style=\"margin:0 0 1.5mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:40mm;max-height:22mm\"></div></div><div data-el=\"e6\" style=\"position:absolute;left:0%;top:31.5mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.4mm solid #1E5C45\"></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"15\" dir=\"ltr\" style=\"position:relative;width:100%;height:15mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:4mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e8\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>شارع حدة<br>صنعاء</bdi></div><div data-el=\"e9\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:4mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e10\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:4mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e11\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi dir=\"ltr\">info@example.com</bdi></div><div data-el=\"e12\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e7\" style=\"position:absolute;left:0%;top:0.8mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.6mm solid #1E5C45\"></div></div></div>"
+		},
+		{
+			"id": "finance_bank_details",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 31,
+					"pad_top": 4,
+					"slots": {
+						"right": 38,
+						"center": 22,
+						"left": 38
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 14,
+								"weight": 700,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.8
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "tax_id",
+								"label": "الرقم الضريبي:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "cr_no",
+								"label": "س.ت:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "logo",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 28,
+							"h": 20,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {}
+						},
+						{
+							"id": "e5",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 12,
+								"weight": 600,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.8
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e6",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "tax_id",
+								"label": "VAT No.",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e7",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "cr_no",
+								"label": "C.R.",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e8",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 28.5,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.6,
+								"style": "solid"
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 20,
+					"pad_top": 3.5,
+					"slots": {
+						"right": 40,
+						"center": 20,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e9",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 0.8,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.3,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e10",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 500,
+								"color": "text",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "bank_name",
+								"label": "البنك:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e11",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 500,
+								"color": "text",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "iban",
+								"label": "الآيبان (IBAN):",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e12",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e13",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e14",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						},
+						{
+							"id": "e15",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_line1",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e16",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "Tel",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e17",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e18",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"31\" dir=\"ltr\" style=\"position:relative;width:100%;height:31mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:4mm;right:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" style=\"font-size:14pt;font-weight:700;color:#1E5C45;margin:0 0 0.8mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e3\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0mm\">س.ت: <bdi dir=\"ltr\">4030123456</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:4mm;left:50%;margin-left:-11%;width:22%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e4\" style=\"margin:0 0 1.5mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:28mm;max-height:20mm\"></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:4mm;left:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e5\" style=\"font-size:12pt;font-weight:600;color:#1E5C45;margin:0 0 0.8mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e7\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0mm\">C.R. <bdi dir=\"ltr\">4030123456</bdi></div></div><div data-el=\"e8\" style=\"position:absolute;left:0%;top:28.5mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.6mm solid #1E5C45\"></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"20\" dir=\"ltr\" style=\"position:relative;width:100%;height:20mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:3.5mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e10\" style=\"font-size:7.5pt;font-weight:500;color:#17211C;margin:0 0 0.3mm\">البنك: <bdi>بنك التضامن</bdi></div><div data-el=\"e11\" style=\"font-size:7.5pt;font-weight:500;color:#17211C;margin:0 0 0.3mm\">الآيبان (IBAN): <bdi dir=\"ltr\">YE00 1234 5678 9012</bdi></div><div data-el=\"e12\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>شارع حدة<br>صنعاء</bdi></div><div data-el=\"e13\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3.5mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e14\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3.5mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e15\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>Hadda St.</bdi></div><div data-el=\"e16\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">Tel <bdi dir=\"ltr\">777 999 579</bdi></div><div data-el=\"e17\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi dir=\"ltr\">info@example.com</bdi></div><div data-el=\"e18\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e9\" style=\"position:absolute;left:0%;top:0.8mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.3mm solid #5B6660\"></div></div></div>"
 		},
 		{
 			"id": "simple",
@@ -974,6 +3228,224 @@
 			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"10\" dir=\"ltr\" style=\"position:relative;width:100%;height:10mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e7\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div></div>"
 		},
 		{
+			"id": "center_logo",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 40,
+					"pad_top": 3,
+					"slots": {
+						"right": 0,
+						"center": 70,
+						"left": 0
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "logo",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 24,
+							"h": 17,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 14,
+								"weight": 700,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.4
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 500,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.4
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e5",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 37,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 1.2,
+								"style": "double"
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 18,
+					"pad_top": 3,
+					"slots": {
+						"right": 0,
+						"center": 70,
+						"left": 0
+					},
+					"elements": [
+						{
+							"id": "e6",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_line1",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e7",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "tax_id",
+								"label": "الرقم الضريبي / VAT No.:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e8",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "cr_no",
+								"label": "س.ت / C.R.:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e9",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"40\" dir=\"ltr\" style=\"position:relative;width:100%;height:40mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3mm;left:50%;margin-left:-35%;width:70%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e1\" style=\"margin:0 0 1.5mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:24mm;max-height:17mm\"></div><div data-el=\"e2\" style=\"font-size:14pt;font-weight:700;color:#1E5C45;margin:0 0 0.4mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e3\" style=\"font-size:9pt;font-weight:500;color:#5B6660;margin:0 0 0.4mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e4\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e5\" style=\"position:absolute;left:0%;top:37mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:1.2mm double #1E5C45\"></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"18\" dir=\"ltr\" style=\"position:relative;width:100%;height:18mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3mm;left:50%;margin-left:-35%;width:70%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e6\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>Hadda St.</bdi></div><div data-el=\"e8\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">س.ت / C.R.: <bdi dir=\"ltr\">4030123456</bdi></div><div data-el=\"e9\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div></div>"
+		},
+		{
 			"id": "formal",
 			"layout": {
 				"v": 1,
@@ -1003,7 +3475,7 @@
 							"style": {
 								"size": 9,
 								"weight": 400,
-								"color": "#B8892E",
+								"color": "primary",
 								"align": "start",
 								"gap": 1.5
 							},
@@ -1211,8 +3683,1023 @@
 					]
 				}
 			},
-			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"34\" dir=\"ltr\" style=\"position:relative;width:100%;height:34mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:7mm;left:50%;margin-left:-35%;width:70%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e2\" style=\"font-size:16pt;font-weight:700;color:#17211C;margin:0 0 0.6mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e3\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>Hadda St.</bdi></div><div data-el=\"e4\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi dir=\"ltr\">777 999 579</bdi></div><div data-el=\"e5\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">info@example.com</bdi></div></div><div data-el=\"e1\" style=\"position:absolute;left:33.3333%;top:3mm;width:33.3333%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.6mm solid #B8892E\"></div></div><div data-el=\"e6\" style=\"position:absolute;left:0%;top:30.5mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:1mm double #17211C\"></div></div></div>",
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"34\" dir=\"ltr\" style=\"position:relative;width:100%;height:34mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:7mm;left:50%;margin-left:-35%;width:70%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e2\" style=\"font-size:16pt;font-weight:700;color:#17211C;margin:0 0 0.6mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e3\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>Hadda St.</bdi></div><div data-el=\"e4\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi dir=\"ltr\">777 999 579</bdi></div><div data-el=\"e5\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">info@example.com</bdi></div></div><div data-el=\"e1\" style=\"position:absolute;left:33.3333%;top:3mm;width:33.3333%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.6mm solid #1E5C45\"></div></div><div data-el=\"e6\" style=\"position:absolute;left:0%;top:30.5mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:1mm double #17211C\"></div></div></div>",
 			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"12\" dir=\"ltr\" style=\"position:relative;width:100%;height:12mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:4mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e9\" dir=\"rtl\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:4mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e10\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e7\" style=\"position:absolute;left:0%;top:1mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.2mm solid #17211C\"></div></div></div>"
+		},
+		{
+			"id": "bank_legal_footer",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 28,
+					"pad_top": 4,
+					"slots": {
+						"right": 50,
+						"center": 0,
+						"left": 46
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 13,
+								"weight": 700,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "logo",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 42,
+							"h": 16,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.2
+							},
+							"props": {}
+						},
+						{
+							"id": "e4",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 500,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 26,
+					"pad_top": 3.5,
+					"slots": {
+						"right": 40,
+						"center": 20,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e5",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 0.8,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.5,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e6",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 700,
+								"color": "text",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e7",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 6.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.2
+							},
+							"props": {
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e8",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 6.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.2
+							},
+							"props": {
+								"token": "cr_no",
+								"label": "س.ت:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e9",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 6.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.2
+							},
+							"props": {
+								"token": "unified_no",
+								"label": "الرقم الموحد:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e10",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 6.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.2
+							},
+							"props": {
+								"token": "po_box",
+								"label": "ص.ب:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e11",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 6.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e12",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e13",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 6.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						},
+						{
+							"id": "e14",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 700,
+								"color": "text",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e15",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 6.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.2
+							},
+							"props": {
+								"token": "activity_en",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e16",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 6.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.2
+							},
+							"props": {
+								"token": "cr_no",
+								"label": "C.R.",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e17",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 6.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.2
+							},
+							"props": {
+								"token": "unified_no",
+								"label": "Unified No.",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e18",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 6.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.2
+							},
+							"props": {
+								"token": "po_box",
+								"label": "P.O. Box",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e19",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 6.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "address_line1",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"28\" dir=\"ltr\" style=\"position:relative;width:100%;height:28mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:4mm;right:0;width:50%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" style=\"font-size:13pt;font-weight:700;color:#1E5C45;margin:0 0 0.6mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e2\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi>خدمات محاسبية</bdi></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:4mm;left:0;width:46%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e3\" style=\"margin:0 0 1.2mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:42mm;max-height:16mm\"></div><div data-el=\"e4\" style=\"font-size:9pt;font-weight:500;color:#5B6660;margin:0 0 0mm\"><bdi>SND Accounting</bdi></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"26\" dir=\"ltr\" style=\"position:relative;width:100%;height:26mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:3.5mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e6\" style=\"font-size:7.5pt;font-weight:700;color:#17211C;margin:0 0 0.3mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e7\" style=\"font-size:6.5pt;font-weight:400;color:#5B6660;margin:0 0 0.2mm\"><bdi>خدمات محاسبية</bdi></div><div data-el=\"e8\" style=\"font-size:6.5pt;font-weight:400;color:#5B6660;margin:0 0 0.2mm\">س.ت: <bdi dir=\"ltr\">4030123456</bdi></div><div data-el=\"e9\" style=\"font-size:6.5pt;font-weight:400;color:#5B6660;margin:0 0 0.2mm\">الرقم الموحد: <bdi dir=\"ltr\">7001234567</bdi></div><div data-el=\"e10\" style=\"font-size:6.5pt;font-weight:400;color:#5B6660;margin:0 0 0.2mm\">ص.ب: <bdi dir=\"ltr\">1234</bdi></div><div data-el=\"e11\" style=\"font-size:6.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi>شارع حدة<br>صنعاء</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3.5mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e12\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div><div data-el=\"e13\" dir=\"ltr\" style=\"font-size:6.5pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3.5mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e14\" style=\"font-size:7.5pt;font-weight:700;color:#17211C;margin:0 0 0.3mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e15\" style=\"font-size:6.5pt;font-weight:400;color:#5B6660;margin:0 0 0.2mm\"><bdi>Accounting services</bdi></div><div data-el=\"e16\" style=\"font-size:6.5pt;font-weight:400;color:#5B6660;margin:0 0 0.2mm\">C.R. <bdi dir=\"ltr\">4030123456</bdi></div><div data-el=\"e17\" style=\"font-size:6.5pt;font-weight:400;color:#5B6660;margin:0 0 0.2mm\">Unified No. <bdi dir=\"ltr\">7001234567</bdi></div><div data-el=\"e18\" style=\"font-size:6.5pt;font-weight:400;color:#5B6660;margin:0 0 0.2mm\">P.O. Box <bdi dir=\"ltr\">1234</bdi></div><div data-el=\"e19\" style=\"font-size:6.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi>Hadda St.</bdi></div></div><div data-el=\"e5\" style=\"position:absolute;left:0%;top:0.8mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.5mm solid #1E5C45\"></div></div></div>"
+		},
+		{
+			"id": "law_chambers",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 34,
+					"pad_top": 4,
+					"slots": {
+						"right": 0,
+						"center": 70,
+						"left": 0
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 17,
+								"weight": 700,
+								"color": "text",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 10,
+								"weight": 500,
+								"color": "muted",
+								"align": "start",
+								"gap": 1.6
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "line",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 44,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.6
+							},
+							"props": {
+								"thick": 0.3,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e4",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 9.5,
+								"weight": 600,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e5",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "activity_en",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 16,
+					"pad_top": 4,
+					"slots": {
+						"right": 40,
+						"center": 20,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e6",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 1,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.2,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e7",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e8",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e9",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "cr_no",
+								"label": "س.ت:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e10",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						},
+						{
+							"id": "e11",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_line1",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e12",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e13",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"34\" dir=\"ltr\" style=\"position:relative;width:100%;height:34mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:4mm;left:50%;margin-left:-35%;width:70%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e1\" style=\"font-size:17pt;font-weight:700;color:#17211C;margin:0 0 0.6mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e2\" style=\"font-size:10pt;font-weight:500;color:#5B6660;margin:0 0 1.6mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e3\" style=\"margin:0 0 1.6mm;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:44mm;height:0;border-top:0.3mm solid #1E5C45\"></div></div><div data-el=\"e4\" style=\"font-size:9.5pt;font-weight:600;color:#1E5C45;margin:0 0 0.3mm\"><bdi>خدمات محاسبية</bdi></div><div data-el=\"e5\" style=\"font-size:8.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi>Accounting services</bdi></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"16\" dir=\"ltr\" style=\"position:relative;width:100%;height:16mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:4mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e7\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>شارع حدة<br>صنعاء</bdi></div><div data-el=\"e8\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div><div data-el=\"e9\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\">س.ت: <bdi dir=\"ltr\">4030123456</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:4mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e10\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:4mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e11\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>Hadda St.</bdi></div><div data-el=\"e12\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi dir=\"ltr\">info@example.com</bdi></div><div data-el=\"e13\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e6\" style=\"position:absolute;left:0%;top:1mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.2mm solid #17211C\"></div></div></div>"
+		},
+		{
+			"id": "band_top",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 34,
+					"pad_top": 20,
+					"slots": {
+						"right": 34,
+						"center": 30,
+						"left": 34
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "band",
+							"slot": null,
+							"x": 0,
+							"y": 0,
+							"w": 180,
+							"h": 20,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"fill": "primary",
+								"radius": 1,
+								"corners": "all"
+							}
+						},
+						{
+							"id": "e2",
+							"type": "logo",
+							"slot": null,
+							"x": 5,
+							"y": 3.5,
+							"w": 15,
+							"h": 13,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": null,
+							"x": 60,
+							"y": 3.5,
+							"w": 116,
+							"h": 0,
+							"style": {
+								"size": 16,
+								"weight": 700,
+								"color": "#FFFFFF",
+								"align": "start",
+								"gap": 1.2
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "field",
+							"slot": null,
+							"x": 60,
+							"y": 11.5,
+							"w": 116,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 500,
+								"color": "#FFFFFF",
+								"align": "end",
+								"gap": 1.2
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e5",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "address_line1",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e6",
+							"type": "field",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف / Tel:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e7",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 12,
+					"pad_top": 4,
+					"slots": {
+						"right": 40,
+						"center": 20,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e8",
+							"type": "band",
+							"slot": null,
+							"x": 0,
+							"y": 0,
+							"w": 180,
+							"h": 1.2,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"fill": "primary",
+								"radius": 0,
+								"corners": "all"
+							}
+						},
+						{
+							"id": "e9",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "tax_id",
+								"label": "الرقم الضريبي:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e10",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "cr_no",
+								"label": "س.ت:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e11",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						},
+						{
+							"id": "e12",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"34\" dir=\"ltr\" style=\"position:relative;width:100%;height:34mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:20mm;right:0;width:34%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e5\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi>Hadda St.</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:20mm;left:50%;margin-left:-15%;width:30%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e6\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\">هاتف / Tel: <bdi dir=\"ltr\">777 999 579</bdi></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:20mm;left:0;width:34%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e7\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">info@example.com</bdi></div></div><div data-el=\"e1\" style=\"position:absolute;left:0%;top:0mm;width:100%;height:20mm;background-color:#1E5C45;border-radius:1mm\"></div><div data-el=\"e2\" style=\"position:absolute;left:2.7778%;top:3.5mm;width:8.3333%;height:13mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:100%;max-height:13mm\"></div><div data-el=\"e3\" dir=\"rtl\" style=\"position:absolute;left:33.3333%;top:3.5mm;width:64.4444%;font-size:16pt;font-weight:700;color:#FFFFFF;text-align:right\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e4\" dir=\"ltr\" style=\"position:absolute;left:33.3333%;top:11.5mm;width:64.4444%;font-size:9pt;font-weight:500;color:#FFFFFF;text-align:right\"><bdi>SND Accounting</bdi></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"12\" dir=\"ltr\" style=\"position:relative;width:100%;height:12mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:4mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e10\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\">س.ت: <bdi dir=\"ltr\">4030123456</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:4mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e11\" dir=\"ltr\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:4mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e12\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e8\" style=\"position:absolute;left:0%;top:0mm;width:100%;height:1.2mm;background-color:#1E5C45\"></div></div>"
 		},
 		{
 			"id": "corner",
@@ -1256,27 +4743,6 @@
 						},
 						{
 							"id": "e2",
-							"type": "band",
-							"slot": null,
-							"x": 8,
-							"y": 4,
-							"w": 20,
-							"h": 16,
-							"style": {
-								"size": 9,
-								"weight": 400,
-								"color": "primary",
-								"align": "start",
-								"gap": 1
-							},
-							"props": {
-								"fill": "#FFFFFF",
-								"radius": 2,
-								"corners": "all"
-							}
-						},
-						{
-							"id": "e3",
 							"type": "logo",
 							"slot": null,
 							"x": 9,
@@ -1293,7 +4759,7 @@
 							"props": {}
 						},
 						{
-							"id": "e4",
+							"id": "e3",
 							"type": "field",
 							"slot": "right",
 							"x": 0,
@@ -1314,7 +4780,7 @@
 							}
 						},
 						{
-							"id": "e5",
+							"id": "e4",
 							"type": "field",
 							"slot": "right",
 							"x": 0,
@@ -1335,7 +4801,7 @@
 							}
 						},
 						{
-							"id": "e6",
+							"id": "e5",
 							"type": "field",
 							"slot": "right",
 							"x": 0,
@@ -1356,7 +4822,7 @@
 							}
 						},
 						{
-							"id": "e7",
+							"id": "e6",
 							"type": "field",
 							"slot": "right",
 							"x": 0,
@@ -1388,7 +4854,7 @@
 					},
 					"elements": [
 						{
-							"id": "e8",
+							"id": "e7",
 							"type": "band",
 							"slot": null,
 							"x": 0,
@@ -1409,7 +4875,7 @@
 							}
 						},
 						{
-							"id": "e9",
+							"id": "e8",
 							"type": "field",
 							"slot": "right",
 							"x": 0,
@@ -1430,7 +4896,7 @@
 							}
 						},
 						{
-							"id": "e10",
+							"id": "e9",
 							"type": "page",
 							"slot": "center",
 							"x": 0,
@@ -1449,7 +4915,7 @@
 							}
 						},
 						{
-							"id": "e11",
+							"id": "e10",
 							"type": "field",
 							"slot": "left",
 							"x": 0,
@@ -1472,8 +4938,1564 @@
 					]
 				}
 			},
-			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"34\" dir=\"ltr\" style=\"position:relative;width:100%;height:34mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:5mm;right:0;width:56%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e4\" style=\"font-size:15pt;font-weight:700;color:#1E5C45;margin:0 0 1.2mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e5\" style=\"font-size:9pt;font-weight:500;color:#5B6660;margin:0 0 1.2mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e6\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi>Hadda St.</bdi></div><div data-el=\"e7\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div></div><div data-el=\"e1\" style=\"position:absolute;left:0%;top:0mm;width:28.8889%;height:24mm;background-color:#1E5C45;border-radius:0 0 10mm 0\"></div><div data-el=\"e2\" style=\"position:absolute;left:4.4444%;top:4mm;width:11.1111%;height:16mm;background-color:#FFFFFF;border-radius:2mm\"></div><div data-el=\"e3\" style=\"position:absolute;left:5%;top:5mm;width:10%;height:14mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:100%;max-height:14mm\"></div></div>",
-			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"14\" dir=\"ltr\" style=\"position:relative;width:100%;height:14mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:5mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e9\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">info@example.com</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:5mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e10\" dir=\"ltr\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:5mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e11\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e8\" style=\"position:absolute;left:0%;top:0mm;width:100%;height:2.5mm;background-color:#1E5C45;border-radius:1mm\"></div></div>"
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"34\" dir=\"ltr\" style=\"position:relative;width:100%;height:34mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:5mm;right:0;width:56%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e3\" style=\"font-size:15pt;font-weight:700;color:#1E5C45;margin:0 0 1.2mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e4\" style=\"font-size:9pt;font-weight:500;color:#5B6660;margin:0 0 1.2mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e5\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi>Hadda St.</bdi></div><div data-el=\"e6\" style=\"font-size:8pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div></div><div data-el=\"e1\" style=\"position:absolute;left:0%;top:0mm;width:28.8889%;height:24mm;background-color:#1E5C45;border-radius:0 0 10mm 0\"></div><div data-el=\"e2\" style=\"position:absolute;left:5%;top:5mm;width:10%;height:14mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:100%;max-height:14mm\"></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"14\" dir=\"ltr\" style=\"position:relative;width:100%;height:14mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:5mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e8\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">info@example.com</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:5mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e9\" dir=\"ltr\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:5mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e10\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e7\" style=\"position:absolute;left:0%;top:0mm;width:100%;height:2.5mm;background-color:#1E5C45;border-radius:1mm\"></div></div>"
+		},
+		{
+			"id": "footer_band_contacts",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 32,
+					"pad_top": 3,
+					"slots": {
+						"right": 37,
+						"center": 22,
+						"left": 37
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 15,
+								"weight": 700,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 500,
+								"color": "text",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "logo",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 28,
+							"h": 22,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {}
+						},
+						{
+							"id": "e5",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 12.5,
+								"weight": 600,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.8
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e6",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 500,
+								"color": "text",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "activity_en",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e7",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "address_line1",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e8",
+							"type": "line",
+							"slot": null,
+							"x": 80,
+							"y": 28.5,
+							"w": 20,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 1.2,
+								"style": "solid"
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 18,
+					"pad_top": 1,
+					"slots": {
+						"right": 0,
+						"center": 40,
+						"left": 0
+					},
+					"elements": [
+						{
+							"id": "e9",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						},
+						{
+							"id": "e10",
+							"type": "band",
+							"slot": null,
+							"x": 0,
+							"y": 7,
+							"w": 180,
+							"h": 10,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"fill": "primary",
+								"radius": 1.5,
+								"corners": "all"
+							}
+						},
+						{
+							"id": "e11",
+							"type": "field",
+							"slot": null,
+							"x": 122,
+							"y": 10.2,
+							"w": 56,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 500,
+								"color": "#FFFFFF",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e12",
+							"type": "field",
+							"slot": null,
+							"x": 62,
+							"y": 10.2,
+							"w": 56,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 500,
+								"color": "#FFFFFF",
+								"align": "center",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e13",
+							"type": "field",
+							"slot": null,
+							"x": 2,
+							"y": 10.2,
+							"w": 56,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 500,
+								"color": "#FFFFFF",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"32\" dir=\"ltr\" style=\"position:relative;width:100%;height:32mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:3mm;right:0;width:37%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" style=\"font-size:15pt;font-weight:700;color:#1E5C45;margin:0 0 0.6mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e2\" style=\"font-size:8.5pt;font-weight:500;color:#17211C;margin:0 0 0.3mm\"><bdi>خدمات محاسبية</bdi></div><div data-el=\"e3\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi>شارع حدة<br>صنعاء</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3mm;left:50%;margin-left:-11%;width:22%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e4\" style=\"margin:0 0 1.5mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:28mm;max-height:22mm\"></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3mm;left:0;width:37%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e5\" style=\"font-size:12.5pt;font-weight:600;color:#1E5C45;margin:0 0 0.8mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e6\" style=\"font-size:8.5pt;font-weight:500;color:#17211C;margin:0 0 0.3mm\"><bdi>Accounting services</bdi></div><div data-el=\"e7\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi>Hadda St.</bdi></div></div><div data-el=\"e8\" style=\"position:absolute;left:44.4444%;top:28.5mm;width:11.1111%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:1.2mm solid #1E5C45\"></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"18\" dir=\"ltr\" style=\"position:relative;width:100%;height:18mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:1mm;left:50%;margin-left:-20%;width:40%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e9\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-el=\"e10\" style=\"position:absolute;left:0%;top:7mm;width:100%;height:10mm;background-color:#1E5C45;border-radius:1.5mm\"></div><div data-el=\"e11\" dir=\"rtl\" style=\"position:absolute;left:67.7778%;top:10.2mm;width:31.1111%;font-size:7.5pt;font-weight:500;color:#FFFFFF;text-align:right\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div><div data-el=\"e12\" dir=\"ltr\" style=\"position:absolute;left:34.4444%;top:10.2mm;width:31.1111%;font-size:7.5pt;font-weight:500;color:#FFFFFF;text-align:center\"><bdi dir=\"ltr\">info@example.com</bdi></div><div data-el=\"e13\" dir=\"ltr\" style=\"position:absolute;left:1.1111%;top:10.2mm;width:31.1111%;font-size:7.5pt;font-weight:500;color:#FFFFFF;text-align:left\"><bdi dir=\"ltr\">example.com</bdi></div></div>"
+		},
+		{
+			"id": "contractor_bars",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 33,
+					"pad_top": 7,
+					"slots": {
+						"right": 40,
+						"center": 18,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "band",
+							"slot": null,
+							"x": 0,
+							"y": 0,
+							"w": 180,
+							"h": 3,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"fill": "primary",
+								"radius": 0,
+								"corners": "all"
+							}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 15,
+								"weight": 700,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 600,
+								"color": "text",
+								"align": "start",
+								"gap": 0.4
+							},
+							"props": {
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "cr_no",
+								"label": "س.ت:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e5",
+							"type": "logo",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 26,
+							"h": 20,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {}
+						},
+						{
+							"id": "e6",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 12.5,
+								"weight": 700,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.8
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e7",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 600,
+								"color": "text",
+								"align": "start",
+								"gap": 0.4
+							},
+							"props": {
+								"token": "activity_en",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e8",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "cr_no",
+								"label": "C.R.",
+								"hide_empty": true
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 16,
+					"pad_top": 1.5,
+					"slots": {
+						"right": 40,
+						"center": 20,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e9",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e10",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e11",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						},
+						{
+							"id": "e12",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e13",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e14",
+							"type": "band",
+							"slot": null,
+							"x": 0,
+							"y": 12,
+							"w": 180,
+							"h": 4,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"fill": "primary",
+								"radius": 0,
+								"corners": "all"
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"33\" dir=\"ltr\" style=\"position:relative;width:100%;height:33mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:7mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e2\" style=\"font-size:15pt;font-weight:700;color:#1E5C45;margin:0 0 0.6mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e3\" style=\"font-size:8.5pt;font-weight:600;color:#17211C;margin:0 0 0.4mm\"><bdi>خدمات محاسبية</bdi></div><div data-el=\"e4\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\">س.ت: <bdi dir=\"ltr\">4030123456</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:7mm;left:50%;margin-left:-9%;width:18%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e5\" style=\"margin:0 0 1.5mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:26mm;max-height:20mm\"></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:7mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e6\" style=\"font-size:12.5pt;font-weight:700;color:#1E5C45;margin:0 0 0.8mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e7\" style=\"font-size:8.5pt;font-weight:600;color:#17211C;margin:0 0 0.4mm\"><bdi>Accounting services</bdi></div><div data-el=\"e8\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\">C.R. <bdi dir=\"ltr\">4030123456</bdi></div></div><div data-el=\"e1\" style=\"position:absolute;left:0%;top:0mm;width:100%;height:3mm;background-color:#1E5C45\"></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"16\" dir=\"ltr\" style=\"position:relative;width:100%;height:16mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:1.5mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e9\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>شارع حدة<br>صنعاء</bdi></div><div data-el=\"e10\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:1.5mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e11\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:1.5mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e12\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi dir=\"ltr\">info@example.com</bdi></div><div data-el=\"e13\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e14\" style=\"position:absolute;left:0%;top:12mm;width:100%;height:4mm;background-color:#1E5C45\"></div></div>"
+		},
+		{
+			"id": "brand_tab",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 32,
+					"pad_top": 3,
+					"slots": {
+						"right": 0,
+						"center": 0,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "band",
+							"slot": null,
+							"x": 76,
+							"y": 0,
+							"w": 104,
+							"h": 24,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"fill": "primary",
+								"radius": 8,
+								"corners": "bl"
+							}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": null,
+							"x": 80,
+							"y": 4,
+							"w": 96,
+							"h": 0,
+							"style": {
+								"size": 14,
+								"weight": 700,
+								"color": "#FFFFFF",
+								"align": "start",
+								"gap": 1.2
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": null,
+							"x": 80,
+							"y": 17.6,
+							"w": 96,
+							"h": 0,
+							"style": {
+								"size": 8.5,
+								"weight": 500,
+								"color": "#FFFFFF",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "logo",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 36,
+							"h": 16,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1.2
+							},
+							"props": {}
+						},
+						{
+							"id": "e5",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 9.5,
+								"weight": 600,
+								"color": "primary",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e6",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "activity_en",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e7",
+							"type": "field",
+							"slot": null,
+							"x": 128,
+							"y": 26.5,
+							"w": 50,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e8",
+							"type": "field",
+							"slot": null,
+							"x": 78,
+							"y": 26.5,
+							"w": 48,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 14,
+					"pad_top": 4,
+					"slots": {
+						"right": 40,
+						"center": 20,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e9",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 1,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.8,
+								"style": "solid"
+							}
+						},
+						{
+							"id": "e10",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e11",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						},
+						{
+							"id": "e12",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"32\" dir=\"ltr\" style=\"position:relative;width:100%;height:32mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e4\" style=\"margin:0 0 1.2mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:36mm;max-height:16mm\"></div><div data-el=\"e5\" style=\"font-size:9.5pt;font-weight:600;color:#1E5C45;margin:0 0 0.3mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e6\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi>Accounting services</bdi></div></div><div data-el=\"e1\" style=\"position:absolute;left:42.2222%;top:0mm;width:57.7778%;height:24mm;background-color:#1E5C45;border-radius:0 0 0 8mm\"></div><div data-el=\"e2\" dir=\"rtl\" style=\"position:absolute;left:44.4444%;top:4mm;width:53.3333%;font-size:14pt;font-weight:700;color:#FFFFFF;text-align:right\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e3\" dir=\"rtl\" style=\"position:absolute;left:44.4444%;top:17.6mm;width:53.3333%;font-size:8.5pt;font-weight:500;color:#FFFFFF;text-align:right\"><bdi>خدمات محاسبية</bdi></div><div data-el=\"e7\" dir=\"rtl\" style=\"position:absolute;left:71.1111%;top:26.5mm;width:27.7778%;font-size:7.5pt;font-weight:400;color:#5B6660;text-align:right\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div><div data-el=\"e8\" dir=\"ltr\" style=\"position:absolute;left:43.3333%;top:26.5mm;width:26.6667%;font-size:7.5pt;font-weight:400;color:#5B6660;text-align:left\"><bdi dir=\"ltr\">info@example.com</bdi></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"14\" dir=\"ltr\" style=\"position:relative;width:100%;height:14mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:4mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e10\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi>شارع حدة<br>صنعاء</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:4mm;left:50%;margin-left:-10%;width:20%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e11\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:4mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e12\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-el=\"e9\" style=\"position:absolute;left:0%;top:1mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.8mm solid #1E5C45\"></div></div></div>"
+		},
+		{
+			"id": "minimal_wordmark",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 24,
+					"pad_top": 5,
+					"slots": {
+						"right": 48,
+						"center": 0,
+						"left": 48
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 13,
+								"weight": 700,
+								"color": "text",
+								"align": "start",
+								"gap": 0.4
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "activity_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 11,
+								"weight": 600,
+								"color": "text",
+								"align": "start",
+								"gap": 0.4
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "activity_en",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e5",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 21.5,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.2,
+								"style": "solid"
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 10,
+					"pad_top": 3,
+					"slots": {
+						"right": 38,
+						"center": 24,
+						"left": 38
+					},
+					"elements": [
+						{
+							"id": "e6",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e7",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						},
+						{
+							"id": "e8",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.6
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"24\" dir=\"ltr\" style=\"position:relative;width:100%;height:24mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:5mm;right:0;width:48%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" style=\"font-size:13pt;font-weight:700;color:#17211C;margin:0 0 0.4mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e2\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi>خدمات محاسبية</bdi></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:5mm;left:0;width:48%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e3\" style=\"font-size:11pt;font-weight:600;color:#17211C;margin:0 0 0.4mm\"><bdi>SND Accounting</bdi></div><div data-el=\"e4\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi>Accounting services</bdi></div></div><div data-el=\"e5\" style=\"position:absolute;left:0%;top:21.5mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.2mm solid #5B6660\"></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"10\" dir=\"ltr\" style=\"position:relative;width:100%;height:10mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:3mm;right:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e6\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi>شارع حدة<br>صنعاء</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3mm;left:50%;margin-left:-12%;width:24%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e7\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3mm;left:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e8\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 0.6mm\"><bdi dir=\"ltr\">example.com</bdi></div></div></div>"
+		},
+		{
+			"id": "minimal_details_column",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 30,
+					"pad_top": 4,
+					"slots": {
+						"right": 40,
+						"center": 0,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "logo",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 36,
+							"h": 18,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {}
+						},
+						{
+							"id": "e2",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 8,
+								"weight": 600,
+								"color": "text",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 10,
+								"weight": 700,
+								"color": "text",
+								"align": "start",
+								"gap": 0.8
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "address_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e5",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "phone_no",
+								"label": "هاتف:",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e6",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0.3
+							},
+							"props": {
+								"token": "email",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e7",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 7.5,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "website",
+								"label": "",
+								"hide_empty": true
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 10,
+					"pad_top": 3,
+					"slots": {
+						"right": 0,
+						"center": 40,
+						"left": 0
+					},
+					"elements": [
+						{
+							"id": "e8",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"30\" dir=\"ltr\" style=\"position:relative;width:100%;height:30mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:4mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e3\" style=\"font-size:10pt;font-weight:700;color:#17211C;margin:0 0 0.8mm\"><bdi>شركة سند للمحاسبة</bdi></div><div data-el=\"e4\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi>شارع حدة<br>صنعاء</bdi></div><div data-el=\"e5\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\">هاتف: <bdi dir=\"ltr\">777 999 579</bdi></div><div data-el=\"e6\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0.3mm\"><bdi dir=\"ltr\">info@example.com</bdi></div><div data-el=\"e7\" style=\"font-size:7.5pt;font-weight:400;color:#5B6660;margin:0 0 0mm\"><bdi dir=\"ltr\">example.com</bdi></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:4mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e1\" style=\"margin:0 0 1mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:36mm;max-height:18mm\"></div><div data-el=\"e2\" style=\"font-size:8pt;font-weight:600;color:#17211C;margin:0 0 0mm\"><bdi>SND Accounting</bdi></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"10\" dir=\"ltr\" style=\"position:relative;width:100%;height:10mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3mm;left:50%;margin-left:-20%;width:40%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e8\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div></div>"
+		},
+		{
+			"id": "compact_running",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 18,
+					"pad_top": 3,
+					"slots": {
+						"right": 40,
+						"center": 16,
+						"left": 40
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 11,
+								"weight": 700,
+								"color": "primary",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e2",
+							"type": "logo",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 18,
+							"h": 10,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "text",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 10,
+								"weight": 600,
+								"color": "primary",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 15.5,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "primary",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.4,
+								"style": "solid"
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 9,
+					"pad_top": 2.5,
+					"slots": {
+						"right": 0,
+						"center": 40,
+						"left": 0
+					},
+					"elements": [
+						{
+							"id": "e5",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						}
+					]
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"18\" dir=\"ltr\" style=\"position:relative;width:100%;height:18mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:3mm;right:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" style=\"font-size:11pt;font-weight:700;color:#1E5C45;margin:0 0 0mm\"><bdi>شركة سند للمحاسبة</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3mm;left:50%;margin-left:-8%;width:16%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e2\" style=\"margin:0 0 0mm;line-height:0\"><img src=\"/files/logo.png\" alt=\"\" style=\"display:inline-block;vertical-align:top;width:auto;height:auto;max-width:18mm;max-height:10mm\"></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3mm;left:0;width:40%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e3\" style=\"font-size:10pt;font-weight:600;color:#1E5C45;margin:0 0 0mm\"><bdi>SND Accounting</bdi></div></div><div data-el=\"e4\" style=\"position:absolute;left:0%;top:15.5mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.4mm solid #1E5C45\"></div></div></div>",
+			"footer": "<div class=\"rvlh\" data-rv-lh=\"footer\" data-h=\"9\" dir=\"ltr\" style=\"position:relative;width:100%;height:9mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:2.5mm;left:50%;margin-left:-20%;width:40%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e5\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div></div>"
+		},
+		{
+			"id": "running_line",
+			"layout": {
+				"v": 1,
+				"font": "IBM Plex Sans Arabic",
+				"colors": {
+					"primary": "#1E5C45",
+					"text": "#17211C",
+					"muted": "#5B6660"
+				},
+				"header": {
+					"h": 13,
+					"pad_top": 3,
+					"slots": {
+						"right": 38,
+						"center": 24,
+						"left": 38
+					},
+					"elements": [
+						{
+							"id": "e1",
+							"type": "field",
+							"slot": "right",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 10,
+								"weight": 700,
+								"color": "text",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "company_name_ar",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e2",
+							"type": "page",
+							"slot": "center",
+							"x": 0,
+							"y": 0,
+							"w": 60,
+							"h": 0,
+							"style": {
+								"size": 7,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1
+							},
+							"props": {
+								"format": "both"
+							}
+						},
+						{
+							"id": "e3",
+							"type": "field",
+							"slot": "left",
+							"x": 0,
+							"y": 0,
+							"w": 0,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 600,
+								"color": "text",
+								"align": "start",
+								"gap": 0
+							},
+							"props": {
+								"token": "company_name",
+								"label": "",
+								"hide_empty": true
+							}
+						},
+						{
+							"id": "e4",
+							"type": "line",
+							"slot": null,
+							"x": 0,
+							"y": 10.5,
+							"w": 180,
+							"h": 0,
+							"style": {
+								"size": 9,
+								"weight": 400,
+								"color": "muted",
+								"align": "start",
+								"gap": 1.5
+							},
+							"props": {
+								"thick": 0.3,
+								"style": "solid"
+							}
+						}
+					]
+				},
+				"footer": {
+					"h": 0,
+					"pad_top": 0,
+					"slots": {
+						"right": 0,
+						"center": 0,
+						"left": 0
+					},
+					"elements": []
+				}
+			},
+			"header": "<div class=\"rvlh\" data-rv-lh=\"header\" data-h=\"13\" dir=\"ltr\" style=\"position:relative;width:100%;height:13mm;overflow:hidden;box-sizing:border-box;font-family:'IBM Plex Sans Arabic',sans-serif;color:#17211C;line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact\"><div data-slot=\"right\" dir=\"rtl\" style=\"position:absolute;top:3mm;right:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:right\"><div data-el=\"e1\" style=\"font-size:10pt;font-weight:700;color:#17211C;margin:0 0 0mm\"><bdi>شركة سند للمحاسبة</bdi></div></div><div data-slot=\"center\" dir=\"auto\" style=\"position:absolute;top:3mm;left:50%;margin-left:-12%;width:24%;padding:0 1mm;box-sizing:border-box;text-align:center\"><div data-el=\"e2\" dir=\"ltr\" style=\"font-size:7pt;font-weight:400;color:#5B6660;margin:0 0 1mm\"><span dir=\"ltr\">Page <span class=\"page\"></span> of <span class=\"topage\"></span></span> | <span dir=\"rtl\">صفحة <span class=\"page\"></span> من <span class=\"topage\"></span></span></div></div><div data-slot=\"left\" dir=\"ltr\" style=\"position:absolute;top:3mm;left:0;width:38%;padding:0 1mm;box-sizing:border-box;text-align:left\"><div data-el=\"e3\" style=\"font-size:9pt;font-weight:600;color:#17211C;margin:0 0 0mm\"><bdi>SND Accounting</bdi></div></div><div data-el=\"e4\" style=\"position:absolute;left:0%;top:10.5mm;width:100%;line-height:0\"><div style=\"display:inline-block;vertical-align:top;width:100%;height:0;border-top:0.3mm solid #5B6660\"></div></div></div>",
+			"footer": ""
 		},
 		{
 			"id": "edge",

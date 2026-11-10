@@ -25,6 +25,10 @@ def after_install():
 def after_migrate():
 	chromium.ensure_in_background()
 	check_pdf_body_html_hook()
+	# the letter heads of the builder follow an update of its generator (ADR-018)
+	from report_view.core.letterhead import refresh_all_letter_heads
+
+	refresh_all_letter_heads()
 
 
 def before_tests():

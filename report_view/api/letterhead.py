@@ -9,6 +9,7 @@ Records are read with ``frappe.get_list`` and written with a normal ``save``.
 """
 
 import json
+import re
 
 import frappe
 from frappe import _
@@ -52,7 +53,10 @@ def _company(name: str | None) -> frappe._dict | None:
 	if not isinstance(name, str):
 		frappe.throw(_("Invalid company"), RVInvalidInput)
 	rows = frappe.get_list(
-		"Company", filters={"name": name}, fields=["name", *lh_core.COMPANY_FIELDS], limit=1
+		"Company",
+		filters={"name": name},
+		fields=["name", *lh_core.COMPANY_FIELDS, *lh_core.paper_fields()],
+		limit=1,
 	)
 	if not rows:
 		frappe.throw(_("Company {0} not found").format(name), frappe.DoesNotExistError)
@@ -80,7 +84,10 @@ def _address(company: str) -> dict:
 def _values(company: frappe._dict, address: dict) -> dict:
 	"""``{token: value}`` of a company: what each field of the layout prints."""
 	name = company.company_name or company.name
-	name_ar = frappe.translate.get_user_translations("ar").get(name) or name
+	# the company's own Arabic name, else its translation; never the English name again
+	name_ar = (
+		company.get("rv_company_name_ar") or frappe.translate.get_user_translations("ar").get(name) or ""
+	)
 	city_line = ", ".join(v for v in (address.get("city"), address.get("state"), address.get("pincode")) if v)
 	full = "\n".join(
 		v
@@ -100,6 +107,9 @@ def _values(company: frappe._dict, address: dict) -> dict:
 		address_line1=address.get("address_line1") or "",
 		city=address.get("city") or "",
 	)
+	for token, field in lh_core.PAPER_FIELDS.items():
+		if token != "company_name_ar":
+			values[token] = company.get(field) or ""
 	return values
 
 
@@ -117,12 +127,63 @@ def _letter_head(name: str) -> frappe._dict:
 	rows = frappe.get_list(
 		"Letter Head",
 		filters={"name": name},
-		fields=["name", "is_default", "disabled", "content", "footer"],
+		fields=[
+			"name",
+			"is_default",
+			"disabled",
+			"content",
+			"footer",
+			"source",
+			"image",
+			"footer_source",
+			"footer_image",
+		],
 		limit=1,
 	)
 	if not rows:
 		frappe.throw(_("Letter Head {0} not found").format(name), frappe.DoesNotExistError)
 	return rows[0]
+
+
+_IMG_SRC = re.compile(r"""<img\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']""", re.IGNORECASE)
+
+
+def _first_image(html: str | None, image: str | None) -> str | None:
+	"""The image a letter head shows (its Image field, else the first <img> of its HTML), when
+	the builder can draw it (a public file of the site: the contract's ``image_src``)."""
+	for src in (image, *(_IMG_SRC.findall(html or "")[:1])):
+		if src and re.match(lh_core.C["image_src"], src):
+			return src
+	return None
+
+
+def _current(lh: frappe._dict, company: str | None) -> dict:
+	"""A letter head the builder did not make, as it prints (rendered for the company): the
+	builder shows it first and may start from its images (B1 of the 2026-11-10 review)."""
+	context = {"doc": frappe._dict(company=company)}
+
+	def render(html: str | None) -> str:
+		if not html:
+			return ""
+		try:
+			return frappe.render_template(html, context)
+		except Exception:
+			return html
+
+	# the HTML whenever there is some: Frappe marks a letter head «Image» when it has no image
+	# field, whatever its HTML holds
+	image = lh.image if lh.source == "Image" else None
+	footer_image = lh.footer_image if lh.footer_source == "Image" else None
+	header = render(lh.content) or (f'<img src="{frappe.utils.escape_html(image)}">' if image else "")
+	footer = render(lh.footer) or (
+		f'<img src="{frappe.utils.escape_html(footer_image)}">' if footer_image else ""
+	)
+	return {
+		"header": header,
+		"footer": footer,
+		"header_image": _first_image(lh.content, image),
+		"footer_image": _first_image(lh.footer, footer_image),
+	}
 
 
 def _layout_record(letter_head: str) -> frappe._dict | None:
@@ -189,7 +250,13 @@ def builder_context(company: str | None = None, letter_head: str | None = None) 
 			"template": record.template if record else None,
 			"hand_edited": _hand_edited(lh, record),
 		}
+		# written by an older generator, not by hand since: «Update» rewrites it as it is
+		lh_info["stale"] = bool(record and record.layout and not lh_info["hand_edited"]) and lh_core.is_stale(
+			lh.content
+		)
 		company = company or (record.company if record else None)
+		if not record:
+			lh_info["current"] = _current(lh, company or _default_company(readable))
 	company = company or _default_company(readable)
 	data = _company_data(company) if company else None
 	return {
@@ -213,6 +280,38 @@ def company_data(company: str) -> dict:
 	_guard_read()
 	if not isinstance(company, str) or not company:
 		frappe.throw(_("Invalid company"), RVInvalidInput)
+	return {"company_data": _company_data(company), "can_set_default": _can_set_default(company)}
+
+
+@frappe.whitelist(methods=["POST"])
+@_rate_limit(30)
+def save_company_paper(company: str, values: dict | str) -> dict:
+	"""What the paper prints that the company record lacked (its Arabic name and address, its
+	registration, unified number, P.O. Box, bank): written to the app's fields on Company, as
+	the user, who must be allowed to write the company. Returns the company's data again."""
+	_guard_read()
+	if not isinstance(company, str) or not company:
+		frappe.throw(_("Invalid company"), RVInvalidInput)
+	values = frappe.parse_json(values) if isinstance(values, str) else values
+	if not isinstance(values, dict):
+		frappe.throw(_("Invalid values"), RVInvalidInput)
+	fields = set(lh_core.paper_fields())
+	changes = {}
+	for token, value in values.items():
+		field = lh_core.PAPER_FIELDS.get(token)
+		if field not in fields:
+			frappe.throw(_("Unknown field {0}").format(token), RVInvalidInput)
+		if value is not None and not isinstance(value, str):
+			frappe.throw(_("Invalid values"), RVInvalidInput)
+		text = (value or "").strip()
+		if len(text) > (500 if token == "address_ar" else 140):
+			frappe.throw(_("{0} is too long").format(token), RVInvalidInput)
+		changes[field] = text
+	doc = frappe.get_doc("Company", company)
+	doc.check_permission("write")
+	# the paper's fields only: ERPNext's Company.on_update (default accounts, warehouses) has
+	# nothing to do with them and is not run
+	doc.db_set(changes, notify=True)
 	return {"company_data": _company_data(company), "can_set_default": _can_set_default(company)}
 
 
@@ -315,6 +414,16 @@ def save(
 		"print_format_css": lh_core.print_format_css(clean),
 		**_heights(clean),
 	}
+
+
+@frappe.whitelist(methods=["POST"])
+@_rate_limit(30)
+def refresh(letter_head: str) -> dict:
+	"""A letter head of the builder written again with today's generator, its design kept."""
+	if not isinstance(letter_head, str) or not letter_head:
+		frappe.throw(_("Invalid letter head"), RVInvalidInput)
+	_guard_save(letter_head, 0, None)
+	return {"refreshed": lh_core.refresh_letter_head(letter_head)}
 
 
 @frappe.whitelist(methods=["GET"])

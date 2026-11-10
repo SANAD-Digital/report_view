@@ -125,7 +125,9 @@ test("helpers: direction and colours", () => {
 });
 
 test("presets: six styles, valid layouts, real data, the last two with free elements", () => {
-	assert.equal(PRESETS.length, 6);
+	// the library: the first six and the sixteen researched (ADR-030), each in a family
+	assert.equal(PRESETS.length, 22);
+	assert.ok(PRESETS.every((p) => p.family));
 	for (const p of PRESETS) {
 		const l = build_preset(p.id, { colors: { primary: "#224466" } });
 		assert.deepEqual(clamp_layout(l), l, `${p.id} is already clamped`);

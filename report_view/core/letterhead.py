@@ -74,6 +74,35 @@ COMPANY_FIELDS = (
 	"company_logo",
 )
 ADDRESS_FIELDS = ("address_line1", "address_line2", "city", "state", "pincode", "country")
+# what the paper prints that ERPNext's Company has no field for: the app's own fields on Company
+# (report_view/custom/company.json), filled from the builder (api.letterhead.save_company_paper)
+# the version of the HTML the builder writes, carried in it (data-rv-gen): raised when the
+# generator writes something new (a font face, a field it reads), so that a letter head
+# written before is written again (refresh_letter_head, after_migrate). 2: the paper's own
+# fields of the company, the Arabic name never the English one again (2026-11-10).
+GENERATOR_VERSION = 2
+_GEN_RE = re.compile(r'data-rv-gen="(\d+)"')
+
+PAPER_FIELDS = {
+	"company_name_ar": "rv_company_name_ar",
+	"address_ar": "rv_address_ar",
+	"cr_no": "rv_cr_no",
+	"unified_no": "rv_unified_no",
+	"po_box": "rv_po_box",
+	"bank_name": "rv_bank_name",
+	"iban": "rv_iban",
+	"activity_ar": "rv_activity_ar",
+	"activity_en": "rv_activity_en",
+}
+
+
+def paper_fields() -> list[str]:
+	"""The app's fields of the paper that this site's Company has (a site where they were not
+	synced yet reads none of them, and prints those tokens empty)."""
+	meta = frappe.get_meta("Company")
+	return [f for f in PAPER_FIELDS.values() if meta.has_field(f)]
+
+
 TYPES = tuple(C["types"])
 # drawn as a box of w x h; the textual ones carry a text style
 BOXED = frozenset(C["boxed"])
@@ -451,7 +480,7 @@ def _company_block(uses: set, company: str | None) -> str:
 			"{%- set _rvc = (doc.company if doc is defined and doc else None) or "
 			'frappe.db.get_single_value("Global Defaults", "default_company") -%}'
 		]
-	fields = ", ".join(f'"{f}"' for f in COMPANY_FIELDS)
+	fields = ", ".join(f'"{f}"' for f in (*COMPANY_FIELDS, *paper_fields()))
 	lines.append(
 		f'{{%- set _rvo = (frappe.db.get_value("Company", _rvc, [{fields}], as_dict=True) if _rvc else None) or {{}} -%}}'
 	)
@@ -463,9 +492,12 @@ def _company_block(uses: set, company: str | None) -> str:
 			'order_by="is_your_company_address desc, is_primary_address desc") if _rvc else None) or {} -%}'
 		)
 	if "name_ar" in uses:
+		# the Arabic name: the company's own field, else its Translation; never the English
+		# name again (a style printed it twice, the critic's review of 2026-11-10)
+		own = "_rvo.rv_company_name_ar or " if "rv_company_name_ar" in paper_fields() else ""
 		lines.append(
-			'{%- set _rvn = (frappe.db.get_value("Translation", {"source_text": _rvo.company_name, "language": "ar"}, '
-			'"translated_text") if _rvo.company_name else None) or _rvo.company_name -%}'
+			f'{{%- set _rvn = {own}(frappe.db.get_value("Translation", {{"source_text": _rvo.company_name, "language": "ar"}}, '
+			'"translated_text") if _rvo.company_name else None) or "" -%}'
 		)
 	return "\n".join(lines) + "\n"
 
@@ -480,6 +512,8 @@ def _token_expr(token: str) -> str:
 		)
 	if token in ("address_line1", "city"):
 		return f"_rva.{token}"
+	if token in PAPER_FIELDS:
+		return f"_rvo.{PAPER_FIELDS[token]}"
 	return f"_rvo.{token}"
 
 
@@ -742,7 +776,7 @@ def _band_html(layout: dict, band: str, company: str | None, qr_website: str | N
 	colors = layout["colors"]
 	h = _n(spec["h"])
 	root = (
-		f'<div class="rvlh" data-rv-lh="{band}" data-h="{h}" dir="ltr" style="position:relative;width:100%;'
+		f'<div class="rvlh" data-rv-lh="{band}" data-rv-gen="{GENERATOR_VERSION}" data-h="{h}" dir="ltr" style="position:relative;width:100%;'
 		f"height:{h}mm;overflow:hidden;box-sizing:border-box;font-family:{font_lib.font_stack(layout['font'])};"
 		f'color:{colors["text"]};line-height:1.35;-webkit-print-color-adjust:exact;print-color-adjust:exact">'
 	)
@@ -956,6 +990,60 @@ def write_letter_head(lh, layout: dict, company: str | None = None, qr_company: 
 	else:
 		lh.save()
 	return content_hash(lh.content, lh.footer)
+
+
+def written_version(content: str | None) -> int:
+	"""The generator's version a letter head was written with (0: before versions)."""
+	m = _GEN_RE.search(content or "")
+	return int(m.group(1)) if m else 0
+
+
+def is_stale(content: str | None) -> bool:
+	"""Written by an older version of the builder's generator than today's."""
+	return written_version(content) < GENERATOR_VERSION
+
+
+def refresh_letter_head(letter_head: str) -> bool:
+	"""Writes again the HTML of a letter head the builder made, when the builder's generator
+	changed since (a new font face, a field it reads): the same layout, today's HTML. A letter
+	head edited by hand since the builder wrote it is left alone. True when it was rewritten
+	(the critic's review of 2026-11-10, B4: a saved letter head kept printing an old font)."""
+	rows = frappe.get_all(
+		"Letter Head Layout",
+		filters={"letter_head": letter_head},
+		fields=["name", "company", "layout", "generated_hash"],
+		limit=1,
+	)
+	if not rows or not rows[0].layout:
+		return False
+	record = rows[0]
+	lh = frappe.get_doc("Letter Head", letter_head)
+	if content_hash(lh.content, lh.footer) != record.generated_hash:
+		return False
+	if not is_stale(lh.content):
+		return False
+	layout = validate_layout(json.loads(record.layout))
+	qr_company = record.company or frappe.db.get_single_value("Global Defaults", "default_company")
+	generated_hash = write_letter_head(lh, layout, record.company, qr_company=qr_company)
+	frappe.db.set_value(
+		"Letter Head Layout", record.name, "generated_hash", generated_hash, update_modified=False
+	)
+	return True
+
+
+def refresh_all_letter_heads() -> list[str]:
+	"""Every letter head of the builder written again with today's generator (after_migrate:
+	an update of the app reaches the paper without anyone opening the builder)."""
+	done = []
+	for name in frappe.get_all("Letter Head Layout", pluck="letter_head"):
+		if not name or not frappe.db.exists("Letter Head", name):
+			continue
+		try:
+			if refresh_letter_head(name):
+				done.append(name)
+		except Exception:
+			frappe.log_error(title=f"Report View: letter head {name} not refreshed")
+	return done
 
 
 def _drop_message(text: str):

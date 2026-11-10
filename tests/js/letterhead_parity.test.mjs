@@ -37,6 +37,15 @@ const VALUES = {
 	address: "Hadda St.\nSana'a, Amanat\nYemen",
 	address_line1: "Hadda St.",
 	city: "Sana'a",
+	// the paper's own fields of the company (custom/company.json)
+	address_ar: "شارع حدة\nصنعاء",
+	cr_no: "4030123456",
+	unified_no: "7001234567",
+	po_box: "1234",
+	bank_name: "بنك التضامن",
+	iban: "YE00 1234 5678 9012",
+	activity_ar: "خدمات محاسبية",
+	activity_en: "Accounting services",
 };
 const LOGO = "/files/logo.png";
 

@@ -16,6 +16,14 @@ export const token_label = (t) =>
 		address: __("Address (all lines)"),
 		address_line1: __("Address line"),
 		city: __("City"),
+		address_ar: __("Address in Arabic"),
+		cr_no: __("Commercial Registration No."),
+		unified_no: __("Unified No."),
+		po_box: __("P.O. Box"),
+		bank_name: __("Bank on the Letter Head"),
+		iban: __("IBAN"),
+		activity_ar: __("Line of Business in Arabic"),
+		activity_en: __("Line of Business in English"),
 	})[t] || t;
 
 export const type_label = (t) =>

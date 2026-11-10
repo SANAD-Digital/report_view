@@ -2,7 +2,7 @@
 // company's real data, the company's fields beside them (an empty one is said to be empty,
 // never filled with made-up text), and a larger preview of the chosen style.
 
-import { PRESETS } from "./presets.js";
+import { PRESETS, FAMILIES } from "./presets.js";
 import { field_value, missing_tokens, esc } from "./render.js";
 import { token_label } from "./labels.js";
 import { thumb_html, fit_thumbs } from "./panels.js";
@@ -10,13 +10,15 @@ import { icons } from "./icons.js";
 import { frame_resize_observer } from "../util.js";
 
 // what a letter head usually shows; the gallery says which of these the company lacks
-const SHOWN = ["company_name_ar", "company_name", "address", "phone_no", "email", "website", "tax_id", "registration_details"];
+const SHOWN = ["company_name_ar", "company_name", "address", "address_ar", "phone_no", "email", "website", "tax_id", "cr_no", "unified_no", "po_box", "iban"];
 
 export class Gallery {
 	constructor({ parent, host }) {
 		this.host = host;
 		this.parent = parent;
 		this.selected = "classic";
+		// the family the cards are filtered by ("all": every style of the library)
+		this.family = "all";
 		parent.addEventListener("click", (e) => this.on_click(e));
 		parent.addEventListener("dblclick", (e) => {
 			const card = e.target.closest("[data-preset]");
@@ -41,7 +43,10 @@ export class Gallery {
 			const v = field_value(ctx, t);
 			return `<li><span>${esc(token_label(t))}</span><b class="${v ? "ltr" : "is-empty"}">${esc(v ? v.split("\n")[0] : __("Empty"))}</b></li>`;
 		};
-		const cards = PRESETS.map((p) => {
+		const shown = PRESETS.filter((p) => this.family === "all" || p.family === this.family);
+		const fam = (id, label, n) => `<button type="button" role="tab" data-family="${id}" aria-selected="${this.family === id}">${esc(label)} <span class="n">${n}</span></button>`;
+		const families = `<div class="rvlb-tabs rvlb-families" role="tablist" aria-label="${esc(__("Families of styles"))}">${fam("all", __("All"), PRESETS.length)}${FAMILIES.map((f) => fam(f.id, __(f.label), PRESETS.filter((p) => p.family === f.id).length)).join("")}</div>`;
+		const cards = shown.map((p) => {
 			const on = p.id === this.selected;
 			return `<button type="button" class="rvlb-card${on ? " on" : ""}" data-preset="${p.id}" aria-pressed="${on}">
 				${thumb_html(h.preset_layout(p.id), ctx)}
@@ -70,9 +75,9 @@ export class Gallery {
 					</label>
 					<div class="rvlb-gal-names">
 						<span class="rvlb-h3">${esc(__("The name in two languages"))}</span>
-						<div class="rvlb-name" dir="rtl">${esc(ar || en)}</div>
+						<div class="rvlb-name${ar_is_name ? " is-empty" : ""}" dir="rtl">${esc(ar_is_name ? __("No Arabic name yet") : ar)}</div>
 						<div class="rvlb-name ltr" dir="ltr">${esc(en)}</div>
-						<p class="rvlb-note">${esc(ar_is_name ? __("No Arabic name yet: add a Translation of the company name and it shows on the right.") : __("The English name from the company record, the Arabic one from its Translation."))}</p>
+						<p class="rvlb-note">${esc(ar_is_name ? __("Without it the styles print the name once, in English. Add it with «Edit the company's paper data».") : __("The English name from the company record, the Arabic one from its paper data."))}</p>
 					</div>
 					<div>
 						<span class="rvlb-h3">${esc(__("On the paper"))}</span>
@@ -80,6 +85,7 @@ export class Gallery {
 							<li><span>${esc(__("Logo"))}</span><b class="${has_logo ? "" : "is-empty"}">${esc(has_logo ? __("From the company record") : __("Empty"))}</b></li>
 							${SHOWN.filter((t) => t !== "company_name_ar" && t !== "company_name").map(row).join("")}
 						</ul>
+						<button type="button" class="btn btn-default btn-sm rvlb-paper-btn" data-act="company-paper">${esc(__("Edit the company's paper data"))}</button>
 					</div>
 					${
 						missing.length || !has_logo
@@ -89,8 +95,9 @@ export class Gallery {
 					}
 				</aside>
 				<main class="rvlb-gal-main">
-					${h.letter_head && !h.has_layout ? `<div class="rvlb-info" role="note">${icons.alert()}<span>${esc(__("«{0}» was not made with the builder. Start from a style: its current content stays until you save.", [h.letter_head]))}</span></div>` : ""}
-					<div class="rvlb-gal-hd"><strong>${esc(__("Six styles drawn with your company's data"))}</strong><span>${esc(h.brand ? __("The colour comes from the logo; change it on the next step.") : __("Change the colours and the font on the next step."))}</span></div>
+					${h.letter_head && !h.has_layout ? this.current_html(h) : ""}
+					<div class="rvlb-gal-hd"><strong>${esc(__("{0} styles drawn with your company's data", [PRESETS.length]))}</strong><span>${esc(h.brand ? __("The colour comes from the logo; change it on the next step.") : __("Change the colours and the font on the next step."))}</span></div>
+					${families}
 					<div class="rvlb-cards">${cards}</div>
 					<section class="rvlb-gal-pv" aria-label="${esc(__("Preview of the selected style"))}">
 						<div class="rvlb-gal-pvmain">
@@ -109,7 +116,27 @@ export class Gallery {
 		requestAnimationFrame(() => fit_thumbs(this.parent));
 	}
 
+	/**
+	 * The letter head as it prints now (a letter head the builder did not make), first: in a
+	 * frame that runs nothing, with «Start from it» when its image can be carried over.
+	 */
+	current_html(h) {
+		const cur = h.current || {};
+		const doc = `<!doctype html><html dir="${h.rtl ? "rtl" : "ltr"}"><head><meta charset="utf-8"><style>html,body{margin:0;background:white;color:black;font-family:system-ui,sans-serif}body{padding:16px 24px}img{max-width:100%;height:auto}.rv-sep{border:0;border-top:1px dashed;opacity:.25;margin:16px 0}</style></head><body>${cur.header || ""}${cur.footer ? `<hr class="rv-sep">${cur.footer}` : ""}</body></html>`;
+		const can = Boolean(cur.header_image || cur.footer_image);
+		return `<section class="rvlb-current" aria-label="${esc(__("The letter head as it prints now"))}">
+			<div class="rvlb-gal-hd"><strong>${esc(__("«{0}» as it prints now", [h.letter_head]))}</strong><span>${esc(can ? __("Start from it to edit it in the builder, or choose a style below: nothing changes until you save.") : __("It was written by hand and has no image to carry over: choose a style below; nothing changes until you save."))}</span></div>
+			<iframe class="rvlb-current-frame" sandbox="" title="${esc(h.letter_head)}" srcdoc="${esc(doc)}"></iframe>
+			${can ? `<div class="rvlb-current-acts"><button type="button" class="btn btn-default btn-sm" data-act="from-current">${esc(__("Start from it"))}</button></div>` : ""}
+		</section>`;
+	}
+
 	on_click(e) {
+		const family = e.target.closest("[data-family]");
+		if (family) {
+			this.family = family.dataset.family;
+			return this.render();
+		}
 		const card = e.target.closest("[data-preset]");
 		if (card) {
 			this.selected = card.dataset.preset;
@@ -120,6 +147,8 @@ export class Gallery {
 		const act = e.target.closest("[data-act]")?.dataset.act;
 		if (act === "start") this.host.start_from(this.selected);
 		if (act === "blank") this.host.start_from(null);
+		if (act === "company-paper") this.host.edit_company_paper();
+		if (act === "from-current") this.host.start_from_current();
 	}
 }
 

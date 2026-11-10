@@ -46,7 +46,8 @@ class DocPrintPage {
 
 	make_dom() {
 		const root = document.createElement("div");
-		root.className = "rv rv-mode-pages rv-docprint";
+		// the print engine of the trial layouts (rv_layouts.css): its side column, its sizes
+		root.className = "rv rv-layout-a rv-mode-pages rv-docprint";
 		root.dir = this.rtl ? "rtl" : "ltr";
 		this.page.main.get(0).replaceChildren(root);
 		this.root = root;
@@ -62,7 +63,10 @@ class DocPrintPage {
 		const parent = document.createElement("div");
 		parent.className = "rv-pages";
 		this.root.replaceChildren(parent);
-		this.pages = new PagesView({ parent, root: this.root, rtl: this.rtl, host: kind === "custom" ? this.custom : this });
+		// the settings in a side column, as Frappe's print view (the owner, 2026-11-10: the print
+		// engine as part of Frappe)
+		this.pages = new PagesView({ parent, root: this.root, rtl: this.rtl, host: kind === "custom" ? this.custom : this, side: true });
+		this.frappe_head(parent);
 		this.page.clear_secondary_action();
 		this.page.clear_menu();
 		if (kind === "custom") {
@@ -79,6 +83,31 @@ class DocPrintPage {
 		this.page.set_secondary_action(__("Back to the document"), () => frappe.set_route("Form", this.doctype, this.name), "arrow-left");
 		this.page.add_menu_item(__("Frappe's print page"), () => frappe.set_route("print", this.doctype, this.name));
 		this.page.add_menu_item(__("Print Settings"), () => frappe.set_route("Form", "Print Settings"));
+	}
+
+	/**
+	 * As Frappe's print page (printing/page/print/print.js): Print the primary action of Desk's
+	 * page head and the PDF an icon beside it; the setup's name, Reset and the notes at the top
+	 * of the side column. The row of the pages' own head stays for a phone, where it opens the
+	 * side column as a sheet.
+	 */
+	frappe_head(parent) {
+		const pages = this.pages;
+		const side = parent.querySelector(".rv-print-side");
+		const bd = side?.querySelector(".bd");
+		const hd = parent.querySelector(".rv-print-bar .rv-print-hd");
+		const note = parent.querySelector(".rv-print-bar .rv-print-note");
+		if (side && bd && hd) {
+			hd.classList.add("rv-print-side-top");
+			side.insertBefore(hd, bd);
+			if (note) side.insertBefore(note, bd);
+		}
+		this.page.clear_primary_action();
+		this.page.clear_icons?.();
+		this.page.set_primary_action(__("Print", null, "Report View"), () => pages.guard(() => pages.print()), "printer");
+		if (pages.host?.pages_pdf_target) {
+			this.page.add_action_icon("file", () => pages.guard(() => pages.pdf()), "", __("PDF"));
+		}
 	}
 
 	fit_height() {

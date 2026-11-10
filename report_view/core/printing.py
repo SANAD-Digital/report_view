@@ -389,3 +389,28 @@ def report_view_signature(name: str, doc=None) -> str:
 		return ""
 	style = f"<style>{out['css']}</style>" if out["css"] else ""
 	return f'{style}<div class="rv-signature">{out["html"]}</div>'
+
+
+_WHOLE_DOCUMENT = re.compile(r"^\s*(?:<!doctype\b|<html\b)", re.IGNORECASE)
+
+
+def document_fragment(html: str, css: str = "") -> tuple[str, str]:
+	"""A print format's output as the pages take it: its body, and its styles apart.
+
+	A format of Frappe's new print format builder (``print_format_builder_beta``) comes back
+	from ``get_html_and_style`` as a whole document: head, styles and body. Put in a page as
+	it is, its body never reached the sheets and its head's rules reached Desk itself. Its
+	<style> blocks join the format's CSS (held to the sheets in the browser:
+	views/pages/support.js scope_format_css); a stylesheet it links is Frappe's own print
+	bundle, not the format's, and is left out; a fragment is returned as it came."""
+	if not html or not _WHOLE_DOCUMENT.match(html):
+		return html, css
+	from bs4 import BeautifulSoup
+
+	soup = BeautifulSoup(html, "html.parser")
+	styles = [style.get_text() for style in soup.find_all("style")]
+	for tag in soup.find_all(["style", "link", "meta", "title", "script"]):
+		tag.decompose()
+	body = soup.body
+	inner = body.decode_contents() if body else str(soup)
+	return inner.strip(), "\n".join(part for part in [css, *styles] if part)

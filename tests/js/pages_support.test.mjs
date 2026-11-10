@@ -34,3 +34,18 @@ test("page_spans numbers the footer's own spans, formatted; other HTML is left a
 	assert.equal(page_spans(html, 3, 1200), 'p. <span class="page">3</span> / <span class="topage">1,200</span>');
 	assert.equal(page_spans("<b>no numbers</b>", 1, 2), "<b>no numbers</b>");
 });
+
+test("a print format's selectors are held to the sheets: html, :root and body stand for them", async () => {
+	const { scope_selector } = await import("../../report_view/public/js/report_view/views/pages/support.js");
+	const S = ".s";
+	assert.equal(scope_selector("body", S), ".s");
+	assert.equal(scope_selector("html", S), ".s");
+	assert.equal(scope_selector(":root", S), ".s");
+	assert.equal(scope_selector("html body .x", S), ".s .x");
+	assert.equal(scope_selector("body.rtl .y", S), ".s.rtl .y");
+	assert.equal(scope_selector("body > div", S), ".s > div");
+	assert.equal(scope_selector(".print-format td", S), ".s .print-format td");
+	assert.equal(scope_selector("table > tr", S), ".s table > tr");
+	// a word that only starts like body is not body
+	assert.equal(scope_selector("bodyx", S), ".s bodyx");
+});

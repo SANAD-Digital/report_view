@@ -3,6 +3,9 @@
 // View), loaded on first open.
 
 frappe.pages["rv-print"].on_page_load = function (wrapper) {
+	// Desk's sidebar folds to its icons on this page (on_page_show) and comes back after, as on
+	// Frappe's own print page (frappe/printing/page/print/print.js)
+	$(wrapper).on("hide", () => frappe.app?.sidebar?.unfold_after_leaving_page?.());
 	frappe.ui.make_app_page({
 		parent: wrapper,
 		title: __("Advanced Print"),
@@ -14,5 +17,6 @@ frappe.pages["rv-print"].on_page_load = function (wrapper) {
 };
 
 frappe.pages["rv-print"].on_page_show = function (wrapper) {
+	frappe.app?.sidebar?.fold_for_page?.();
 	wrapper.rv_ready.then(() => wrapper.rv_print.show());
 };

@@ -269,7 +269,6 @@ test("pages in the trial layouts: the side column holds every section in four gr
 		const st = await page.evaluate(() => {
 			const side = document.querySelector(".rv-print-side").getBoundingClientRect();
 			const stage = document.querySelector(".rv-print-stage").getBoundingClientRect();
-			const thumbs = document.querySelector(".rv-print-thumbs").getBoundingClientRect();
 			const rtl = getComputedStyle(document.querySelector(".rv-print-side")).direction === "rtl";
 			return {
 				sidecol: document.querySelector(".rv-pages").classList.contains("rv-print-sidecol"),
@@ -280,7 +279,9 @@ test("pages in the trial layouts: the side column holds every section in four gr
 				bar: Math.round(document.querySelector(".rv-print-bar").getBoundingClientRect().height),
 				width: Math.round(side.width),
 				start: rtl ? side.left >= stage.right - 1 : side.right <= stage.left + 1,
-				thumbs_end: rtl ? thumbs.right <= stage.left + 1 : thumbs.left >= stage.right - 1,
+				// no column of thumbnails: the floating bar at the sheets' foot moves through the pages
+				thumbs: getComputedStyle(document.querySelector(".rv-print-thumbs")).display,
+				bar_acts: [...document.querySelectorAll(".rv-print-floatbar [data-bar], .rv-print-floatbar [data-zoom]")].map((b) => b.dataset.bar || b.dataset.zoom),
 				ribbon: document.querySelectorAll(".rv-rg, .rv-print-pop").length,
 				head: [...document.querySelectorAll(".rv-print-bar [data-action]")].map((b) => b.dataset.action),
 			};
@@ -299,7 +300,8 @@ test("pages in the trial layouts: the side column holds every section in four gr
 		expect(st.bar).toBeLessThanOrEqual(45);
 		expect(st.width).toBe(288);
 		expect(st.start).toBe(true);
-		expect(st.thumbs_end).toBe(true);
+		expect(st.thumbs).toBe("none");
+		expect(st.bar_acts).toEqual(["prev-page", "next-page", "zoom-out", "zoom-in", "fit"]);
 		expect(st.ribbon).toBe(0);
 		expect(st.head).toEqual(["reset", "print-settings", "pdf", "print"]);
 	}

@@ -28,7 +28,7 @@ import { PagesLayouts } from "./pages/layouts.js";
 import { PagesOutput } from "./pages/output.js";
 import { PagesPanel } from "./pages/panel.js";
 import { DEFAULT_SETTINGS, KEEP_FORMATS, KEEP_LANGS, KEEP_LETTERHEADS, KEEP_PARTS, PAGE_GAP, PAINT_KEYS, PRINT_MAX_PAGES, SKELETON_BARS, STAGE_PAD, ZOOM_STEPS, sanitize_settings } from "./pages/settings.js";
-import { Lru, strip_scripts } from "./pages/support.js";
+import { Lru, scope_format_css, strip_scripts } from "./pages/support.js";
 import { PagesVirtual } from "./pages/virtual.js";
 
 export class PagesView {
@@ -130,6 +130,9 @@ export class PagesView {
 	 */
 	make_side_dom() {
 		const el = this.el;
+		// a button of Frappe's print preview bar (espresso es-button, Frappe's own icons)
+		const fbtn = (action, label, icon) =>
+			`<button type="button" class="es-button" data-variant="ghost" data-size="sm" data-icon-button="true" data-bar="${action}" aria-label="${esc(label)}" title="${esc(label)}">${frappe.utils?.icon ? frappe.utils.icon(icon, "sm") : ""}</button>`;
 		el.classList.add("rv-print-sidecol");
 		el.innerHTML = `
 			<div class="rv-print-bar">
@@ -153,21 +156,25 @@ export class PagesView {
 			</aside>
 			<div class="rv-print-main">
 			<nav class="rv-print-thumbs" aria-label="${esc(__("Pages", null, "Report View"))}"></nav>
+			<div class="rv-print-stagewrap">
 			<div class="rv-print-stage" tabindex="0">
-				<div class="rv-print-tools">
-					<div class="rv-seg rv-zoom" role="group" aria-label="${esc(__("Zoom"))}">
-						<button type="button" data-zoom="out" aria-label="${esc(__("Zoom out"))}" title="${esc(__("Zoom out"))}">−</button>
-						<button type="button" data-zoom="fit">${esc(__("Fit", null, "Report View"))}</button>
-						<button type="button" data-zoom="in" aria-label="${esc(__("Zoom in"))}" title="${esc(__("Zoom in"))}">+</button>
-					</div>
-					<span class="rv-print-zoom-lbl"></span>
-					<span class="sp"></span>
-					<span class="rv-print-pos"></span>
-				</div>
 				<div class="rv-print-busy" role="status" aria-live="polite" hidden><span class="rv-spin" aria-hidden="true"></span><span class="txt"></span><button type="button" class="rv-btn sm ghost" data-action="pdf-cancel" hidden>${esc(__("Cancel"))}</button></div>
 				<div class="rv-print-fmt-css" hidden></div>
 				<div class="rv-print-sheets" dir="${this.rtl ? "rtl" : "ltr"}"></div>
 				<div class="rv-print-probe" aria-hidden="true"></div>
+			</div>
+			<!-- Frappe's print preview bar (print_preview.scss .print-preview-bar): floating at the
+			     foot of the sheets, the page then the zoom -->
+			<div class="rv-print-tools rv-print-floatbar" role="toolbar" aria-label="${esc(__("Zoom"))}">
+				${fbtn("prev-page", __("Previous page"), "chevron-up")}
+				<span class="rv-print-pos"></span>
+				${fbtn("next-page", __("Next page"), "chevron-down")}
+				<span class="dv" aria-hidden="true"></span>
+				${fbtn("zoom-out", __("Zoom out"), "minus")}
+				<span class="rv-print-zoom-lbl"></span>
+				${fbtn("zoom-in", __("Zoom in"), "plus")}
+				<button type="button" class="es-button" data-variant="ghost" data-size="sm" data-zoom="fit">${esc(__("Fit", null, "Report View"))}</button>
+			</div>
 			</div>
 			</div>
 			</div>`;
@@ -219,6 +226,15 @@ export class PagesView {
 			if (b) this.go_to_page(Number(b.dataset.thumb));
 		});
 		for (const b of el.querySelectorAll("[data-zoom]")) b.addEventListener("click", () => this.zoom(b.dataset.zoom));
+		// the floating bar of the side layout (Frappe's preview bar): pages and zoom
+		el.querySelector(".rv-print-floatbar")?.addEventListener("click", (e) => {
+			const act = e.target.closest?.("[data-bar]")?.dataset.bar;
+			if (!act) return;
+			if (act === "zoom-in" || act === "zoom-out") return this.zoom(act === "zoom-in" ? "in" : "out");
+			// the page on screen (data-thumb counts from 0), then the one after or before it
+			const at = Number(this.thumbs?.querySelector('[aria-current="page"]')?.dataset.thumb) || 0;
+			this.go_to_page(Math.max(0, Math.min(this.pages.length - 1, at + (act === "next-page" ? 1 : -1))));
+		});
 		this.stage.addEventListener("scroll", () => this.update_position(), { passive: true });
 		// the wheel scrolls the panel; a focused number field would take it as a step up or
 		// down and change its value under the pointer: it lets the field go first
@@ -353,6 +369,9 @@ export class PagesView {
 				this.unsaved = false;
 			}
 		}
+		// the side layout opens as Frappe's print page does: the sheets at their real size (the
+		// owner, 2026-11-10: a fitted sheet did not look like Frappe's); «Fit» stays one press away
+		if (this.side_layout && this.settings.zoom === "fit") this.settings.zoom = 1;
 		this.settings_report = name;
 		this.options_report = name;
 		// Unknown choices of a saved setting fall back; the company's letter head is the
@@ -437,7 +456,8 @@ export class PagesView {
 	set_format_css(html) {
 		if (this.fmt_css_html === html) return;
 		this.fmt_css_html = html;
-		this.fmt_css.innerHTML = html;
+		// held to the sheets: a format's rules never reach Desk's own page
+		this.fmt_css.innerHTML = scope_format_css(html);
 	}
 
 	note(text, warn = false) {

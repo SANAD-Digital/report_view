@@ -2,6 +2,7 @@
 Report View, behind the print permission on the document."""
 
 import frappe
+from frappe.tests import UnitTestCase
 
 from report_view.api import document as api
 from report_view.core.errors import RVInvalidInput
@@ -112,3 +113,25 @@ class TestDocumentPrint(RVTestCase):
 			out = api.render_doc_letterhead("Journal Entry", self.je, lh.name)
 		self.assertEqual(out["header"], "<div>&lt;img src=x onerror=alert(1)&gt;</div>")
 		self.assertEqual(out["footer"], "&lt;img src=x onerror=alert(1)&gt;")
+
+
+class TestDocumentFragment(UnitTestCase):
+	"""A format of Frappe's new print format builder comes back as a whole document: the pages
+	take its body, and its styles apart."""
+
+	def test_a_whole_document_gives_its_body_and_its_styles(self):
+		from report_view.core.printing import document_fragment
+
+		whole = (
+			'<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>X</title>'
+			'<link rel="stylesheet" href="/assets/frappe/dist/css/print_format.bundle.css">'
+			"<style>body { display: flex; } .a { color: red; }</style></head>"
+			'<body><div class="print-format-doc"><p>Body</p></div><script>alert(1)</script></body></html>'
+		)
+		html, css = document_fragment(whole, ".own { margin: 0 }")
+		self.assertEqual(html, '<div class="print-format-doc"><p>Body</p></div>')
+		self.assertIn(".own { margin: 0 }", css)
+		self.assertIn("body { display: flex; }", css)
+		self.assertNotIn("print_format.bundle", html + css)
+		# a fragment comes back as it came
+		self.assertEqual(document_fragment("<div>x</div>", "c"), ("<div>x</div>", "c"))

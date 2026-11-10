@@ -115,7 +115,8 @@ def render_doc_print(
 		)
 	if out.get("html") is None:
 		frappe.throw(_("The print format could not be rendered"), RVInvalidInput)
-	return {"name": print_format or "", "type": "Jinja", "html": out["html"], "css": out.get("style") or ""}
+	html, css = printing.document_fragment(out["html"], out.get("style") or "")
+	return {"name": print_format or "", "type": "Jinja", "html": html, "css": css}
 
 
 @frappe.whitelist(methods=["POST"])

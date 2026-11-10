@@ -134,6 +134,36 @@ class LetterheadBuilderPage {
 	set_view(view) {
 		this.view = view;
 		for (const n of this.root.querySelectorAll(":scope > [data-view]")) n.hidden = n.dataset.view !== view;
+		this.frappe_head();
+	}
+
+	/**
+	 * Desk's page head carries the builder's title, its state and its actions, as Frappe's print
+	 * format builder does: Save the primary action, the real preview an icon beside it; in the
+	 * gallery «Start with this style» and «Blank page».
+	 */
+	frappe_head() {
+		const page = this.page;
+		page.clear_primary_action();
+		page.clear_secondary_action();
+		page.clear_icons?.();
+		page.clear_indicator?.();
+		page.set_title(this.letter_head || __("New letter head"));
+		if (this.view === "gallery") {
+			page.set_primary_action(__("Start with this style"), () => this.start_from(this.gallery.selected));
+			page.set_secondary_action(__("Blank page"), () => this.start_from(null));
+		} else if (this.view === "editor") {
+			if (this.can_write !== false) page.set_primary_action(__("Save", null, "Report View"), () => this.save(), "save");
+			page.add_action_icon("eye", () => this.preview(), "", __("Real preview"));
+			this.paint_indicator();
+		}
+	}
+
+	/** The state of the letter head beside the title, as a document's: saved, or not. */
+	paint_indicator() {
+		if (this.view !== "editor") return;
+		const dirty = !this.letter_head || this.store.dirty;
+		this.page.set_indicator(!this.letter_head ? __("Not Saved") : dirty ? __("Not Saved") : __("Saved"), dirty ? "orange" : "green");
 	}
 
 	// ------------------------------------------------------------------ loading
@@ -318,6 +348,7 @@ class LetterheadBuilderPage {
 		this.root.querySelector("[data-act=undo]").disabled = !h.can_undo;
 		this.root.querySelector("[data-act=redo]").disabled = !h.can_redo;
 		this.refs.name.textContent = this.letter_head || __("New letter head");
+		this.paint_indicator();
 		this.refs.status.textContent = !this.letter_head ? __("Not saved yet") : this.store.dirty ? __("Unsaved changes") : __("Saved");
 		this.refs.status.classList.toggle("is-dirty", !this.letter_head || this.store.dirty);
 		const save = this.root.querySelector("[data-act=save]");

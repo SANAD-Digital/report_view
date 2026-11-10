@@ -35,7 +35,9 @@ test("pages: a print format's styles stand once beside the sheets, are printed w
 			printed,
 			// core/pdf.py splits the sheets at the paper's <style> right after them
 			split_mark: html.includes("</div><style>@page{"),
-			copies: html.split(".fmt-mark{letter-spacing:3px}").length - 1,
+			// once, and held to the sheets (views/pages/support.js scope_format_css)
+			copies: (html.match(/\.fmt-mark\s*\{\s*letter-spacing:\s*3px/g) || []).length,
+			scoped: html.includes(":is(.rv-print-sheets, .rv-print-probe) .fmt-mark"),
 			back: v.stage.contains(v.fmt_css) && v.fmt_css.nextElementSibling === v.sheets,
 		};
 	});
@@ -46,6 +48,7 @@ test("pages: a print format's styles stand once beside the sheets, are printed w
 	expect(out.printed).toEqual({ first: true, filled: out.shown.pages });
 	expect(out.split_mark).toBe(true);
 	expect(out.copies).toBe(1);
+	expect(out.scoped).toBe(true);
 	expect(out.back).toBe(true);
 	// back to the standard template: the format's styles leave the page
 	await page.evaluate(async () => {

@@ -111,6 +111,10 @@
 .rv-page-lh.fit-wide{align-items:stretch}
 .rv-page-lh.fit-wide img{width:100%;height:var(--pp-lh-h,26mm);max-height:none;object-fit:fill}
 .rv-page-lh *{max-height:calc(var(--pp-lh-h,26mm) + 4mm)}
+/* a letter head that sizes its image itself (Frappe's own: `width:100% !important` on the img)
+   is drawn whole inside the band, its proportions kept, not cut at the band's foot */
+.rv-page .rv-page-lh:not(.fit-wide) img{max-height:var(--pp-lh-h,26mm) !important;height:auto !important;object-fit:contain !important}
+.rv-page .rv-page-lhf img{max-height:var(--pp-lhf-h,11mm) !important;height:auto !important;object-fit:contain !important}
 .rv-page-lhf{max-height:calc(var(--pp-lhf-h,11mm) + 3mm);margin-block:var(--pp-foot-mb,1.5mm);margin-inline:var(--pp-foot-mi,0);border-top:var(--pp-foot-line,0 solid transparent);padding-top:1.2mm;display:flex;flex-direction:column;align-items:var(--pp-lhf-align,center)}
 .rv-page-lhf img{max-width:100%;max-height:var(--pp-lhf-h,11mm);width:auto;height:auto;object-fit:contain}
 /* a letter head of the builder (ADR-018, .rvlh) is a fixed design: its band is its own height
@@ -399,7 +403,21 @@
 .rv-psec[open] > summary:where(:not(.rv-print-sidecol,.rv-print-sidecol *))::after{transform:translateY(2px) rotate(-135deg)}
 /* the document print page (ADR-017): Frappe's print format flows in the body of the pages;
    its own sheet (width, padding, shadow of the print page) gives way to the page's */
-.rv-docprint{display:flex;min-height:420px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.rv-docprint{display:flex;min-height:420px;overflow:hidden}
+/* as Frappe's print page: the whole width of Desk, the actions in its page head (doc_print.js
+   frappe_head), the setup's name and Reset at the top of the side column */
+.page-container[data-page-route="rv-print"] .page-body.container,.page-container[data-page-route="rv-print"] .page-head .container{max-width:none}
+@media (min-width:768px){
+  .rv-docprint .rv-print-sidecol .rv-print-bar{display:none}
+}
+.rv-docprint .rv-print-side{display:flex;flex-direction:column}
+.rv-docprint .rv-print-side > .bd{flex:1;min-height:0}
+.rv-docprint .rv-print-side-top{flex:0 0 auto;height:auto;display:flex;align-items:center;align-content:flex-start;justify-content:flex-start;flex-wrap:wrap;gap:var(--s2,8px);margin:0;padding:var(--s3,12px) var(--gut,12px) var(--s2,8px);border-bottom:1px solid var(--outline-gray-1,var(--line))}
+.rv-docprint .rv-print-side-top .rv-print-hd-t{flex:1 1 100%;display:flex;align-items:baseline;gap:8px}
+.rv-docprint .rv-print-side-top .rv-print-hd-t strong{font-size:var(--text-sm);font-weight:var(--weight-medium,500);color:var(--ink-gray-5,var(--tx-3))}
+.rv-docprint .rv-print-side > .rv-print-note{display:block;margin:var(--s2,8px) var(--gut,12px) 0;font-size:var(--text-xs);color:var(--tx-3)}
+.rv-docprint .rv-print-side > .rv-print-note:empty{display:none}
+.rv-docprint .rv-print-side > .rv-print-note.warn{color:var(--warn,var(--orange-600))}
 .rv-docprint .rv-pages{flex:1}
 .rv-page-flow .print-format-gutter{padding:0!important;margin:0!important;background:none!important}
 .rv-page-flow .print-format{width:auto!important;max-width:none!important;min-height:0!important;padding:0!important;margin:0!important;box-shadow:none!important;border:0!important;background:transparent!important}

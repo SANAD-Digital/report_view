@@ -124,3 +124,88 @@ export function sample_signature(nodes, root) {
 	const attrs = (el) => [...el.attributes].map((a) => `${a.name}=${a.value}`).join(" ");
 	return `${attrs(document.documentElement)}|${attrs(document.body)}|${root.className}|${[...tokens].sort().join(" ")}`;
 }
+
+// where the rules of a print format's <style> hold: the sheets, and the probe that measures them
+export const FORMAT_SCOPE = ":is(.rv-print-sheets, .rv-print-probe)";
+
+/**
+ * A selector of a print format held inside the sheets: `html`, `:root` and `body` stand for
+ * the sheets themselves, every other selector is looked for inside them.
+ */
+export function scope_selector(selector, scope = FORMAT_SCOPE) {
+	const s = selector.trim();
+	if (!s) return s;
+	const own = s.match(/^(?:html|:root)?\s*(?:body)?(?=$|[\s.#[:>+~])/i);
+	if (own && own[0].trim()) {
+		const rest = s.slice(own[0].length);
+		return `${scope}${rest}`;
+	}
+	return `${scope} ${s}`;
+}
+
+// what a format's rule on `html` or `body` keeps: its lettering, which the sheets pass down;
+// its sizes, margins, paddings, shadows and display describe a page of its own (the new print
+// format builder sizes `body` to the paper and lays it out as a column), not ours
+const PAGE_ROOT = /^\s*(?:html|:root|body|html\s+body|:root\s+body)\s*$/i;
+const LETTERING = new Set(["font", "font-family", "font-size", "font-weight", "font-style", "line-height", "color", "letter-spacing", "word-spacing", "direction", "-webkit-print-color-adjust", "print-color-adjust"]);
+
+function lettering(style) {
+	let out = "";
+	for (let i = 0; i < style.length; i++) {
+		const name = style[i];
+		if (LETTERING.has(name)) out += `${name}:${style.getPropertyValue(name)}${style.getPropertyPriority(name) ? " !important" : ""};`;
+	}
+	return out;
+}
+
+function scope_rules(rules, scope) {
+	let out = "";
+	for (const rule of rules) {
+		if (rule.selectorText !== undefined && rule.style) {
+			// a style rule: each of its selectors held to the scope (nested rules as written);
+			// the page's own root (html, body) keeps only its lettering
+			const parts = rule.selectorText.split(",");
+			const roots = parts.filter((x) => PAGE_ROOT.test(x));
+			const rest = parts.filter((x) => !PAGE_ROOT.test(x));
+			if (roots.length) {
+				const kept = lettering(rule.style);
+				if (kept) out += `${scope}{${kept}}\n`;
+			}
+			if (!rest.length) continue;
+			const sel = rest.map((x) => scope_selector(x, scope)).join(", ");
+			out += `${sel}{${rule.style.cssText}${rule.cssRules?.length ? scope_rules(rule.cssRules, "&") : ""}}\n`;
+		} else if (rule.cssRules && rule.conditionText !== undefined) {
+			// @media, @supports, @container: their rules held the same way
+			const kind = rule.constructor?.name === "CSSSupportsRule" ? "supports" : rule.constructor?.name === "CSSContainerRule" ? "container" : "media";
+			out += `@${kind} ${rule.conditionText}{${scope_rules(rule.cssRules, scope)}}\n`;
+		} else if (rule.cssRules && rule.name !== undefined && rule.constructor?.name === "CSSLayerBlockRule") {
+			out += `@layer ${rule.name}{${scope_rules(rule.cssRules, scope)}}\n`;
+		} else {
+			// @font-face, @page, @keyframes, @import, @layer statements: as written
+			out += `${rule.cssText}\n`;
+		}
+	}
+	return out;
+}
+
+/**
+ * The <style> blocks of a print format held to the sheets (the owner's print page, 2026-11-10:
+ * «Sales Invoice Classic» sets `body { display: flex; flex-direction: column }`, which turned
+ * Desk itself upside down). Read by the browser's own CSS parser; a block it cannot read is
+ * dropped rather than let loose on the page.
+ */
+export function scope_format_css(html, scope = FORMAT_SCOPE) {
+	if (!html || typeof CSSStyleSheet !== "function") return html || "";
+	const box = document.createElement("div");
+	box.innerHTML = html;
+	for (const style of box.querySelectorAll("style")) {
+		try {
+			const sheet = new CSSStyleSheet();
+			sheet.replaceSync(style.textContent || "");
+			style.textContent = scope_rules(sheet.cssRules, scope);
+		} catch {
+			style.remove();
+		}
+	}
+	return box.innerHTML;
+}

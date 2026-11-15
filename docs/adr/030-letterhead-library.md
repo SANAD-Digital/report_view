@@ -42,7 +42,7 @@
   - القراءة بـ `frappe.get_list(parent_doctype="Company")`.
   - الكتابة صف واحد يُحدَّث أو يُضاف (`row.db_update` أو `db_insert`)، بلا تشغيل `Company.on_update`، مع سجل التغيير.
   - القالب يقرؤها في `_rvp`.
-- حقول الشركة القديمة (`rv_company_name_ar` … `rv_iban`، و`rv_letter_head_column`) يحذفها صاحب الموقع بيده مرة واحدة، لأنه لا patches.
+- حقول الشركة القديمة (`rv_company_name_ar` … `rv_iban`، و`rv_letter_head_column`) يحذفها patch في `pre_model_sync` (`patches/v1/remove_company_paper_fields.py`)، بطلب صاحب المشروع. يعمل قبل مزامنة الأنواع، لأن تعديل تعريف الشركة نفسه يفشل بوجودها. ويحذف عموداً لها فقط حيث وُجد وكان فارغاً.
 
 ## مصادر البحث
 - البنك المركزي السعودي، بيانات المراسلات: https://rulebook.sama.gov.sa/en/node/5536 ، والرقم الموحد: https://rulebook.sama.gov.sa/en/node/10428

@@ -154,7 +154,9 @@
 .rv-tc-search{flex:0 1 220px;min-width:120px}
 .rv-tc-search .rv-search{width:100%;background:var(--surface)}
 .rv-tc-sp{flex:1 1 0;min-width:0}
-.rv-layout-c.rv-mode-pages .rv-tc [data-action="print"]{display:none}
+.rv-layout-c.rv-mode-pages .rv-tc :is([data-action="print"],[data-action="pdf"]){display:none}
+/* the Pages have their own Print and PDF in their column: the head's are not repeated */
+.rv-layout-a.rv-mode-pages .rv-ha-acts :is([data-action="print"],[data-action="pdf"]){display:none}
 /* the full-width table */
 .rv-layout-c .rv-gridwrap{border:0;border-radius:0}
 /* the bottom bar: the saved views as sheet tabs, the rows and the selection */
@@ -211,7 +213,9 @@
   /* C: the table tools fold into ⋯ */
   .rv-tc{flex-wrap:wrap;padding:var(--s1) var(--s2)}
   .rv-tc-modes{flex:1 1 100%;overflow-x:auto;scrollbar-width:none}
-  .rv-tc-tools,.rv-tc [data-sep],.rv-tc [data-action="export-menu"],.rv-tc [data-action="print"]{display:none !important}
+  .rv-tc-tools,.rv-tc [data-sep],.rv-tc [data-action="export-menu"],.rv-tc [data-action="print"],.rv-tc [data-action="pdf"]{display:none !important}
+  /* A: Print and PDF fold into ⋯ (head_menus.js open_more_menu) */
+  .rv-ha-acts :is([data-action="print"],[data-action="pdf"]){display:none !important}
   .rv-tc-search{flex:1 1 auto;min-width:0}
   .rv-tc-sp{display:none}
   .rv-tc [data-action="refresh"] > span{display:none}
@@ -408,3 +412,5 @@
 .rv-stmt-levels.rv-tree-level .rv-tl-step button{height:18px;padding:0 4px;min-width:18px}
 .rv-stmt-levels.rv-tree-level input{height:18px;width:2.6em;font-size:11px}
 .rv-stmt-levels.rv-tree-level label{font-size:11px}
+/* the PDF button carries its letters (icons.pdf): a little wider than an icon */
+:is(.rv-layout-a,.rv-layout-c) .btn.btn-sm.icon-btn[data-action="pdf"],.rv-tb.icon[data-action="pdf"]{width:auto;padding:0 6px}

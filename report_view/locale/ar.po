@@ -4931,3 +4931,9 @@ msgstr "مستوى أقل"
 
 msgid "One level more"
 msgstr "مستوى أعمق"
+
+msgid "A print is being prepared"
+msgstr "جارٍ تجهيز طباعة"
+
+msgid "Making the PDF… it downloads when it is ready."
+msgstr "جارٍ إعداد ملف PDF… يُنزَّل حين يجهز."

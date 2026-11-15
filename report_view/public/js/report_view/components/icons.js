@@ -28,7 +28,9 @@ export const icons = {
 		svg(16, '<rect x="3.5" y="3.5" width="17" height="17" rx="3"></rect><path d="M8 12h8"></path>', 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"'),
 	close: () => svg(11, '<path d="M18 6 6 18M6 6l12 12"></path>', 'fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"'),
 	group: () => svg(15, '<path d="M4 6h16M8 12h12M12 18h8"></path>', 'fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"'),
-	pdf: () => svg(16, '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path>'),
+	// PDF in letters, in a small frame: read as a file type at the size of an icon (the owner, 2026-11-15)
+	pdf: () =>
+		'<svg width="26" height="16" viewBox="0 0 26 16" aria-hidden="true" class="rv-ic-pdf"><rect x="0.9" y="0.9" width="24.2" height="14.2" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"></rect><text x="13" y="11.6" text-anchor="middle" direction="ltr" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="9" font-weight="800" letter-spacing="0.3" fill="currentColor" stroke="none">PDF</text></svg>',
 	print: () => svg(16, '<path d="M6 9V3h12v6"></path><rect x="3" y="9" width="18" height="8" rx="2"></rect><path d="M7 14h10v7H7z"></path>'),
 	calendar: (size = 16) => svg(size, '<rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path>'),
 	fiscal: () => svg(14, '<path d="M4 20V10M9 20V6M14 20v-8M19 20V4"></path>', 'fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"'),

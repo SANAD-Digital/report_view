@@ -26,6 +26,9 @@ export class HeaderA {
 		this.page = page;
 		const refresh = esc(__("Refresh"));
 		const more = esc(__("More"));
+		// Print and PDF at once from every view (index.js print_now; the owner, 2026-11-15)
+		const print = esc(__("Print", null, "Report View"));
+		const pdf = esc(__("PDF"));
 		const el = document.createElement("header");
 		el.className = "rv-ha";
 		el.innerHTML = `
@@ -40,6 +43,8 @@ export class HeaderA {
 				<div class="rv-ha-acts">
 					<div class="rv-views-slot"></div>
 					<button type="button" class="btn btn-default btn-sm icon-btn" data-action="refresh" title="${refresh}" aria-label="${refresh}">${icons.refresh()}</button>
+					<button type="button" class="btn btn-default btn-sm icon-btn" data-action="print" title="${print}" aria-label="${print}" hidden>${icons.print()}</button>
+					<button type="button" class="btn btn-default btn-sm icon-btn" data-action="pdf" title="${pdf}" aria-label="${pdf}" hidden>${icons.pdf()}</button>
 					<button type="button" class="btn btn-default btn-sm" data-action="export-menu" aria-haspopup="menu" hidden><span>${esc(__("Export"))}</span>${icons.chevron_down(12)}</button>
 					<div class="rv-xjob" role="status" aria-live="polite" hidden><span class="rv-xspin" aria-hidden="true"></span><span class="txt"></span><button type="button" class="rv-btn icon ghost" data-action="export-stop" aria-label="${esc(__("Stop waiting"))}" title="${esc(__("Stop waiting"))}">${icons.close()}</button></div>
 					<button type="button" class="btn btn-default btn-sm icon-btn" data-action="more" aria-haspopup="menu" aria-label="${more}" title="${more}">${icons.more()}</button>
@@ -52,8 +57,11 @@ export class HeaderA {
 		this.tabs = [...el.querySelectorAll(".rv-modes [data-mode]")];
 		for (const t of this.tabs) t.addEventListener("click", () => on_mode(t.dataset.mode));
 		this.$('[data-action="refresh"]').addEventListener("click", () => on_refresh());
+		this.$('[data-action="print"]').addEventListener("click", () => page.print_now("print"));
+		this.$('[data-action="pdf"]').addEventListener("click", () => page.print_now("pdf"));
 		this.$('[data-action="export-menu"]').addEventListener("click", (e) => open_export_menu(page, e.currentTarget));
-		this.$('[data-action="more"]').addEventListener("click", (e) => open_more_menu(page, e.currentTarget, { print: false }));
+		// on a phone Print and PDF fold into ⋯ (rv_layouts.css)
+		this.$('[data-action="more"]').addEventListener("click", (e) => open_more_menu(page, e.currentTarget, { print: window.matchMedia("(max-width: 900px)").matches }));
 		this.$('[data-action="export-stop"]').addEventListener("click", () => this.on_export_stop && this.on_export_stop());
 		this.chips = new FilterChips({ root: page.root, parent: this.$(".rv-ha-r2") });
 		this.set_mode("grid");
@@ -89,6 +97,8 @@ export class HeaderA {
 		const excel = Boolean(can_export) && features?.excel !== false;
 		const pages = Boolean(can_print) && features?.pages !== false;
 		this.export_button.hidden = !excel && !pages;
+		this.$('[data-action="print"]').hidden = !pages;
+		this.$('[data-action="pdf"]').hidden = !pages;
 		this.set_modes(this.page.modes());
 	}
 
@@ -118,5 +128,4 @@ export class HeaderA {
 		this.page.shell?.paint_density(density);
 	}
 
-	set_theme() {}
 }

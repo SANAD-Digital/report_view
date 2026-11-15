@@ -9,9 +9,9 @@ import { esc } from "../util.js";
 
 export class Header {
 	/**
-	 * @param {object} opts {parent, dir, on_refresh(), on_density(d), on_theme(), on_export()}
+	 * @param {object} opts {parent, dir, on_refresh(), on_density(d), on_export(), on_print()}
 	 */
-	constructor({ parent, dir, on_refresh, on_density, on_theme, on_export, on_print }) {
+	constructor({ parent, dir, on_refresh, on_density, on_export, on_print, on_pdf }) {
 		const refresh = esc(__("Refresh"));
 		const el = document.createElement("div");
 		el.className = "rv rv-headbar";
@@ -24,10 +24,10 @@ export class Header {
 					<button type="button" data-density="comfortable">${esc(__("Comfortable"))}</button>
 					<button type="button" data-density="compact">${esc(__("Compact"))}</button>
 				</div>
-				<button type="button" class="rv-btn icon ghost" data-action="theme"></button>
 				<button type="button" class="rv-btn" data-action="export" hidden>${icons.sheet()}<span>${esc(__("Excel", null, "Report View"))}</span></button>
 				<div class="rv-xjob" role="status" aria-live="polite" hidden><span class="rv-xspin" aria-hidden="true"></span><span class="txt"></span><button type="button" class="rv-btn icon ghost" data-action="export-stop" aria-label="${esc(__("Stop waiting"))}" title="${esc(__("Stop waiting"))}">${icons.close()}</button></div>
 				<button type="button" class="rv-btn" data-action="print" hidden>${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
+				<button type="button" class="rv-btn icon ghost" data-action="pdf" title="${esc(__("PDF"))}" aria-label="${esc(__("PDF"))}" hidden>${icons.pdf()}</button>
 			</div>`;
 		parent.prepend(el);
 		this.el = el;
@@ -36,9 +36,9 @@ export class Header {
 			b.addEventListener("click", () => on_density(b.dataset.density));
 		}
 		this.$('[data-action="refresh"]').addEventListener("click", () => on_refresh());
-		this.$('[data-action="theme"]').addEventListener("click", () => on_theme());
 		this.$('[data-action="export"]').addEventListener("click", () => on_export());
 		this.$('[data-action="print"]').addEventListener("click", () => on_print && on_print());
+		this.$('[data-action="pdf"]').addEventListener("click", () => on_pdf && on_pdf());
 		this.$('[data-action="export-stop"]').addEventListener("click", () => this.on_export_stop && this.on_export_stop());
 	}
 
@@ -68,6 +68,7 @@ export class Header {
 	set_report({ can_export, can_print = false, features = null }) {
 		this.export_button.hidden = !can_export || features?.excel === false;
 		this.$('[data-action="print"]').hidden = !can_print || features?.pages === false;
+		this.$('[data-action="pdf"]').hidden = this.$('[data-action="print"]').hidden;
 		this.$(".rv-seg").hidden = features?.density === false;
 	}
 
@@ -105,14 +106,5 @@ export class Header {
 			b.classList.toggle("on", on);
 			b.setAttribute("aria-pressed", on ? "true" : "false");
 		}
-	}
-
-	/** The theme button shows Desk's theme (the page has none of its own, ADR-022). */
-	set_theme(dark) {
-		const b = this.$('[data-action="theme"]');
-		const label = dark ? __("Switch to light mode") : __("Switch to dark mode");
-		b.innerHTML = dark ? icons.sun() : icons.moon();
-		b.setAttribute("aria-label", label);
-		b.title = label;
 	}
 }

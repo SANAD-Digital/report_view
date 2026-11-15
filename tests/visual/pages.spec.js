@@ -218,10 +218,10 @@ test("pages: print fills every page and leaves the sheets alone in the document 
 });
 
 
-test("pages: only the pages near the viewport carry content; far ones give it back; the Print action of the head opens the pages", async ({ page }) => {
+test("pages: only the pages near the viewport carry content; far ones give it back", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, "report=gl&lang=ar&rows=20000");
-	await page.click('.rv-headbar [data-action="print"]');
+	await page.click('.rv-views [data-mode="pages"]');
 	await page.waitForFunction(() => window.rv_page.state.mode === "pages" && window.rv_page.pages.pages.length > 0);
 	await settle(page);
 	const st = await pages_state(page);

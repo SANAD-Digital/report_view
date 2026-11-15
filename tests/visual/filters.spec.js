@@ -489,14 +489,17 @@ for (const desk of ["light", "dark"]) {
 	});
 }
 
-test("the theme button switches Desk's theme (data-theme on <html>), not a class of the page", async ({ page }) => {
+test("the page has no theme switch of its own: it follows Desk's theme (data-theme on <html>)", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, "report=tb&lang=en&desk=light");
-	const theme = () => page.evaluate(() => document.documentElement.getAttribute("data-theme"));
-	await page.locator('.rv-headbar [data-action="theme"]').click();
-	expect(await theme()).toBe("dark");
+	await settle(page);
+	// no button in the head, no item in a menu (the owner, 2026-11-15): the system's setting rules
+	expect(await page.locator('[data-action="theme"]').count()).toBe(0);
+	const bg = () => page.evaluate(() => getComputedStyle(document.querySelector(".rv-gridwrap") || document.querySelector(".rv")).backgroundColor);
+	const light = await bg();
+	await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+	await page.waitForTimeout(100);
+	expect(await bg()).not.toBe(light);
 	expect(await page.locator(".rv.dark").count()).toBe(0);
-	await page.locator('.rv-headbar [data-action="theme"]').click();
-	expect(await theme()).toBe("light");
 	expect(problems, "console errors/warnings").toEqual([]);
 });

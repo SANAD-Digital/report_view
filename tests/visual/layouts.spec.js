@@ -60,7 +60,8 @@ test("layout A: a head of two rows inside the page, the table in a card with its
 	expect(st.title).toBe("General Ledger");
 	expect(st.crumb).toBe("Accounts · Reports");
 	expect(st.modes).toEqual([["statement", "false"], ["grid", "true"], ["pivot", "false"], ["charts", "false"], ["pages", "false"]]);
-	expect(st.acts).toEqual(["layout", "views", "refresh", "export-menu", "more"]);
+	// Print and PDF at once from every view (index.js print_now)
+	expect(st.acts).toEqual(["layout", "views", "refresh", "print", "pdf", "export-menu", "more"]);
 	expect(st.chips.slice(0, 2)).toEqual(["company", "__period"]);
 	expect(st.chips.at(-1)).toBe("add");
 	expect(st.tools).toEqual(["rv-search", "group-menu", "columns", "filter-row", "rv-ta-sp", "rv-ta-count", "rv-seg"]);
@@ -201,7 +202,7 @@ test("layout C: the filters as one sentence whose values open their editors; one
 	expect(st.title).toBe("Trial Balance");
 	expect(st.sentence).toMatch(/^for .+ from .+ to .+\+ condition$/);
 	expect(st.values).toEqual(["company", "__period", "__period", "__more"]);
-	expect(st.bar).toEqual(["rv-tc-modes", "rv-tsep", "rv-tc-tools", "rv-tsep", "rv-tc-search", "rv-tc-sp", "refresh", "export-menu", "print", "layout", "more"]);
+	expect(st.bar).toEqual(["rv-tc-modes", "rv-tsep", "rv-tc-tools", "rv-tsep", "rv-tc-search", "rv-tc-sp", "refresh", "export-menu", "print", "pdf", "layout", "more"]);
 	expect(st.modes.slice(0, 2)).toEqual([["statement", "false"], ["grid", "true"]]);
 	// a report tree: its level (components/tree_level.js) among the table's tools
 	expect(st.tools).toEqual(["group-menu", "subtotals", "columns", "filter-row", "tree-level", "density-menu"]);

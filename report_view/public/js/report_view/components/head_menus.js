@@ -39,13 +39,19 @@ export function open_export_menu(page, anchor) {
 	open_menu(page, anchor, items, __("Export"));
 }
 
-/** ⋯: what the head has no room for (the theme, the tool panels, Report View Settings, the standard report). */
+/** ⋯: what the head has no room for (the tool panels, Report View Settings). The theme is Desk's
+ * own, set where Desk sets it; Frappe's report page is in «Design» (the owner, 2026-11-15). */
 export function open_more_menu(page, anchor, { print = false } = {}) {
 	const f = page.features;
 	const mode = page.state?.mode || "grid";
-	const dark = page.is_dark();
 	const items = [];
-	if (print && page.modes().includes("pages")) items.push({ key: "print", label: __("Print", null, "Report View"), icon: icons.print(), act: () => page.print() });
+	// a phone has no room for the head's Print and PDF: they are here, at once from the view
+	if (print && page.modes().includes("pages")) {
+		items.push(
+			{ key: "print", label: __("Print", null, "Report View"), icon: icons.print(), act: () => page.print_now("print") },
+			{ key: "pdf", label: __("PDF"), icon: icons.pdf(), act: () => page.print_now("pdf") }
+		);
+	}
 	if (f.side_panel && f.filters_panel && (mode === "grid" || mode === "pivot")) {
 		items.push({ key: "filters", label: __("Column filters"), icon: icons.funnel(15), act: () => page.controls.side_host().set_side("filters") });
 	}
@@ -58,8 +64,6 @@ export function open_more_menu(page, anchor, { print = false } = {}) {
 		);
 	}
 	if (items.length) items.push({ sep: true });
-	items.push({ key: "theme", label: dark ? __("Switch to light mode") : __("Switch to dark mode"), icon: dark ? icons.sun() : icons.moon(), act: () => page.toggle_theme() });
-	items.push({ key: "standard", label: __("Open standard report"), icon: icons.open(), act: () => page.open_standard_report() });
 	if (is_manager()) items.push({ key: "settings", label: __("Report View settings"), icon: icons.gear(), act: () => page.open_settings() });
 	open_menu(page, anchor, items, __("More"), 248);
 }

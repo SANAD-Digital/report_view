@@ -25,6 +25,9 @@ export class HeaderC {
 		bar.setAttribute("role", "toolbar");
 		bar.setAttribute("aria-label", __("Report tools"));
 		const more = esc(__("More"));
+		// Print and PDF at once from every view (index.js print_now; the owner, 2026-11-15)
+		const print = esc(__("Print", null, "Report View"));
+		const pdf = esc(__("PDF"));
 		bar.innerHTML = `
 			<div class="rv-tc-modes" role="group" aria-label="${esc(__("View"))}">
 				${MODES.map((m) => `<button type="button" class="rv-tb" data-mode="${m.mode}" aria-pressed="false" title="${esc(m.label())}">${m.icon()}<span>${esc(m.label())}</span></button>`).join("")}
@@ -37,7 +40,8 @@ export class HeaderC {
 			<button type="button" class="rv-tb" data-action="refresh">${icons.refresh()}<span>${esc(__("Refresh"))}</span></button>
 			<button type="button" class="rv-tb" data-action="export-menu" aria-haspopup="menu" hidden><span>${esc(__("Export"))}</span>${icons.chevron_down(12)}</button>
 			<div class="rv-xjob" role="status" aria-live="polite" hidden><span class="rv-xspin" aria-hidden="true"></span><span class="txt"></span><button type="button" class="rv-btn icon ghost" data-action="export-stop" aria-label="${esc(__("Stop waiting"))}" title="${esc(__("Stop waiting"))}">${icons.close()}</button></div>
-			<button type="button" class="rv-tb" data-action="print" hidden>${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
+			<button type="button" class="rv-tb icon" data-action="print" aria-label="${print}" title="${print}" hidden>${icons.print()}</button>
+			<button type="button" class="rv-tb icon" data-action="pdf" aria-label="${pdf}" title="${pdf}" hidden>${icons.pdf()}</button>
 			<button type="button" class="rv-tb icon" data-action="more" aria-haspopup="menu" aria-label="${more}" title="${more}">${icons.more()}</button>`;
 		parent.prepend(el, bar);
 		this.el = el;
@@ -47,6 +51,7 @@ export class HeaderC {
 		for (const t of this.tabs) t.addEventListener("click", () => on_mode(t.dataset.mode));
 		this.$('[data-action="refresh"]').addEventListener("click", () => on_refresh());
 		this.$('[data-action="print"]').addEventListener("click", () => on_print());
+		this.$('[data-action="pdf"]').addEventListener("click", () => page.print_now("pdf"));
 		this.$('[data-action="export-menu"]').addEventListener("click", (e) => open_export_menu(page, e.currentTarget));
 		this.$('[data-action="more"]').addEventListener("click", (e) => this.open_more(e.currentTarget));
 		this.$('[data-action="export-stop"]').addEventListener("click", () => this.on_export_stop && this.on_export_stop());
@@ -102,6 +107,7 @@ export class HeaderC {
 		const pages = Boolean(can_print) && features?.pages !== false;
 		this.export_button.hidden = !excel && !pages;
 		this.$('[data-action="print"]').hidden = !pages;
+		this.$('[data-action="pdf"]').hidden = !pages;
 		const modes = this.page.modes();
 		for (const t of this.tabs) t.hidden = !modes.includes(t.dataset.mode);
 		const few = this.tabs.filter((t) => !t.hidden).length < 2;
@@ -124,5 +130,4 @@ export class HeaderC {
 		this.page.shell?.paint_density(density);
 	}
 
-	set_theme() {}
 }

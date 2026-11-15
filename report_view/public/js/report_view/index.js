@@ -46,7 +46,7 @@ import * as dashboard_state from "./state/dashboard_state.js";
 import { ViewControls } from "./view_controls.js";
 import { NoticeBar, describe_notices } from "./components/notices.js";
 import { icons } from "./components/icons.js";
-import { esc, fmt_int, session_lang, settings_saver, set_desk_theme, load_bundle } from "./util.js";
+import { esc, fmt_int, session_lang, settings_saver, load_bundle } from "./util.js";
 import { ERROR_TITLES } from "./host/error_titles.js";
 import { PagesHost } from "./host/pages_host.js";
 import { ExportFlow } from "./host/export_flow.js";
@@ -65,6 +65,10 @@ const RESERVED_PARAMS = new Set(["rv", "view", "prepared_report_name"]);
 const DENSITY_KEY = "report_view:density";
 // A change of the report's filters runs it again after this much quiet (ms), as query-report.
 const RUN_DEBOUNCE_MS = 300;
+
+// a print from another view waits for its sheets to come back from the print root (afterprint)
+const PRINT_NOW_WAIT_MS = 120000;
+const PRINT_NOW_STEP_MS = 250;
 
 // the frame of the table or the pages fits the window: never shorter than this; the room
 // left under it on the standard page, and under it above a trial layout's bottom bar (px)
@@ -131,7 +135,6 @@ export class ReportViewPage {
 		this.pages_saver = settings_saver();
 		this.charts_saver = settings_saver();
 		this.make_dom();
-		this.watch_theme();
 		this.fit_height = this.fit_height.bind(this);
 		// the window's size is listened to while the page is shown (show / hide)
 		this.listen_window(true);
@@ -165,9 +168,9 @@ export class ReportViewPage {
 				dir: root.dir,
 				on_refresh: () => this.run(),
 				on_density: (d) => this.set_density(d),
-				on_theme: () => this.toggle_theme(),
 				on_export: () => this.export_xlsx(),
 				on_print: () => this.print(),
+				on_pdf: () => this.print_now("pdf"),
 			});
 		} else {
 			// the trial layouts' head stands inside the page (ADR-025)
@@ -295,12 +298,6 @@ export class ReportViewPage {
 		if (!name) return;
 		if (await frappe.db.exists("Report View Settings", name)) frappe.set_route("Form", "Report View Settings", name);
 		else frappe.new_doc("Report View Settings", { report: name });
-	}
-
-	/** The report on Frappe's own page (query-report), with the filters of the last run. */
-	open_standard_report() {
-		if (!this.report_name) return;
-		window.location.assign(query_report_url(this.report_name, this.last_filters || {}));
 	}
 
 	/** The views the report offers now (its settings, the print permission). */
@@ -458,12 +455,56 @@ export class ReportViewPage {
 
 	// The Print action of the page head: the pages, where the print button is (ADR-014).
 	print() {
-		if (!this.state || !this.modes().includes("pages")) return;
-		if (this.state.mode !== "pages") {
-			this.set_mode("pages");
-			return;
+		return this.print_now("print");
+	}
+
+	/**
+	 * Prints the report, or makes its PDF, at once from any view (the owner, 2026-11-15): on
+	 * the Pages the pages shown; elsewhere the pages are drawn out of sight with the person's
+	 * print settings (their saved setup), from what the view shows (the Statement's own
+	 * columns too), and the view stays. A failure is said in Frappe's dialog (output.js).
+	 * @param {"print"|"pdf"} kind
+	 */
+	async print_now(kind = "print") {
+		if (!this.state || !this.report || !this.modes().includes("pages")) return;
+		// one print at a time: a second press is told, not dropped silently
+		if (this.printing_now) return frappe.show_alert({ message: __("A print is being prepared"), indicator: "orange" }, 3);
+		const pdf = kind === "pdf";
+		if (this.state.mode === "pages") {
+			const v = this.pages;
+			return v.guard(() => (pdf ? v.pdf() : v.print()));
 		}
-		this.pages.print();
+		this.printing_now = true;
+		const session = this.session;
+		const shown = this.statement_state();
+		let own = null;
+		let view = null;
+		if (pdf) frappe.show_alert({ message: __("Making the PDF… it downloads when it is ready."), indicator: "blue" }, 6);
+		try {
+			// the rows of the view on screen (the table, the Statement); the pivot and the charts
+			// read their own: a view of the rows is opened for the pages
+			let opened = this.opened;
+			if (!opened?.view) {
+				own = await session.open(shown, "grid", session.spec_of(shown));
+				opened = own;
+			}
+			view = await this.load_pages();
+			this.root.classList.add("rv-print-offstage");
+			await view.show({ report: this.report, opened, session, state: shown, config: this.config, fmt: this.formatter });
+			await (pdf ? view.pdf() : view.print());
+			// the sheets come back from the print root on afterprint (or its fallback)
+			for (let waited = 0; view.printing && waited < PRINT_NOW_WAIT_MS; waited += PRINT_NOW_STEP_MS) {
+				await new Promise((r) => setTimeout(r, PRINT_NOW_STEP_MS));
+			}
+		} catch (e) {
+			frappe.msgprint({ title: __("Nothing was printed"), message: esc(error_text(e)), indicator: "red" });
+		} finally {
+			this.root.classList.remove("rv-print-offstage");
+			// the pages drawn for this print go, unless the person opened the Pages meanwhile
+			if (view && this.state?.mode !== "pages") view.destroy();
+			if (own && session === this.session) await session.close_view(own).catch(() => {});
+			this.printing_now = false;
+		}
 	}
 
 	// The user changed the chart (type, dimension, measures): only the chart's view is opened again.
@@ -578,18 +619,14 @@ export class ReportViewPage {
 		if (this.charts) await this.charts.close();
 	}
 
-	/** The window's resize and the Desk theme, listened to only while the page is shown. */
+	/** The window's resize, listened to only while the page is shown. */
 	listen_window(on) {
 		if (Boolean(this.window_listening) === on) return;
 		this.window_listening = on;
 		if (on) {
 			window.addEventListener("resize", this.fit_height);
-			this.theme_observer?.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-			// the theme may have changed while the page was hidden
-			if (this.theme_observer) this.apply_theme();
 		} else {
 			window.removeEventListener("resize", this.fit_height);
-			this.theme_observer?.disconnect();
 		}
 	}
 
@@ -599,25 +636,8 @@ export class ReportViewPage {
 	}
 
 	// Theme: Desk's own (ADR-022). Frappe's variables follow <html data-theme> (the resolved
-	// light/dark value, also in "automatic" mode) and the tokens are made of them, so the page
-	// needs no class of its own; the header button switches Desk's theme for the user, as
-	// Frappe's theme switcher does. (observed while the page is shown: listen_window)
-	watch_theme() {
-		this.apply_theme();
-		this.theme_observer = new MutationObserver(() => this.apply_theme());
-	}
-
-	is_dark() {
-		return document.documentElement.getAttribute("data-theme") === "dark";
-	}
-
-	apply_theme() {
-		this.header.set_theme(this.is_dark());
-	}
-
-	toggle_theme() {
-		set_desk_theme(this.is_dark() ? "light" : "dark");
-	}
+	// light/dark value, also in "automatic" mode) and the tokens are made of them: the page
+	// follows the system's theme by itself and has no switch of its own (the owner, 2026-11-15).
 
 	apply_density() {
 		// the density switch turned off (Report View Settings): comfortable

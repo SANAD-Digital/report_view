@@ -490,3 +490,38 @@ test("pages: a Frappe format stands on Frappe's print styles (print.bundle.css) 
 	expect(out.after).toBe(0);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
+
+
+for (const [where, query, head] of [
+	["the standard page's table", "report=gl&lang=en", ".rv-headbar"],
+	["layout A's Statement", "report=tb&lang=ar&layout=a&mode=statement", ".rv-ha"],
+	["layout C's pivot", "report=gl&lang=en&layout=c&mode=pivot", ".rv-tc"],
+]) {
+	test(`print at once from ${where}: the pages drawn out of sight go to the print, the view stays`, async ({ page }) => {
+		const problems = watch_console(page);
+		await open(page, query);
+		await settle(page);
+		const mode = await page.evaluate(() => window.rv_page.state.mode);
+		// the browser's print dialog: what it would print, counted when it opens
+		await page.evaluate(() => {
+			window.__printed = [];
+			window.print = () => window.__printed.push(document.querySelectorAll("body > .rv-print-root .rv-page").length);
+		});
+		await page.click(`${head} [data-action="print"]`);
+		await page.waitForFunction(() => window.__printed.length > 0, null, { timeout: 30000 });
+		await page.waitForFunction(() => !window.rv_page.printing_now, null, { timeout: 30000 });
+		const st = await page.evaluate(() => ({
+			printed: window.__printed[0],
+			mode: window.rv_page.state.mode,
+			offstage: document.querySelector(".rv").classList.contains("rv-print-offstage"),
+			root_left: document.querySelectorAll("body > .rv-print-root").length,
+			pages_shown: getComputedStyle(document.querySelector(".rv-pages")).display,
+		}));
+		expect(st.printed).toBeGreaterThan(0);
+		expect(st.mode).toBe(mode);
+		expect(st.offstage).toBe(false);
+		expect(st.root_left).toBe(0);
+		expect(st.pages_shown).toBe("none");
+		expect(problems, "console errors/warnings").toEqual([]);
+	});
+}

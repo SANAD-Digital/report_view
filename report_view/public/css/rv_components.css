@@ -550,3 +550,8 @@
 .rv-tree-level input{width:3em;height:calc(var(--ctl-sm) - 4px);box-sizing:border-box;padding:0 4px;text-align:center;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);color:var(--tx);font:inherit;font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield}
 .rv-tree-level input::-webkit-inner-spin-button,.rv-tree-level input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .rv-tree-level input:focus-visible{outline:none;box-shadow:var(--focus)}
+/* the PDF button carries its letters (icons.pdf): a little wider than an icon */
+.rv-btn.icon[data-action="pdf"]{width:auto;padding:0 8px}
+.rv-ic-pdf{flex:none;display:block}
+/* the letters are drawn, never outlined: a button's svg rules give its icons a stroke */
+.rv-ic-pdf text{stroke:none !important;stroke-width:0 !important}

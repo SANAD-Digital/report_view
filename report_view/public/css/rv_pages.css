@@ -613,3 +613,8 @@ button.rv-preset-star:focus-visible{outline:2px solid var(--pri);outline-offset:
 /* a document's Standard format: Frappe's own Print Style picker (desk print_preview.scss),
    one field among the others here, without the rule above it on Frappe's print page */
 .rv-print-side .rv-frappe-styles.print-style-picker{border-top:0;padding-top:0;margin-top:0}
+
+/* a print from another view (index.js print_now): the pages are drawn and measured out of
+   sight, at a desk's size; the view the person is in stays on screen. The sheets go to their
+   print root as on the Pages (output.js prepare_print). */
+.rv.rv-print-offstage .rv-pages{display:flex !important;position:fixed;top:0;inset-inline-start:0;width:1280px;height:900px;visibility:hidden;pointer-events:none;z-index:-1}

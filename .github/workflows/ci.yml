@@ -52,6 +52,7 @@ jobs:
           npx --yes "eslint@${ESLINT_VERSION}" --quiet --ext .js
           --ignore-pattern 'report_view/public/dist/'
           --ignore-pattern 'report_view/public/js/lib/'
+          --ignore-pattern 'report_view/public/vendor/'
           --ignore-pattern 'report_view/templates/includes/'
           --ignore-pattern 'tests/visual/dist/'
           --ignore-pattern 'node_modules/'

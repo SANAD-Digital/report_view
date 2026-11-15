@@ -70,6 +70,22 @@ test("VERSION in the loader equals the pinned @finos/perspective version", () =>
 	assert.equal(installed.version, VERSION);
 });
 
+test("the engine's files the pages load are the pinned package's own, byte for byte", () => {
+	// report_view/public/vendor/perspective (engine/assets.js): served with the app's public
+	// files, never through the node_modules link a server with assets apart lacks
+	const dist = path.join(root, "node_modules/@finos/perspective/dist");
+	const vendor = path.join(root, "report_view/public/vendor/perspective");
+	for (const [file, from] of [
+		["perspective-server.wasm", "wasm/perspective-server.wasm"],
+		["perspective-js.wasm", "wasm/perspective-js.wasm"],
+		["perspective-server.worker.js", "cdn/perspective-server.worker.js"],
+	]) {
+		const ours = fs.readFileSync(path.join(vendor, file));
+		assert.ok(ours.length > 0, file);
+		assert.ok(ours.equals(fs.readFileSync(path.join(dist, from))), `${file} differs from @finos/perspective ${VERSION}: copy it again`);
+	}
+});
+
 test("tables are created with the explicit schema (no inference)", async () => {
 	const report = load("trial_balance_fy2026");
 	await with_session(report, async (session) => {

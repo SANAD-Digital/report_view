@@ -191,11 +191,34 @@ let idle_timer = null;
 let unload_hooked = false;
 let requests = 0;
 
+/**
+ * A file of the engine, refused when the server does not have it. Perspective reads any
+ * answer as WebAssembly: a missing file (a 404, often empty) read as «BufferSource argument
+ * is empty», which told nobody what to do (production, 2026-11-16: the app's node_modules
+ * were not installed). The page shows this sentence instead.
+ */
+export async function engine_file(url) {
+	let r;
+	try {
+		r = await fetch(url);
+	} catch {
+		r = null;
+	}
+	const size = Number(r?.headers?.get?.("Content-Length") ?? -1);
+	if (!r || !r.ok || size === 0) {
+		const file = url.split("?")[0].split("/").pop();
+		throw new Error(
+			__("The table engine's file {0} is missing on the server. Ask the administrator to run «bench setup requirements --node report_view», then «bench build --app report_view».", [file])
+		);
+	}
+	return r;
+}
+
 function start_wasm() {
 	if (wasm_started) return;
 	wasm_started = true;
-	perspective.init_server(fetch(SERVER_WASM));
-	perspective.init_client(fetch(CLIENT_WASM));
+	perspective.init_server(engine_file(SERVER_WASM));
+	perspective.init_client(engine_file(CLIENT_WASM));
 }
 
 /**

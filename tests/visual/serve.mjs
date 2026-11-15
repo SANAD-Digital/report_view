@@ -16,6 +16,7 @@ const root = path.resolve(here, "../..");
 const MAP = [
 	["/assets/report_view/node_modules/", path.join(root, "node_modules")],
 	["/assets/report_view/dist/", path.join(root, "report_view/public/dist")],
+	["/assets/report_view/vendor/", path.join(root, "report_view/public/vendor")],
 	["/assets/assets.json", path.resolve(root, "../../sites/assets/assets.json")],
 	["/assets/frappe/", path.resolve(root, "../../sites/assets/frappe")],
 	["/", here],

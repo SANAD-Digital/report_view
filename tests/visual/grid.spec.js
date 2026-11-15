@@ -197,9 +197,11 @@ test("the bundle written by `bench build` runs the same page (WASM and worker fr
 	page.on("request", (r) => requests.push(new URL(r.url()).pathname + new URL(r.url()).search));
 	await open(page, "report=tb&lang=ar&built=1");
 	expect(requests).toContain(built);
-	expect(requests).toContain("/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-server.wasm?v=3.8.0");
-	expect(requests).toContain("/assets/report_view/node_modules/@finos/perspective/dist/wasm/perspective-js.wasm?v=3.8.0");
-	expect(requests).toContain("/assets/report_view/node_modules/@finos/perspective/dist/cdn/perspective-server.worker.js?v=3.8.0");
+	// the engine's files are the app's own public files (engine/assets.js), never node_modules
+	expect(requests).toContain("/assets/report_view/vendor/perspective/perspective-server.wasm?v=3.8.0");
+	expect(requests).toContain("/assets/report_view/vendor/perspective/perspective-js.wasm?v=3.8.0");
+	expect(requests).toContain("/assets/report_view/vendor/perspective/perspective-server.worker.js?v=3.8.0");
+	expect(requests.some((r) => r.includes("/node_modules/"))).toBe(false);
 	expect(requests.some((r) => r.includes("dist/harness.js"))).toBe(false);
 	const state = await page.evaluate(() => ({
 		totals: window.rv_page.debug_totals(),

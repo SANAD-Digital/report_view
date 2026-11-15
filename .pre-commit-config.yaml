@@ -1,10 +1,12 @@
-# vendored and generated files stay byte for byte: fonts and their licences, JSON
-# fixtures, the generated @font-face sheet, lockfiles
+# vendored and generated files stay byte for byte: fonts and their licences, the table
+# engine's files (copies of @finos/perspective), JSON fixtures, the generated @font-face
+# sheet, lockfiles
 exclude: |
     (?x)^(
         .*node_modules.*|
         \.git/.*|
         report_view/public/fonts/.*|
+        report_view/public/vendor/.*|
         report_view/public/css/rv_fonts\.css|
         .*/fixtures/.*\.json|
         .*package-lock\.json|

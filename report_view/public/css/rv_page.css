@@ -108,6 +108,8 @@
   .rv.rv-headbar .rv-actions{gap:4px}
   .rv.rv-headbar .rv-btn:not(.icon){width:var(--ctl);padding:0}
   .rv.rv-headbar .rv-btn:not(.icon) > span:not(.ico-dr){display:none}
+  /* the PDF badge in a square as the other actions: the head stays inside the phone's width */
+  .rv.rv-headbar .rv-btn.icon[data-action="pdf"]{width:var(--ctl);padding:0;justify-content:center}
   .rv.rv-headbar .rv-seg button{padding:0 7px;font-size:var(--fs-xs)}
   .rv-server{padding:8px;gap:8px}
   .rv-filters,.rv-criteria-main{flex:1 1 100%}

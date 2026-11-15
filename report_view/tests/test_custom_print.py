@@ -599,7 +599,8 @@ class TestOpenIn(RVTestCase):
 				frappe.clear_document_cache("Report View Global Settings", "Report View Global Settings")
 				boot = frappe._dict()
 				settings.boot_session(boot)
-				self.assertEqual(boot.report_view, {"custom_print_open_in": expected})
+				# the boot carries other choices too (ADR-031): this one is read alone
+				self.assertEqual(boot.report_view["custom_print_open_in"], expected)
 		finally:
 			gs.custom_print_open_in = old
 			gs.save()

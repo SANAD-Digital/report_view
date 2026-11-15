@@ -38,6 +38,9 @@ class TestReportViewGlobalSettings(RVTestCase):
 			boot_session(info)
 			return info.report_view
 
+		# whatever the site chose: the test sets each value itself (rolled back after it)
+		frappe.db.set_single_value("Report View Global Settings", "default_report_view", "System page")
+		frappe.db.set_single_value("Report View Global Settings", "default_print_view", "System page")
 		self.assertEqual(
 			{k: boot()[k] for k in ("report_route", "print_route")}, {"report_route": "", "print_route": ""}
 		)

@@ -7,7 +7,7 @@
 		{"fieldname": "item_code", "fieldtype": "MultiSelectList", "options": "Item"},
 		{"fieldname": "item_group", "fieldtype": "Link", "options": "Item Group"},
 		{"fieldname": "batch_no", "fieldtype": "Link", "options": "Batch"},
-		{"fieldname": "brand", "fieldtype": "Link", "options": "Brand"},
+		{"fieldname": "brand", "fieldtype": "MultiSelectList", "options": "Brand"},
 		{"fieldname": "project", "fieldtype": "Link", "options": "Project"},
 		{"fieldname": "include_uom", "fieldtype": "Link", "options": "UOM"}
 	]

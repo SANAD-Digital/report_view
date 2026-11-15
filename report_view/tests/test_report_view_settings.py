@@ -345,3 +345,46 @@ class TestReportViewSettings(RVTestCase):
 		frappe.cache.hdel(MERGED_CACHE_KEY, TB)
 		with self.as_user("accountant"), self.assertRaises(RVInvalidInput):
 			api.render_row_details(TB, {"account": "x"})
+
+
+class TestShippedFilterDefs(RVTestCase):
+	"""The filter definitions shipped for a report (ADR-021) say what its own script says: a
+	report's filter retyped by its app (ERPNext made «Territory» of Accounts Receivable a
+	multi-select in 2026-10) must not be checked as the old type. An empty multi-select
+	checked as a Link was refused («Territory: []») and the report did not run."""
+
+	def test_each_filter_def_has_the_type_of_the_reports_own_filter(self):
+		import os
+		import re
+
+		folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), "defaults")
+		checked = 0
+		for file in sorted(os.listdir(folder)):
+			if not file.endswith(".json"):
+				continue
+			with open(os.path.join(folder, file), encoding="utf-8") as f:
+				data = json.load(f)
+			name = data.get("report")
+			if not data.get("filter_defs") or not name or not frappe.db.exists("Report", name):
+				continue
+			module = frappe.db.get_value("Report", name, "module")
+			script = os.path.join(
+				frappe.get_module_path(module), "report", frappe.scrub(name), f"{frappe.scrub(name)}.js"
+			)
+			if not os.path.exists(script):
+				continue
+			with open(script, encoding="utf-8") as f:
+				source = f.read()
+			for d in data["filter_defs"]:
+				# the filter's own object in the script: its fieldname, then its fieldtype
+				m = re.search(
+					r'fieldname:\s*["\']%s["\'](?:(?!fieldname:).){0,400}?fieldtype:\s*["\'](\w[\w ]*)["\']'
+					% re.escape(d["fieldname"]),
+					source,
+					re.S,
+				)
+				if not m:
+					continue
+				checked += 1
+				self.assertEqual(d["fieldtype"], m.group(1), f"{file}: {d['fieldname']}")
+		self.assertGreater(checked, 0)

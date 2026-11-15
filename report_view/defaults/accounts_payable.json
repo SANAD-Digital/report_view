@@ -9,6 +9,6 @@
 		{"fieldname": "party_account", "fieldtype": "Link", "options": "Account"},
 		{"fieldname": "payment_terms_template", "fieldtype": "Link", "options": "Payment Terms Template"},
 		{"fieldname": "party", "fieldtype": "MultiSelectList", "options": "party_type"},
-		{"fieldname": "supplier_group", "fieldtype": "Link", "options": "Supplier Group"}
+		{"fieldname": "supplier_group", "fieldtype": "MultiSelectList", "options": "Supplier Group"}
 	]
 }

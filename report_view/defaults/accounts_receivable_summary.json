@@ -9,7 +9,7 @@
 		{"fieldname": "party", "fieldtype": "MultiSelectList", "options": "party_type"},
 		{"fieldname": "customer_group", "fieldtype": "Link", "options": "Customer Group"},
 		{"fieldname": "payment_terms_template", "fieldtype": "Link", "options": "Payment Terms Template"},
-		{"fieldname": "territory", "fieldtype": "Link", "options": "Territory"},
+		{"fieldname": "territory", "fieldtype": "MultiSelectList", "options": "Territory"},
 		{"fieldname": "sales_partner", "fieldtype": "Link", "options": "Sales Partner"},
 		{"fieldname": "sales_person", "fieldtype": "Link", "options": "Sales Person"}
 	]

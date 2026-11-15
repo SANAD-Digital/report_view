@@ -17,7 +17,6 @@
 import { GridRows } from "./grid_rows.js";
 import { page_box, fit_columns, SCREEN_FONT } from "../engine/page_layout.js";
 import { icons } from "../components/icons.js";
-import { outside_press } from "../components/popover.js";
 import { esc, fmt_int, frame_resize_observer, session_lang } from "../util.js";
 import { error_text } from "../api.js";
 import { PresetControl } from "./print_presets.js";
@@ -41,15 +40,12 @@ export class PagesView {
 	 *   pages_format(name, lang, type, view_columns, variables), pages_part(kind, name, lang), pages_translations(lang, messages), pages_run_lang(lang),
 	 *   pages_settings_load(), pages_settings_save(settings), pages_context(),
 	 *   pages_preset_target() → {context, target} of the print presets (optional, ADR-020)
-	 * @param {boolean} [o.side] the settings in a side column at the inline start, as Frappe's
-	 *   print view (the trial layouts, ADR-025); else the toolbar above the pages
+	 * @param {boolean} [o.head_in_side] the setup's name, Reset and the note at the top of the
+	 *   side column (a document's print page: Print and PDF are in Desk's page head)
 	 */
-	constructor({ parent, root, rtl, host, side = false, head_in_side = false }) {
+	constructor({ parent, root, rtl, host, head_in_side = false }) {
 		this.root = root;
-		this.side_layout = Boolean(side);
-		// the setup's name, Reset and the note at the top of the side column (a document's
-		// print page: Print and PDF are in Desk's page head)
-		this.head_in_side = this.side_layout && Boolean(head_in_side);
+		this.head_in_side = Boolean(head_in_side);
 		this.rtl = rtl;
 		this.host = host;
 		this.rows = new GridRows();
@@ -82,56 +78,12 @@ export class PagesView {
 		this.presets = new PresetControl(this, { sanitize: sanitize_settings, defaults: DEFAULT_SETTINGS });
 	}
 
-	make_dom() {
-		if (this.side_layout) {
-			this.make_side_dom();
-			return;
-		}
-		const el = this.el;
-		el.innerHTML = `
-			<aside class="rv-print-side" aria-label="${esc(__("Print settings"))}">
-				<div class="rv-print-hd">
-					<div class="rv-print-hd-t"><strong>${esc(__("Print setup"))}</strong><span class="rv-print-count"></span></div>
-					<button type="button" class="rv-btn sm ghost" data-action="reset" title="${esc(__("Back to the default settings"))}">${icons.reset()}<span>${esc(__("Reset", null, "Report View"))}</span></button>
-				</div>
-				<div class="bd"></div>
-				<div class="rv-print-ft">
-					<span class="rv-print-note"></span>
-					<div class="rv-print-acts">
-						<button type="button" class="rv-btn primary rv-print-go" data-action="print" title="${esc(__("To keep a PDF file, choose «Save as PDF» in the print dialog."))}">${icons.print()}<span>${esc(__("Print", null, "Report View"))}</span></button>
-						<button type="button" class="rv-btn rv-print-pdf" data-action="pdf" title="${esc(__("The same pages as a PDF file, made by the server"))}">${esc(__("PDF"))}</button>
-					</div>
-					<small class="rv-print-tip">${esc(__("To keep a PDF file, choose «Save as PDF» in the print dialog."))}</small>
-				</div>
-			</aside>
-			<div class="rv-print-main">
-			<nav class="rv-print-thumbs" aria-label="${esc(__("Pages", null, "Report View"))}"></nav>
-			<div class="rv-print-stage" tabindex="0">
-				<div class="rv-print-tools">
-					<div class="rv-seg rv-zoom" role="group" aria-label="${esc(__("Zoom"))}">
-						<button type="button" data-zoom="out" aria-label="${esc(__("Zoom out"))}" title="${esc(__("Zoom out"))}">−</button>
-						<button type="button" data-zoom="fit">${esc(__("Fit", null, "Report View"))}</button>
-						<button type="button" data-zoom="in" aria-label="${esc(__("Zoom in"))}" title="${esc(__("Zoom in"))}">+</button>
-					</div>
-					<span class="rv-print-zoom-lbl"></span>
-					<span class="sp"></span>
-					<span class="rv-print-pos"></span>
-				</div>
-				<div class="rv-print-busy" role="status" aria-live="polite" hidden><span class="rv-spin" aria-hidden="true"></span><span class="txt"></span><button type="button" class="rv-btn sm ghost" data-action="pdf-cancel" hidden>${esc(__("Cancel"))}</button></div>
-				<div class="rv-print-fmt-css" hidden></div>
-				<div class="rv-print-sheets" dir="${this.rtl ? "rtl" : "ltr"}"></div>
-				<div class="rv-print-probe" aria-hidden="true"></div>
-			</div>
-			</div>`;
-		this.bind_dom();
-	}
-
 	/**
-	 * The trial layouts (ADR-025): a head row as Frappe's page head (the title, the page count,
-	 * the preset and Reset; the note, PDF and Print at its end), then the side column at the
-	 * inline start (a sheet on a phone, opened by «Print settings») beside the stage.
+	 * As Frappe's print view: a head row (the title, the page count, the preset and Reset; the
+	 * note, PDF and Print at its end), then the side column at the inline start (a sheet on a
+	 * phone, opened by «Print settings») beside the stage and its floating bar.
 	 */
-	make_side_dom() {
+	make_dom() {
 		const el = this.el;
 		// a button of Frappe's print preview bar (espresso es-button, Frappe's own icons)
 		const fbtn = (action, label, icon) =>
@@ -211,28 +163,10 @@ export class PagesView {
 		else pdf.remove();
 		el.querySelector('[data-action="reset"]').addEventListener("click", () => this.guard(() => this.reset()));
 		el.addEventListener("keydown", (e) => {
-			if (e.key !== "Escape") return;
-			if (this.side_layout) {
-				if (this.sheet_open()) this.close_sheet();
-			} else if (this.open_secs?.size) this.close_menu();
-		});
-		// a tool's menu closes on a click elsewhere (lists of its own fields excepted) and
-		// follows the window's size: listened to only while a menu is open (menu_listeners)
-		this.outside = outside_press(
-			(t) => this.bd.contains(t),
-			() => {
-				if (this.open_secs?.size && this.el.isConnected) this.close_menu();
-			}
-		);
-		this.on_resize = () => this.place_menu();
-		// the thumbnails: the standard page only; the side layout has the floating bar instead
-		this.thumbs = el.querySelector(".rv-print-thumbs");
-		this.thumbs?.addEventListener("click", (e) => {
-			const b = e.target.closest("[data-thumb]");
-			if (b) this.go_to_page(Number(b.dataset.thumb));
+			if (e.key === "Escape" && this.sheet_open()) this.close_sheet();
 		});
 		for (const b of el.querySelectorAll("[data-zoom]")) b.addEventListener("click", () => this.zoom(b.dataset.zoom));
-		// the floating bar of the side layout (Frappe's preview bar): pages and zoom
+		// the floating bar (Frappe's preview bar): pages and zoom
 		el.querySelector(".rv-print-floatbar")?.addEventListener("click", (e) => {
 			const act = e.target.closest?.("[data-bar]")?.dataset.bar;
 			if (!act) return;
@@ -248,10 +182,9 @@ export class PagesView {
 			const t = e.target;
 			if (t instanceof HTMLInputElement && t.type === "number" && t === document.activeElement) t.blur();
 		}, { passive: true });
-				// an open list of a Link field follows its field while the panel scrolls
+		// an open list of a Link field follows its field while the panel scrolls
 		this.bd.addEventListener("scroll", () => {
 			for (const input of this.bd.querySelectorAll(".rv-linkf input[aria-expanded='true']")) this.place_dropdown(input);
-			this.place_menu();
 		}, { passive: true, capture: true });
 		this.resize_observer = frame_resize_observer(() => this.apply_zoom());
 		this.resize_observer.observe(this.stage);
@@ -378,7 +311,7 @@ export class PagesView {
 		// the side layout opens as Frappe's print page does: the sheets at their real size (the
 		// owner, 2026-11-10: a fitted sheet did not look like Frappe's), smaller only when a wide
 		// sheet does not fit the stage (zoom_value «auto»); «Fit» stays one press away
-		if (this.side_layout && this.settings.zoom === "fit") this.auto_zoom = true;
+		if (this.settings.zoom === "fit") this.auto_zoom = true;
 		this.settings_report = name;
 		this.options_report = name;
 		// Unknown choices of a saved setting fall back; the company's letter head is the
@@ -424,13 +357,8 @@ export class PagesView {
 		this.clear_pages();
 		this.bd.replaceChildren();
 		// nothing of the pages listens while they are not shown (show observes the stage again)
-		if (this.side_layout) {
-			// the side column keeps its folds for the next time
-			this.close_sheet(false);
-		} else {
-			this.open_secs = new Set();
-			this.menu_listeners(false);
-		}
+		// the side column keeps its folds for the next time
+		this.close_sheet(false);
 		this.presets.destroy();
 		this.resize_observer.disconnect();
 	}
@@ -795,15 +723,6 @@ export class PagesView {
 		const num = fmt_int;
 		this.page_at = Math.max(1, at);
 		this.pos_el.textContent = __("Page {0} of {1}", [num(this.page_at), num(this.pages.length)]);
-		const cur = this.thumbs?.querySelector('[aria-current="page"]');
-		const next = this.thumbs?.children[Math.max(1, at) - 1];
-		if (cur !== next) {
-			cur?.removeAttribute("aria-current");
-			if (next) {
-				next.setAttribute("aria-current", "page");
-				if (next.offsetTop < this.thumbs.scrollTop || next.offsetTop + next.offsetHeight > this.thumbs.scrollTop + this.thumbs.clientHeight) next.scrollIntoView({ block: "nearest" });
-			}
-		}
 	}
 }
 

@@ -158,7 +158,20 @@ function lettering(style) {
 	return out;
 }
 
-function scope_rules(rules, scope) {
+// the rules nested in a held rule (CSS nesting): already inside it, written as they are
+function nested_rules(rules) {
+	let out = "";
+	for (const rule of rules) {
+		if (rule.selectorText !== undefined && rule.style) out += `${rule.selectorText}{${rule.style.cssText}${rule.cssRules?.length ? nested_rules(rule.cssRules) : ""}}\n`;
+		else if (rule.cssRules && rule.conditionText !== undefined) {
+			const kind = rule.constructor?.name === "CSSSupportsRule" ? "supports" : rule.constructor?.name === "CSSContainerRule" ? "container" : "media";
+			out += `@${kind} ${rule.conditionText}{${nested_rules(rule.cssRules)}}\n`;
+		} else out += `${rule.cssText}\n`;
+	}
+	return out;
+}
+
+function scope_rules(rules, scope, keep_roots = true) {
 	let out = "";
 	for (const rule of rules) {
 		if (rule.selectorText !== undefined && rule.style) {
@@ -167,19 +180,19 @@ function scope_rules(rules, scope) {
 			const parts = rule.selectorText.split(",");
 			const roots = parts.filter((x) => PAGE_ROOT.test(x));
 			const rest = parts.filter((x) => !PAGE_ROOT.test(x));
-			if (roots.length) {
+			if (roots.length && keep_roots) {
 				const kept = lettering(rule.style);
 				if (kept) out += `${scope}{${kept}}\n`;
 			}
 			if (!rest.length) continue;
 			const sel = rest.map((x) => scope_selector(x, scope)).join(", ");
-			out += `${sel}{${rule.style.cssText}${rule.cssRules?.length ? scope_rules(rule.cssRules, "&") : ""}}\n`;
+			out += `${sel}{${rule.style.cssText}${rule.cssRules?.length ? nested_rules(rule.cssRules) : ""}}\n`;
 		} else if (rule.cssRules && rule.conditionText !== undefined) {
 			// @media, @supports, @container: their rules held the same way
 			const kind = rule.constructor?.name === "CSSSupportsRule" ? "supports" : rule.constructor?.name === "CSSContainerRule" ? "container" : "media";
-			out += `@${kind} ${rule.conditionText}{${scope_rules(rule.cssRules, scope)}}\n`;
+			out += `@${kind} ${rule.conditionText}{${scope_rules(rule.cssRules, scope, keep_roots)}}\n`;
 		} else if (rule.cssRules && rule.name !== undefined && rule.constructor?.name === "CSSLayerBlockRule") {
-			out += `@layer ${rule.name}{${scope_rules(rule.cssRules, scope)}}\n`;
+			out += `@layer ${rule.name}{${scope_rules(rule.cssRules, scope, keep_roots)}}\n`;
 		} else {
 			// @font-face, @page, @keyframes, @import, @layer statements: as written
 			out += `${rule.cssText}\n`;
@@ -192,16 +205,22 @@ function scope_rules(rules, scope) {
  * A stylesheet's text held to the sheets (as scope_format_css holds a format's <style>).
  * @returns {string} the scoped CSS, "" when it cannot be read
  */
-export function scope_css(text, scope = FORMAT_SCOPE) {
+export function scope_css(text, scope = FORMAT_SCOPE, keep_roots = true) {
 	if (!text || typeof CSSStyleSheet !== "function") return "";
 	try {
 		const sheet = new CSSStyleSheet();
 		sheet.replaceSync(text);
-		return scope_rules(sheet.cssRules, scope);
+		return scope_rules(sheet.cssRules, scope, keep_roots);
 	} catch {
 		return "";
 	}
 }
+
+// where Frappe's print styles hold: what Frappe's print view puts in .print-format (the
+// format and its letter head), never the frame of the pages (a page is a <section>, its head
+// a <header>: Bootstrap's normalize would make them blocks). :where() weighs nothing, :is()
+// one class: as much as a format's own rules (FORMAT_SCOPE), which come after and win.
+export const BASE_SCOPE = ":where(.rv-print-sheets, .rv-print-probe) :is(.rv-page-flow, .rv-page-lh, .rv-page-lhf)";
 
 // Frappe's stylesheets under a format, held to the sheets: once each for the session
 const SCOPED_SHEETS = new Map();
@@ -211,7 +230,8 @@ export function scoped_stylesheet(url) {
 	if (!SCOPED_SHEETS.has(url)) {
 		const p = fetch(url, { credentials: "same-origin" })
 			.then((r) => (r.ok ? r.text() : ""))
-			.then((css) => scope_css(css))
+			// its rules on html and body describe Frappe's own page: the format's say the lettering
+			.then((css) => scope_css(css, BASE_SCOPE, false))
 			.catch(() => "");
 		// a failure is not kept: the next format asks again
 		p.then((css) => css || SCOPED_SHEETS.delete(url));

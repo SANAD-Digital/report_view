@@ -89,7 +89,7 @@ const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", nam
 	const lhs = await page.evaluate((g) => eval(g).options.letter_heads.map((x) => x.name), V);
 	for (const lh of lhs) { await set({ letter_head: lh }); s = await state(); check(`letter head «${lh}»`, s.pages[0].lh, ""); }
 	await set({ letter_head: "SND Accounting" });
-	const nofoot = await page.evaluate(() => document.querySelector('[data-sec="foot"] .sm')?.textContent || "");
+	const nofoot = await page.evaluate(() => document.querySelector('.rv-psub[data-sec="foot"]')?.dataset.sm || "");
 	check("a letter head without footer says so", /غير موجود|Not in/.test(nofoot), nofoot);
 	await set({ letter_head: "" }); s = await state();
 	check("no letter head", !s.pages[0].lh);
@@ -168,12 +168,13 @@ const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", nam
 	check("English: the format renders in English", /Journal Entry/.test(head || ""), head);
 	await set({ lang: "" });
 	const z0 = await page.evaluate((g) => eval(g).zoom_value(), V);
-	await page.click('[data-zoom="in"]'); await page.waitForTimeout(200);
+	// the floating bar at the foot of the sheets (Frappe's preview bar)
+	await page.click('.rv-print-floatbar [data-bar="zoom-in"]'); await page.waitForTimeout(200);
 	check("zoom in", (await page.evaluate((g) => eval(g).zoom_value(), V)) > z0);
-	await page.click('[data-zoom="fit"]');
+	await page.click('.rv-print-floatbar [data-zoom="fit"]');
 
 	// 9. the Autocomplete fields: instant lists, a value from the list sets the pages
-	await page.evaluate((g) => { const v = eval(g); v.open_secs = new Set(["tpl"]); v.render_panel(); }, V);
+	await page.evaluate((g) => { const v = eval(g); v.open_secs = new Set(["content"]); v.render_panel(); }, V);
 	let t = Date.now();
 	const lhInput = page.locator('[data-link="letter_head"] input');
 	await lhInput.click(); await lhInput.fill("2");
@@ -184,14 +185,14 @@ const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", nam
 	await lhInput.click(); await lhInput.fill("لا شيء من هذا"); await page.keyboard.press("Tab"); await page.waitForTimeout(400);
 	check("a value not in the list is dropped", (await page.evaluate((g) => eval(g).settings.letter_head, V)) !== "لا شيء من هذا");
 
-	// 10. print and PDF
+	// 10. print and PDF (PDF is an icon of Desk's page head here: doc_print.js frappe_head)
 	const pr = await page.evaluate(async (g) => { const v = eval(g); const restore = await v.prepare_print(); const n = document.querySelectorAll(".rv-print-root .rv-page").length; restore(); return n; }, V);
 	s = await state();
 	check("print: every sheet goes to the print root", pr === s.pages.length, `${pr}`);
 	await open(LONG);
 	await set({ letter_head: "SND Accounting 2", signatures: true });
 	s = await state();
-	const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 120000 }), page.click('[data-action="pdf"]')]);
+	const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 120000 }), page.evaluate((g) => { const v = eval(g); v.guard(() => v.pdf()); }, V)]);
 	const file = await dl.path();
 	const pdf = fs.readFileSync(file);
 	const pages = (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) || []).length;
@@ -199,7 +200,7 @@ const check = (name, ok, info = "") => { results.push([ok ? "PASS" : "FAIL", nam
 	// more than 40 sheets: a background job, its progress, then the file
 	await set({ margins: "custom", page_m: { top: 110, bottom: 110, start: 12, end: 12 } });
 	s = await state();
-	const [dl2] = await Promise.all([page.waitForEvent("download", { timeout: 300000 }), page.click('[data-action="pdf"]')]);
+	const [dl2] = await Promise.all([page.waitForEvent("download", { timeout: 300000 }), page.evaluate((g) => { const v = eval(g); v.guard(() => v.pdf()); }, V)]);
 	const pdf2 = fs.readFileSync(await dl2.path());
 	const pages2 = (pdf2.toString("latin1").match(/\/Type\s*\/Page[^s]/g) || []).length;
 	check("PDF by a background job (over 40 pages): same page count", s.pages.length > 40 && pages2 === s.pages.length, `pdf ${pages2} vs ${s.pages.length}`);

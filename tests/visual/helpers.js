@@ -488,7 +488,8 @@ const pages_settings = (s) => `&pages=${encodeURIComponent(JSON.stringify(s))}`;
 const open_sections = (page) =>
 	page.evaluate(() => {
 		const v = window.rv_page.pages;
-		v.open_secs = new Set(["paper", "tpl", "head", "heading", "foot", "num", "sign", "border", "wm", "content", "cols"]);
+		// every group of the side column open
+		v.open_secs = new Set(["page", "content", "identity", "marks"]);
 		v.render_panel();
 	});
 

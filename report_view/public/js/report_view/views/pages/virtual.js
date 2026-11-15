@@ -30,7 +30,6 @@ export class PagesVirtual {
 		}
 		this.sheets.innerHTML = html;
 		this.count_el.textContent = __("{0} pages", [num(n)]);
-		this.render_thumbs();
 		this.el.classList.toggle("many", n > max);
 		this.observer = new IntersectionObserver((entries) => this.on_intersect(entries), {
 			root: this.stage,

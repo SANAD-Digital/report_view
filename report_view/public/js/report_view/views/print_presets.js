@@ -233,7 +233,6 @@ export class PresetControl {
 
 	open() {
 		if (!this.list) return;
-		this.view.close_menu?.();
 		this.is_open = true;
 		this.btn.setAttribute("aria-expanded", "true");
 		this.render();

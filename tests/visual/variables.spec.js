@@ -44,10 +44,9 @@ test("variables: the tool shows a control per variable; a switch renders the for
 	await open(page, `report=gl&lang=en&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
 	await settle(page);
 	await with_variables(page, DEFS);
-	const tool = page.locator('details[data-sec="vars"] > summary');
-	await expect(tool).toBeVisible();
-	await tool.click();
-	const menu = page.locator(".rv-print-pop");
+	// the variables in the content group of the side column (open)
+	await expect(page.locator('.rv-psub[data-sec="vars"]')).toBeVisible();
+	const menu = page.locator(".rv-print-side");
 	await expect(menu.locator("[data-var-sw=show_details]")).toHaveAttribute("aria-checked", "true");
 	await expect(menu.locator("select[data-var=layout]")).toHaveValue("Short");
 	await expect(menu.locator("input[data-var-num=copies]")).toHaveValue("2");
@@ -58,8 +57,8 @@ test("variables: the tool shows a control per variable; a switch renders the for
 	await expect(menu.locator("[data-var-sw=show_details]")).toHaveAttribute("aria-checked", "false");
 	await expect(page.locator(".rv-print-sheets .var-out").first()).toContainText('"show_details":0');
 	await expect(page.locator(".rv-print-sheets .var-detail")).toHaveCount(0);
-	// the menu stays open while the format renders again
-	await expect(menu).toBeVisible();
+	// the variables stay on screen while the format renders again
+	await expect(menu.locator("select[data-var=layout]")).toBeVisible();
 	await menu.locator("select[data-var=layout]").selectOption("Long");
 	await expect(page.locator(".rv-print-sheets .var-out").first()).toContainText('"layout":"Long"');
 	const out = await page.evaluate(() => {
@@ -78,7 +77,7 @@ test("variables: the tool shows a control per variable; a switch renders the for
 		v.update({ template: "Plain" });
 		await v.ready;
 	});
-	await expect(page.locator('details[data-sec="vars"]')).toHaveCount(0);
+	await expect(page.locator('[data-sec="vars"]')).toHaveCount(0);
 	expect(await page.evaluate(() => window.RV_VAR_CALLS.at(-1))).toEqual({ name: "Plain", vars: null });
 	expect(problems, "console errors/warnings").toEqual([]);
 });
@@ -88,8 +87,9 @@ test("variables: Arabic, right to left, and the sheet of a phone", async ({ page
 	await open(page, `report=gl&lang=ar&rv=${PAGES}`, { width: 390, height: 844 });
 	await settle(page);
 	await with_variables(page, DEFS);
-	await page.locator('details[data-sec="vars"] > summary').click();
-	const menu = page.locator(".rv-print-pop");
+	// the side column is the phone's sheet, opened by «Print settings»
+	await page.locator('[data-action="print-settings"]').click();
+	const menu = page.locator(".rv-print-side");
 	await expect(menu.locator("[data-var-sw=show_details]")).toHaveAttribute("aria-checked", "true");
 	// the sheet slides in: the picture once it stands
 	await menu.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));

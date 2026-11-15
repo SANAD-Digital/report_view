@@ -1,18 +1,15 @@
-// The settings panel of the Pages view (views/pages_view.js): its sections as the tools of a
-// toolbar, one tool's menu at a time (a sheet on a phone), the record fields (Frappe's
-// Autocomplete), the thumbnails, and the binding of every control to update(). Methods of PagesView.
-// The trial layouts (ADR-025: report-view-a / report-view-c) give the same sections a side
-// column at the inline start instead, as Frappe's print view (printing/page/print/print.js
-// setup_sidebar): four groups under plain headings, each section folding in place, a sheet on
-// a phone (`this.side_layout`).
+// The settings column of the Pages view (views/pages_view.js), as Frappe's print view
+// (printing/page/print/print.js setup_sidebar): four groups under plain headings, each folding
+// in place, a sheet on a phone; the record fields (Frappe's Autocomplete) and the binding of
+// every control to update(). Methods of PagesView.
 
 import { bind_font_picker, font_picker_html } from "../../components/font_picker.js";
 import { icons } from "../../components/icons.js";
-import { POP_MARGIN, place_near } from "../../components/popover.js";
+import { place_near } from "../../components/popover.js";
 import { PAGE_SIZES, preset_margins } from "../../engine/page_layout.js";
 import { esc, fmt_int, session_lang } from "../../util.js";
 import { to_number, values_for } from "../../print_variables.js";
-import { BOX_MM, DEFAULT_OPEN_SECS, DROPDOWN_FLIP_UNDER, DROPDOWN_MAX_H, DROPDOWN_MIN_H, FOOT_SCOPES, MENU_GAP, MENU_GAP_BELOW, MENU_MIN_H, MENU_W, MOBILE_QUERY, NUMS, PAGE_SCOPES, PAGE_STYLES, RIBBON, SIDE_GROUPS, SIDES, clamp } from "./settings.js";
+import { BOX_MM, DEFAULT_OPEN_SECS, DROPDOWN_FLIP_UNDER, DROPDOWN_MAX_H, DROPDOWN_MIN_H, FOOT_SCOPES, NUMS, PAGE_SCOPES, PAGE_STYLES, SIDE_GROUPS, SIDES, clamp } from "./settings.js";
 import { can_write_letter_head } from "./support.js";
 
 // Frappe's select (form/controls/select.js): its own chevrons over a select without the
@@ -29,7 +26,7 @@ export class PagesPanel {
 		const s = this.settings;
 		const o = this.options || { letter_heads: [], print_formats: [], languages: [] };
 		const model = this.rows.model;
-		if (!this.open_secs) this.open_secs = new Set(this.side_layout ? DEFAULT_OPEN_SECS : []);
+		if (!this.open_secs) this.open_secs = new Set(DEFAULT_OPEN_SECS);
 		const mm = __("mm");
 		const option = (value, label, on) => `<option value="${esc(value)}" ${on ? "selected" : ""}>${esc(label)}</option>`;
 		const check = (key, label) =>
@@ -38,7 +35,7 @@ export class PagesPanel {
 			`<label class="rv-print-sw"><span>${esc(label)}</span><button type="button" class="rv-switch${s[key] ? " on" : ""}" role="switch" aria-checked="${s[key]}" data-sw="${key}" aria-label="${esc(label)}"></button></label>`;
 		const seg = (key, label, opts) =>
 			`<div class="rv-field"><span>${esc(label)}</span><div class="rv-seg rv-print-seg" role="group" aria-label="${esc(label)}">${opts
-				.map(([v, l]) => `<button type="button" data-seg="${key}" data-value="${v}" class="${s[key] === v ? "on" : ""}" aria-pressed="${s[key] === v}">${esc(l)}</button>`)
+				.map(([v, l]) => `<button type="button" data-seg="${key}" data-value="${v}" class="${s[key] === v ? "on" : ""}" aria-pressed="${s[key] === v}" title="${esc(l)}">${esc(l)}</button>`)
 				.join("")}</div></div>`;
 		const num = (key, label, unit) => {
 			const [min, max, step] = NUMS[key];
@@ -68,12 +65,9 @@ export class PagesPanel {
 					.map(([v, l]) => option(v, l, s[`${key}_s`] === v))
 					.join("")}</select>${sel_icon()}</span>
 				<input type="color" data-color="${key}_c" value="${this.color_of(s, `${key}_c`)}" aria-label="${esc(__("Colour"))}" title="${esc(__("Colour"))}"></div></div>`;
-		const section = this.side_layout
-			? // the side column: a part of a group (side_panel folds the groups): its small title, its controls
-			  (id, icon, title, summary, body) =>
-					`<div class="rv-psub" data-sec="${id}" data-title="${esc(title)}" data-sm="${esc(summary || "")}"><div class="rv-psub-t">${esc(title)}</div><div class="rv-psec-bd">${body}</div></div>`
-			: (id, icon, title, summary, body, extra = "") =>
-					`<details class="rv-psec" data-sec="${id}" ${this.open_secs.has(id) ? "open" : ""}><summary><span class="ic">${icon}</span><span class="tx"><span class="tt">${esc(title)}</span>${summary ? `<span class="sm">${esc(summary)}</span>` : ""}</span>${extra}</summary><div class="rv-psec-bd">${body}</div></details>`;
+		// a part of a group (side_panel folds the groups): its small title, its controls
+		const section = (id, icon, title, summary, body) =>
+			`<div class="rv-psub" data-sec="${id}" data-title="${esc(title)}" data-sm="${esc(summary || "")}"><div class="rv-psub-t">${esc(title)}</div><div class="rv-psec-bd">${body}</div></div>`;
 		const align3 = [["start", __("Start", null, "Report View")], ["center", __("Centre")], ["end", __("End", null, "Report View")]];
 		const pm = s.page_m;
 		const columns = model ? [...model.pinned, ...model.data] : [];
@@ -314,16 +308,7 @@ export class PagesPanel {
 		];
 		// a document is not a table: no word about filters and groups under its column
 		const note = this.doc_mode ? "" : __("The pages show the table as it is: the same filters, grouping and folded groups.");
-		if (this.side_layout) {
-			this.side_panel(secs, note);
-			return;
-		}
-		this.bd.innerHTML = [...secs, note ? `<p class="rv-zone-empty">${esc(note)}</p>` : ""].join("");
-		this.ribbon_layout();
-		this.bd.scrollLeft = this.ribbon_scroll || 0;
-		const menu = this.bd.querySelector(".rv-print-pop");
-		if (menu && this.menu_scroll && this.menu_scroll.id === [...this.open_secs].join()) menu.scrollTop = this.menu_scroll.top;
-		this.bind_panel();
+		this.side_panel(secs, note);
 	}
 
 	/**
@@ -362,7 +347,7 @@ export class PagesPanel {
 
 	/** Whether the side column is the sheet of a phone, open over the pages. */
 	sheet_open() {
-		return Boolean(this.side_layout) && this.el.classList.contains("rv-sheet-open");
+		return this.el.classList.contains("rv-sheet-open");
 	}
 
 	/**
@@ -392,130 +377,6 @@ export class PagesPanel {
 		this.side.removeAttribute("aria-modal");
 		this.opts_btn.setAttribute("aria-expanded", "false");
 		if (focus) this.opts_btn.focus({ preventScroll: true });
-	}
-
-	/**
-	 * The sections as the tools of the toolbar, in RIBBON's groups; the open ones (one when
-	 * a person opens a tool) show their settings in one menu under the tool, its title and
-	 * summary at its head. The controls are the sections' own: bind_panel binds them as before.
-	 */
-	ribbon_layout() {
-		const bd = this.bd;
-		const take = (id) => bd.querySelector(`:scope > details[data-sec="${id}"]`);
-		const frag = document.createDocumentFragment();
-		let last = null;
-		for (const g of RIBBON) {
-			const secs = g.secs.map(take).filter(Boolean);
-			if (!secs.length) continue;
-			const wrap = document.createElement("div");
-			wrap.className = "rv-rg";
-			wrap.dataset.group = g.id;
-			wrap.setAttribute("role", "group");
-			wrap.setAttribute("aria-label", g.label());
-			const tools = document.createElement("div");
-			tools.className = "rv-rg-tools";
-			tools.append(...secs);
-			const name = document.createElement("span");
-			name.className = "rv-rg-name";
-			name.textContent = g.label();
-			wrap.append(tools, name);
-			frag.append(wrap);
-			last = tools;
-		}
-		// a section no group names (a later one) joins the last group
-		for (const d of bd.querySelectorAll(":scope > details[data-sec]")) last?.append(d);
-		bd.replaceChildren(frag);
-		for (const d of bd.querySelectorAll("details[data-sec]")) {
-			const summary = d.querySelector(":scope > summary");
-			const sm = summary.querySelector(".sm")?.textContent || "";
-			summary.title = sm;
-			summary.setAttribute("aria-haspopup", "dialog");
-			summary.setAttribute("aria-expanded", String(d.open));
-		}
-		const open = [...bd.querySelectorAll("details[data-sec][open]")];
-		this.menu_listeners(open.length > 0);
-		if (!open.length) return;
-		// on a phone the menu is a sheet over the pages: a scrim under it closes it
-		const scrim = document.createElement("div");
-		scrim.className = "rv-print-scrim";
-		scrim.setAttribute("aria-hidden", "true");
-		scrim.addEventListener("click", () => this.close_menu());
-		const menu = document.createElement("div");
-		menu.className = "rv-print-pop";
-		menu.tabIndex = -1;
-		menu.setAttribute("role", "dialog");
-		menu.setAttribute("aria-label", open.map((d) => d.querySelector(".tt")?.textContent || "").join(" · "));
-		for (const d of open) {
-			const sec = document.createElement("section");
-			sec.className = "rv-pop-sec";
-			sec.dataset.sec = d.dataset.sec;
-			const hd = document.createElement("div");
-			hd.className = "rv-pop-hd";
-			hd.innerHTML = `<strong>${esc(d.querySelector(".tt")?.textContent || "")}</strong><span>${esc(d.querySelector(".sm")?.textContent || "")}</span>`;
-			sec.append(hd, d.querySelector(":scope > .rv-psec-bd"));
-			menu.append(sec);
-		}
-		const close = document.createElement("button");
-		close.type = "button";
-		close.className = "rv-pop-x";
-		close.setAttribute("aria-label", __("Close"));
-		close.innerHTML = icons.close();
-		close.addEventListener("click", () => this.close_menu());
-		menu.querySelector(".rv-pop-hd")?.append(close);
-		bd.append(scrim, menu);
-		menu.addEventListener("scroll", () => (this.menu_scroll = { id: [...this.open_secs].join(), top: menu.scrollTop }), { passive: true });
-		this.place_menu();
-	}
-
-	/** The listeners of the document and the window an open menu needs, on or off. */
-	menu_listeners(on) {
-		if (Boolean(this.listening) === on) return;
-		this.listening = on;
-		this.outside.set(on);
-		if (on) window.addEventListener("resize", this.on_resize, { passive: true });
-		else window.removeEventListener("resize", this.on_resize, { passive: true });
-	}
-
-	/** The menu of the open tool: under its tool, inside the window (a sheet on a phone, by CSS). */
-	place_menu() {
-		const menu = this.bd?.querySelector(".rv-print-pop");
-		if (!menu) return;
-		const id = this.open_secs.has(this.menu_anchor) ? this.menu_anchor : [...this.open_secs][0];
-		const tool = this.bd.querySelector(`details[data-sec="${id}"] > summary`);
-		if (!tool) return;
-		const w = Math.min(MENU_W, window.innerWidth - 2 * POP_MARGIN);
-		const p = place_near(tool.getBoundingClientRect(), { w, gap: MENU_GAP, rtl: this.rtl });
-		Object.assign(menu.style, {
-			top: `${Math.round(p.top)}px`,
-			left: `${Math.round(p.left)}px`,
-			width: `${w}px`,
-			maxHeight: `${Math.max(MENU_MIN_H, Math.round(p.room - MENU_GAP_BELOW))}px`,
-		});
-	}
-
-	open_menu(id) {
-		const only = this.open_secs.size === 1 && this.open_secs.has(id);
-		this.ribbon_scroll = this.bd.scrollLeft;
-		this.open_secs = only ? new Set() : new Set([id]);
-		this.menu_anchor = id;
-		this.menu_scroll = null;
-		this.render_panel();
-		if (only) return;
-		// on a phone a focused field opens the keyboard and its list over the sheet: the
-		// sheet itself takes the focus there
-		const menu = this.bd.querySelector(".rv-print-pop");
-		const sheet = window.matchMedia(MOBILE_QUERY).matches;
-		(sheet ? menu : menu?.querySelector("input:not([type=hidden]), select, button:not(.rv-pop-x)"))?.focus({ preventScroll: true });
-	}
-
-	close_menu() {
-		// the side column has no menu: its sections fold in place
-		if (this.side_layout || !this.open_secs?.size) return;
-		const id = this.menu_anchor;
-		this.ribbon_scroll = this.bd.scrollLeft;
-		this.open_secs = new Set();
-		this.render_panel();
-		this.bd.querySelector(`details[data-sec="${id}"] > summary`)?.focus({ preventScroll: true });
 	}
 
 	// ------------------------------------------------------------ variables (ADR-024)
@@ -668,17 +529,6 @@ export class PagesPanel {
 			.join("")}</div>`;
 	}
 
-	/** The thumbnails of the pages (numbers on little sheets): one each, the current marked. */
-	render_thumbs() {
-		if (!this.thumbs) return;
-		const num = fmt_int;
-		const n = Math.min(this.pages.length, this.max_pages());
-		let html = "";
-		for (let i = 0; i < n; i++) html += `<button type="button" data-thumb="${i}" aria-label="${esc(__("Page {0}", [num(i + 1)]))}"><i aria-hidden="true"></i><span>${esc(num(i + 1))}</span></button>`;
-		this.thumbs.innerHTML = html;
-		this.thumbs.style.setProperty("--th-ratio", String(this.box ? this.box.h / this.box.w : 1.414));
-	}
-
 	/**
 	 * The record fields of the panel (print format, letter head, print heading, signature,
 	 * language): Frappe's Autocomplete over the lists the server read with the user's
@@ -767,20 +617,11 @@ export class PagesPanel {
 		// once per panel element (the picker keeps its own binding): its unbind for release()
 		this.unbind_fonts = bind_font_picker(bd, (key, family) => this.update({ [key]: family }));
 		this.mount_links();
-		// the side column: a section folds in place, remembered for the next panel, nothing drawn again
-		if (this.side_layout) {
-			for (const d of bd.querySelectorAll("details[data-group]")) {
-				d.addEventListener("toggle", () => {
-					if (d.open) this.open_secs.add(d.dataset.group);
-					else this.open_secs.delete(d.dataset.group);
-				});
-			}
-		}
-		for (const summary of this.side_layout ? [] : bd.querySelectorAll("details[data-sec] > summary")) {
-			summary.addEventListener("click", (e) => {
-				if (e.target !== summary && e.target.closest("button, input, select, a")) return;
-				e.preventDefault();
-				this.open_menu(summary.parentElement.dataset.sec);
+		// a group folds in place, remembered for the next panel, nothing drawn again
+		for (const d of bd.querySelectorAll("details[data-group]")) {
+			d.addEventListener("toggle", () => {
+				if (d.open) this.open_secs.add(d.dataset.group);
+				else this.open_secs.delete(d.dataset.group);
 			});
 		}
 		for (const sel of bd.querySelectorAll("select[data-set]")) {

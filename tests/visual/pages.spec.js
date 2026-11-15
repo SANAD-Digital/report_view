@@ -556,8 +556,7 @@ test("pages: the site's standard print settings are where a new user starts and 
 	});
 	const want = { size: "A3", orientation: "portrait", style: "ledger", heading: "Statement heading", heading_pages: "all", page_numbers: false, number_format: "full" };
 	expect(await st()).toEqual(want);
-	// the paper tool of the toolbar opens its menu
-	await page.click('details[data-sec="paper"] > summary');
+	// the page group of the side column is open
 	await page.click('[data-seg="margins"][data-value="wide"]').catch(() => {});
 	await page.selectOption('select[data-set="size"]', "A4");
 	await settle(page);
@@ -592,84 +591,58 @@ test("pages: a long report prints every sheet with its content (far pages are no
 });
 
 
-test("pages: the toolbar opens one tool's menu at a time, under its tool; elsewhere or Escape closes it", async ({ page }) => {
+test("pages: the settings in a side column beside the sheets, four groups; the floating bar moves through the pages", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, `report=tb&lang=ar&rv=${PAGES}`);
 	await settle(page);
-	const menu = () =>
+	const st = () =>
 		page.evaluate(() => {
-			const m = document.querySelector(".rv-print-pop");
-			if (!m) return null;
-			const r = m.getBoundingClientRect();
-			return { secs: [...m.querySelectorAll(".rv-pop-sec")].map((x) => x.dataset.sec), top: Math.round(r.top), bottom: Math.round(r.bottom), w: Math.round(r.width) };
+			const side = document.querySelector(".rv-print-side").getBoundingClientRect();
+			const stage = document.querySelector(".rv-print-stage").getBoundingClientRect();
+			return {
+				groups: [...document.querySelectorAll(".rv-print-side details.rv-pgrp")].map((g) => g.dataset.group),
+				// Arabic: the column at the right of the sheets, as Frappe's print view
+				start: side.left >= stage.right - 1,
+				width: Math.round(side.width),
+				old: document.querySelectorAll(".rv-rg, .rv-print-thumbs, details.rv-psec").length,
+				pos: document.querySelector(".rv-print-pos").textContent,
+				at: window.rv_page.pages.page_at,
+			};
 		});
-	// four groups, every section a tool, nothing open
-	expect(await page.locator(".rv-rg").count()).toBe(4);
-	expect(await menu()).toBe(null);
-	await page.click('details[data-sec="sign"] > summary');
-	let m = await menu();
-	expect(m.secs).toEqual(["sign"]);
-	const tool = await page.locator('details[data-sec="sign"] > summary').boundingBox();
-	expect(m.top).toBeGreaterThanOrEqual(Math.round(tool.y + tool.height));
-	// a change inside the menu keeps it open
-	await page.click('.rv-print-pop [data-sw="signatures"]');
-	await settle(page);
-	expect((await menu()).secs).toEqual(["sign"]);
-	// another tool replaces it; the same tool again closes it
-	await page.click('details[data-sec="paper"] > summary');
-	expect((await menu()).secs).toEqual(["paper"]);
-	await page.click('details[data-sec="paper"] > summary');
-	expect(await menu()).toBe(null);
-	// a click on the pages closes it, Escape too
-	await page.click('details[data-sec="foot"] > summary');
-	// the part of the stage on screen, without its scroll bars: the stage runs below the
-	// viewport, where Chromium still delivers a click (to the document) and Firefox does not
-	const stage = await page.evaluate(() => {
-		const el = document.querySelector(".rv-print-stage");
-		const r = el.getBoundingClientRect();
-		const y = r.top + el.clientTop;
-		return { x: r.left + el.clientLeft, y, width: el.clientWidth, height: Math.min(el.clientHeight, window.innerHeight - y) };
-	});
-	const open_menu = await page.locator(".rv-print-pop").boundingBox();
-	// a point of the stage away from the menu
-	const x = open_menu.x > stage.x + 60 ? stage.x + 20 : stage.x + stage.width - 20;
-	await page.mouse.click(x, stage.y + stage.height - 20);
-	expect(await menu()).toBe(null);
-	await page.click('details[data-sec="foot"] > summary');
-	await page.keyboard.press("Escape");
-	expect(await menu()).toBe(null);
-	// the thumbnails: one a page, the current marked, a click goes to its page
+	let s = await st();
+	expect(s.groups).toEqual(["page", "content", "identity", "marks"]);
+	expect(s.start).toBe(true);
+	expect(s.width).toBe(288);
+	expect(s.old).toBe(0);
 	const n = await page.evaluate(() => window.rv_page.pages.pages.length);
-	expect(await page.locator(".rv-print-thumbs [data-thumb]").count()).toBe(n);
-	expect(await page.getAttribute(".rv-print-thumbs [data-thumb='0']", "aria-current")).toBe("page");
+	expect(n).toBeGreaterThan(1);
+	expect(s.at).toBe(1);
+	await page.click('.rv-print-floatbar [data-bar="next-page"]');
+	await page.waitForFunction(() => window.rv_page.pages.page_at === 2);
+	await page.click('.rv-print-floatbar [data-bar="prev-page"]');
+	await page.waitForFunction(() => window.rv_page.pages.page_at === 1);
 	expect(problems).toEqual([]);
 });
 
 
-test("pages: on a phone the toolbar stays on top and a tool's menu opens as a sheet from the bottom", async ({ page }) => {
+test("pages: on a phone the head stays on top, the side column waits as a sheet, nothing scrolls sideways", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, `report=tb&lang=ar&rv=${PAGES}`);
 	await settle(page);
 	// the harness opens at desktop size: the phone's width after
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.waitForTimeout(300);
-	const st = () =>
-		page.evaluate(() => {
-			const m = document.querySelector(".rv-print-pop")?.getBoundingClientRect();
-			return { menu: m ? { top: Math.round(m.top), bottom: Math.round(m.bottom), w: Math.round(m.width) } : null, thumbs: getComputedStyle(document.querySelector(".rv-print-thumbs")).display, hscroll: document.documentElement.scrollWidth > innerWidth };
-		});
-	let s = await st();
-	expect(s.menu).toBe(null);
-	expect(s.thumbs).toBe("none");
+	const s = await page.evaluate(() => ({
+		side: getComputedStyle(document.querySelector(".rv-print-side")).display,
+		opts: Boolean(document.querySelector('[data-action="print-settings"]')?.getClientRects().length),
+		bar: Math.round(document.querySelector(".rv-print-bar").getBoundingClientRect().top),
+		stage: Math.round(document.querySelector(".rv-print-stage").getBoundingClientRect().top),
+		hscroll: document.documentElement.scrollWidth > innerWidth,
+	}));
+	expect(s.side).toBe("none");
+	expect(s.opts).toBe(true);
+	expect(s.bar).toBeLessThan(s.stage);
 	expect(s.hscroll).toBe(false);
-	await page.locator('details[data-sec="paper"] > summary').click();
-	// the sheet slides in: measured once its animation is over
-	await page.evaluate(() => Promise.all(document.querySelector(".rv-print-pop").getAnimations().map((a) => a.finished)));
-	s = await st();
-	expect(s.menu.bottom).toBe(844);
-	expect(s.menu.w).toBe(390);
-	await page.keyboard.press("Escape");
-	expect((await st()).menu).toBe(null);
 	expect(problems).toEqual([]);
 });
 
@@ -727,17 +700,19 @@ test("side panel: ticking a column keeps the columns list and the panel where th
 });
 
 
-test("pages: in compact density the toolbar spans the pages, as in the comfortable one", async ({ page }) => {
+test("pages: in compact density the side column keeps Frappe's 28px controls, as in the comfortable one", async ({ page }) => {
 	const problems = watch_console(page);
 	for (const density of ["comfortable", "compact"]) {
 		await open(page, `report=tb&lang=ar&density=${density}&rv=${PAGES}`);
 		await settle(page);
-		const w = await page.evaluate(() => {
-			const r = (s) => Math.round(document.querySelector(s).getBoundingClientRect().width);
-			return { compact: Boolean(document.querySelector(".rv.compact")), pages: r(".rv-pages"), toolbar: r(".rv-print-side") };
-		});
+		const w = await page.evaluate(() => ({
+			compact: Boolean(document.querySelector(".rv.compact")),
+			side: Math.round(document.querySelector(".rv-print-side").getBoundingClientRect().width),
+			controls: [...new Set([...document.querySelectorAll(".rv-print-side details[open] .rv-input")].filter((x) => x.offsetParent).map((x) => Math.round(x.getBoundingClientRect().height)))],
+		}));
 		expect(w.compact).toBe(density === "compact");
-		expect(w.toolbar).toBe(w.pages);
+		expect(w.side).toBe(288);
+		expect(w.controls).toEqual([28]);
 	}
 	expect(problems).toEqual([]);
 });

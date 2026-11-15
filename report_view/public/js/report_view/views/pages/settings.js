@@ -43,16 +43,6 @@ export const PDF_WAIT_LIMIT_MIN = 16;
 
 export const ZOOM_STEPS = [0.4, 0.5, 0.67, 0.8, 1, 1.25, 1.5];
 
-// A tool's menu: its width, the gap under its tool, the least height it is given and the room
-// it leaves under it (px; components/popover.js place_near keeps it inside the window).
-export const MENU_W = 360;
-
-export const MENU_GAP = 6;
-
-export const MENU_MIN_H = 220;
-
-export const MENU_GAP_BELOW = 4;
-
 // The list of a Link field: above the field when the room under it is less than this, and
 // its height between these (px).
 export const DROPDOWN_FLIP_UNDER = 220;
@@ -60,9 +50,6 @@ export const DROPDOWN_FLIP_UNDER = 220;
 export const DROPDOWN_MIN_H = 120;
 
 export const DROPDOWN_MAX_H = 320;
-
-// A phone (rv_pages.css and rv_charts.css use the same width): a tool's menu is a sheet there.
-export const MOBILE_QUERY = "(max-width: 900px), (pointer: coarse)";
 
 // How long a print waits for the images of the measured pages (ms).
 export const IMAGE_WAIT_MS = 2500;
@@ -210,18 +197,14 @@ const NUMBER_FORMATS = ["full", "short", "number", "dash"];
 
 // Settings drawn over the pages (the watermark, the border round the page): changed on
 // the pages already cut, without cutting them again.
-// The toolbar above the pages (owner's choice, 2026-10-20): the panel's sections as tools
-// in four groups; a tool opens its settings in one menu under it.
-export const RIBBON = [
+// The side column of the pages (ADR-025, owner's choice 2026-10-28: Frappe's print view): the
+// panel's sections in four groups, each under a plain heading, a rule between two.
+export const SIDE_GROUPS = [
 	{ id: "page", label: () => __("Page", null, "Report View"), secs: ["paper"] },
 	{ id: "content", label: () => __("Content", null, "Report View"), secs: ["tpl", "vars", "content", "cols"] },
 	{ id: "identity", label: () => __("Identity", null, "Report View"), secs: ["head", "heading", "foot", "sign"] },
 	{ id: "marks", label: () => __("Marks", null, "Report View"), secs: ["num", "border", "wm"] },
 ];
-
-// The side column of the pages in the trial layouts (ADR-025, owner's choice 2026-10-28:
-// Frappe's print view): the same four groups, each under a plain heading, a rule between two.
-export const SIDE_GROUPS = RIBBON;
 
 // The groups of the side column open when the pages are first shown; the others fold to
 // their title and summary.

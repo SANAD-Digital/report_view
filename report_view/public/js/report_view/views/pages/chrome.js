@@ -154,7 +154,7 @@ export class PagesChrome {
 	period_text() {
 		const period = this.period_only();
 		const f = this.ctx.filters || {};
-		const party = this.side_layout ? [].concat(f.party_name || f.party || []).filter(Boolean).join(this.t(", ")) : "";
+		const party = [].concat(f.party_name || f.party || []).filter(Boolean).join(this.t(", "));
 		return party && period ? `<b>${esc(party)}</b> · ${period}` : period;
 	}
 
@@ -181,14 +181,14 @@ export class PagesChrome {
 			if (df?.fieldtype === "Check" && !Number(value)) continue;
 			// the trial layouts print what the reader needs: not the report's options and fields
 			// that only serve the screen (the year behind the dates, the party's type)
-			if (this.side_layout && (df?.fieldtype === "Check" || df?.hidden || df?.read_only || PRINT_NOISE.has(key))) continue;
+			if ((df?.fieldtype === "Check" || df?.hidden || df?.read_only || PRINT_NOISE.has(key))) continue;
 			const label = df?.label ? this.in_lang(df.label) : frappe.unscrub(key);
 			let text;
 			if (df?.fieldtype === "Check") text = this.t("Yes");
 			else if (Array.isArray(value)) text = value.map(String).join(", ");
 			else if (df?.fieldtype === "Date") text = frappe.datetime.str_to_user(value);
 			else if (df?.fieldtype === "Autocomplete" || (df?.fieldtype === "Link" && ["DocType", "Party Type"].includes(df.options))) text = this.t(String(value));
-			else text = this.side_layout && df?.fieldtype === "Select" ? this.in_lang(String(value)) : String(value);
+			else text = df?.fieldtype === "Select" ? this.in_lang(String(value)) : String(value);
 			parts.push(`<span class="rv-page-filter"><span>${esc(label)}:</span> <b>${esc(text)}</b></span>`);
 		}
 		// the search and the column filters of the screen narrow what is printed: they are filters too

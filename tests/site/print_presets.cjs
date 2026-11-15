@@ -131,7 +131,8 @@ async function api_client(user, pwd) {
 		// delete through the menu (Frappe's confirm)
 		await page.click(".rv-preset-btn");
 		await page.click('.rv-preset-pop [data-act="delete"]');
-		await page.locator(".modal.show .btn-primary").last().click();
+		// Frappe's confirm (Frappe 16: its primary button is .btn-modal-primary)
+		await page.locator(".modal.show :is(.btn-modal-primary, .btn-primary)").last().click();
 		await page.waitForFunction((n) => document.querySelector(".rv-preset-btn .nm")?.textContent !== n, name, { timeout: 15000 }).catch(() => {});
 		const after = await a.get("list_presets", { context: "Document", target: "Journal Entry" });
 		check("«Delete» removes it", !after.body.message?.mine.some((r) => r.preset_name === name));

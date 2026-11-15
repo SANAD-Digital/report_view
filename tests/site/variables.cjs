@@ -87,10 +87,10 @@ const HTML = '<div class="rv-var-out">S={{ variables.show_note }} T={{ variables
 		await page.waitForTimeout(80);
 		await settle();
 		check("the defaults reach the template", /S=1 T=Short C= N=2/.test((await out_text()) || ""), await out_text());
-		const tool = page.locator('details[data-sec="vars"] > summary');
-		check("the «Variables» tool is in the toolbar", (await tool.count()) === 1);
-		await tool.click();
-		const menu = page.locator(".rv-print-pop");
+		// the variables in the content group of the side column (open on arrival)
+		const tool = page.locator('.rv-print-side .rv-psub[data-sec="vars"]');
+		check("the «Variables» part is in the side column", (await tool.count()) === 1);
+		const menu = tool;
 		check("a control per variable", (await menu.locator("[data-var-sw], select[data-var], [data-var-link], input[data-var-num]").count()) === 4);
 		check("the Link is Frappe's Link control", (await menu.locator("[data-var-link] input").count()) === 1);
 		if (SHOTS) await page.screenshot({ path: path.join(SHOTS, "site-variables-menu.png") });
@@ -128,6 +128,8 @@ const HTML = '<div class="rv-var-out">S={{ variables.show_note }} T={{ variables
 			if (SHOTS) await apage.screenshot({ path: path.join(SHOTS, "site-variables-dialog.png") });
 			// a reserved name is refused in the dialog, as on the server
 			// the variables dialog itself: another app's modal (site_quota) may have reset cur_dialog
+			// Frappe lists a dialog in open_dialogs once it is shown (after its animation)
+			await apage.waitForFunction(() => (frappe.ui.open_dialogs || []).some((d) => d.fields_dict?.variables), null, { timeout: 10000 }).catch(() => {});
 			const vars_dialog = await apage.evaluateHandle(() => (frappe.ui.open_dialogs || []).find((d) => d.fields_dict && d.fields_dict.variables) || cur_dialog);
 			await apage.evaluate((d) => {
 				const f = d.fields_dict.variables;

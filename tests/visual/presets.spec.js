@@ -49,8 +49,7 @@ test("pages: print presets: save as new, the changed dot, save over it, apply, e
 	// the user's settings remember the preset applied
 	await page.evaluate(() => window.rv_page.flush_settings());
 	expect(await page.evaluate(() => window.rv_test.saved_settings().pages.preset)).toBe(st.store[0].name);
-	// a change: the dot; «Save» writes it into the preset
-	await page.click('details[data-sec="paper"] > summary');
+	// a change: the dot; «Save» writes it into the preset (the page group of the column is open)
 	await page.click('[data-orient="portrait"]');
 	await settle(page);
 	await page.keyboard.press("Escape");

@@ -63,7 +63,7 @@ export class PagesLayouts {
 		const label = { column: m.label, title: m.label_title, numeric: false, side: null, band: null, totalled: false, width: m.label_width, label: true };
 		// a trial layout leaves out of the paper a number column with nothing in it (a trial
 		// balance's opening of a first year): a quarter of the sheet for blank cells
-		const blank = (d) => this.side_layout && d.numeric && this.facts_of(d.column.key).every((v) => !Number(v));
+		const blank = (d) => d.numeric && this.facts_of(d.column.key).every((v) => !Number(v));
 		const shown = (d) => !hidden.has(d.column.key) && !blank(d);
 		return [label, ...m.pinned.filter(shown), ...m.data.filter(shown)];
 	}
@@ -158,14 +158,12 @@ export class PagesLayouts {
 		const cur = this.current;
 		const t = (m, a) => this.t(m, a);
 		let report_bottom = rows.report_rows(cur).bottom;
-		if (this.side_layout) {
-			// as the trial layouts show it (grid_view.js render_pinned): a row repeated once
-			const seen = new Set();
-			report_bottom = report_bottom.filter((row) => {
-				const key = JSON.stringify([row.__kind, ...cols.map((d) => row[d.column.key])]);
-				return !seen.has(key) && seen.add(key);
-			});
-		}
+		// as the screen shows it (grid_view.js render_pinned): a row repeated once
+		const seen = new Set();
+		report_bottom = report_bottom.filter((row) => {
+			const key = JSON.stringify([row.__kind, ...cols.map((d) => row[d.column.key])]);
+			return !seen.has(key) && seen.add(key);
+		});
 		const bottom = report_bottom.map((row) => this.report_row("foot closing", row, cols)).join("");
 		if (!this.settings.include_total) return bottom;
 		const total = rows.total_row(cur, cur.counts);
@@ -178,7 +176,7 @@ export class PagesLayouts {
 		const total_html = `<tr class="total">${cells.join("")}</tr>`;
 		// a trial layout in the order of a ledger, as on the screen: the period's total, then the
 		// closing balance last; the report's own total stands for the grand total
-		if (this.side_layout && report_bottom.some((row) => row.__kind === "closing")) {
+		if (report_bottom.some((row) => row.__kind === "closing")) {
 			return (report_bottom.some((row) => row.__kind === "internal_total") ? "" : total_html) + bottom;
 		}
 		return `${bottom}${total_html}`;
@@ -643,9 +641,10 @@ export class PagesLayouts {
 					}
 					continue;
 				}
-				// a block taller than a page, or one holding a page break of the format (its
-				// wrapper: .print-format), is read block by block
-				if (child.children.length && (hh > body_h || child.querySelector(".page-break"))) {
+				// a block taller than a page is read block by block; so is the .print-format put
+				// round the format (in_print_format) when the format's own pages are its children
+				const wraps_pages = child.classList.contains("rv-print-format") && child.querySelector(":scope > .page-break");
+				if (child.children.length && (hh > body_h || wraps_pages)) {
 					walk(child, [...path, child.cloneNode(false)]);
 					continue;
 				}

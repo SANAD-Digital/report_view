@@ -74,17 +74,13 @@ test("pages: a report longer than the print limit mounts the pages that can prin
 			max,
 			sheets: v.sheets.querySelectorAll(":scope > .rv-page").length,
 			more: document.querySelector(".rv-print-sheets > .rv-print-more")?.textContent || "",
-			thumbs: v.thumbs.children.length,
 			visibility: getComputedStyle(v.sheets.querySelector(".rv-page")).contentVisibility,
-			thumb_visibility: getComputedStyle(v.thumbs.querySelector("button")).contentVisibility,
 		};
 	});
 	expect(out.pages).toBeGreaterThan(out.max);
 	expect(out.sheets).toBe(out.max);
-	expect(out.thumbs).toBe(out.max);
 	expect(out.more).toContain("Excel");
 	expect(out.visibility).toBe("auto");
-	expect(out.thumb_visibility).toBe("auto");
 	// the end of the stage: the last page fills, the card stays a card
 	await page.evaluate(() => {
 		const stage = document.querySelector(".rv-print-stage");
@@ -277,21 +273,27 @@ test("pages: the default colours of the rules, border and watermark are the pape
 });
 
 
-test("pages: a tool's menu listens to the document only while it is open; leaving the pages stops every listener", async ({ page }) => {
+test("pages: a group of the side column folds in place, with no listener on the document; its folds are kept when the pages come back", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, `report=tb&lang=en&rv=${PAGES}`);
 	await settle(page);
-	const listening = () => page.evaluate(() => Boolean(window.rv_page.pages.listening));
-	expect(await listening()).toBe(false);
-	await page.click('details[data-sec="paper"] > summary');
-	expect(await listening()).toBe(true);
-	await page.mouse.click(700, 600);
-	expect(await page.locator(".rv-print-pop").count()).toBe(0);
-	expect(await listening()).toBe(false);
-	await page.click('details[data-sec="paper"] > summary');
+	const st = () =>
+		page.evaluate(() => ({
+			open: [...document.querySelectorAll(".rv-print-side details.rv-pgrp[open]")].map((d) => d.dataset.group),
+			kept: [...window.rv_page.pages.open_secs],
+		}));
+	expect((await st()).open).toEqual(["page", "content"]);
+	await page.click('details[data-group="marks"] > summary');
+	await page.click('details[data-group="page"] > summary');
+	let s = await st();
+	expect(s.open).toEqual(["content", "marks"]);
+	expect(s.kept.sort()).toEqual(["content", "marks"]);
+	// away to the table and back: the same groups open
 	await page.click('.rv-views [data-mode="grid"]');
 	await page.waitForFunction(() => window.rv_page.state.mode === "grid" && window.rv_page.grid.rt);
-	expect(await listening()).toBe(false);
+	await page.click('.rv-views [data-mode="pages"]');
+	await settle(page);
+	expect((await st()).open).toEqual(["content", "marks"]);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 
@@ -350,29 +352,36 @@ test("pages: on a phone the sheet has a scrim and a close button, and no field t
 	await page.waitForTimeout(300);
 	const st = () =>
 		page.evaluate(() => {
-			const m = document.querySelector(".rv-print-pop");
+			const open = document.querySelector(".rv-pages").classList.contains("rv-sheet-open");
+			const m = document.querySelector(".rv-print-side");
 			const s = document.querySelector(".rv-print-scrim");
-			const r = m?.getBoundingClientRect();
+			const r = m.getBoundingClientRect();
 			const sr = s?.getBoundingClientRect();
-			// the sheet is drawn, not clipped by the toolbar it belongs to: its centre is itself
-			const hit = r && document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+			// the sheet is drawn over the pages: its centre is itself
+			const hit = open && document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
 			return {
-				open: Boolean(m),
+				open,
 				drawn: Boolean(hit && m.contains(hit)),
+				bottom: open ? Math.round(r.bottom) === innerHeight : false,
 				scrim: sr ? Math.round(sr.width) === innerWidth && Math.round(sr.height) === innerHeight : false,
 				focus: document.activeElement === m,
-				list: Boolean(document.querySelector(".rv-print-pop .awesomplete > ul:not([hidden])")),
-				close: Boolean(m?.querySelector(".rv-pop-x[aria-label]")),
+				list: Boolean(m.querySelector(".awesomplete > ul:not([hidden])")),
+				close: Boolean(m.querySelector('[data-action="close-options"][aria-label]')),
 			};
 		});
-	await page.locator('details[data-sec="tpl"] > summary').click();
+	const opts = page.locator('[data-action="print-settings"]');
+	await opts.click();
+	await page.evaluate(() => Promise.all(document.querySelector(".rv-print-side").getAnimations().map((a) => a.finished)));
 	let s = await st();
-	expect(s).toEqual({ open: true, drawn: true, scrim: true, focus: true, list: false, close: true });
-	await page.locator(".rv-pop-x").click();
+	expect(s).toEqual({ open: true, drawn: true, bottom: true, scrim: true, focus: true, list: false, close: true });
+	await page.locator('[data-action="close-options"]').click();
 	expect((await st()).open).toBe(false);
-	await page.locator('details[data-sec="tpl"] > summary').click();
+	await opts.click();
 	// a tap on the dimmed pages closes the sheet
-	await page.mouse.click(220, 120);
+	await page.mouse.click(220, 60);
+	expect((await st()).open).toBe(false);
+	await opts.click();
+	await page.keyboard.press("Escape");
 	expect((await st()).open).toBe(false);
 	expect(problems).toEqual([]);
 });
@@ -421,7 +430,8 @@ test("pages: a Frappe format stands on Frappe's print styles (print.bundle.css) 
 	const problems = watch_console(page);
 	// Frappe's print bundle, as the site serves it: a Bootstrap 3 border and a heading weight
 	await page.route("**/assets/frappe/dist/css/print.bundle.TEST.css", (route) =>
-		route.fulfill({ contentType: "text/css", body: ".table-bordered td{border:1px solid rgb(1, 2, 3)}h2{font-weight:300}.only-base{color:rgb(4, 5, 6)}html,body{font-size:10px;margin:40px}" })
+		// Bootstrap 3's normalize (section, header, footer as blocks): never the frame of the pages
+		route.fulfill({ contentType: "text/css", body: ".table-bordered td{border:1px solid rgb(1, 2, 3)}h2{font-weight:300}.only-base{color:rgb(4, 5, 6)}html,body{font-size:10px;margin:40px}section,header,footer{display:block}" })
 	);
 	await open(page, `report=gl&lang=en&rv=${PAGES}${pages_settings({ orientation: "portrait" })}`);
 	await settle(page);
@@ -437,7 +447,8 @@ test("pages: a Frappe format stands on Frappe's print styles (print.bundle.css) 
 		v.host.pages_format = async () => ({
 			type: "Jinja",
 			html: `<div class="print-format"><h2>Title</h2><table class="table table-bordered"><tr><td class="c">1</td><td>2</td></tr></table><p class="only-base">x</p><p class="own">y</p></div>`,
-			css: "h2{font-weight:600}",
+			// nested CSS of the format: its inner rule as written, inside the held one
+			css: "h2{font-weight:600}.print-format{.own{letter-spacing:5px}}",
 		});
 		v.update({ template: "Base" });
 		await v.ready;
@@ -453,6 +464,8 @@ test("pages: a Frappe format stands on Frappe's print styles (print.bundle.css) 
 			h2: getComputedStyle(q("h2")).fontWeight,
 			only: getComputedStyle(q(".only-base")).color,
 			desk_cell: getComputedStyle(outside.querySelector("td")).borderTopColor,
+			nested: getComputedStyle(q(".own")).letterSpacing,
+			page: getComputedStyle(document.querySelector(".rv-print-sheets .rv-page")).display,
 			body_margin: getComputedStyle(document.body).marginTop,
 		};
 		outside.remove();
@@ -469,6 +482,9 @@ test("pages: a Frappe format stands on Frappe's print styles (print.bundle.css) 
 	expect(out.only).toBe("rgb(4, 5, 6)");
 	// held to the sheets: Desk's own tables and page keep their look
 	expect(out.desk_cell).toBe("rgb(200, 0, 0)");
+	expect(out.nested).toBe("5px");
+	// the page stays the column of its head, body and foot
+	expect(out.page).toBe("flex");
 	expect(out.body_margin).not.toBe("40px");
 	expect(out.after).toBe(0);
 	expect(problems, "console errors/warnings").toEqual([]);

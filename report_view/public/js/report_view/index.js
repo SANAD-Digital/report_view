@@ -312,7 +312,7 @@ export class ReportViewPage {
 	async load_pages() {
 		if (!this.pages_view) {
 			const PagesView = await load_bundle("report_view_pages.bundle.js", "PagesView");
-			this.pages_view ||= new PagesView({ parent: this.$(".rv-pages"), root: this.root, rtl: this.rtl, host: this, side: this.layout !== "classic" });
+			this.pages_view ||= new PagesView({ parent: this.$(".rv-pages"), root: this.root, rtl: this.rtl, host: this });
 		}
 		return this.pages_view;
 	}
@@ -424,8 +424,8 @@ export class ReportViewPage {
 		this.root.classList.toggle("rv-mode-pages", mode === "pages");
 		this.root.classList.toggle("rv-mode-statement", mode === "statement");
 		// what stands over the frame changes with the view (a trial layout hides the summary in
-		// some): its height is measured again
-		if (this.shell) this.fit_height();
+		// some; the pages fit the window from where they start): its height is measured again
+		this.fit_height();
 		this.toolbar.set_mode(mode);
 		this.header.set_mode(mode);
 	}
@@ -640,8 +640,11 @@ export class ReportViewPage {
 			const pos = getComputedStyle(el).position;
 			if (pos === "sticky" || pos === "fixed") sticky = Math.max(sticky, el.getBoundingClientRect().bottom);
 		}
-		// a trial layout's head stands in the page: the frame starts under it, its bottom bar on screen
-		const top = this.shell ? Math.max(sticky, wrap.getBoundingClientRect().top + window.scrollY) : sticky;
+		// a trial layout's head stands in the page: the frame starts under it, its bottom bar on
+		// screen; the pages too (their floating bar at the foot of the sheets, as on Frappe's
+		// print page), on every page
+		const in_view = this.shell || this.root.classList.contains("rv-mode-pages");
+		const top = in_view ? Math.max(sticky, wrap.getBoundingClientRect().top + window.scrollY) : sticky;
 		const h = Math.max(420, Math.round(window.innerHeight - Math.max(0, top) - (this.shell ? 8 + this.shell.below_grid() : 16)));
 		wrap.style.height = `${h}px`;
 	}

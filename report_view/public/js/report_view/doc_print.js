@@ -65,7 +65,7 @@ class DocPrintPage {
 		this.root.replaceChildren(parent);
 		// the settings in a side column, as Frappe's print view (the owner, 2026-11-10: the print
 		// engine as part of Frappe)
-		this.pages = new PagesView({ parent, root: this.root, rtl: this.rtl, host: kind === "custom" ? this.custom : this, side: true, head_in_side: true });
+		this.pages = new PagesView({ parent, root: this.root, rtl: this.rtl, host: kind === "custom" ? this.custom : this, head_in_side: true });
 		this.frappe_head();
 		this.page.clear_secondary_action();
 		this.page.clear_menu();

@@ -367,18 +367,19 @@ test("trial layouts on a phone: the heads wrap, the chips scroll sideways, C's t
 });
 
 
-test("the standard page keeps its own shell: no trial class, Desk's head with its actions, the print ribbon", async ({ page }) => {
+test("the standard page keeps its own shell: no trial class, Desk's head with its actions; its pages in the side column", async ({ page }) => {
 	const problems = watch_console(page);
 	await open(page, `report=tb&lang=en&rv=${PAGES}`);
 	await settle(page);
 	const st = await page.evaluate(() => ({
 		root: document.querySelector(".rv-shell").parentElement.className,
 		head: Boolean(document.querySelector(".page-head .rv-headbar")),
-		ribbon: document.querySelectorAll(".rv-print-side .rv-rg").length,
-		sidecol: document.querySelectorAll(".rv-print-sidecol, .rv-ha, .rv-hc, .rv-ta, .rv-cfoot, .rv-rd-rail").length,
+		// the print engine has one shape (ADR-029): the side column, on every page
+		sidecol: document.querySelectorAll(".rv-print-sidecol .rv-print-side details.rv-pgrp").length,
+		trial: document.querySelectorAll(".rv-ha, .rv-hc, .rv-ta, .rv-cfoot, .rv-rd-rail").length,
 		route: window.rv_page.page_route,
 	}));
-	expect(st).toEqual({ root: "rv rv-mode-pages", head: true, ribbon: 4, sidecol: 0, route: "report-view" });
+	expect(st).toEqual({ root: "rv rv-mode-pages", head: true, sidecol: 4, trial: 0, route: "report-view" });
 	void rv;
 	expect(problems).toEqual([]);
 });

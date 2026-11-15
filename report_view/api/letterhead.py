@@ -63,22 +63,45 @@ def _company(name: str | None) -> frappe._dict | None:
 	return rows[0]
 
 
+# the addresses of a company read to choose the one its letter head prints
+ADDRESS_CANDIDATES = 20
+
+
 def _address(company: str) -> dict:
 	"""The company's address (``is_your_company_address`` first, then the primary one),
 	as the letter head prints it; nothing for a user who may not read addresses."""
 	if not frappe.has_permission("Address", "read"):
 		return {}
+	# the addresses the user may read, with the fields the letter head prints; not ordered by
+	# the two flags: Frappe refuses an order on a field the user may not read
 	rows = frappe.get_list(
 		"Address",
 		filters=[
 			["Dynamic Link", "link_doctype", "=", "Company"],
 			["Dynamic Link", "link_name", "=", company],
 		],
-		fields=list(lh_core.ADDRESS_FIELDS),
-		order_by="is_your_company_address desc, is_primary_address desc",
-		limit=1,
+		fields=["name", *lh_core.ADDRESS_FIELDS],
+		limit=ADDRESS_CANDIDATES,
 	)
-	return rows[0] if rows else {}
+	if not rows:
+		return {}
+	# the company's own address first, then the primary one: the flags only choose among the
+	# addresses already read, nothing of them is shown
+	flags = {
+		r.name: r
+		for r in frappe.get_all(
+			"Address",
+			filters={"name": ["in", [r.name for r in rows]]},
+			fields=["name", "is_your_company_address", "is_primary_address"],
+		)
+	}
+
+	def preference(row):
+		flag = flags.get(row.name) or {}
+		return (-int(flag.get("is_your_company_address") or 0), -int(flag.get("is_primary_address") or 0))
+
+	best = min(rows, key=preference)
+	return {k: v for k, v in best.items() if k != "name"}
 
 
 def _values(company: frappe._dict, address: dict) -> dict:

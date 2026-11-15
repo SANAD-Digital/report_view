@@ -51,18 +51,19 @@ const check = (name, ok, info = "") => results.push([ok ? "PASS" : "FAIL", name,
 		await btn.first().waitFor({ timeout: 30000 }).catch(() => {});
 		check("Letter Head form has «Design with the builder»", (await btn.count()) > 0);
 
-		// 1. the gallery: six styles with the company's real data
+		// 1. the gallery: the library of styles (ADR-030) with the company's real data
 		await page.goto(`${BASE}/desk/rv-letterhead`, { waitUntil: "domcontentloaded" });
 		await page.waitForSelector(".rvlb-gallery:not([hidden]) .rvlb-card", { timeout: 40000 });
 		await page.waitForTimeout(500);
 		const ctxdata = await page.evaluate((h) => eval(h).render_ctx(), H);
 		const g = await page.evaluate(() => ({
 			cards: document.querySelectorAll(".rvlb-card").length,
+			all: Number(document.querySelector('[data-family="all"] .n')?.textContent || 0),
 			text: [...document.querySelectorAll(".rvlb-card .rvlb-thumb")].map((t) => t.textContent),
 			empties: [...document.querySelectorAll(".rvlb-vals b.is-empty")].length,
 			warn: document.querySelector(".rvlb-warn")?.textContent || "",
 		}));
-		check("gallery: six styles", g.cards === 6, String(g.cards));
+		check("gallery: every style of the library", g.cards >= 20 && g.cards === g.all, `${g.cards} of ${g.all}`);
 		const name_en = ctxdata.values.company_name;
 		check("gallery: every style shows the company's name", g.text.every((t) => t.includes(name_en) || t.includes(ctxdata.values.company_name_ar)), name_en);
 		const phone = ctxdata.values.phone_no;
@@ -70,10 +71,19 @@ const check = (name, ok, info = "") => results.push([ok ? "PASS" : "FAIL", name,
 		const empty_tokens = ["tax_id", "registration_details"].filter((t) => !ctxdata.values[t]);
 		check("gallery: empty fields are said to be empty, never faked", empty_tokens.length === 0 || (g.empties >= empty_tokens.length && g.warn.length > 0 && !g.text.some((t) => /الرقم الضريبي|CR:/.test(t))), `${g.empties} empty`);
 		await shot("site-01-gallery");
+		// a family shows its own styles only, «All» all of them again
+		const gov_n = Number(await page.locator('[data-family="government"] .n').textContent());
+		await page.click('[data-family="government"]');
+		await page.waitForTimeout(300);
+		check("gallery: a family shows its own styles", gov_n > 0 && (await page.locator(".rvlb-card").count()) === gov_n, String(gov_n));
+		await page.click('[data-family="all"]');
+		await page.waitForTimeout(300);
+		// the actions are Desk's page head's, as on Frappe's print format builder (ADR-029)
+		const head_btn = (text) => page.locator(".page-head .page-actions button:visible", { hasText: text }).first();
 
 		// 2. start with the classic style
 		await page.click(".rvlb-card[data-preset=classic]");
-		await page.click("[data-act=start]");
+		await head_btn(/ابدأ بهذا النمط|Start with this style/).click();
 		await page.waitForSelector(".rvlb-editor:not([hidden]) .rvlb-el", { timeout: 20000 });
 		await page.waitForTimeout(600);
 		let L = await layout();
@@ -140,8 +150,27 @@ const check = (name, ok, info = "") => results.push([ok ? "PASS" : "FAIL", name,
 		L = await layout();
 		check("header height by dragging its edge", L.header.h > h0, `${h0} → ${L.header.h}`);
 
-		// 10. real preview from the server, with the margin line
-		await page.click("[data-act=preview]");
+		// 9b. lines past the foot of their band: said above the paper, with the height that
+		// holds them; the band raised by its button, the warning gone
+		await page.evaluate((h) => eval(h).store.commit((d) => { d.header.h = 10; }), H);
+		await page.waitForSelector(".rvlb-overflow:not([hidden]) [data-raise]", { timeout: 5000 }).catch(() => {});
+		const cut = await page.evaluate(() => {
+			const b = document.querySelector(".rvlb-overflow:not([hidden]) [data-raise]");
+			return b ? { raise: Number(b.dataset.raise), one_line: b.getBoundingClientRect().height < 30, zone: Boolean(document.querySelector(".rvlb-zone[data-band=header].is-cut")) } : null;
+		});
+		check("cut: lines past the band's foot are said, with a height that holds them", cut && cut.raise > 10 && cut.zone && cut.one_line, JSON.stringify(cut));
+		if (cut) {
+			await page.click(".rvlb-overflow [data-raise]");
+			await page.waitForTimeout(300);
+			const after = await page.evaluate((h) => ({ h: eval(h).store.layout.header.h, shown: !document.querySelector(".rvlb-overflow")?.hidden }), H);
+			check("cut: «Make it n mm» raises the band and the warning goes", after.h === cut.raise && !after.shown, JSON.stringify(after));
+		}
+		// back to the height dragged above
+		await page.evaluate(([h, v]) => eval(h).store.commit((d) => { d.header.h = v; }), [H, L.header.h]);
+
+		// 10. real preview from the server, with the margin line (Desk's page head: an icon)
+		check("real preview: an icon of Desk's page head", (await page.locator(".page-head .page-icon-group button:visible").count()) > 0);
+		await page.evaluate((h) => eval(h).preview(), H);
 		await page.waitForSelector(".rvlb-pv-head [data-rv-lh=header]", { timeout: 30000 });
 		const pv = await page.evaluate(() => ({ head: document.querySelector(".rvlb-pv-head").textContent, css: document.querySelector(".rvlb-code code")?.textContent || "" }));
 		check("real preview: the server's HTML with the company", pv.head.includes(name_en), pv.head.slice(0, 80));
@@ -151,10 +180,11 @@ const check = (name, ok, info = "") => results.push([ok ? "PASS" : "FAIL", name,
 		await page.waitForTimeout(400);
 
 		// 11. save as a new letter head
-		await page.click("[data-act=save]");
+		// Desk's primary action (Frappe 16 keeps its «Saving…» words hidden inside the button)
+		await page.locator(".page-head .page-actions .primary-action:visible").first().click();
 		const dlg = page.locator(".modal.show");
 		await dlg.locator("input[data-fieldname=name]").fill(NAME);
-		await dlg.locator(".btn-primary").click();
+		await dlg.locator(":is(.btn-modal-primary, .btn-primary)").first().click();
 		await page.waitForFunction((n) => frappe.get_route().join("/") === `rv-letterhead/${n}`, NAME, { timeout: 30000 }).catch(() => {});
 		saved = await page.evaluate((n) => frappe.xcall("frappe.client.get", { doctype: "Letter Head", name: n }).catch(() => null), NAME);
 		check("save: a new Letter Head with the generated HTML", saved && saved.source === "HTML" && /data-rv-lh="header"/.test(saved.content || "") && /data-rv-lh="footer"/.test(saved.footer || ""), saved ? saved.source : "missing");
@@ -207,6 +237,8 @@ const check = (name, ok, info = "") => results.push([ok ? "PASS" : "FAIL", name,
 		await pp.waitForTimeout(300);
 		const n1 = await pp.evaluate((h) => eval(h).store.layout.header.elements.length, H);
 		check("phone: tap a field to add it", n1 === n0 + 1, `${n0} → ${n1}`);
+		// Desk shows no action icons on a phone: the real preview stays in the bar
+		check("phone: the real preview is at hand", await pp.locator(".rvlb-bar [data-act=preview]").isVisible());
 		const sw = await pp.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
 		check("phone: no horizontal page scroll", sw[0] <= sw[1], JSON.stringify(sw));
 		if (SHOTS) await pp.screenshot({ path: `${SHOTS}/site-07-phone.png` });

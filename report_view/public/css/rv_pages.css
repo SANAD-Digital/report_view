@@ -281,23 +281,14 @@
 .rv-num input{width:100%;padding-inline-end:30px;font-variant-numeric:tabular-nums}
 .rv-num i{position:absolute;inset-inline-end:8px;font-style:normal;font-size:var(--fs-xs);color:var(--tx-4);pointer-events:none}
 .rv-sw-field{justify-content:flex-end}
-/* four margins around a little page: top, the two sides, bottom */
+/* four margins in one row (the side column: rv-box4 below) */
 .rv-box4{display:grid;grid-template-columns:1fr 1.1fr 1fr;grid-template-rows:auto auto auto;gap:6px;align-items:center}
 .rv-box4 input{width:100%;text-align:center;padding:0 4px;font-variant-numeric:tabular-nums}
-.rv-box4-top{grid-column:2;grid-row:1}
-.rv-box4-start{grid-column:1;grid-row:2}
-.rv-box4-page{grid-column:2;grid-row:2;height:42px;border:1.5px solid var(--line-3);border-radius:3px;background:linear-gradient(var(--surface-3),var(--surface-3)) center/62% 58% no-repeat,var(--surface)}
-.rv-box4-end{grid-column:3;grid-row:2}
-.rv-box4-bottom{grid-column:2;grid-row:3}
 .rv-rule-ctl{display:grid;grid-template-columns:76px 1fr 34px;gap:6px;align-items:center}
 .rv-rule-ctl input[type=color],.rv-color-wide{width:100%;height:var(--ctl);padding:2px;border:1px solid var(--ctl-line);border-radius:var(--r);background:var(--ctl-bg);cursor:pointer}
 .rv-wm-img{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .rv-wm-img img{width:56px;height:40px;object-fit:contain;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2)}
-.rv-box4{grid-template-columns:1fr 92px 1fr;gap:6px 8px}
 .rv-box4 input.rv-input{text-align:center;padding:0 4px}
-.rv-box4-top input,.rv-box4-bottom input{width:100%}
-.rv-box4-page{position:relative;height:58px;border:1px solid var(--line-3);border-radius:3px;background:var(--surface);box-shadow:var(--sh-mini)}
-.rv-box4-page i{position:absolute;top:var(--m-top,12%);bottom:var(--m-bottom,12%);inset-inline-start:var(--m-start,12%);inset-inline-end:var(--m-end,12%);border:1px dashed var(--pri);border-radius:1px;background:repeating-linear-gradient(0deg,var(--pri-soft) 0 3px,transparent 3px 6px);transition:inset .15s,top .15s,bottom .15s}
 .rv-rule-ctl{grid-template-columns:72px 1fr 32px}
 .rv-rule-ctl input[type=color],.rv-color-wide{height:var(--input-height,28px);border-radius:var(--r-sm)}
 /* ---------- the body of a page: between head and foot, never pushing the foot off ---------- */
@@ -350,7 +341,11 @@
 .rv-docprint .rv-print-side > .rv-print-note.warn{color:var(--warn,var(--orange-600))}
 .rv-docprint .rv-pages{flex:1}
 .rv-page-flow .print-format-gutter{padding:0!important;margin:0!important;background:none!important}
-.rv-page-flow .print-format{width:auto!important;max-width:none!important;min-height:0!important;padding:0!important;margin:0!important;box-shadow:none!important;border:0!important;background:transparent!important}
+/* Frappe's .print-format (Frappe's page box; layouts.js in_print_format puts every format in
+   it, its print style's rules start from it): here the sheet is the page, so only its
+   lettering stays. Important: a format's or a print style's own .print-format rules come
+   later in the document and weigh as much */
+.rv-page-flow .print-format{width:auto!important;max-width:none!important;min-height:0!important;height:auto!important;padding:0!important;margin:0!important;box-shadow:none!important;border:0!important;border-radius:0!important;background:transparent!important}
 /* the rows of a format stand inside the page body: Bootstrap's negative margins reach into the
    padding of Frappe's own sheet, which the pages do not have (rows inside a column keep them) */
 .rv-page-flow .row:not([class*="col-"] .row){margin-inline:0}
@@ -515,10 +510,6 @@ button.rv-preset-star:focus-visible{outline:2px solid var(--pri);outline-offset:
 .rv-var{display:flex;flex-direction:column;gap:3px}
 .rv-var-desc{font-size:var(--fs-xs);color:var(--tx-3);line-height:1.4}
 
-/* Frappe's .print-format around a format (layouts.js in_print_format): its print style's
-   rules start from it; its page box (width, padding, rounded white sheet) is Frappe's page,
-   and here the sheet is the page, so only its lettering stays */
-:is(.rv-print-sheets,.rv-print-probe) .print-format.rv-print-format{width:auto !important;max-width:none !important;min-height:0 !important;height:auto !important;margin:0 !important;padding:0 !important;border:0 !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important}
 
 /* ==========================================================================
    The side column, the one shape of the print engine (ADR-029; T1/T2 of the critic's review
@@ -586,7 +577,6 @@ button.rv-preset-star:focus-visible{outline:2px solid var(--pri);outline-offset:
 .rv .rv-print-sidecol .rv-psec-bd .rv-zone-empty{font-size:var(--t12)}
 /* the margins: four small fields in one row (top, bottom, start, end), no drawing of the page */
 .rv .rv-print-sidecol .rv-box4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:auto;gap:var(--s2)}
-.rv .rv-print-sidecol .rv-box4-page{display:none}
 .rv .rv-print-sidecol .rv-box4-top{order:1}
 .rv .rv-print-sidecol .rv-box4-bottom{order:2}
 .rv .rv-print-sidecol .rv-box4-start{order:3}

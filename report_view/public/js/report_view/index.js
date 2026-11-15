@@ -65,6 +65,12 @@ const DENSITY_KEY = "report_view:density";
 // A change of the report's filters runs it again after this much quiet (ms), as query-report.
 const RUN_DEBOUNCE_MS = 300;
 
+// the frame of the table or the pages fits the window: never shorter than this; the room
+// left under it on the standard page, and under it above a trial layout's bottom bar (px)
+const MIN_FRAME_HEIGHT_PX = 420;
+const ROOM_UNDER_FRAME_PX = 16;
+const ROOM_ABOVE_BOTTOM_BAR_PX = 8;
+
 function read_pref(key) {
 	try {
 		return window.localStorage.getItem(key);
@@ -645,7 +651,8 @@ export class ReportViewPage {
 		// print page), on every page
 		const in_view = this.shell || this.root.classList.contains("rv-mode-pages");
 		const top = in_view ? Math.max(sticky, wrap.getBoundingClientRect().top + window.scrollY) : sticky;
-		const h = Math.max(420, Math.round(window.innerHeight - Math.max(0, top) - (this.shell ? 8 + this.shell.below_grid() : 16)));
+		const under = this.shell ? ROOM_ABOVE_BOTTOM_BAR_PX + this.shell.below_grid() : ROOM_UNDER_FRAME_PX;
+		const h = Math.max(MIN_FRAME_HEIGHT_PX, Math.round(window.innerHeight - Math.max(0, top) - under));
 		wrap.style.height = `${h}px`;
 	}
 

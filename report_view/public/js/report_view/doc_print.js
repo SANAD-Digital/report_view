@@ -14,6 +14,11 @@ import { PagesView } from "./views/pages_view.js";
 import { error_text } from "./api.js";
 import { load_user_settings, settings_saver } from "./util.js";
 import { CUSTOM, TOKEN, METHOD, OPTION_KEYS } from "./custom_print_rules.js";
+
+// the print page fills the window under Desk's head: never shorter than this, and this much
+// room left under it (px)
+const MIN_PAGE_HEIGHT_PX = 420;
+const ROOM_UNDER_PAGE_PX = 12;
 const call = (method, args, type = "GET") => frappe.call({ method, args, type }).then((r) => r.message);
 
 class DocPrintPage {
@@ -119,7 +124,7 @@ class DocPrintPage {
 
 	fit_height() {
 		const top = this.root.getBoundingClientRect().top + window.scrollY;
-		this.root.style.height = `${Math.max(420, window.innerHeight - top - 12)}px`;
+		this.root.style.height = `${Math.max(MIN_PAGE_HEIGHT_PX, window.innerHeight - top - ROOM_UNDER_PAGE_PX)}px`;
 	}
 
 	/** Every part of the pages loaded before is dropped: another document, other data. */

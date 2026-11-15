@@ -26,7 +26,7 @@ import { PagesLang } from "./pages/i18n.js";
 import { PagesLayouts } from "./pages/layouts.js";
 import { PagesOutput } from "./pages/output.js";
 import { PagesPanel } from "./pages/panel.js";
-import { DEFAULT_SETTINGS, KEEP_FORMATS, KEEP_LANGS, KEEP_LETTERHEADS, KEEP_PARTS, PAGE_GAP, PAINT_KEYS, PRINT_MAX_PAGES, SKELETON_BARS, STAGE_PAD, ZOOM_STEPS, sanitize_settings } from "./pages/settings.js";
+import { A4_WIDTH_PX, DEFAULT_SETTINGS, FIT_ZOOM_MAX, FIT_ZOOM_MIN, KEEP_FORMATS, KEEP_LANGS, KEEP_LETTERHEADS, KEEP_PARTS, PAGE_GAP, PAINT_KEYS, PRINT_MAX_PAGES, ROWS_LAYOUT_WIDTH, SKELETON_BARS, STAGE_PAD, ZOOM_STEPS, sanitize_settings } from "./pages/settings.js";
 import { Lru, format_fragment, scope_format_css, strip_scripts } from "./pages/support.js";
 import { PagesVirtual } from "./pages/virtual.js";
 
@@ -258,7 +258,7 @@ export class PagesView {
 			this.clear_pages();
 			return;
 		}
-		this.rows.set({ report, state, config, post: opened.post, fmt, session, width: 1200 });
+		this.rows.set({ report, state, config, post: opened.post, fmt, session, width: ROWS_LAYOUT_WIDTH });
 		// No choice made yet for this report: a table too wide for a portrait page at the
 		// smallest font opens in landscape, as Frappe prints reports by default.
 		if (this.unsaved && !this.settings.template && !this.options?.defaults?.orientation) {
@@ -552,6 +552,8 @@ export class PagesView {
 		const dir = this.lang_rtl() ? "rtl" : "ltr";
 		this.sheets.dir = dir;
 		this.sheets.lang = this.lang();
+		// the probe measures what the sheets draw: a format's [lang] rules hold in both
+		this.probe.lang = this.sheets.lang;
 		this.apply_vars(s);
 		this.root.style.setProperty("--pp-w", `${box.w}px`);
 		this.root.style.setProperty("--pp-h", `${box.h}px`);
@@ -656,7 +658,7 @@ export class PagesView {
 			// the sheets' own padding (smaller on a narrow screen), at the zoom it is drawn with
 			const pad = this.sheet_metrics().pad_inline;
 			const w = this.stage.clientWidth - 2 * pad;
-			const fit = Math.max(0.3, Math.min(1.25, w / (this.box?.w || 794)));
+			const fit = Math.max(FIT_ZOOM_MIN, Math.min(FIT_ZOOM_MAX, w / (this.box?.w || A4_WIDTH_PX)));
 			// opened in the side layout: the real size, or what fits when the sheet is wider
 			// (a landscape sheet at 1440: its last columns were off the stage)
 			return this.auto_zoom ? Math.min(1, fit) : fit;

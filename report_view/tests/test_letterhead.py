@@ -392,6 +392,35 @@ class TestGeneratedHtml(RVTestCase):
 		out = frappe.render_template(fixed, {"doc": {"company": COMPANY}})
 		self.assertIn(frappe.db.get_value("Company", OTHER_COMPANY, "company_name"), out)
 
+	def test_the_primary_company_address_is_chosen_without_ordering_by_its_flags(self):
+		"""Of the company's addresses (ERPNext marks every address of a company as its own),
+		the primary one, chosen after the read: Frappe refuses an order on a field the user
+		may not read. Its flags are not returned with it."""
+
+		def address(title, line, own, primary):
+			return frappe.get_doc(
+				{
+					"doctype": "Address",
+					"address_title": title,
+					"address_type": "Office",
+					"address_line1": line,
+					"city": "Sanaa",
+					"country": frappe.db.get_value("Company", COMPANY, "country") or "Yemen",
+					"is_your_company_address": own,
+					"is_primary_address": primary,
+					"links": [{"link_doctype": "Company", "link_name": COMPANY}],
+				}
+			).insert(ignore_permissions=True)
+
+		address("RV LH other", "RV other line", 1, 0)
+		address("RV LH primary", "RV primary line", 1, 1)
+		address("RV LH later", "RV later line", 1, 0)
+		with self.as_user("admin"):
+			got = api._address(COMPANY)
+		self.assertEqual(got.get("address_line1"), "RV primary line")
+		self.assertNotIn("is_your_company_address", got)
+		self.assertNotIn("name", got)
+
 	def test_the_arabic_name_comes_from_translation(self):
 		name = company_value("company_name")
 		frappe.get_doc(

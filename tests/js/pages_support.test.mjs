@@ -48,4 +48,9 @@ test("a print format's selectors are held to the sheets: html, :root and body st
 	assert.equal(scope_selector("table > tr", S), ".s table > tr");
 	// a word that only starts like body is not body
 	assert.equal(scope_selector("bodyx", S), ".s bodyx");
+	// a print style's language rules (standard.css: [lang="ar"] .print-format): the sheets and
+	// every sheet carry the language of the pages, so both forms hold
+	assert.equal(scope_selector('[lang="ar"] .print-format', S), '.s [lang="ar"] .print-format');
+	assert.equal(scope_selector('html[lang="ar"] .print-format', S), '.s[lang="ar"] .print-format');
+	assert.equal(scope_selector(':root[dir="rtl"] td', S), '.s[dir="rtl"] td');
 });

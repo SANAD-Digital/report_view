@@ -7,7 +7,7 @@ import { PAGE_FONT, fit_columns, paginate } from "../../engine/page_layout.js";
 import { build_layout } from "../../engine/row_layout.js";
 import { ordered_columns } from "../../engine/view_config.js";
 import { esc } from "../../util.js";
-import { FIT_GUARD, FIT_RUN, SAFETY_PX, UNORDERED, on_page } from "./settings.js";
+import { CELL_PAD_EM, DIGIT_EM, FIT_GUARD, FIT_RUN, LETTER_EM, MIN_BODY_PX, MIN_NUMBER_CHARS, MIN_VOUCHER_CHARS, SAFETY_PX, TEMPLATE_FONT_PX, UNORDERED, on_page } from "./settings.js";
 import { breathe, foot_height, frappe_print_base, strip_scripts, wait_images } from "./support.js";
 
 // text columns printed whole, never cut (fit_input)
@@ -46,13 +46,13 @@ export class PagesLayouts {
 			if (d.label) return { width: d.width, flex: true, weight: 0.5 };
 			// a voucher number is the reference a row is matched by: printed whole
 			if (!d.numeric && UNCUT.has(d.column.fieldname)) {
-				const longest = Math.max(8, ...this.facts_of(d.column.key).map((v) => String(v ?? "").length));
-				return { width: Math.ceil((longest * 0.62 + 1.6) * 13), flex: false };
+				const longest = Math.max(MIN_VOUCHER_CHARS, ...this.facts_of(d.column.key).map((v) => String(v ?? "").length));
+				return { width: Math.ceil((longest * LETTER_EM + CELL_PAD_EM) * TEMPLATE_FONT_PX), flex: false };
 			}
 			if (!d.numeric) return { width: d.width, flex: true, weight: 1 };
-			const longest = Math.max(10, chars(total?.cell(d).html), ...String(this.title_of(d)).split(/\s+/).map((w) => w.length));
-			// tabular digits are about 0.6em; the padding of a cell is 1.1em (rv_pages.css)
-			return { width: Math.min(d.width, Math.ceil((longest * 0.6 + 1.6) * 13)), flex: false };
+			const longest = Math.max(MIN_NUMBER_CHARS, chars(total?.cell(d).html), ...String(this.title_of(d)).split(/\s+/).map((w) => w.length));
+			// tabular digits are about DIGIT_EM wide
+			return { width: Math.min(d.width, Math.ceil((longest * DIGIT_EM + CELL_PAD_EM) * TEMPLATE_FONT_PX)), flex: false };
 		});
 	}
 
@@ -332,8 +332,8 @@ export class PagesLayouts {
 		const first_h = h(q(".rv-page-top-first"));
 		const next_h = h(q(".rv-page-top-next"));
 		const foot_h = foot_height(q(".rv-page-foot"));
-		const body_h = Math.max(40, box.inner_h - next_h - foot_h - SAFETY_PX);
-		const first_body_h = Math.max(40, box.inner_h - first_h - foot_h - SAFETY_PX);
+		const body_h = Math.max(MIN_BODY_PX, box.inner_h - next_h - foot_h - SAFETY_PX);
+		const first_body_h = Math.max(MIN_BODY_PX, box.inner_h - first_h - foot_h - SAFETY_PX);
 		if (this.sig_leaves_no_room(box.inner_h - next_h - foot_h - SAFETY_PX, box)) return this.layout_custom(token, box, dir);
 		let units;
 		let wide;
@@ -471,7 +471,7 @@ export class PagesLayouts {
 				let end = bad + 1;
 				while (end < pages.length && !pages[end].forced) end += 1;
 				const rest = pages.slice(bad + 1, end).flatMap((p) => p.units);
-				const room = Math.max(40, this.custom_room - cut);
+				const room = Math.max(MIN_BODY_PX, this.custom_room - cut);
 				const packed = this.pack_units(rest, room, room);
 				if (pages[bad + 1]?.forced) packed[0].forced = true;
 				pages.splice(bad + 1, end - bad - 1, ...packed);

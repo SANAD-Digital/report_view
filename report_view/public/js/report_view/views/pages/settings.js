@@ -43,6 +43,47 @@ export const PDF_WAIT_LIMIT_MIN = 16;
 
 export const ZOOM_STEPS = [0.4, 0.5, 0.67, 0.8, 1, 1.25, 1.5];
 
+// «Fit»: the sheet as wide as the stage, never smaller or larger than these
+export const FIT_ZOOM_MIN = 0.3;
+
+export const FIT_ZOOM_MAX = 1.25;
+
+// a zoom kept in the settings (sanitize_settings): between these
+export const SAVED_ZOOM_MIN = 0.3;
+
+export const SAVED_ZOOM_MAX = 2;
+
+// an A4 sheet at 96 dpi (px): the width «Fit» reads before the first sheet is measured
+export const A4_WIDTH_PX = 794;
+
+// the least room a page body keeps for the content of a print format (px)
+export const MIN_BODY_PX = 40;
+
+// a number column of the standard template is never narrower than so many characters
+export const MIN_NUMBER_CHARS = 10;
+
+// a voucher number printed whole: never narrower than so many characters
+export const MIN_VOUCHER_CHARS = 8;
+
+// a column's width from its characters: the width of a character (em) and a cell's padding
+// (em; rv_pages.css) at the template's 13px
+export const DIGIT_EM = 0.6;
+
+export const LETTER_EM = 0.62;
+
+export const CELL_PAD_EM = 1.6;
+
+export const TEMPLATE_FONT_PX = 13;
+
+// the width the rows are laid out for before the pages measure them (px)
+export const ROWS_LAYOUT_WIDTH = 1200;
+
+// a value of a print format's variable typed or switched: the format renders again after
+// this much quiet (ms); a typed number waits longer, between two keys
+export const VARIABLE_WAIT_MS = 250;
+
+export const VARIABLE_TYPING_WAIT_MS = 400;
+
 // The list of a Link field: above the field when the room under it is less than this, and
 // its height between these (px).
 export const DROPDOWN_FLIP_UNDER = 220;
@@ -372,6 +413,6 @@ export function sanitize_settings(raw, base = DEFAULT_SETTINGS) {
 	if (PAGE_SCOPES.includes(raw.wm_pages)) out.wm_pages = raw.wm_pages;
 	if (raw.variables && typeof raw.variables === "object") out.variables = sanitize_variables(raw.variables);
 	if (Array.isArray(raw.hidden)) out.hidden = raw.hidden.filter((k) => typeof k === "string").slice(0, 500);
-	if (raw.zoom === "fit" || (Number.isFinite(raw.zoom) && raw.zoom >= 0.3 && raw.zoom <= 2)) out.zoom = raw.zoom;
+	if (raw.zoom === "fit" || (Number.isFinite(raw.zoom) && raw.zoom >= SAVED_ZOOM_MIN && raw.zoom <= SAVED_ZOOM_MAX)) out.zoom = raw.zoom;
 	return out;
 }

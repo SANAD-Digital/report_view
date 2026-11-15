@@ -21,6 +21,9 @@ import { frame_resize_observer } from "../util.js";
 const PX_MM = 96 / 25.4;
 const DRAG_PX = 4;
 const HANDLES = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+// the sheet of the editor is drawn between a quarter and twice its size
+const SCALE_MIN = 0.25;
+const SCALE_MAX = 2;
 const pct = (mm) => `${+((mm / REF_W) * 100).toFixed(3)}%`;
 const fmt = (v) => String(+(+v).toFixed(1));
 
@@ -118,7 +121,7 @@ export class Canvas {
 
 	set_scale(s, { fit = false } = {}) {
 		this.fit = fit;
-		this.scale = Math.min(2, Math.max(0.25, s));
+		this.scale = Math.min(SCALE_MAX, Math.max(SCALE_MIN, s));
 		this.sheet.style.transform = `scale(${this.scale})`;
 		this.sheet.style.setProperty("--inv", String(1 / this.scale));
 		this.box.style.width = `${PAGE.w * PX_MM * this.scale}px`;

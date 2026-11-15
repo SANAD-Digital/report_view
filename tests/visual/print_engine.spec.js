@@ -285,15 +285,16 @@ test("pages: a group of the side column folds in place, with no listener on the 
 	expect((await st()).open).toEqual(["page", "content"]);
 	await page.click('details[data-group="marks"] > summary');
 	await page.click('details[data-group="page"] > summary');
-	let s = await st();
-	expect(s.open).toEqual(["content", "marks"]);
-	expect(s.kept.sort()).toEqual(["content", "marks"]);
+	// a fold is the browser's toggle event: read once it has run
+	await expect.poll(async () => (await st()).open).toEqual(["content", "marks"]);
+	// what is kept follows the toggle events, which the browser fires after the change
+	await expect.poll(async () => (await st()).kept.sort()).toEqual(["content", "marks"]);
 	// away to the table and back: the same groups open
 	await page.click('.rv-views [data-mode="grid"]');
 	await page.waitForFunction(() => window.rv_page.state.mode === "grid" && window.rv_page.grid.rt);
 	await page.click('.rv-views [data-mode="pages"]');
 	await settle(page);
-	expect((await st()).open).toEqual(["content", "marks"]);
+	await expect.poll(async () => (await st()).open).toEqual(["content", "marks"]);
 	expect(problems, "console errors/warnings").toEqual([]);
 });
 

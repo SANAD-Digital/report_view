@@ -36,6 +36,7 @@ import { Toolbar } from "./components/toolbar.js";
 import { StatusBar } from "./components/status_bar.js";
 import { Summary } from "./components/summary.js";
 import { GroupPanel } from "./components/group_panel.js";
+import { TreeLevel } from "./components/tree_level.js";
 import { SidePanel } from "./components/side_panel.js";
 import { HeaderCells } from "./components/header_cells.js";
 import * as popover from "./components/popover.js";
@@ -203,6 +204,10 @@ export class ReportViewPage {
 			on_column_groups: () => open_column_groups(this.controls),
 		});
 		wrap.prepend(this.group_panel.el);
+		// the level a report tree opens to (Frappe's «Set Level»), in the row groups bar; the
+		// layouts and the Statement have their own (layouts/layout.js)
+		this.tree_levels = [new TreeLevel(this, "rv-tl-gp")];
+		this.group_panel.el.querySelector(".rv-gp-tools").prepend(this.tree_levels[0].el);
 		this.pivot_bar = new PivotBar({
 			parent: wrap,
 			after: this.group_panel.el,
@@ -382,9 +387,15 @@ export class ReportViewPage {
 	}
 
 	// Controls that show the view state: facets, header cells, group panel, side panel.
+	/** Every tree level control shows the level the tree opens to now. */
+	refresh_tree_levels() {
+		for (const t of this.tree_levels || []) t.update();
+	}
+
 	refresh_controls() {
 		if (!this.state) return;
 		this.apply_mode();
+		this.refresh_tree_levels();
 		this.shell?.refresh();
 		this.toolbar.search.refresh();
 		this.cells.refresh();
@@ -1078,6 +1089,8 @@ export class ReportViewPage {
 		} catch (e) {
 			this.show_error(e);
 		}
+		// a node opened or closed by hand, a new report: the level shown follows
+		this.refresh_tree_levels();
 	}
 
 	async render_view() {

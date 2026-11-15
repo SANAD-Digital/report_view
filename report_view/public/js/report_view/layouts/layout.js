@@ -20,7 +20,7 @@ import { open_popover, close_popover, menu_content } from "../components/popover
 import { open_group_menu, open_density_menu, open_more_menu, open_export_menu } from "../components/head_menus.js";
 import { ViewsTabs } from "../components/views_tabs.js";
 import { esc, fmt_int } from "../util.js";
-import { tree_index } from "../engine/tree_nodes.js";
+import { TreeLevel } from "../components/tree_level.js";
 
 export const LAYOUTS = ["a", "c"];
 // the rows a Statement draws at their full height; beyond them its body scrolls
@@ -50,12 +50,12 @@ export class TrialLayout {
 			bar.className = "rv-ta";
 			bar.setAttribute("role", "toolbar");
 			bar.setAttribute("aria-label", __("Table tools"));
-			bar.append(page.toolbar.search.el, this.tools.group, this.tools.columns, this.tools.subtotals, this.tools.frow, this.tools.sp, this.tools.count, this.tools.density);
+			bar.append(page.toolbar.search.el, this.tools.group, this.tools.columns, this.tools.subtotals, this.tools.frow, this.tools.level.el, this.tools.sp, this.tools.count, this.tools.density);
 			wrap.prepend(bar);
 			this.bar = bar;
 		} else {
 			const h = page.header;
-			h.tools_slot.append(this.tools.group, this.tools.subtotals, this.tools.columns, this.tools.frow, this.tools.density);
+			h.tools_slot.append(this.tools.group, this.tools.subtotals, this.tools.columns, this.tools.frow, this.tools.level.el, this.tools.density);
 			h.search_slot.append(page.toolbar.search.el);
 			// the bottom bar: the views as tabs, the views menu, then the rows and the selection
 			const foot = document.createElement("footer");
@@ -199,7 +199,10 @@ export class TrialLayout {
 			density.innerHTML = `<button type="button" data-density="comfortable">${esc(__("Comfortable"))}</button><button type="button" data-density="compact">${esc(__("Compact"))}</button>`;
 			for (const d of density.querySelectorAll("[data-density]")) d.addEventListener("click", () => page.set_density(d.dataset.density));
 		}
-		return { group, columns, subtotals, frow, sp, count, density };
+		// the level a report tree opens to (Frappe's «Set Level»), one control on every page
+		const level = new TreeLevel(page, c ? "rv-tl-c" : "rv-tl-a");
+		page.tree_levels.push(level);
+		return { group, columns, subtotals, frow, level, sp, count, density };
 	}
 
 	/** The row of filters under the column titles, shown or not; the table is drawn again. */
@@ -290,15 +293,11 @@ export class TrialLayout {
 			<div class="rv-stmt-title"><div class="t"></div><div class="s"></div><div class="n" hidden></div></div>
 			<div class="rv-stmt-tools">
 				<button type="button" class="rv-stmt-colsbtn" aria-haspopup="dialog">${icons.columns()}<span>${esc(__("Columns", null, "Report View"))}</span></button>
-				<div class="rv-stmt-levels" role="group" aria-label="${esc(__("Level of detail"))}">
-					<button type="button" data-level="roots">${esc(__("Roots"))}</button>
-					<button type="button" data-level="groups">${esc(__("Groups"))}</button>
-					<button type="button" data-level="all">${esc(__("All accounts"))}</button>
-				</div>
 			</div>`;
-		for (const b of el.querySelectorAll("[data-level]")) {
-			b.addEventListener("click", () => this.set_level(b.dataset.level));
-		}
+		// the level of detail of a report tree: the same control as the table's (Frappe's «Set Level»)
+		this.stmt_level = new TreeLevel(this.page, "rv-stmt-levels");
+		this.page.tree_levels.push(this.stmt_level);
+		el.querySelector(".rv-stmt-tools").append(this.stmt_level.el);
 		const cols = el.querySelector(".rv-stmt-colsbtn");
 		cols.addEventListener("click", () => this.open_statement_columns(cols));
 		return el;
@@ -375,21 +374,6 @@ export class TrialLayout {
 		paint();
 	}
 
-	/** The depth of the report tree for a level of detail, or null without a tree. */
-	level_depth(level) {
-		const report = this.page.report;
-		if (!report?.tree?.enabled) return null;
-		const max = tree_index(report).max_depth;
-		return { roots: 0, groups: Math.max(0, max - 1), all: max }[level];
-	}
-
-	set_level(level) {
-		const page = this.page;
-		const depth = this.level_depth(level);
-		if (depth == null || !page.state) return;
-		page.state.tree = { depth, expanded: null };
-		page.render();
-	}
 
 	/**
 	 * The Statement on a phone: the closing balance in a bar that stays, then a card per report
@@ -642,21 +626,7 @@ export class TrialLayout {
 		const parts = [party, f.company, from && to ? __("From {0} to {1}", [date(from), date(to)]) : "", f.presentation_currency || ""].filter(Boolean);
 		el.querySelector(".s").textContent = parts.join(" · ");
 		this.paint_narrowing();
-		const levels = el.querySelector(".rv-stmt-levels");
-		const tree = Boolean(page.report?.tree?.enabled);
-		levels.hidden = !tree;
-		if (tree) {
-			// the middle level is a depth of the tree, not the group accounts: a ledger account
-			// above that depth shows too, so it says what it does (the critic's review, 2026-11-08)
-			const max = tree_index(page.report).max_depth;
-			levels.querySelector('[data-level="groups"]').textContent = __("To level {0}", [fmt_int(max)]);
-			const depth = s.tree?.expanded ? null : s.tree?.depth ?? page.report.tree.initial_depth ?? 2;
-			for (const b of levels.querySelectorAll("[data-level]")) {
-				const on = depth != null && this.level_depth(b.dataset.level) === depth;
-				b.classList.toggle("on", on);
-				b.setAttribute("aria-pressed", on ? "true" : "false");
-			}
-		}
+		this.stmt_level?.update();
 	}
 
 	/**

@@ -203,7 +203,8 @@ test("layout C: the filters as one sentence whose values open their editors; one
 	expect(st.values).toEqual(["company", "__period", "__period", "__more"]);
 	expect(st.bar).toEqual(["rv-tc-modes", "rv-tsep", "rv-tc-tools", "rv-tsep", "rv-tc-search", "rv-tc-sp", "refresh", "export-menu", "print", "layout", "more"]);
 	expect(st.modes.slice(0, 2)).toEqual([["statement", "false"], ["grid", "true"]]);
-	expect(st.tools).toEqual(["group-menu", "subtotals", "columns", "filter-row", "density-menu"]);
+	// a report tree: its level (components/tree_level.js) among the table's tools
+	expect(st.tools).toEqual(["group-menu", "subtotals", "columns", "filter-row", "tree-level", "density-menu"]);
 	expect(st.tabs).toEqual([["Standard", "true"], ["Debit first", "false"], ["Shared view", "false"]]);
 	expect(st.foot_last).toBe("rv-status");
 	// a value of the sentence opens its editor (the company's own control)
@@ -399,7 +400,8 @@ for (const layout of ["a", "c"]) {
 					mode: document.querySelector(".rv").classList.contains("rv-mode-statement"),
 					head: Boolean(head) && getComputedStyle(head).display !== "none",
 					title: head?.querySelector(".t")?.textContent || "",
-					levels: [...document.querySelectorAll(".rv-stmt-levels [data-level]")].map((b) => [b.dataset.level, b.getAttribute("aria-pressed")]),
+					// the tree level (components/tree_level.js): the roots, a level, all
+					levels: [...document.querySelectorAll(".rv-stmt-levels [data-tl]")].map((b) => [b.dataset.tl, b.getAttribute("aria-pressed")]),
 					numbers_only: Boolean(row) && [...row.querySelectorAll("td")].every((td) => td.classList.contains("num")),
 					rows: document.querySelectorAll("regular-table tbody tr").length,
 				};
@@ -408,10 +410,10 @@ for (const layout of ["a", "c"]) {
 		expect(st.mode).toBe(true);
 		expect(st.head).toBe(true);
 		expect(st.title.length).toBeGreaterThan(0);
-		expect(st.levels.map((l) => l[0])).toEqual(["roots", "groups", "all"]);
+		expect(st.levels.map((l) => l[0])).toEqual(["roots", "less", "more", "all"]);
 		expect(st.numbers_only).toBe(true);
 		await shot(page, `layout-${layout}-tb-statement-ar`);
-		await page.locator('.rv-stmt-levels [data-level="roots"]').click();
+		await page.locator('.rv-stmt-levels [data-tl="roots"]').click();
 		await settle(page);
 		const roots = await read();
 		expect(roots.levels.find((l) => l[0] === "roots")[1]).toBe("true");

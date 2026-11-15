@@ -4922,3 +4922,12 @@ msgstr "زر الطباعة في المستند يفتح"
 
 msgid "«System page» is Frappe's own print page; «Advanced Print» is the print page of Report View."
 msgstr "«طريقة النظام» هي صفحة طباعة Frappe نفسها، و«الطباعة المتقدمة» هي صفحة طباعة عرض التقرير."
+
+msgid "Tree level"
+msgstr "مستوى الشجرة"
+
+msgid "One level less"
+msgstr "مستوى أقل"
+
+msgid "One level more"
+msgstr "مستوى أعمق"

@@ -537,3 +537,16 @@
 .rv-rd-entries-t :is(td,th).num{direction:ltr;text-align:end;white-space:nowrap}
 .rv-rd-entries-t tfoot td{font-weight:var(--fw-b);border-top:1.5px solid var(--tx);border-bottom:0}
 .rv-rd-entry-p{font-size:var(--fs-xs,11px);color:var(--tx-3)}
+
+/* the level a report tree opens to (components/tree_level.js; Frappe's «Set Level»): the
+   roots, the level typed or stepped, every node; the choice in force raised as in a segment */
+.rv-tree-level{align-items:center}
+.rv-tree-level[hidden]{display:none}
+.rv-tree-level .rv-tl-step{display:inline-flex;align-items:center;gap:2px;border-radius:var(--r-sm)}
+.rv-tree-level .rv-tl-step.on{background:var(--surface);box-shadow:var(--sh-1)}
+.rv-tree-level .rv-tl-step button{padding:0 6px;min-width:22px;justify-content:center}
+.rv-tree-level .rv-tl-step button:disabled{opacity:.4;cursor:default}
+.rv-tree-level label{display:inline-flex;align-items:center;gap:4px;margin:0;font-size:var(--fs-sm);font-weight:500;color:var(--tx-2);white-space:nowrap}
+.rv-tree-level input{width:3em;height:calc(var(--ctl-sm) - 4px);box-sizing:border-box;padding:0 4px;text-align:center;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);color:var(--tx);font:inherit;font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield}
+.rv-tree-level input::-webkit-inner-spin-button,.rv-tree-level input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.rv-tree-level input:focus-visible{outline:none;box-shadow:var(--focus)}

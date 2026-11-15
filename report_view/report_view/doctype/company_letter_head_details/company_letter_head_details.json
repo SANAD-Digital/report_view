@@ -1,0 +1,84 @@
+{
+ "actions": [],
+ "creation": "2026-11-16 01:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "company_name_ar",
+  "activity_ar",
+  "activity_en",
+  "address_ar",
+  "column_break_paper",
+  "cr_no",
+  "unified_no",
+  "po_box",
+  "bank_name",
+  "iban"
+ ],
+ "fields": [
+  {
+   "fieldname": "company_name_ar",
+   "fieldtype": "Data",
+   "label": "Company Name in Arabic",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "activity_ar",
+   "fieldtype": "Data",
+   "label": "Line of Business in Arabic",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "activity_en",
+   "fieldtype": "Data",
+   "label": "Line of Business in English"
+  },
+  {
+   "fieldname": "address_ar",
+   "fieldtype": "Small Text",
+   "label": "Address in Arabic"
+  },
+  {
+   "fieldname": "column_break_paper",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cr_no",
+   "fieldtype": "Data",
+   "label": "Commercial Registration No.",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "unified_no",
+   "fieldtype": "Data",
+   "label": "Unified No."
+  },
+  {
+   "fieldname": "po_box",
+   "fieldtype": "Data",
+   "label": "P.O. Box"
+  },
+  {
+   "fieldname": "bank_name",
+   "fieldtype": "Data",
+   "label": "Bank on the Letter Head"
+  },
+  {
+   "fieldname": "iban",
+   "fieldtype": "Data",
+   "label": "IBAN"
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-16 01:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Report View",
+ "name": "Company Letter Head Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

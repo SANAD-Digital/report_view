@@ -55,12 +55,32 @@ def _company(name: str | None) -> frappe._dict | None:
 	rows = frappe.get_list(
 		"Company",
 		filters={"name": name},
-		fields=["name", *lh_core.COMPANY_FIELDS, *lh_core.paper_fields()],
+		fields=["name", *lh_core.COMPANY_FIELDS],
 		limit=1,
 	)
 	if not rows:
 		frappe.throw(_("Company {0} not found").format(name), frappe.DoesNotExistError)
-	return rows[0]
+	row = rows[0]
+	# the paper's own fields: the company's row of its child table, read as its company is
+	row.update(_paper(row.name))
+	return row
+
+
+def _paper(company: str) -> dict:
+	"""The company's letter head details (its child table, lh_core.PAPER_DOCTYPE), read with
+	the user's permission on the company; nothing on a site without the table."""
+	fields = lh_core.paper_fields()
+	if not fields:
+		return {}
+	rows = frappe.get_list(
+		lh_core.PAPER_DOCTYPE,
+		filters=lh_core.paper_filters(company),
+		fields=fields,
+		parent_doctype="Company",
+		order_by="idx asc",
+		limit=1,
+	)
+	return dict(rows[0]) if rows else {}
 
 
 # the addresses of a company read to choose the one its letter head prints
@@ -109,7 +129,7 @@ def _values(company: frappe._dict, address: dict) -> dict:
 	name = company.company_name or company.name
 	# the company's own Arabic name, else its translation; never the English name again
 	# one source with the paper (the template's _rvn): the preview never differs from the print
-	name_ar = lh_core.arabic_name(company.company_name, company.get("rv_company_name_ar"))
+	name_ar = lh_core.arabic_name(company.company_name, company.get(lh_core.PAPER_FIELDS["company_name_ar"]))
 	city_line = ", ".join(v for v in (address.get("city"), address.get("state"), address.get("pincode")) if v)
 	full = "\n".join(
 		v
@@ -311,8 +331,9 @@ def company_data(company: str) -> dict:
 @_rate_limit(30)
 def save_company_paper(company: str, values: dict | str) -> dict:
 	"""What the paper prints that the company record lacked (its Arabic name and address, its
-	registration, unified number, P.O. Box, bank): written to the app's fields on Company, as
-	the user, who must be allowed to write the company. Returns the company's data again."""
+	registration, unified number, P.O. Box, bank): written to the company's row of its child
+	table (lh_core.PAPER_DOCTYPE), as the user, who must be allowed to write the company.
+	Returns the company's data again."""
 	_guard_read()
 	if not isinstance(company, str) or not company:
 		frappe.throw(_("Invalid company"), RVInvalidInput)
@@ -320,7 +341,7 @@ def save_company_paper(company: str, values: dict | str) -> dict:
 	if not isinstance(values, dict):
 		frappe.throw(_("Invalid values"), RVInvalidInput)
 	fields = set(lh_core.paper_fields())
-	meta = frappe.get_meta("Company")
+	meta = frappe.get_meta(lh_core.PAPER_DOCTYPE) if fields else None
 	changes = {}
 	for token, value in values.items():
 		field = lh_core.PAPER_FIELDS.get(token)
@@ -335,18 +356,39 @@ def save_company_paper(company: str, values: dict | str) -> dict:
 		changes[field] = text
 	doc = frappe.get_doc("Company", company)
 	doc.check_permission("write")
-	# the paper's fields only: ERPNext's Company.on_update (default accounts, warehouses) has
-	# nothing to do with them and is not run; the change is kept in the company's history as
-	# a save keeps it (a registration number or an IBAN printed on every page)
-	changed = [[f, doc.get(f) or "", v] for f, v in changes.items() if (doc.get(f) or "") != v]
+	# the company's one row of the table: written alone; ERPNext's Company.on_update (default
+	# accounts, warehouses) has nothing to do with it and is not run. The change is kept in
+	# the company's history as a save keeps it (a registration number or an IBAN printed on
+	# every page)
+	row = (doc.get(lh_core.PAPER_TABLE) or [None])[0]
+	old = {f: ((row.get(f) if row else "") or "") for f in changes}
+	changed = [[f, old[f], v] for f, v in changes.items() if old[f] != v]
 	if changed:
-		doc.db_set(changes, notify=True)
+		if row:
+			row.update(changes)
+			row.db_update()
+			version = {
+				"changed": [],
+				"added": [],
+				"removed": [],
+				"row_changed": [[lh_core.PAPER_TABLE, row.idx, row.name, changed]],
+			}
+		else:
+			row = doc.append(lh_core.PAPER_TABLE, changes)
+			row.db_insert()
+			version = {
+				"changed": [],
+				"added": [[lh_core.PAPER_TABLE, row.as_dict()]],
+				"removed": [],
+				"row_changed": [],
+			}
+		frappe.clear_document_cache("Company", company)
 		frappe.get_doc(
 			{
 				"doctype": "Version",
 				"ref_doctype": "Company",
 				"docname": company,
-				"data": frappe.as_json({"changed": changed, "added": [], "removed": [], "row_changed": []}),
+				"data": frappe.as_json(version),
 			}
 		).insert(ignore_permissions=True)
 	return {"company_data": _company_data(company), "can_set_default": _can_set_default(company)}

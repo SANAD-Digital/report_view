@@ -83,16 +83,23 @@ ADDRESS_FIELDS = ("address_line1", "address_line2", "city", "state", "pincode", 
 GENERATOR_VERSION = 2
 _GEN_RE = re.compile(r'data-rv-gen="(\d+)"')
 
+# What the paper prints that Company lacks: one row of a child table under the company
+# (report_view/custom/company.json: its table rv_letter_head_details). A child table adds no
+# column to tabCompany: on a site with many apps that table is near MariaDB's row size, and
+# its migrate failed adding fields to it («Row size too large», 2026-11-16).
+PAPER_DOCTYPE = "Company Letter Head Details"
+PAPER_TABLE = "rv_letter_head_details"
+# token of the layout -> field of that table
 PAPER_FIELDS = {
-	"company_name_ar": "rv_company_name_ar",
-	"address_ar": "rv_address_ar",
-	"cr_no": "rv_cr_no",
-	"unified_no": "rv_unified_no",
-	"po_box": "rv_po_box",
-	"bank_name": "rv_bank_name",
-	"iban": "rv_iban",
-	"activity_ar": "rv_activity_ar",
-	"activity_en": "rv_activity_en",
+	"company_name_ar": "company_name_ar",
+	"address_ar": "address_ar",
+	"cr_no": "cr_no",
+	"unified_no": "unified_no",
+	"po_box": "po_box",
+	"bank_name": "bank_name",
+	"iban": "iban",
+	"activity_ar": "activity_ar",
+	"activity_en": "activity_en",
 }
 
 
@@ -110,10 +117,19 @@ def arabic_name(company_name: str | None, own: str | None = None) -> str:
 
 
 def paper_fields() -> list[str]:
-	"""The app's fields of the paper that this site's Company has (a site where they were not
-	synced yet reads none of them, and prints those tokens empty)."""
-	meta = frappe.get_meta("Company")
+	"""The fields of the paper this site has (a site where the table was not synced yet reads
+	none of them, and prints those tokens empty)."""
+	if not frappe.db.exists("DocType", PAPER_DOCTYPE) or not frappe.get_meta("Company").has_field(
+		PAPER_TABLE
+	):
+		return []
+	meta = frappe.get_meta(PAPER_DOCTYPE)
 	return [f for f in PAPER_FIELDS.values() if meta.has_field(f)]
+
+
+def paper_filters(company: str) -> dict:
+	"""The row of a company's paper in its child table."""
+	return {"parent": company, "parenttype": "Company", "parentfield": PAPER_TABLE}
 
 
 TYPES = tuple(C["types"])
@@ -493,10 +509,20 @@ def _company_block(uses: set, company: str | None) -> str:
 			"{%- set _rvc = (doc.company if doc is defined and doc else None) or "
 			'frappe.db.get_single_value("Global Defaults", "default_company") -%}'
 		]
-	fields = ", ".join(f'"{f}"' for f in (*COMPANY_FIELDS, *paper_fields()))
+	fields = ", ".join(f'"{f}"' for f in COMPANY_FIELDS)
 	lines.append(
 		f'{{%- set _rvo = (frappe.db.get_value("Company", _rvc, [{fields}], as_dict=True) if _rvc else None) or {{}} -%}}'
 	)
+	# the paper's own fields: the company's row of its child table (PAPER_DOCTYPE)
+	paper = paper_fields()
+	if paper:
+		pfields = ", ".join(f'"{f}"' for f in paper)
+		lines.append(
+			f'{{%- set _rvp = (frappe.db.get_value({_jstr(PAPER_DOCTYPE)}, {{"parent": _rvc, "parenttype": "Company", '
+			f'"parentfield": {_jstr(PAPER_TABLE)}}}, [{pfields}], as_dict=True) if _rvc else None) or {{}} -%}}'
+		)
+	else:
+		lines.append("{%- set _rvp = {} -%}")
 	if "address" in uses:
 		afields = ", ".join(f'"{f}"' for f in ADDRESS_FIELDS)
 		lines.append(
@@ -507,7 +533,7 @@ def _company_block(uses: set, company: str | None) -> str:
 	if "name_ar" in uses:
 		# the Arabic name: the company's own field, else its Translation; never the English
 		# name again (a style printed it twice, the critic's review of 2026-11-10)
-		own = "_rvo.rv_company_name_ar or " if "rv_company_name_ar" in paper_fields() else ""
+		own = "_rvp.company_name_ar or " if "company_name_ar" in paper else ""
 		lines.append(
 			f'{{%- set _rvn = {own}(frappe.db.get_value("Translation", {{"source_text": _rvo.company_name, "language": "ar"}}, '
 			'"translated_text") if _rvo.company_name else None) or "" -%}'
@@ -526,7 +552,7 @@ def _token_expr(token: str) -> str:
 	if token in ("address_line1", "city"):
 		return f"_rva.{token}"
 	if token in PAPER_FIELDS:
-		return f"_rvo.{PAPER_FIELDS[token]}"
+		return f"_rvp.{PAPER_FIELDS[token]}"
 	return f"_rvo.{token}"
 
 

@@ -14,110 +14,16 @@
   {
    "doctype": "Custom Field",
    "dt": "Company",
-   "fieldname": "rv_company_name_ar",
-   "fieldtype": "Small Text",
+   "fieldname": "rv_letter_head_details",
+   "fieldtype": "Table",
    "insert_after": "rv_letter_head_section",
-   "label": "Company Name in Arabic",
-   "translatable": 0,
+   "label": "Letter Head Details",
    "module": "Report View",
-   "name": "Company-rv_company_name_ar",
-   "modified": "2026-11-16 00:31:46.970130"
-  },
-  {
-   "doctype": "Custom Field",
-   "dt": "Company",
-   "fieldname": "rv_activity_ar",
-   "fieldtype": "Small Text",
-   "insert_after": "rv_company_name_ar",
-   "label": "Line of Business in Arabic",
-   "module": "Report View",
-   "name": "Company-rv_activity_ar",
-   "modified": "2026-11-16 00:31:46.970174"
-  },
-  {
-   "doctype": "Custom Field",
-   "dt": "Company",
-   "fieldname": "rv_activity_en",
-   "fieldtype": "Small Text",
-   "insert_after": "rv_activity_ar",
-   "label": "Line of Business in English",
-   "module": "Report View",
-   "name": "Company-rv_activity_en",
-   "modified": "2026-11-16 00:31:46.970190"
-  },
-  {
-   "doctype": "Custom Field",
-   "dt": "Company",
-   "fieldname": "rv_address_ar",
-   "fieldtype": "Small Text",
-   "insert_after": "rv_activity_en",
-   "label": "Address in Arabic",
-   "module": "Report View",
-   "name": "Company-rv_address_ar"
-  },
-  {
-   "doctype": "Custom Field",
-   "dt": "Company",
-   "fieldname": "rv_letter_head_column",
-   "fieldtype": "Column Break",
-   "insert_after": "rv_address_ar",
-   "module": "Report View",
-   "name": "Company-rv_letter_head_column"
-  },
-  {
-   "doctype": "Custom Field",
-   "dt": "Company",
-   "fieldname": "rv_cr_no",
-   "fieldtype": "Small Text",
-   "insert_after": "rv_letter_head_column",
-   "label": "Commercial Registration No.",
-   "module": "Report View",
-   "name": "Company-rv_cr_no",
-   "modified": "2026-11-16 00:31:46.970197"
-  },
-  {
-   "doctype": "Custom Field",
-   "dt": "Company",
-   "fieldname": "rv_unified_no",
-   "fieldtype": "Small Text",
-   "insert_after": "rv_cr_no",
-   "label": "Unified No.",
-   "module": "Report View",
-   "name": "Company-rv_unified_no",
-   "modified": "2026-11-16 00:31:46.970203"
-  },
-  {
-   "doctype": "Custom Field",
-   "dt": "Company",
-   "fieldname": "rv_po_box",
-   "fieldtype": "Small Text",
-   "insert_after": "rv_unified_no",
-   "label": "P.O. Box",
-   "module": "Report View",
-   "name": "Company-rv_po_box",
-   "modified": "2026-11-16 00:31:46.970209"
-  },
-  {
-   "doctype": "Custom Field",
-   "dt": "Company",
-   "fieldname": "rv_bank_name",
-   "fieldtype": "Small Text",
-   "insert_after": "rv_po_box",
-   "label": "Bank on the Letter Head",
-   "module": "Report View",
-   "name": "Company-rv_bank_name",
-   "modified": "2026-11-16 00:31:46.970215"
-  },
-  {
-   "doctype": "Custom Field",
-   "dt": "Company",
-   "fieldname": "rv_iban",
-   "fieldtype": "Small Text",
-   "insert_after": "rv_bank_name",
-   "label": "IBAN",
-   "module": "Report View",
-   "name": "Company-rv_iban",
-   "modified": "2026-11-16 00:31:46.970221"
+   "name": "Company-rv_letter_head_details",
+   "modified": "2026-11-16 01:00:00.000000",
+   "options": "Company Letter Head Details",
+   "description": "What the letter head prints that the company lacks. Filled from the letter head builder («Company data on the letter head»); one row.",
+   "creation": "2026-11-16 01:00:00.000000"
   }
  ],
  "custom_perms": [],

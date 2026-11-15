@@ -446,17 +446,12 @@ class TestGeneratedHtml(RVTestCase):
 			{"id": "i", "type": "field", "slot": "left", "props": {"token": "iban"}},
 		]
 		html = lh.generate(lh.validate_layout(raw))["header"]
-		frappe.db.set_value("Company", COMPANY, {"rv_company_name_ar": "", "rv_cr_no": "", "rv_iban": ""})
+		set_paper(COMPANY, {"company_name_ar": "", "cr_no": "", "iban": ""})
 		empty = frappe.render_template(html, {"doc": {"company": COMPANY}})
 		self.assertNotIn(frappe.utils.escape_html(company_value("company_name")), empty)
-		frappe.db.set_value(
-			"Company",
+		set_paper(
 			COMPANY,
-			{
-				"rv_company_name_ar": "سند للمحاسبة",
-				"rv_cr_no": "1010123456",
-				"rv_iban": "SA0380000000608010167519",
-			},
+			{"company_name_ar": "سند للمحاسبة", "cr_no": "1010123456", "iban": "SA0380000000608010167519"},
 		)
 		out = frappe.render_template(html, {"doc": {"company": COMPANY}})
 		self.assertIn("سند للمحاسبة", out)
@@ -472,6 +467,18 @@ class TestGeneratedHtml(RVTestCase):
 		self.assertTrue(any("c1" in w for w in warnings))
 
 
+def set_paper(company: str, values: dict) -> None:
+	"""The company's letter head details (its child table) as the builder writes them."""
+	doc = frappe.get_doc("Company", company)
+	rows = doc.get(lh.PAPER_TABLE)
+	if rows:
+		rows[0].update(values)
+		rows[0].db_update()
+	else:
+		doc.append(lh.PAPER_TABLE, values).db_insert()
+	frappe.clear_document_cache("Company", company)
+
+
 class TestCompanyPaper(RVTestCase):
 	def test_the_paper_data_is_saved_by_who_may_write_the_company(self):
 		with self.as_user("admin"):
@@ -479,7 +486,14 @@ class TestCompanyPaper(RVTestCase):
 				COMPANY, json.dumps({"company_name_ar": " سند ", "cr_no": "4030000000"})
 			)
 		self.assertEqual(out["company_data"]["values"]["company_name_ar"], "سند")
-		self.assertEqual(frappe.db.get_value("Company", COMPANY, "rv_cr_no"), "4030000000")
+		# in the company's row of its child table: no column of tabCompany (row size)
+		self.assertEqual(
+			frappe.db.get_value(lh.PAPER_DOCTYPE, lh.paper_filters(COMPANY), "cr_no"), "4030000000"
+		)
+		# a second save changes the same row, never a second one
+		with self.as_user("admin"):
+			api.save_company_paper(COMPANY, json.dumps({"cr_no": "4030000001"}))
+		self.assertEqual(frappe.db.count(lh.PAPER_DOCTYPE, lh.paper_filters(COMPANY)), 1)
 		with self.as_user("admin"), self.assertRaises(RVInvalidInput):
 			api.save_company_paper(COMPANY, json.dumps({"company_name": "renamed"}))
 		with self.as_user("admin"), self.assertRaises(RVInvalidInput):
@@ -890,16 +904,19 @@ class TestRendererParity(RVTestCase):
 		"""The bands as they print for a company with ``values``: the template's company
 		block reads them from the fixture instead of the database."""
 		line1, line2, country = values["address"].split("\n")
-		# the paper's own fields are read from the app's fields of Company (rv_…)
+		# the paper's own fields are read from the company's row of its child table (_rvp)
 		paper = {field: values.get(token, "") for token, field in lh.PAPER_FIELDS.items()}
 		fx = {
-			"o": frappe._dict({**values, **paper, "company_logo": logo}),
+			"o": frappe._dict({**values, "company_logo": logo}),
+			"p": frappe._dict(paper),
 			"a": frappe._dict(
 				address_line1=line1, address_line2=line2, city="", state="", pincode="", country=country
 			),
 			"n": values["company_name_ar"],
 		}
-		block = "{%- set _rvo = fx.o -%}{%- set _rva = fx.a -%}{%- set _rvn = fx.n -%}\n"
+		block = (
+			"{%- set _rvo = fx.o -%}{%- set _rvp = fx.p -%}{%- set _rva = fx.a -%}{%- set _rvn = fx.n -%}\n"
+		)
 		with (
 			patch.object(lh, "_company_block", lambda uses, company: block if uses else ""),
 			patch.object(lh, "company_website", lambda company: values["website"]),

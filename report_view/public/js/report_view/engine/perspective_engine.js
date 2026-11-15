@@ -192,26 +192,29 @@ let unload_hooked = false;
 let requests = 0;
 
 /**
- * A file of the engine, refused when the server does not have it. Perspective reads any
- * answer as WebAssembly: a missing file (a 404, often empty) read as «BufferSource argument
- * is empty», which told nobody what to do (production, 2026-11-16: the app's node_modules
- * were not installed). The page shows this sentence instead.
+ * A file of the engine, handed to Perspective as application/wasm whatever the server sends.
+ * nginx 1.18 does not know .wasm and sends it whole but as application/octet-stream; the
+ * library's WebAssembly.instantiateStreaming refuses that type, the library swallows the
+ * refusal («Stage 0 wasm loading failed, skipping») and goes on with an empty buffer:
+ * «WebAssembly.instantiate(): BufferSource argument is empty» (production, 2026-11-16). The
+ * answer's body is passed on, streamed, under the right type. A file the server does not
+ * have (not found, or said to be empty) is said with what to run.
+ * @returns {Promise<Response>}
  */
 export async function engine_file(url) {
+	const file = url.split("?")[0].split("/").pop();
+	const missing = () =>
+		new Error(
+			__("The table engine's file {0} is missing on the server. Ask the administrator to run «bench setup requirements --node report_view», then «bench build --app report_view».", [file])
+		);
 	let r;
 	try {
 		r = await fetch(url);
 	} catch {
-		r = null;
+		throw missing();
 	}
-	const size = Number(r?.headers?.get?.("Content-Length") ?? -1);
-	if (!r || !r.ok || size === 0) {
-		const file = url.split("?")[0].split("/").pop();
-		throw new Error(
-			__("The table engine's file {0} is missing on the server. Ask the administrator to run «bench setup requirements --node report_view», then «bench build --app report_view».", [file])
-		);
-	}
-	return r;
+	if (!r.ok || !r.body || r.headers.get("Content-Length") === "0") throw missing();
+	return new Response(r.body, { headers: { "Content-Type": "application/wasm" } });
 }
 
 function start_wasm() {

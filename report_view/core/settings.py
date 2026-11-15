@@ -522,10 +522,19 @@ def boot_session(bootinfo) -> None:
 	"""Hook ``extend_bootinfo`` (ADR-019): what a page needs before any request, here where
 	report_view.print() opens a Custom print. It must be known at the click: a tab opened
 	after a request is blocked by the browser."""
-	gs = global_settings()
+	gs = global_settings() or {}
 	bootinfo.report_view = {
-		"custom_print_open_in": "tab" if gs and gs.get("custom_print_open_in") == "New tab" else "same"
+		"custom_print_open_in": "tab" if gs.get("custom_print_open_in") == "New tab" else "same",
+		# what opens first (report_view_entry.bundle.js): the route of a report's page, the
+		# print page of a document; "" is Frappe's own
+		"report_route": REPORT_ROUTES.get(gs.get("default_report_view") or "", ""),
+		"print_route": PRINT_ROUTES.get(gs.get("default_print_view") or "", ""),
 	}
+
+
+# «A report opens in» and «A document's Print opens in» of the single, as routes
+REPORT_ROUTES = {"Standard design": "report-view", "Design A": "report-view-a", "Design C": "report-view-c"}
+PRINT_ROUTES = {"Advanced Print": "rv-print"}
 
 
 # The labels of the single's Select fields, as the Pages view keys them.

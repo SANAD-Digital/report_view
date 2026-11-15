@@ -4592,7 +4592,7 @@ msgid "Design"
 msgstr "التصميم"
 
 msgid "Standard design"
-msgstr "التصميم الحالي"
+msgstr "التصميم القياسي"
 
 msgid "Design A"
 msgstr "التصميم «أ»"
@@ -4901,3 +4901,24 @@ msgstr "حتى بارتفاع {0} مم يُقص: اختصر النص أو صغّ
 
 msgid "Invalid print settings"
 msgstr "إعدادات طباعة غير صالحة"
+
+msgid "Default views"
+msgstr "طريقة العرض الافتراضية"
+
+msgid "What opens first. Every view stays one click away: the «Design» list of Report View and the «View» list of the system's report page move between all of them."
+msgstr "ما يُفتح أولاً. وكل طريقة عرض تبقى على بُعد نقرة: قائمة «التصميم» في عرض التقرير، وقائمة «طريقة العرض» في صفحة تقارير النظام، تنقلان بينها كلها."
+
+msgid "A report opens in"
+msgstr "يُفتح التقرير في"
+
+msgid "System page"
+msgstr "طريقة النظام"
+
+msgid "«System page» is Frappe's own report page. A report turned off in its Report View Settings always opens there."
+msgstr "«طريقة النظام» هي صفحة تقارير Frappe نفسها. والتقرير الموقوف في إعدادات عرض التقرير يُفتح فيها دائماً."
+
+msgid "A document's Print opens in"
+msgstr "زر الطباعة في المستند يفتح"
+
+msgid "«System page» is Frappe's own print page; «Advanced Print» is the print page of Report View."
+msgstr "«طريقة النظام» هي صفحة طباعة Frappe نفسها، و«الطباعة المتقدمة» هي صفحة طباعة عرض التقرير."

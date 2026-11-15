@@ -14,6 +14,7 @@ import { PagesView } from "./views/pages_view.js";
 import { error_text } from "./api.js";
 import { load_user_settings, settings_saver } from "./util.js";
 import { CUSTOM, TOKEN, METHOD, OPTION_KEYS } from "./custom_print_rules.js";
+import { stay_on_system } from "./view_choice.js";
 
 // the print page fills the window under Desk's head: never shorter than this, and this much
 // room left under it (px)
@@ -86,7 +87,11 @@ class DocPrintPage {
 			return;
 		}
 		this.page.set_secondary_action(__("Back to the document"), () => frappe.set_route("Form", this.doctype, this.name), "arrow-left");
-		this.page.add_menu_item(__("Frappe's print page"), () => frappe.set_route("print", this.doctype, this.name));
+		this.page.add_menu_item(__("Frappe's print page"), () => {
+			// chosen here: this document's print stays on Frappe's page in this tab
+			stay_on_system("print", `${this.doctype}/${this.name}`);
+			frappe.set_route("print", this.doctype, this.name);
+		});
 		this.page.add_menu_item(__("Print Settings"), () => frappe.set_route("Form", "Print Settings"));
 	}
 

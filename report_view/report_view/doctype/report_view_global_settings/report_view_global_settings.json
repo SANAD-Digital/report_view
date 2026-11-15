@@ -4,6 +4,10 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "views_section",
+  "default_report_view",
+  "column_break_views",
+  "default_print_view",
   "limits_tab_section",
   "max_rows",
   "column_break_limits",
@@ -46,6 +50,32 @@
   "pdf_engine_status"
  ],
  "fields": [
+  {
+   "fieldname": "views_section",
+   "fieldtype": "Section Break",
+   "label": "Default views",
+   "description": "What opens first. Every view stays one click away: the «Design» list of Report View and the «View» list of the system's report page move between all of them."
+  },
+  {
+   "fieldname": "default_report_view",
+   "fieldtype": "Select",
+   "label": "A report opens in",
+   "options": "System page\nStandard design\nDesign A\nDesign C",
+   "default": "System page",
+   "description": "«System page» is Frappe's own report page. A report turned off in its Report View Settings always opens there."
+  },
+  {
+   "fieldname": "column_break_views",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "default_print_view",
+   "fieldtype": "Select",
+   "label": "A document's Print opens in",
+   "options": "System page\nAdvanced Print",
+   "default": "System page",
+   "description": "«System page» is Frappe's own print page; «Advanced Print» is the print page of Report View."
+  },
   {
    "fieldname": "limits_tab_section",
    "fieldtype": "Section Break",
@@ -305,7 +335,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-22 06:05:48.343408",
+ "modified": "2026-11-15 22:01:59.130577",
  "modified_by": "Administrator",
  "module": "Report View",
  "name": "Report View Global Settings",

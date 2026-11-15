@@ -10,6 +10,8 @@ import { SERVER_WASM, CLIENT_WASM, WORKER_JS } from "./report_view/engine/assets
 import "./report_view/custom_print.js";
 // the checks of a print format's variables (ADR-024), for the «Add variables» dialog of its form
 import * as print_variables from "./report_view/print_variables.js";
+// what opens first, and the views a person moves between (Report View Global Settings)
+import { REPORT_VIEWS, default_print_route, default_report_route, report_url, stay_on_system, stays_on_system } from "./report_view/view_choice.js";
 
 frappe.provide("report_view");
 window.report_view.print_variables = print_variables;
@@ -81,11 +83,18 @@ function add_button(report_name, state, tries = 0) {
 		return;
 	}
 	if (current_route()[1] !== report_name) return;
-	const put = () =>
-		qr.page.add_inner_button(__("Go to Advanced View"), () => {
-			frappe.route_options = qr.get_filter_values ? qr.get_filter_values() : {};
-			frappe.set_route(...state.route);
-		});
+	// to a Report View page, the report's filters with it; Frappe's page is no longer the
+	// choice for this report
+	const go = (route) => {
+		stay_on_system("report", report_name, false);
+		frappe.route_options = qr.get_filter_values ? qr.get_filter_values() : {};
+		frappe.set_route(route, report_name);
+	};
+	const put = () => {
+		qr.page.add_inner_button(__("Go to Advanced View"), () => go(state.route[0]));
+		// «View»: every page of the report, as Report View's «Design» list
+		for (const v of REPORT_VIEWS) qr.page.add_inner_button(v.label(), () => go(v.route), __("View"));
+	};
 	put();
 	prefetch_page();
 	// In Frappe 16 the inner toolbar is the custom-actions area, which refresh_report empties
@@ -120,19 +129,41 @@ function add_advanced_print(tries = 0) {
 		__("Advanced Print"),
 		() => {
 			const r = current_route();
-			if (r[0] === "print" && r[1] && r[2]) frappe.set_route("rv-print", r[1], r.slice(2).join("/"));
+			if (!(r[0] === "print" && r[1] && r[2])) return;
+			// Frappe's print page is no longer the choice for this document
+			stay_on_system("print", `${r[1]}/${r.slice(2).join("/")}`, false);
+			frappe.set_route("rv-print", r[1], r.slice(2).join("/"));
 		},
 		{ icon: "printer" }
 	);
 }
 
+/** The route in place of the current one (Back does not return to the page left). */
+function replace_route(...args) {
+	frappe.route_flags.replace_route = true;
+	frappe.set_route(...args);
+}
+
 function on_route_change() {
 	const route = current_route();
-	if (route[0] === "print") add_advanced_print();
+	if (route[0] === "print" && route[1] && route[2]) {
+		const doc = route.slice(2).join("/");
+		// a document's print opens where the site says, unless Frappe's was chosen here
+		if (default_print_route() && !stays_on_system("print", `${route[1]}/${doc}`)) return replace_route(default_print_route(), route[1], doc);
+		add_advanced_print();
+	}
 	if (route[0] !== "query-report" || !route[1]) return stop_watching();
 	const report_name = route[1];
+	const target = default_report_route();
+	const opens_elsewhere = target && !stays_on_system("report", report_name);
 	get_entry_state(report_name).then((state) => {
-		if (state && state.show) add_button(report_name, state);
+		if (!state || !state.show) return;
+		// a report opens where the site says (one Report View turned off stays on Frappe's)
+		if (opens_elsewhere) {
+			if (current_route()[0] === "query-report" && current_route()[1] === report_name) replace_route(report_url(target, report_name));
+			return;
+		}
+		add_button(report_name, state);
 	});
 }
 

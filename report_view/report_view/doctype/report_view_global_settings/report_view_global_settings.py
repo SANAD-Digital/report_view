@@ -19,3 +19,9 @@ class ReportViewGlobalSettings(Document):
 		for side in ("top", "bottom", "start", "end"):
 			if (self.get(f"margin_{side}") or 0) > 60:
 				frappe.throw(_("A page margin cannot be more than {0} mm").format(60))
+
+	def on_update(self):
+		# what opens first (default_report_view, default_print_view) and where a custom print
+		# opens reach the pages through Desk's boot (core/settings.py boot_session), kept per
+		# user: dropped, every user has the new choice at the next load
+		frappe.cache.delete_key("bootinfo")

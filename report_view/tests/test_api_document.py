@@ -81,6 +81,28 @@ class TestDocumentPrint(RVTestCase):
 		for f in opts["doc_settings"]:
 			self.assertEqual(set(f), {"fieldname", "label", "default"})
 
+	def test_print_settings_reach_frappe_as_a_json_string(self):
+		"""Frappe types get_html_and_style's ``settings`` as a JSON string and, in a request,
+		refuses a dict («should be of type 'str | None' but got 'dict'»)."""
+		seen = []
+		real = api.get_html_and_style
+
+		def spy(*args, **kwargs):
+			seen.append(kwargs.get("settings"))
+			return real(*args, **kwargs)
+
+		doc = frappe.get_doc("Journal Entry", self.je)
+		own = list(doc.get_print_settings() or []) if hasattr(doc, "get_print_settings") else []
+		chosen = {own[0]: 1} if own else {}
+		with self.as_user("accountant"), patch.object(api, "get_html_and_style", side_effect=spy):
+			api.render_doc_print("Journal Entry", self.je, settings=frappe.as_json(chosen))
+		self.assertEqual(len(seen), 1)
+		if chosen:
+			self.assertIsInstance(seen[0], str)
+			self.assertEqual(frappe.parse_json(seen[0]), chosen)
+		else:
+			self.assertIsNone(seen[0])
+
 	def test_print_permission_is_required(self):
 		with self.as_user("none"):
 			for call in (

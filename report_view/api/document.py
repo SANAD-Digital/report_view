@@ -178,7 +178,8 @@ def render_doc_print(
 			no_letterhead=1,
 			trigger_print=False,
 			style=style,
-			settings=overrides or None,
+			# Frappe types it a JSON string and parses it itself; a dict is refused
+			settings=frappe.as_json(overrides) if overrides else None,
 		)
 	if out.get("html") is None:
 		frappe.throw(_("The print format could not be rendered"), RVInvalidInput)

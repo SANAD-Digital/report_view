@@ -177,7 +177,30 @@ function safe_route_change() {
 	}
 }
 
+// Our pages, which a print or a report is sent to in place of Frappe's own.
+const OWN_PAGES = new Set(["rv-print", ...REPORT_VIEWS.map((v) => v.route)]);
+
+/**
+ * Frappe shows a page once its script is loaded (pageview.show → with_page → change_to)
+ * without asking whether the route still wants it. Sent from «print» to «rv-print», the
+ * page that loads last wins: when Frappe's print page arrives after ours (neither cached,
+ * as after a deploy), it covers ours under our address, with its short side panel. When
+ * a page is shown that is not the one the route names, and the route names one of ours,
+ * ours is shown again.
+ */
+function keep_own_page() {
+	try {
+		const name = current_route()[0];
+		if (!OWN_PAGES.has(name)) return;
+		const own = frappe.pages?.[name];
+		if (own && frappe.container?.page && frappe.container.page !== own) frappe.container.change_to(name);
+	} catch (e) {
+		console.error(e);
+	}
+}
+
 $(document).on("app_ready", () => {
 	frappe.router.on("change", safe_route_change);
 	setTimeout(safe_route_change);
+	$(document).on("page-change", keep_own_page);
 });
